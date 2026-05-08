@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nezumi_Chan BLE Debug Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base:    #0d1117;
+            --bg-panel:   #161b22;
+            --bg-card:    #21262d;
+            --border:     #30363d;
+            --text-pri:   #e6edf3;
+            --text-sec:   #8b949e;
+            --blue:       #58a6ff;
+            --green:      #3fb950;
+            --red:        #f85149;
+            --orange:     #d29922;
+            --purple:     #bc8cff;
+            --cyan:       #39d2c0;
+            /* maze palette */
+            --maze-bg:    #000000;
+            --cell-unvis: #0a0a0a;
+            --cell-vis:   #888888;
+            --cell-goal:  #1e4d2b;
+            --cell-robot: #0a1a44;
+            --cell-path:  #3a2200;
+            --cell-open:  #1a2a1a;
+            --wall-color: #dd2222;
+            --wall-dim:   #333333;
+            --post-color: #cccccc;
+            --robot-fill: #2255ff;
+            --flood-text: rgba(120,200,255,0.85);
+            --astar-text: rgba(255,200,80,0.85);
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-base);
+            color: var(--text-pri);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── HEADER ──────────────────────────────────────── */
+        .header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 9px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+        .hd-left { display: flex; align-items: center; gap: 10px; }
+        .logo { font-size: 24px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+        .hd-title { font-size: 13px; font-weight: 600; letter-spacing: 1px;
+            background: linear-gradient(135deg,var(--cyan),var(--blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hd-sub { font-size: 10px; color: var(--text-sec); letter-spacing: 0.5px; }
+
+        .status-badge {
+            display: flex; align-items: center; gap: 7px;
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+        }
+        .status-badge.disconnected { background:rgba(248,81,73,.12); color:var(--red); border:1px solid rgba(248,81,73,.3); }
+        .status-badge.connecting   { background:rgba(210,153,34,.12); color:var(--orange); border:1px solid rgba(210,153,34,.3); }
+        .status-badge.connected    { background:rgba(63,185,80,.12); color:var(--green); border:1px solid rgba(63,185,80,.3); }
+        .status-dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+        .status-badge.connected .status-dot { animation: pulse 2s infinite; }
+        .status-badge.connecting .status-dot { animation: pulse .7s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor} 50%{opacity:.5;box-shadow:0 0 6px 2px currentColor} }
+
+        /* ─── MAIN WORKSPACE ──────────────────────────────── */
+        .workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* ─── LEFT: MAZE PANEL ────────────────────────────── */
+        .maze-side {
+            display: flex;
+            flex-direction: column;
+            background: var(--maze-bg);
+            flex-shrink: 0;
+            border-right: 2px solid var(--border);
+            position: relative;
+            min-width: 300px;
+        }
+        .maze-toolbar {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 7px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .maze-canvas-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 8px;
+            background: var(--maze-bg);
+        }
+        #mazeCanvas {
+            image-rendering: pixelated;
+            display: block;
+        }
+        .maze-info-bar {
+            background: rgba(0,0,0,0.7);
+            border-top: 1px solid #222;
+            padding: 5px 12px;
+            font-size: 11px;
+            color: var(--text-sec);
+            display: flex;
+            gap: 16px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .maze-info-bar .mib-val { color: var(--cyan); font-weight: 600; }
+        .maze-info-bar .mib-lbl { opacity: .7; }
+
+        .maze-overlay-msg {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px 32px;
+            text-align: center;
+            pointer-events: none;
+        }
+        .maze-overlay-msg .icon { font-size: 40px; margin-bottom: 10px; }
+        .maze-overlay-msg p { color: var(--text-sec); font-size: 12px; }
+
+        /* ─── RIGHT: CONTROL PANEL ────────────────────────── */
+        .ctrl-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 320px;
+            overflow: hidden;
+            background: var(--bg-base);
+        }
+
+        /* Controls bar */
+        .controls-bar {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+        .controls-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+        .controls-label {
+            font-size: 10px;
+            color: var(--text-sec);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            min-width: 38px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-pri);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex; align-items: center; gap: 5px;
+            letter-spacing: 0.3px;
+            user-select: none;
+        }
+        .btn:hover { background: var(--border); }
+        .btn:active { transform: scale(.97); }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        .btn-ble  { background: linear-gradient(135deg,#1a6eff,#0050cc); border-color:var(--blue); color:#fff;
+                    box-shadow:0 2px 10px rgba(88,166,255,.2); }
+        .btn-ble:hover  { background: linear-gradient(135deg,#2c7aff,#0060ef); }
+        .btn-ble.active { background: linear-gradient(135deg,#da3633,#b62324); border-color:var(--red); }
+
+        .btn-run  { background:linear-gradient(135deg,#1a5c1a,#0d3d0d); border-color:var(--green); color:var(--green); }
+        .btn-run:hover { background:linear-gradient(135deg,#2a7a2a,#1a4d1a); }
+        .btn-run.active { background:rgba(63,185,80,.2); border-color:var(--green); color:var(--green); }
+
+        .btn-pause { background:rgba(210,153,34,.1); border-color:rgba(210,153,34,.4); color:var(--orange); }
+        .btn-reset { background:rgba(248,81,73,.1); border-color:rgba(248,81,73,.3); color:var(--red); }
+
+        .btn-status {
+            padding: 5px 14px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border: 1px solid;
+            cursor: default;
+        }
+        .btn-status.idle     { background:rgba(88,166,255,.1); border-color:rgba(88,166,255,.3); color:var(--blue); }
+        .btn-status.running  { background:rgba(63,185,80,.15); border-color:rgba(63,185,80,.4); color:var(--green);
+                               animation: runningPulse 1s ease-in-out infinite; }
+        .btn-status.paused   { background:rgba(210,153,34,.1); border-color:rgba(210,153,34,.4); color:var(--orange); }
+        .btn-status.error    { background:rgba(248,81,73,.1); border-color:rgba(248,81,73,.4); color:var(--red); }
+        .btn-status.done     { background:rgba(188,140,255,.1); border-color:rgba(188,140,255,.4); color:var(--purple); }
+        @keyframes runningPulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+
+
+        /* Display toggles */
+        .toggle-group { display:flex; gap:4px; }
+        .toggle-btn {
+            padding: 3px 9px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-sec);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .toggle-btn.on { background:rgba(57,210,192,.12); border-color:rgba(57,210,192,.3); color:var(--cyan); }
+        .toggle-btn:hover { background:var(--bg-card); }
+
+        /* Tabs */
+        .tabs-bar {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 0 14px;
+            display: flex;
+            gap: 0;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            color: var(--text-sec);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .15s;
+            letter-spacing: 0.3px;
+            margin-bottom: -1px;
+        }
+        .tab-btn:hover { color: var(--text-pri); }
+        .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+        /* Log pane */
+        .log-pane {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            line-height: 1.65;
+            position: relative;
+        }
+        .log-pane::-webkit-scrollbar { width: 6px; }
+        .log-pane::-webkit-scrollbar-track { background: transparent; }
+        .log-pane::-webkit-scrollbar-thumb { background: var(--bg-card); border-radius: 3px; }
+
+        .log-line {
+            display: flex; gap: 9px; padding: 1px 0;
+            animation: fadeIn .12s ease;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:none} }
+        .ll-time { color:var(--text-sec); font-size:10px; flex-shrink:0; min-width:75px; opacity:.6; }
+        .ll-tag  { font-size:9px; padding:1px 5px; border-radius:3px; font-weight:700;
+                   flex-shrink:0; align-self:center; }
+        .ll-msg  { word-break:break-all; white-space:pre-wrap; }
+
+        .log-line.sys  .ll-tag { background:rgba(188,140,255,.15); color:var(--purple); }
+        .log-line.sys  .ll-msg { color:var(--purple); }
+        .log-line.info .ll-tag { background:rgba(88,166,255,.12); color:var(--blue); }
+        .log-line.info .ll-msg { color:var(--text-pri); }
+        .log-line.maze .ll-tag { background:rgba(63,185,80,.12); color:var(--green); }
+        .log-line.maze .ll-msg { color:#7fcc85; }
+        .log-line.srch .ll-tag { background:rgba(57,210,192,.12); color:var(--cyan); }
+        .log-line.srch .ll-msg { color:#80e0da; }
+        .log-line.warn .ll-tag { background:rgba(210,153,34,.12); color:var(--orange); }
+        .log-line.warn .ll-msg { color:var(--orange); }
+        .log-line.err  .ll-tag { background:rgba(248,81,73,.12); color:var(--red); }
+        .log-line.err  .ll-msg { color:var(--red); }
+        .log-line.astr .ll-tag { background:rgba(255,200,80,.12); color:#ffc850; }
+        .log-line.astr .ll-msg { color:#ffc850; }
+
+        .log-tab-content { display:none; flex:1; flex-direction:column; overflow:hidden; }
+        .log-tab-content.active { display:flex; }
+
+        /* Stats panel */
+        .stats-panel {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .stat-card .sc-label { font-size: 10px; color: var(--text-sec); letter-spacing: 0.5px; margin-bottom: 5px; }
+        .stat-card .sc-value { font-size: 22px; font-weight: 600; color: var(--cyan); }
+        .stat-card .sc-sub   { font-size: 10px; color: var(--text-sec); margin-top: 2px; }
+
+        /* Send bar */
+        .send-bar {
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            padding: 9px 14px;
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .send-bar input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-base);
+            color: var(--text-pri);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .send-bar input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(88,166,255,.15); }
+        .send-bar input::placeholder { color: var(--text-sec); opacity: .4; }
+
+        /* Resize handle */
+        .resize-handle {
+            width: 4px;
+            background: var(--border);
+            cursor: col-resize;
+            flex-shrink: 0;
+            transition: background .15s;
+        }
+        .resize-handle:hover { background: var(--blue); }
+
+        /* Scrollbar indicator */
+        .scroll-ind {
+            position: sticky;
+            bottom: 8px;
+            float: right;
+            margin-right: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-sec);
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity .2s;
+            pointer-events: none;
+        }
+        .scroll-ind.show { opacity: 1; pointer-events: all; }
+
+        /* Maze size label */
+        .maze-size-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(57,210,192,.1);
+            border: 1px solid rgba(57,210,192,.2);
+            color: var(--cyan);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .workspace { flex-direction: column; }
+            .maze-side { border-right: none; border-bottom: 2px solid var(--border); min-height: 40vh; }
+            .maze-side { min-width: unset; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════ -->
+<div class="header">
+    <div class="hd-left">
+        <div class="logo">🐭</div>
+        <div>
+            <div class="hd-title">NEZUMI_CHAN</div>
+            <div class="hd-sub">Micromouse Debug Console</div>
+        </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+        <span class="maze-size-badge">16×16</span>
+        <div class="status-badge disconnected" id="statusBadge">
+            <div class="status-dot"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     WORKSPACE
+════════════════════════════════════════════════════ -->
+<div class="workspace">
+
+    <!-- ── LEFT: MAZE ──────────────────────────────── -->
+    <div class="maze-side" id="mazeSide" style="width:520px;">
+
+        <div class="maze-toolbar">
+            <span style="font-size:11px;color:var(--text-sec);font-weight:600;">DISPLAY</span>
+            <div class="toggle-group">
+                <button class="toggle-btn on" id="tglFlood" onclick="toggleDisplay('flood', this)">Flood#</button>
+                <button class="toggle-btn on" id="tglPath"  onclick="toggleDisplay('path', this)">Path</button>
+                <button class="toggle-btn on" id="tglVisit" onclick="toggleDisplay('visit', this)">Explored</button>
+            </div>
+        </div>
+
+        <div class="maze-canvas-wrap" id="mazeCanvasWrap">
+            <canvas id="mazeCanvas"></canvas>
+            <div class="maze-overlay-msg" id="mazeOverlay">
+                <div class="icon">🗺️</div>
+                <p>Connect BLE device to start.</p>
+            </div>
+        </div>
+
+        <div class="maze-info-bar" id="mazeInfoBar">
+            <span><span class="mib-lbl">Robot </span><span class="mib-val" id="mibPos">(0,0)</span></span>
+            <span><span class="mib-lbl">Dir </span><span class="mib-val" id="mibDir">N</span></span>
+            <span><span class="mib-lbl">Flood </span><span class="mib-val" id="mibDist">—</span></span>
+            <span><span class="mib-lbl">Visited </span><span class="mib-val" id="mibVisit">0</span><span class="mib-lbl">/256</span></span>
+            <span><span class="mib-lbl">Steps </span><span class="mib-val" id="mibSteps">0</span></span>
+            <span id="mibPhase" style="color:var(--purple);font-size:10px;"></span>
+        </div>
+    </div>
+
+    <!-- Resize handle -->
+    <div class="resize-handle" id="resizeHandle"></div>
+
+    <!-- ── RIGHT: CONTROLS + LOG ───────────────────── -->
+    <div class="ctrl-side">
+
+        <!-- Controls bar -->
+        <div class="controls-bar">
+            <!-- BLE row -->
+            <div class="controls-row">
+                <span class="controls-label">BLE</span>
+                <button class="btn btn-ble" id="btnBLE" onclick="toggleConnection()">⚡ Connect BLE</button>
+                <button class="btn" onclick="clearLogs()">🗑 Clear</button>
+                <button class="btn" onclick="exportLog()">💾 Export</button>
+                <div style="flex:1;"></div>
+                <div style="display:flex;gap:4px;">
+                    <button class="toggle-btn on" onclick="setFilter('all',this)" data-f="all">ALL</button>
+                    <button class="toggle-btn" onclick="setFilter('maze',this)" data-f="maze">MAZE</button>
+                    <button class="toggle-btn" onclick="setFilter('srch',this)" data-f="srch">SRCH</button>
+                    <button class="toggle-btn" onclick="setFilter('warn',this)" data-f="warn">WRN</button>
+                    <button class="toggle-btn" onclick="setFilter('err',this)" data-f="err">ERR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-bar">
+            <button class="tab-btn active" onclick="switchTab('ble',this)">📡 BLE Log</button>
+            <button class="tab-btn" onclick="switchTab('stats',this)">📊 Stats</button>
+        </div>
+
+        <!-- Tab: BLE Log -->
+        <div class="log-tab-content active" id="tab-ble" style="overflow:hidden;flex:1;display:flex;flex-direction:column;">
+            <div class="log-pane" id="bleLog">
+                <div style="text-align:center;padding:30px;opacity:.4;">
+                    <div style="font-size:36px;margin-bottom:8px;">🔌</div>
+                    <div style="font-size:12px;color:var(--text-sec);">No BLE connection</div>
+                    <div style="font-size:10px;color:var(--text-sec);margin-top:4px;">Click "Connect BLE" to start</div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Tab: Stats -->
+        <div class="log-tab-content" id="tab-stats" style="overflow:hidden;flex:1;overflow-y:auto;">
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="sc-label">TOTAL STEPS</div>
+                    <div class="sc-value" id="st-steps">0</div>
+                    <div class="sc-sub">robot movements</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">CELLS VISITED</div>
+                    <div class="sc-value" id="st-visited">0</div>
+                    <div class="sc-sub">of 256 total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">WALLS FOUND</div>
+                    <div class="sc-value" id="st-walls">0</div>
+                    <div class="sc-sub">discovered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">BACKTRACK</div>
+                    <div class="sc-value" id="st-back">0</div>
+                    <div class="sc-sub">visited revisits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">FLOOD RECALC</div>
+                    <div class="sc-value" id="st-freq">0</div>
+                    <div class="sc-sub">flood fill updates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="sc-label">PATH LENGTH</div>
+                    <div class="sc-value" id="st-path">—</div>
+                    <div class="sc-sub">optimal path cells</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Send bar -->
+        <div class="send-bar">
+            <input type="text" id="sendInput" placeholder="Send command to Nezumi_Chan..." disabled
+                   onkeydown="if(event.key==='Enter') sendData()">
+            <button class="btn" onclick="sendData()" id="btnSend" disabled>Send</button>
+        </div>
+
+    </div><!-- ctrl-side -->
+</div><!-- workspace -->
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════════ */
+const MAZE_SIZE    = 16;
+const WALL_N = 0x1, WALL_E = 0x2, WALL_S = 0x4, WALL_W = 0x8;
+const GOAL_CELLS   = [[7,7],[8,7],[7,8],[8,8]]; // [x,y]
+const DIR_LABELS   = ['N','E','S','W'];
+const DIR_DX       = [0, 1, 0, -1];
+const DIR_DY       = [1, 0,-1,  0];
+const DIR_WALL     = [WALL_N, WALL_E, WALL_S, WALL_W];
+const DIR_OPP_WALL = [WALL_S, WALL_W, WALL_N, WALL_E];
+const DIR_OPP      = [2, 3, 0, 1];
+
+
+
+/* ═══════════════════════════════════════════════
+   FLOOD FILL
+═══════════════════════════════════════════════ */
+function calcFlood(knownWalls, goals) {
+    const flood = Array.from({length:MAZE_SIZE}, () => new Array(MAZE_SIZE).fill(255));
+    const queue = [];
+    for (const [gx,gy] of goals) {
+        flood[gy][gx] = 0;
+        queue.push(gx, gy);
+    }
+    let qi = 0;
+    while (qi < queue.length) {
+        const x = queue[qi++], y = queue[qi++];
+        const w = knownWalls[y][x], v = flood[y][x];
+        if (!(w&WALL_N)&&y<MAZE_SIZE-1&&flood[y+1][x]>v+1){flood[y+1][x]=v+1;queue.push(x,y+1);}
+        if (!(w&WALL_E)&&x<MAZE_SIZE-1&&flood[y][x+1]>v+1){flood[y][x+1]=v+1;queue.push(x+1,y);}
+        if (!(w&WALL_S)&&y>0          &&flood[y-1][x]>v+1){flood[y-1][x]=v+1;queue.push(x,y-1);}
+        if (!(w&WALL_W)&&x>0          &&flood[y][x-1]>v+1){flood[y][x-1]=v+1;queue.push(x-1,y);}
+    }
+    return flood;
+}
+
+/* Init walls with only boundary walls known */
+function initKnownWalls() {
+    return Array.from({length:MAZE_SIZE}, (_, y) =>
+        Array.from({length:MAZE_SIZE}, (_, x) => {
+            let w = 0;
+            if (y===MAZE_SIZE-1) w |= WALL_N;
+            if (x===MAZE_SIZE-1) w |= WALL_E;
+            if (y===0)           w |= WALL_S;
+            if (x===0)           w |= WALL_W;
+            return w;
+        })
+    );
+}
+
+
+
+/* ═══════════════════════════════════════════════
+   CANVAS RENDERER
+═══════════════════════════════════════════════ */
+const canvas = document.getElementById('mazeCanvas');
+const ctx = canvas.getContext('2d');
+
+let CANVAS_W = 512, CANVAS_H = 512;
+const POST  = 3;   // pixels
+let CELL;          // computed
+let WALL_T;        // wall thickness
+
+function sizeCanvas() {
+    const wrap = document.getElementById('mazeCanvasWrap');
+    const maxW = wrap.clientWidth  - 16;
+    const maxH = wrap.clientHeight - 16;
+    const sz   = Math.min(maxW, maxH, 640);
+    CANVAS_W = CANVAS_H = sz;
+    canvas.width  = sz;
+    canvas.height = sz;
+    CELL   = (sz - (MAZE_SIZE+1) * POST) / MAZE_SIZE;
+    WALL_T = Math.max(2, Math.round(CELL * 0.09));
+}
+
+function cellOrigin(cx, cy) {
+    const gy = MAZE_SIZE - 1 - cy; // flip Y
+    return {
+        px: POST + cx * (CELL + POST),
+        py: POST + gy * (CELL + POST)
+    };
+}
+
+/* Display toggles */
+let showFlood = true, showPath = true, showVisit = true;
+
+function toggleDisplay(which, btn) {
+    if (which === 'flood') showFlood = !showFlood;
+    if (which === 'path')  showPath  = !showPath;
+    if (which === 'visit') showVisit = !showVisit;
+    btn.classList.toggle('on');
+    renderMaze();
+}
+
+/* Gradient color for flood fill */
+function floodColor(val, maxVal) {
+    if (val >= 255) return null;
+    const t = Math.max(0, Math.min(1, val / Math.max(maxVal,1)));
+    // teal (0) → blue (0.5) → purple (1)
+    const r = Math.round(20  + t * 100);
+    const g = Math.round(180 - t * 140);
+    const b = Math.round(120 + t * 100);
+    return `rgb(${r},${g},${b})`;
+}
+
+function renderMaze() {
+    if (!mazeWalls) return;
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // Background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    const maxFlood = mazeFlood
+        ? Math.max(...mazeFlood.flat().filter(v=>v<255))
+        : 30;
+
+    // ── Cell backgrounds ──
+    for (let y = 0; y < MAZE_SIZE; y++) {
+        for (let x = 0; x < MAZE_SIZE; x++) {
+            const {px, py} = cellOrigin(x, y);
+            const isGoal    = GOAL_CELLS.some(([gx,gy])=>gx===x&&gy===y);
+            const isRobot   = (x===robotPos.x && y===robotPos.y);
+            const isVisited = visitedCells.has(`${x},${y}`);
+            const isPath    = pathCells.has(`${x},${y}`);
+            const isAstar   = astarExplored.has(`${x},${y}`);
+
+            if (isRobot) {
+                ctx.fillStyle = '#0a1540';
+            } else if (showPath && isPath) {
+                ctx.fillStyle = '#3a2000';
+            } else if (isAstar && showVisit) {
+                ctx.fillStyle = '#1a1a2a';
+            } else if (isGoal) {
+                ctx.fillStyle = '#0f2a15';
+            } else if (showVisit && isVisited) {
+                // MMS-style gray for explored cells
+                if (mazeFlood && showFlood && mazeFlood[y][x] < 255) {
+                    const fc = floodColor(mazeFlood[y][x], maxFlood);
+                    ctx.fillStyle = fc || '#555';
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(px, py, CELL, CELL);
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = '#777';
+                    ctx.globalAlpha = 0.5;
+                } else {
+                    ctx.fillStyle = '#777';
+                    ctx.globalAlpha = 1;
+                }
+            } else {
+                ctx.fillStyle = '#0d0d0d';
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.globalAlpha = ctx.globalAlpha; // noop to keep current
+            ctx.fillRect(px, py, CELL, CELL);
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // ── Goal zone highlight ──
+    for (const [gx,gy] of GOAL_CELLS) {
+        const {px,py} = cellOrigin(gx,gy);
+        ctx.fillStyle = 'rgba(50,180,80,0.18)';
+        ctx.fillRect(px, py, CELL, CELL);
+    }
+
+    // ── A* explored cells (subtle) ──
+    if (astarExplored.size > 0 && showVisit) {
+        for (const k of astarExplored) {
+            const [x,y] = k.split(',').map(Number);
+            const isPath = pathCells.has(k);
+            if (isPath) continue;
+            const {px,py} = cellOrigin(x,y);
+            ctx.fillStyle = 'rgba(80,80,200,0.15)';
+            ctx.fillRect(px,py,CELL,CELL);
+        }
+    }
+
+    // ── Path cells ──
+    if (showPath && pathCells.size > 0) {
+        for (const k of pathCells) {
+            const [x,y] = k.split(',').map(Number);
+            const {px,py} = cellOrigin(x,y);
+            ctx.fillStyle = 'rgba(255,160,30,0.35)';
+            ctx.fillRect(px,py,CELL,CELL);
+        }
+    }
+
+    // ── Posts (corners) ──
+    ctx.fillStyle = '#aaa';
+    for (let r = 0; r <= MAZE_SIZE; r++) {
+        for (let c = 0; c <= MAZE_SIZE; c++) {
+            const px = c * (CELL + POST);
+            const py = r * (CELL + POST);
+            ctx.fillRect(px, py, POST, POST);
+        }
+    }
+
+    // ── Walls ──
+    for (let y = 0; y < MAZE_SIZE; y++) {
+        for (let x = 0; x < MAZE_SIZE; x++) {
+            const w = mazeWalls[y][x];
+            const {px, py} = cellOrigin(x, y);
+            const gy = MAZE_SIZE - 1 - y;
+            const isVisited = visitedCells.has(`${x},${y}`);
+            const wallAlpha = isVisited ? 1.0 : 0.25;
+
+            // N wall (top in display)
+            if (w & WALL_N) {
+                const wy = gy * (CELL + POST);
+                ctx.fillStyle = isVisited ? '#dd2222' : '#333';
+                ctx.globalAlpha = wallAlpha;
+                ctx.fillRect(px, wy, CELL, WALL_T);
+            }
+            // S wall (bottom in display)
+            if (w & WALL_S) {
+                const wy = (gy+1) * (CELL + POST);
+                ctx.fillStyle = isVisited ? '#dd2222' : '#333';
+                ctx.globalAlpha = wallAlpha;
+                ctx.fillRect(px, wy, CELL, WALL_T);
+            }
+            // W wall
+            if (w & WALL_W) {
+                const wx = x * (CELL + POST);
+                ctx.fillStyle = isVisited ? '#dd2222' : '#333';
+                ctx.globalAlpha = wallAlpha;
+                ctx.fillRect(wx, py, WALL_T, CELL);
+            }
+            // E wall
+            if (w & WALL_E) {
+                const wx = (x+1) * (CELL + POST);
+                ctx.fillStyle = isVisited ? '#dd2222' : '#333';
+                ctx.globalAlpha = wallAlpha;
+                ctx.fillRect(wx, py, WALL_T, CELL);
+            }
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // ── Flood fill numbers ──
+    if (showFlood && mazeFlood) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const fs = Math.max(7, Math.min(12, CELL * 0.32));
+        ctx.font = `600 ${fs}px JetBrains Mono, monospace`;
+        for (let y = 0; y < MAZE_SIZE; y++) {
+            for (let x = 0; x < MAZE_SIZE; x++) {
+                if (x===robotPos.x && y===robotPos.y) continue;
+                const fv = mazeFlood[y][x];
+                if (fv >= 255) continue;
+                const {px,py} = cellOrigin(x,y);
+                const cx2 = px + CELL/2, cy2 = py + CELL/2;
+                const isVis = visitedCells.has(`${x},${y}`);
+                ctx.fillStyle = isVis
+                    ? 'rgba(40,160,255,0.9)'
+                    : 'rgba(40,160,255,0.4)';
+                ctx.fillText(fv, cx2, cy2);
+            }
+        }
+    }
+
+    // ── A* path direction arrows (subtle) ──
+    if (showPath && pathList.length > 1) {
+        ctx.strokeStyle = 'rgba(255,160,30,0.6)';
+        ctx.lineWidth   = Math.max(1.5, CELL * 0.08);
+        ctx.lineCap = 'round';
+        for (let i = 0; i < pathList.length - 1; i++) {
+            const [ax,ay] = pathList[i];
+            const [bx,by] = pathList[i+1];
+            const {px:apx,py:apy} = cellOrigin(ax,ay);
+            const {px:bpx,py:bpy} = cellOrigin(bx,by);
+            const acx = apx + CELL/2, acy = apy + CELL/2;
+            const bcx = bpx + CELL/2, bcy = bpy + CELL/2;
+            ctx.beginPath();
+            ctx.moveTo(acx, acy);
+            ctx.lineTo(bcx, bcy);
+            ctx.stroke();
+        }
+    }
+
+    // ── Robot ──
+    {
+        const {px,py} = cellOrigin(robotPos.x, robotPos.y);
+        const cx2 = px + CELL/2, cy2 = py + CELL/2;
+        const r   = CELL * 0.36;
+        ctx.save();
+        ctx.translate(cx2, cy2);
+        // dir: 0=N, 1=E, 2=S, 3=W → canvas angle: N=-90°, E=0°, S=90°, W=180°
+        const angles = [-Math.PI/2, 0, Math.PI/2, Math.PI];
+        ctx.rotate(angles[robotPos.dir] ?? -Math.PI/2);
+        // Glowing robot body (triangle pointing right = East)
+        ctx.shadowColor = '#4488ff';
+        ctx.shadowBlur  = 10;
+        ctx.beginPath();
+        ctx.moveTo( r,     0);
+        ctx.lineTo(-r*0.7, -r*0.65);
+        ctx.lineTo(-r*0.7,  r*0.65);
+        ctx.closePath();
+        ctx.fillStyle = '#2255ff';
+        ctx.fill();
+        ctx.strokeStyle = '#66aaff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+
+    // ── Goal star markers ──
+    for (const [gx,gy] of GOAL_CELLS) {
+        if (gx===robotPos.x && gy===robotPos.y) continue;
+        const {px,py} = cellOrigin(gx,gy);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `${Math.max(8, CELL*0.3)}px serif`;
+        ctx.fillStyle = 'rgba(50,220,100,0.7)';
+        ctx.fillText('★', px+CELL/2, py+CELL/2);
+    }
+
+    updateInfoBar();
+}
+
+function updateInfoBar() {
+    document.getElementById('mibPos').textContent    = `(${robotPos.x},${robotPos.y})`;
+    document.getElementById('mibDir').textContent    = DIR_LABELS[robotPos.dir];
+    const fd = mazeFlood ? mazeFlood[robotPos.y][robotPos.x] : 255;
+    document.getElementById('mibDist').textContent   = fd < 255 ? fd : '—';
+    document.getElementById('mibVisit').textContent  = visitedCells.size;
+    document.getElementById('mibSteps').textContent  = simStepCount;
+}
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let mazeWalls   = null;   // what robot knows (displayed)
+let mazeFlood   = null;   // flood fill values
+let robotPos    = { x:0, y:0, dir:0 };
+let visitedCells = new Set();
+let pathCells    = new Set();
+let pathList     = [];
+let astarExplored = new Set();
+let simStepCount = 0;
+
+// Stats
+let statWalls    = 0;
+let statBack     = 0;
+let statFreq     = 0;
+
+// BLE
+let bleDevice    = null;
+let bleChar      = null;
+let lineBuffer   = '';
+let totalMessages = 0;
+let totalBytes   = 0;
+let bleAutoScroll = true;
+let activeFilter = 'all';
+
+// Log entries (BLE)
+let bleLogEntries = [];
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+    sizeCanvas();
+    initMazeDisplay();
+    document.getElementById('mazeOverlay').style.display = 'none';
+});
+
+window.addEventListener('resize', () => {
+    sizeCanvas();
+    renderMaze();
+});
+
+function initMazeDisplay() {
+    mazeWalls   = initKnownWalls();
+    mazeFlood   = calcFlood(mazeWalls, GOAL_CELLS);
+    robotPos    = { x:0, y:0, dir:0 };
+    visitedCells = new Set();
+    pathCells   = new Set();
+    pathList    = [];
+    astarExplored = new Set();
+    simStepCount = 0;
+    statWalls = statBack = statFreq = 0;
+    renderMaze();
+    updateStats();
+}
+
+function propagateWalls(x, y, w) {
+    if (y<MAZE_SIZE-1) {
+        if (w&WALL_N) mazeWalls[y+1][x]|=WALL_S;
+        else mazeWalls[y+1][x]&=~WALL_S;
+    }
+    if (y>0) {
+        if (w&WALL_S) mazeWalls[y-1][x]|=WALL_N;
+        else mazeWalls[y-1][x]&=~WALL_N;
+    }
+    if (x<MAZE_SIZE-1) {
+        if (w&WALL_E) mazeWalls[y][x+1]|=WALL_W;
+        else mazeWalls[y][x+1]&=~WALL_W;
+    }
+    if (x>0) {
+        if (w&WALL_W) mazeWalls[y][x-1]|=WALL_E;
+        else mazeWalls[y][x-1]&=~WALL_E;
+    }
+}
+
+function updateStats() {
+    document.getElementById('st-steps').textContent   = simStepCount;
+    document.getElementById('st-visited').textContent = visitedCells.size;
+    document.getElementById('st-walls').textContent   = statWalls;
+    document.getElementById('st-back').textContent    = statBack;
+    document.getElementById('st-freq').textContent    = statFreq;
+}
+
+/* ═══════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════ */
+let activeTab = 'ble';
+function switchTab(name, btn) {
+    document.querySelectorAll('.log-tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b  => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    activeTab = name;
+}
+
+/* ═══════════════════════════════════════════════
+   LOGGING
+═══════════════════════════════════════════════ */
+
+
+function addBLEEntry(text, forceType) {
+    totalMessages++;
+    const type = forceType || classifyBLE(text);
+    bleLogEntries.push({time: new Date(), text, type});
+    if (bleLogEntries.length > 5000) bleLogEntries.shift();
+
+    const el = document.getElementById('bleLog');
+    if (bleLogEntries.length === 1) el.innerHTML = '';
+
+    const div = document.createElement('div');
+    div.className = `log-line ${type}`;
+    if (activeFilter !== 'all' && type !== activeFilter) div.style.display = 'none';
+    div.innerHTML = `<span class="ll-time">${fmtTime(bleLogEntries[bleLogEntries.length-1].time)}</span>
+        <span class="ll-tag">${bleTagLabel(type)}</span>
+        <span class="ll-msg">${escHtml(text)}</span>`;
+    el.appendChild(div);
+    if (bleAutoScroll) el.scrollTop = el.scrollHeight;
+}
+
+function classifyBLE(t) {
+    const u = t.toUpperCase();
+    if (u.includes('ERR')||u.includes('FAIL')||u.includes('STUCK')) return 'err';
+    if (u.includes('WARN')||u.includes('TIMEOUT')) return 'warn';
+    if (u.includes('CELL')||u.includes('MAZE')||u.includes('FLOOD')||
+        u.includes('WALL')||u.includes('EXPLORE')||u.includes('ACTION'))   return 'maze';
+    if (u.includes('SEARCH')) return 'srch';
+    if (u.includes('IR:')||u.includes('ADC')||u.includes('SENSOR')) return 'srch';
+    return 'info';
+}
+
+function bleTagLabel(t) {
+    return {sys:'SYS',info:'LOG',maze:'MAZE',srch:'SRCH',warn:'WRN',err:'ERR',astr:'A*'}[t]||'LOG';
+}
+
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtTime(d) {
+    return d.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})
+           + '.' + String(d.getMilliseconds()).padStart(3,'0');
+}
+
+function setFilter(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelectorAll('#bleLog .log-line').forEach(line => {
+        line.style.display = (filter==='all'||line.classList.contains(filter)) ? '' : 'none';
+    });
+}
+
+function clearLogs() {
+    document.getElementById('bleLog').innerHTML = '<div style="text-align:center;padding:30px;opacity:.4;"><div style="font-size:36px;margin-bottom:8px;">🔌</div><div style="font-size:12px;color:var(--text-sec);">Log cleared</div></div>';
+    bleLogEntries = [];
+    totalMessages = 0;
+    totalBytes = 0;
+}
+
+function exportLog() {
+    const lines = bleLogEntries.map(e=>`[${fmtTime(e.time)}] [${bleTagLabel(e.type)}] ${e.text}`).join('\n');
+    const blob = new Blob([lines], {type:'text/plain'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `nezumi_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+    addBLEEntry(`Exported ${bleLogEntries.length} entries`, 'sys');
+}
+
+/* ═══════════════════════════════════════════════
+   BLE CONNECTION
+═══════════════════════════════════════════════ */
+const BLE_SVC  = 0xFFE0;
+const BLE_CHAR = 0xFFE1;
+
+async function toggleConnection() {
+    if (bleDevice && bleDevice.gatt.connected) { bleDisconnect(); }
+    else { await bleConnect(); }
+}
+
+async function bleConnect() {
+    try {
+        setStatus('connecting', 'Scanning...');
+        addBLEEntry('Scanning for BLE devices...','sys');
+
+        bleDevice = await navigator.bluetooth.requestDevice({
+            filters:[{services:[BLE_SVC]}], optionalServices:[BLE_SVC]
+        });
+        addBLEEntry(`Found: ${bleDevice.name || 'Unknown'}`, 'sys');
+        setStatus('connecting', 'Connecting...');
+        bleDevice.addEventListener('gattserverdisconnected', onBLEDisconnected);
+
+        const server  = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(BLE_SVC);
+        bleChar = await service.getCharacteristic(BLE_CHAR);
+        await bleChar.startNotifications();
+        bleChar.addEventListener('characteristicvaluechanged', onBLEData);
+
+        setStatus('connected', bleDevice.name || 'BLE');
+        addBLEEntry(`✅ Connected to ${bleDevice.name}`, 'sys');
+        document.getElementById('sendInput').disabled = false;
+        document.getElementById('btnSend').disabled   = false;
+        const btn = document.getElementById('btnBLE');
+        btn.innerHTML = '⏏ Disconnect'; btn.classList.add('active');
+
+        // switch to BLE tab
+        const bleTabBtn = document.querySelector('[onclick*="\'ble\'"]');
+        if (bleTabBtn) switchTab('ble', bleTabBtn);
+    } catch(err) {
+        if (err.name !== 'NotFoundError')
+            addBLEEntry(`❌ Error: ${err.message}`, 'err');
+        setStatus('disconnected', 'Disconnected');
+    }
+}
+
+function bleDisconnect() {
+    if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+}
+
+function onBLEDisconnected() {
+    setStatus('disconnected', 'Disconnected');
+    addBLEEntry('🔌 Disconnected', 'sys');
+    lineBuffer = '';
+    document.getElementById('sendInput').disabled = true;
+    document.getElementById('btnSend').disabled   = true;
+    const btn = document.getElementById('btnBLE');
+    btn.innerHTML = '⚡ Connect BLE'; btn.classList.remove('active');
+}
+
+function onBLEData(event) {
+    const text = new TextDecoder().decode(event.target.value);
+    totalBytes += event.target.value.byteLength;
+    lineBuffer += text;
+
+    /* Fix: MZ frames can arrive concatenated without \r\n between them.
+     * Insert newlines before any MZn: that appears mid-string. */
+    lineBuffer = lineBuffer.replace(/(?<!\n)(MZ[0-7]:)/g, '\n$1');
+    /* Same fix for CELL: frames that may be concatenated */
+    lineBuffer = lineBuffer.replace(/(?<!\n)(CELL:)/g, '\n$1');
+
+    const lines = lineBuffer.split(/\r?\n/);
+    lineBuffer = lines.pop();
+
+    for (const line of lines) {
+        if (!line.trim()) continue;
+        if (line.startsWith('MAZE:'))      { parseMazeData(line); addBLEEntry(line, 'maze'); }
+        else if (line.startsWith('CELL:')) { parseCellUpdate(line); addBLEEntry(line, 'maze'); }
+        else if (/^MZ[0-7]:/.test(line))   { parseMZChunk(line); addBLEEntry(line, 'maze'); }
+        else if (line.startsWith('MAZE_RESET')) { initMazeDisplay(); addBLEEntry('🗑 Maze reset by robot', 'sys'); }
+        else                               { addBLEEntry(line); }
+    }
+}
+
+async function sendData() {
+    const inp  = document.getElementById('sendInput');
+    const text = inp.value.trim();
+    if (!text || !bleChar) return;
+    try {
+        const data = new TextEncoder().encode(text + '\r\n');
+        for (let i = 0; i < data.length; i += 20)
+            await bleChar.writeValue(data.slice(i, i+20));
+        addBLEEntry(`→ ${text}`, 'info');
+        inp.value = '';
+    } catch(err) {
+        addBLEEntry(`❌ Send failed: ${err.message}`, 'err');
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   BLE MAZE PROTOCOL PARSING
+═══════════════════════════════════════════════ */
+
+/* Chunked protocol: MZ0..MZ7 reassembly buffer */
+let mzChunks = {};
+let mzTimeout = null;
+
+function parseMZChunk(line) {
+    const idx = parseInt(line[2]);
+    const payload = line.substring(line.indexOf(':') + 1).trim();
+
+    if (idx === 0) {
+        /* MZ0:RX,RY,RD:WALLS_ROW0-3 — reset buffer, parse header */
+        mzChunks = {};
+        const colonPos = payload.indexOf(':');
+        if (colonPos < 0) return;
+        const rp = payload.substring(0, colonPos).split(',');
+        robotPos = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+        mzChunks[0] = payload.substring(colonPos + 1);
+    } else {
+        mzChunks[idx] = payload;
+    }
+
+    /* Clear any pending timeout */
+    if (mzTimeout) { clearTimeout(mzTimeout); mzTimeout = null; }
+
+    /* Check if wall chunks (0-3) are complete */
+    let hasWalls = true;
+    for (let i = 0; i < 4; i++) {
+        if (!mzChunks[i]) { hasWalls = false; break; }
+    }
+
+    /* Check if flood chunks (4-7) are also complete */
+    let hasFlood = true;
+    for (let i = 4; i < 8; i++) {
+        if (!mzChunks[i]) { hasFlood = false; break; }
+    }
+
+    if (hasWalls && hasFlood) {
+        /* Full data available — render immediately */
+        applyMZData(true);
+    } else if (hasWalls) {
+        /* Walls ready but flood missing — wait briefly then render with local flood */
+        mzTimeout = setTimeout(() => applyMZData(false), 500);
+    } else {
+        /* Still waiting for wall chunks — set timeout to render partial if chunks lost */
+        mzTimeout = setTimeout(() => applyMZData(false), 3000);
+    }
+}
+
+function applyMZData(hasFlood) {
+    mzTimeout = null;
+
+    /* Assemble walls from chunks 0-3 (64 hex chars each = 4 rows of 16) */
+    let wallsHex = '';
+    for (let i = 0; i < 4; i++) wallsHex += (mzChunks[i] || '0'.repeat(64));
+    if (wallsHex.length >= 256) {
+        mazeWalls = Array.from({length:MAZE_SIZE}, (_,y) =>
+            Array.from({length:MAZE_SIZE}, (_,x) => parseInt(wallsHex[y*MAZE_SIZE+x],16))
+        );
+    }
+
+    if (hasFlood) {
+        /* Assemble flood from chunks 4-7 */
+        const floodHex = mzChunks[4] + mzChunks[5] + mzChunks[6] + mzChunks[7];
+        if (floodHex.length >= 512) {
+            mazeFlood = Array.from({length:MAZE_SIZE}, (_,y) =>
+                Array.from({length:MAZE_SIZE}, (_,x) =>
+                    parseInt(floodHex.substring((y*MAZE_SIZE+x)*2, (y*MAZE_SIZE+x)*2+2), 16))
+            );
+        }
+    } else {
+        /* Compute flood locally from walls */
+        if (mazeWalls) mazeFlood = calcFlood(mazeWalls, GOAL_CELLS);
+    }
+
+    /* Update visited cells and render */
+    visitedCells.clear();
+    if (mazeWalls) {
+        for (let y=0; y<MAZE_SIZE; y++)
+            for (let x=0; x<MAZE_SIZE; x++)
+                if (mazeWalls[y][x] !== 0) visitedCells.add(`${x},${y}`);
+    }
+
+    mzChunks = {};
+    renderMaze();
+}
+
+function parseMazeData(line) {
+    // Legacy format: MAZE:RX,RY,RD:WALLS_256H:FLOOD_512H
+    const parts = line.split(':');
+    if (parts.length < 3) return;
+    const rp = parts[1].split(',');
+    robotPos = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+
+    const wh = parts[2];
+    if (wh.length < 256) return;
+    mazeWalls = Array.from({length:MAZE_SIZE}, (_,y) =>
+        Array.from({length:MAZE_SIZE}, (_,x) => parseInt(wh[y*MAZE_SIZE+x],16))
+    );
+
+    if (parts.length >= 4 && parts[3].length >= 512) {
+        const fh = parts[3];
+        mazeFlood = Array.from({length:MAZE_SIZE}, (_,y) =>
+            Array.from({length:MAZE_SIZE}, (_,x) => parseInt(fh.substring((y*MAZE_SIZE+x)*2, (y*MAZE_SIZE+x)*2+2), 16))
+        );
+    }
+
+    visitedCells.clear();
+    for (let y=0; y<MAZE_SIZE; y++)
+        for (let x=0; x<MAZE_SIZE; x++)
+            if (mazeWalls[y][x] !== 0) visitedCells.add(`${x},${y}`);
+
+    renderMaze();
+}
+
+function parseCellUpdate(line) {
+    // Format: CELL:X,Y,W,RD,FF
+    const parts = line.substring(5).split(',');
+    if (parts.length < 4) return;
+    const x=parseInt(parts[0]), y=parseInt(parts[1]);
+    const w=parseInt(parts[2],16), rd=parseInt(parts[3]);
+    const ff=parts.length>=5 ? parseInt(parts[4],16) : 255;
+
+    if (!mazeWalls) {
+        mazeWalls = initKnownWalls();
+        mazeFlood = Array.from({length:MAZE_SIZE}, ()=>new Array(MAZE_SIZE).fill(255));
+    }
+    mazeWalls[y][x] = w;
+    if (!mazeFlood) mazeFlood = Array.from({length:MAZE_SIZE},()=>new Array(MAZE_SIZE).fill(255));
+    mazeFlood[y][x] = ff;
+    robotPos = { x, y, dir: rd };
+    visitedCells.add(`${x},${y}`);
+    propagateWalls(x, y, w);
+    renderMaze();
+}
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════ */
+function setStatus(state, text) {
+    const b = document.getElementById('statusBadge');
+    b.className = `status-badge ${state}`;
+    document.getElementById('statusText').textContent = text;
+}
+
+/* ═══════════════════════════════════════════════
+   RESIZE HANDLE
+═══════════════════════════════════════════════ */
+const rh = document.getElementById('resizeHandle');
+let resizing = false, resizeStartX = 0, resizeStartW = 0;
+
+rh.addEventListener('mousedown', e => {
+    resizing = true; resizeStartX = e.clientX;
+    resizeStartW = document.getElementById('mazeSide').offsetWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+    if (!resizing) return;
+    const newW = Math.max(250, Math.min(800, resizeStartW + e.clientX - resizeStartX));
+    document.getElementById('mazeSide').style.width = newW + 'px';
+});
+document.addEventListener('mouseup', () => {
+    if (resizing) { resizing = false; document.body.style.cursor=''; document.body.style.userSelect=''; sizeCanvas(); renderMaze(); }
+});
+
+/* ─── BLE check ─────────────────────────────── */
+if (!navigator.bluetooth) {
+    addBLEEntry('❌ Web Bluetooth NOT supported in this browser!', 'err');
+    addBLEEntry('💡 Use Chrome/Edge desktop, or Chrome on Android', 'sys');
+} else {
+    addBLEEntry('✅ Web Bluetooth ready. Connect your Nezumi_Chan!', 'sys');
+}
+</script>
+</body>
+</html>
