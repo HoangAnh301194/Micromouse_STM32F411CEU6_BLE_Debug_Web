@@ -242,6 +242,3 @@ Nếu muốn dùng repo này làm nền cho robot khác, nên bắt đầu theo 
 4. kiểm tra từng primitive trong `System Test`
 5. sau đó mới đổi solver hoặc mở rộng maze size
 
-## License
-
-Chưa khai báo license. Nếu định public trên GitHub, nên thêm `LICENSE` trước khi publish.
