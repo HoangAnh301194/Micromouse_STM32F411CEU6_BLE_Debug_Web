@@ -1,35 +1,85 @@
 # Nezumi Chan Micromouse Firmware
 
-Firmware điều khiển robot micromouse chạy trên `STM32F411CE` (Black Pill), viết theo hướng bare-metal với `CMSIS`, không dùng HAL. Dự án này tập trung vào một bộ robot maze nhỏ để thử nghiệm thuật toán dò mê cung, chạy lại theo đường tối ưu, hiệu chuẩn cảm biến IR, bám tường, quay mượt và quan sát trạng thái qua BLE.
+A micromouse robot control firmware running on `STM32F411CE` (Black Pill), developed bare-metal using `CMSIS` without HAL. This project provides a complete firmware stack for a compact maze robot to experiment with maze exploration algorithms, optimal path re-running (A*), IR sensor calibration, wall following, smooth turns, and real-time telemetry via BLE.
 
-Hiện tại firmware đang được cấu hình cho một **mê cung thực hành 5x5** với ô đích tại `(4,4)`. Một số tên hàm vẫn giữ từ logic micromouse cổ điển như `Center`, nhưng trong cấu hình hiện tại hãy hiểu đó là **goal cell** của bài test.
+Currently, the firmware is configured for a **5x5 practice maze** with the goal cell at `(4,4)`. Some function names retain classical micromouse terminology (e.g., `Center`), but in the current configuration, they refer to the **goal cell** of the test setup.
 
-## Điểm nổi bật
+## Key Features
 
-- Điều khiển chuyển động có encoder + MPU6050 + PID heading/speed
-- Hệ IR 6 mắt đọc tường với hiệu chuẩn nhiều bước và hysteresis
-- Maze solver gồm flood-fill, persistent map và A* run
-- Lưu map, IR calibration và MPU calibration trực tiếp vào flash nội
-- OLED menu để chạy trực tiếp trên robot
-- BLE debug console để xem log và trực quan hóa mê cung
-- System test menu tách riêng để kiểm tra từng primitive
+- Motion control featuring quadrature encoders + MPU6050 + heading/speed PID loops
+- 6-channel IR wall sensing system with multi-step calibration and hysteresis
+- Maze solver with flood-fill exploration, persistent map storage, and A* path execution
+- Flash persistence for maze map, IR calibration, and MPU calibration in internal flash
+- Onboard OLED menu for direct robot interaction and operation
+- BLE debug console for real-time logging and 2D maze visualization
+- Dedicated System Test menu to isolate and test individual motion & sensor primitives
 
-## Công nghệ và môi trường
+## Requirements & Environment
 
 - MCU: `STM32F411CE`
-- Build system: `PlatformIO`
+- Build System: `PlatformIO`
 - Framework: `cmsis`
-- Upload: `ST-Link`
-- UI on-robot: `SSD1306 OLED`
-- Inertial sensor: `MPU6050`
-- Debug transport: `USART2 + JDY-33 BLE`
+- Upload Protocol: `ST-Link`
+- On-robot UI: `SSD1306 OLED`
+- Inertial Sensor: `MPU6050`
+- Debug Transport: `USART2 + JDY-33 BLE`
 
-## Cấu trúc repo
+## Hardware Showcase
+
+### 1. PCB Layers (Front & Back)
+| Top Layer (Front) | Bottom Layer (Back) |
+| :---: | :---: |
+| ![Top PCB Layer](assets/topPCB.png) | ![Bottom PCB Layer](assets/bottomPCB.png) |
+
+### 2. 3D Render Preview (Front & Back)
+| Top Preview (Front) | Bottom Preview (Back) |
+| :---: | :---: |
+| ![Top Preview](assets/topPreview.png) | ![Bottom Preview](assets/bottomPreview.png) |
+
+### 3. Real Prototype & Schematic Diagram
+| Real Prototype | Schematic Diagram |
+| :---: | :---: |
+| ![Real Prototype](assets/reallife.jpg) | ![Schematic Diagram](assets/schematic.png) |
+
+## Hardware & Pinout Mapping
+
+Complete macro definitions are located in `include/pinout.h`. Key pin assignments:
+
+| Subsystem | Pin Assignment |
+|---|---|
+| Motor PWM | `PA15`, `PB3` via `TIM2` |
+| Motor DIR | `PB12`, `PB13`, `PB14`, `PB15` |
+| Encoders | `TIM3` (`PB4/PB5`), `TIM4` (`PB6/PB7`) |
+| IR Receiver (ADC) | `PB1`, `PB0`, `PA6`, `PA5`, `PA4`, `PA1` |
+| IR Emitter (TX) | `PA7`, `PB10`, `PB2`, `PA8`, `PA11`, `PA12` |
+| I2C | `PB8` (SCL) / `PB9` (SDA) |
+| OLED | I2C address `0x3C` |
+| MPU6050 | I2C address `0x68` |
+| BLE (JDY-33) | `USART2` on `PA2` (TX) / `PA3` (RX) |
+| User Button | `PA0` |
+| Status LED | `PC13` |
+
+Robot Physical Parameters (configured in firmware):
+
+- Cell size: `180.0 mm`
+- Wheel diameter: `35.0 mm`
+- Wheel base: `84.0 mm`
+- Encoder PPR: `1430`
+
+## Repository Structure
 
 ```text
 .
 |-- README.md
 |-- platformio.ini
+|-- assets/
+|   |-- reallife.jpg
+|   |-- topPreview.png
+|   |-- bottomPreview.png
+|   |-- topPCB.png
+|   |-- bottomPCB.png
+|   |-- schematic.png
+|   `-- webBLEDebug.png
 |-- docs/
 |   |-- architecture.md
 |   `-- archive/
@@ -41,127 +91,118 @@ Hiện tại firmware đang được cấu hình cho một **mê cung thực hà
     `-- ble_debug_console.html
 ```
 
-### Ý nghĩa từng vùng
+### Directory Overview
 
-- `src/`: toàn bộ firmware C của robot
-- `include/`: header công khai cho từng module
-- `docs/architecture.md`: bản đồ module, luồng runtime và điểm mở rộng
-- `docs/archive/`: ghi chú kỹ thuật của các phiên chỉnh sửa trước
-- `tools/ble_debug_console.html`: web console để xem BLE log và render maze
-- `lib/`: vùng dành cho thư viện nội bộ nếu sau này tách module dùng chung
+- `src/`: Complete C firmware source code
+- `include/`: Public header files for all modules
+- `assets/`: Hardware photos, PCB layouts, schematics, and web console screenshots
+- `docs/architecture.md`: Module architecture, runtime flows, and extension points
+- `tools/ble_debug_console.html`: Web Bluetooth console for viewing logs and rendering maze state
 
-## Bản đồ module firmware
+## Firmware Module Map
 
-### 1. Application layer
+### 1. Application Layer
 
-- `src/main.c`: điểm vào hệ thống, menu chính, state machine của explore/A*
-- `src/systemTest.c`: test menu và các bài test primitive
+- `src/main.c`: System entry point, main menu loop, explore/A* state machine
+- `src/systemTest.c`: System test menu and primitive test routines
 
-### 2. Motion and control
+### 2. Motion and Control
 
-- `src/motion_controller.c`: straight, turn, smooth turn, speed profile, PID loop
-- `src/pid.c`: cấu trúc PID cơ bản
-- `src/back_align.c`: primitive lùi tường để tái chuẩn pose sau khi quay
+- `src/motion_controller.c`: Straight driving, in-place turns, smooth turns, trapezoidal speed profiling, PID loops
+- `src/pid.c`: Generic PID controller implementation
+- `src/back_align.c`: Reverse wall alignment primitive to re-reference robot pose
 
-### 3. Sensing and calibration
+### 3. Sensing and Calibration
 
-- `src/ir_sensor.c`: đọc 6 cảm biến IR bằng DMA
-- `src/ir_simple_calib.c`: quy trình calibration và ngưỡng phát hiện tường
-- `src/mpu6050.c`: driver gyro/yaw
-- `src/sensor_fusion.c`: hợp nhất encoder + gyro + IR để sinh trạng thái dùng cho control
+- `src/ir_sensor.c`: 6-channel IR emitter pulsing and ADC DMA sampling
+- `src/ir_simple_calib.c`: Multi-step calibration routine and wall detection threshold computation
+- `src/mpu6050.c`: I2C driver for gyroscope and yaw tracking
+- `src/sensor_fusion.c`: Fuses encoders, gyro, and IR sensors to generate fused state estimates for control
 
-### 4. Navigation and persistence
+### 4. Navigation and Persistence
 
-- `src/maze_solver.c`: flood-fill, smart exploration, A*, export maze cho BLE
-- `src/flash_storage.c`: lưu map và calibration vào flash nội
+- `src/maze_solver.c`: Flood-fill exploration, smart unknown-cell prioritization, A* shortest path solver, BLE maze exporter
+- `src/flash_storage.c`: Saves and restores maze map and calibration profiles to/from internal Flash sectors
 
-### 5. Platform drivers
+### 5. Platform Drivers
 
-- `src/hardware.c`: init GPIO, ADC, timer, motor, safety hooks
-- `src/system_timer.c`, `src/timer.c`: timebase và timer helpers
-- `src/encoder.c`: quadrature encoder
-- `src/i2c.c`: I2C blocking + DMA
-- `src/uart.c`: debug UART
-- `src/bt_debug.c`: UART2 BLE transport
-- `src/tb6612fng.c`: driver motor bridge
+- `src/hardware.c`: Low-level peripheral initialization (GPIO, ADC, Timers, Motors, safety hooks)
+- `src/system_timer.c`, `src/timer.c`: System timebase and hardware timer helpers
+- `src/encoder.c`: Quadrature encoder interface via timer hardware
+- `src/i2c.c`: I2C driver (blocking + DMA)
+- `src/uart.c`: Debug UART transport
+- `src/bt_debug.c`: UART2 BLE transport wrapper
+- `src/tb6612fng.c`: Dual H-bridge motor driver
 
-### 6. UI
+### 6. User Interface
 
-- `src/ssd1306.c`, `src/fonts.c`: OLED rendering
+- `src/ssd1306.c`, `src/fonts.c`: SSD1306 I2C OLED display driver and font rendering
 
-## Luồng chạy chính
+## Main Execution Flow
 
-1. `main()` khởi tạo hardware, UART/BLE, OLED, encoder, IR, motor, MPU.
-2. Nạp dữ liệu persistent từ flash: maze map, IR calibration, MPU calibration.
-3. Hiển thị menu trên OLED.
-4. Người dùng dùng 1 nút:
-   - nhấn ngắn để đổi lựa chọn
-   - giữ để chạy mode hiện tại
-5. Trong explore/A*:
-   - đọc tường từ IR
-   - cập nhật maze
-   - quyết định hành động tiếp theo
-   - thực thi motion primitive
-   - phát log/cell update qua BLE
+1. `main()` initializes peripherals, UART/BLE, OLED, encoders, IR sensors, motors, and MPU6050.
+2. Loads persistent data from internal Flash: maze map, IR calibration, and MPU gyro offsets.
+3. Renders the interactive menu on the OLED.
+4. User interacts via a single push button:
+   - Short press: Cycle through menu options
+   - Long press: Execute selected mode
+5. During Maze Exploration / A* Run:
+   - Read wall presence via IR sensors
+   - Update maze wall data
+   - Compute next optimal cell target
+   - Execute coordinated motion primitive
+   - Stream telemetry logs and cell update packets over BLE
 
-## Các mode trong menu chính
+## Main Menu Modes
 
-| Mode | Mục đích |
+| Mode | Description |
 |---|---|
-| `1.Calibration` | Chạy quy trình hiệu chuẩn IR và MPU |
-| `2.Run Slow` | Explore mode tốc độ chậm, dễ quan sát |
-| `3.Run Faster` | Explore mode nhanh hơn |
-| `4.A* Run` | Chạy lại theo đường tối ưu từ map đã lưu |
-| `5.Speedrun` | Placeholder, chưa hoàn thiện |
-| `6.Reset Map` | Xóa persistent map trong flash |
-| `7.System Test` | Vào menu test primitive |
+| `1.Calibration` | Runs the interactive IR and MPU calibration routine |
+| `2.Run Slow` | Slow-speed maze exploration mode for safe observation |
+| `3.Run Faster` | Higher-speed exploration mode |
+| `4.A* Run` | Executes the optimal shortest path using the stored maze map |
+| `5.Speedrun` | Speedrun mode (placeholder / WIP) |
+| `6.Reset Map` | Clears the persistent maze map from internal flash |
+| `7.System Test` | Enters the hardware and motion primitive test suite |
 
-## Các mode trong System Test
+## System Test Suite
 
-| Test | Ý nghĩa |
+| Test | Description |
 |---|---|
-| `1.IR` | Kiểm tra đọc IR và ngưỡng cảm biến |
-| `2.Align` | Test front wall alignment |
-| `3.Pivot` | Test smooth/pivot turn |
-| `4.TrStr` | Transition straight test |
-| `5.TrTn` | Transition turn test |
-| `6.SPHT` | Sensor presence hysteresis test |
+| `1.IR` | Live sensor readings & wall detection threshold verification |
+| `2.Align` | Front wall alignment test |
+| `3.Pivot` | In-place pivot & smooth turn verification |
+| `4.TrStr` | Transition straight movement test |
+| `5.TrTn` | Transition turn movement test |
+| `6.SPHT` | Sensor Presence Hysteresis Test |
 | `7.T1WT` | One-wheel turn / smooth turn trigger test |
 
-## Phần cứng và ánh xạ chính
+## BLE Debug Web Console
 
-Các macro đầy đủ nằm trong `include/pinout.h`. Những chân quan trọng:
+<p align="center">
+  <img src="assets/webBLEDebug.png" width="95%" alt="Web BLE Debug Console Interface"/>
+</p>
 
-| Khối | Kết nối chính |
-|---|---|
-| Motor PWM | `PA15`, `PB3` qua `TIM2` |
-| Motor DIR | `PB12`, `PB13`, `PB14`, `PB15` |
-| Encoder | `TIM3` (`PB4/PB5`), `TIM4` (`PB6/PB7`) |
-| IR RX | `PB1`, `PB0`, `PA6`, `PA5`, `PA4`, `PA1` |
-| IR TX | `PA7`, `PB10`, `PB2`, `PA8`, `PA11`, `PA12` |
-| I2C | `PB8/PB9` |
-| OLED | I2C address `0x3C` |
-| MPU6050 | I2C address `0x68` |
-| BLE | `USART2` trên `PA2/PA3` |
-| User button | `PA0` |
-| Status LED | `PC13` |
+Open [tools/ble_debug_console.html](tools/ble_debug_console.html) using a Web Bluetooth-supported browser (e.g., Google Chrome or Microsoft Edge on desktop).
 
-Thông số robot đang hardcode:
+Console capabilities:
 
-- Cell size: `180.0 mm`
-- Wheel diameter: `35.0 mm`
-- Wheel base: `84.0 mm`
-- Encoder PPR: `1430`
+- Connects to the JDY-33 Bluetooth module via Web Bluetooth API
+- Live stream text log viewing
+- Real-time 2D rendering of the maze grid, flood values, planned path, and robot pose
+- Handles step-by-step `CELL:` update packets and complete `MAZE:` memory dumps
 
-## Build và nạp firmware
+For further details, refer to [tools/README.md](tools/README.md).
 
-### Yêu cầu
+## Build & Flash
 
-- `PlatformIO Core`
-- `ST-Link`
-- board `STM32F411CE` đang nối đúng driver
+### Prerequisites
 
-### Lệnh cơ bản
+- `PlatformIO Core` / `PlatformIO IDE`
+- `ST-Link` v2 programmer
+- `STM32F411CE` development board connected with appropriate drivers
+
+### Build Commands
 
 ```bash
 pio run
@@ -169,76 +210,62 @@ pio run -t upload
 pio device monitor -b 115200
 ```
 
-### Cấu hình build hiện tại
+### Current PlatformIO Configuration
 
-- environment: `genericSTM32F411CE`
-- framework: `cmsis`
-- upload protocol: `stlink`
+- Environment: `genericSTM32F411CE`
+- Framework: `cmsis`
+- Upload Protocol: `stlink`
 
-## Quy trình sử dụng đề xuất
+## Recommended Operational Workflow
 
-### Lần đầu bring-up
+### Initial Bring-up
 
-1. Flash firmware.
-2. Vào `Calibration`.
-3. Chạy đủ các bước IR/MPU calibration.
-4. Vào `Run Slow` để kiểm tra hướng đi và log.
-5. Quan sát log qua BLE console.
-6. Khi map đã đủ tin cậy, chạy `A* Run`.
+1. Flash firmware to the target MCU.
+2. Select `1.Calibration` on the OLED menu.
+3. Complete all on-screen calibration steps for IR sensors and MPU gyro.
+4. Select `2.Run Slow` to verify exploration behavior, wall sensing, and telemetry logs.
+5. Monitor real-time navigation progress via the BLE Web Console.
+6. Once the target cell has been explored and the map is confirmed, run `4.A* Run` to perform the optimal path run.
 
-### Nếu robot đổi hành vi sau khi chỉnh cơ khí
+### Maintenance & Mechanical Adjustments
 
-1. Reset map nếu dữ liệu cũ không còn đáng tin.
-2. Chạy lại calibration.
-3. Test từng primitive trong `System Test` trước khi quay lại explore.
+1. Reset the map if previous wall data is no longer valid.
+2. Re-run the calibration routine.
+3. Validate individual motion and sensor primitives in `7.System Test` before running autonomous exploration.
 
-## Calibration và dữ liệu persistent
+## Calibration & Persistent Data
 
-### Lưu ở flash nội
+### Internal Flash Layout
 
-- `Sector 6 @ 0x08040000`: IR calibration
-- `Sector 6 + 256`: MPU calibration
-- `Sector 7 @ 0x08060000`: persistent maze map
+- `Sector 6 @ 0x08040000`: IR calibration profile
+- `Sector 6 + 256`: MPU gyro calibration offsets
+- `Sector 7 @ 0x08060000`: Persistent maze map data
 
-### Ý nghĩa
+### Key Benefits
 
-- IR calibration giúp ngưỡng phát hiện tường phù hợp với robot thực tế
-- Persistent maze giúp robot không phải học lại từ đầu sau mỗi lần reset
-- MPU calibration giảm drift yaw trong motion control
+- **IR Calibration**: Matches detection thresholds to individual sensor characteristics and ambient conditions.
+- **Persistent Maze Storage**: Retains wall and explored cell information across power cycles and resets.
+- **MPU Calibration**: Minimizes gyroscope zero-rate drift to ensure accurate yaw angle tracking during high-speed motion.
 
-## BLE debug console
+## Supplementary Documentation
 
-Mở file [tools/ble_debug_console.html](tools/ble_debug_console.html) bằng Chrome hoặc Edge trên desktop.
+- [Firmware Architecture](docs/architecture.md)
+- [Session Changelog (2026-03-20)](docs/archive/2026-03-20-session-changes.md)
+- [Legacy Calibration Walkthrough](docs/archive/ir-calibration-walkthrough.md)
 
-Console hỗ trợ:
+## Current Limitations
 
-- kết nối Web Bluetooth tới module JDY-33
-- xem log dạng text
-- render maze, flood value, path và robot pose
-- nhận `CELL:` update từng bước và `MAZE:` full dump
+- `main.c` and `systemTest.c` serve as central orchestrators and contain significant logic
+- `Speedrun` is currently a placeholder
+- Maze dimensions are currently configured for `5x5` testing rather than a competition `16x16` grid
+- If scaling to a larger maze size, verify BLE packet formatting and Web Console memory limits
 
-Xem thêm trong [tools/README.md](tools/README.md).
+## Porting & Customization Guide
 
-## Tài liệu bổ sung
+To adapt this codebase to a different robot platform or chassis:
 
-- [Kiến trúc firmware](docs/architecture.md)
-- [Ghi chú thay đổi 2026-03-20](docs/archive/2026-03-20-session-changes.md)
-- [Ghi chú calibration cũ](docs/archive/ir-calibration-walkthrough.md)
-
-## Giới hạn hiện tại
-
-- `main.c` và `systemTest.c` còn rất lớn, đóng vai trò orchestration trung tâm
-- `Speedrun` vẫn là placeholder
-- Cấu hình maze hiện tại là `5x5`, chưa phải profile thi đấu 16x16
-- Nếu nâng maze size lớn hơn, nên xem lại BLE transport và visualizer
-
-## Hướng tái sử dụng
-
-Nếu muốn dùng repo này làm nền cho robot khác, nên bắt đầu theo thứ tự:
-
-1. cập nhật `include/pinout.h`
-2. xác nhận hướng encoder/motor trong `motion_controller.c` và `hardware.c`
-3. hiệu chỉnh lại IR thresholds bằng menu calibration
-4. kiểm tra từng primitive trong `System Test`
-5. sau đó mới đổi solver hoặc mở rộng maze size
-
+1. Update pin assignments in `include/pinout.h`.
+2. Verify motor directions and encoder polarities in `motion_controller.c` and `hardware.c`.
+3. Re-calibrate IR sensor thresholds using the onboard calibration menu.
+4. Test and tune each motion primitive using the `System Test` suite.
+5. Modify maze dimensions or solver heuristics as required.

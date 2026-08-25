@@ -1,22 +1,26 @@
-# Tools
+# Host Tools
 
 ## BLE Debug Console
 
-File `ble_debug_console.html` là công cụ host-side để:
+<p align="center">
+  <img src="../assets/webBLEDebug.png" width="95%" alt="Web BLE Debug Console Interface"/>
+</p>
 
-- kết nối robot qua Web Bluetooth
-- xem log UART/BLE
-- hiển thị maze, flood map, path và pose robot
+The `ble_debug_console.html` is a standalone host-side web application designed to:
 
-### Cách dùng
+- Connect to the robot via Web Bluetooth API (JDY-33 BLE module)
+- Monitor real-time UART/BLE log streams
+- Render live 2D maze walls, flood-fill distance maps, calculated path, and robot pose
 
-1. Mở file HTML bằng Chrome hoặc Edge.
-2. Bật nguồn robot và module BLE.
-3. Nhấn `Connect BLE`.
-4. Chọn thiết bị quảng bá service `0xFFE0`.
+### Getting Started
 
-### Ghi chú
+1. Open `ble_debug_console.html` using a Chromium-based browser (Google Chrome or Microsoft Edge).
+2. Power on the robot and the JDY-33 BLE module.
+3. Click the **Connect BLE** button in the console header.
+4. Select the Bluetooth device broadcasting the `0xFFE0` service.
 
-- Console hiện đồng bộ với firmware cấu hình `maze 5x5`.
-- Firmware phát `CELL:` để cập nhật từng bước và `MAZE:` để dump đầy đủ.
-- Nếu bạn đổi kích thước maze trong firmware, hãy sửa hằng số tương ứng trong file HTML này.
+### Notes
+
+- The console is currently synced with the firmware's **5x5 maze configuration**.
+- The robot sends `CELL:` packets for incremental step updates and `MAZE:` packets for complete maze dumps.
+- If you change the maze dimensions in the firmware, update the corresponding constants in `ble_debug_console.html`.
