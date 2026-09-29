@@ -148,7 +148,7 @@ File nên xem:
 - `ir_simple_calib.c`
 - `main.c` cho timeout/safety logic ở tầng orchestration
 
-## 6. Nợ kỹ thuật đang tồn tại
+## 6. Hạn chế kỹ thuật đang tồn tại
 
 - `main.c` rất lớn, đang chứa cả UI, explore state machine, A* orchestration và calibration flow
 - `systemTest.c` cũng là file monolith theo cùng kiểu
