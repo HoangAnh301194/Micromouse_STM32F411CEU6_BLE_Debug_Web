@@ -60,6 +60,12 @@ void Control_Start(void)
 
 void Control_Stop(void)
 {
+    /*
+     * Stopping the scheduler while a motion command is active must also
+     * force the motor command to zero; otherwise the last PWM value could
+     * remain latched after TIM11 stops.
+     */
+    Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
     control_running = 0U;
 }
