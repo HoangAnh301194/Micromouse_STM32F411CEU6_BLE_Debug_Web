@@ -2,61 +2,75 @@
 
 This branch (`giomuadongbac`) is a clean baseline rebuilt from the original firmware.
 
-The PCB pin mapping is intentionally unchanged. The goal of this branch is to make the real-time path small enough to audit and test before maze solving, OLED, calibration workflows and advanced motion features are added back.
+The PCB pin mapping is intentionally unchanged. The goal is to keep the real-time path small, explicit and testable before maze solving, OLED, calibration workflows and advanced motion features are added back.
 
 ## Active runtime
 
 ```text
 main.c
 ├── board.c
+├── control.c
+├── motion.c
+├── pid.c
 ├── motor.c
 ├── encoder.c
 ├── ir_sensor.c
-├── i2c.c
 ├── mpu6050.c
-├── pid.c
-├── motion.c
+├── i2c.c
 ├── system_timer.c
 └── bt_debug.c
 ```
 
-The control path is:
+Module roles:
+
+```text
+main.c       = initialization + application commands + low-rate telemetry
+control.c    = TIM11 owner + 1 kHz scheduler/ISR
+motion.c     = motion state machine + controller
+pid.c        = reusable PID mathematics
+drivers      = peripheral-specific register configuration
+```
+
+The real-time path is:
 
 ```text
 TIM11 @ 1 kHz
-    ├── Encoder_Update()
-    ├── MPU6050_Update()
-    ├── collect completed IR scan
-    └── Motion_Update()
-            └── Motor_SetPair()
+      |
+      v
+control.c
+├── Encoder_Update()
+├── MPU6050_Update()
+├── consume/restart IR scan
+└── Motion_Update()
+        └── PID_Compute()
+              └── Motor_SetPair()
 ```
 
-BLE formatting and telemetry are executed in the main loop at 10 Hz, not in the control ISR.
+BLE formatting and telemetry execute in the main loop at 10 Hz, never in the TIM11 ISR.
 
-## Fixed PCB resources
+## Peripheral ownership
 
-`include/pinout.h` is preserved from `main`.
+- TIM2 CH1/CH2 -> `motor.c`
+- TIM3/TIM4 -> `encoder.c`
+- TIM5 -> `system_timer.c`
+- TIM10 -> `ir_sensor.c`
+- TIM11 -> `control.c`
+- ADC1 + DMA2 Stream0 -> `ir_sensor.c`
+- I2C1 -> `i2c.c`
+- MPU6050 logic -> `mpu6050.c`
+- USART2/JDY-33 -> `bt_debug.c`
 
-- TIM2 CH1/CH2: right/left motor PWM
-- TIM3: right quadrature encoder
-- TIM4: left quadrature encoder
-- TIM5: microsecond timebase
-- TIM10: IR scan state machine
-- TIM11: 1 kHz control loop
-- I2C1 PB8/PB9: MPU6050
-- USART2 PA2/PA3: JDY-33 BLE
+`include/pinout.h` remains the fixed PCB wiring definition and is not changed by this refactor.
 
-TIM10 and TIM11 now derive their prescalers from the current RCC clock configuration instead of assuming a fixed 96 MHz timer clock.
+TIM10 and TIM11 derive their prescalers from the current RCC clock configuration rather than assuming a fixed 96 MHz timer clock.
 
 ## Minimal motion scope
 
-Only three states are active:
+Only three motion states are active:
 
 - `MOTION_IDLE`
 - `MOTION_STRAIGHT`
 - `MOTION_TURN`
-
-Advanced features are intentionally excluded until this baseline is verified on the real PCB.
 
 BLE commands:
 
@@ -68,58 +82,32 @@ S  immediate stop
 Z  zero gyro yaw (idle only)
 ```
 
-## Legacy code
-
-Previous high-level modules are retained under `legacy/` and are not compiled by PlatformIO.
-
-Examples:
-
-- maze/flood-fill/A*
-- OLED/fonts
-- IR calibration workflow
-- flash persistence
-- system test menu
-- back alignment
-- previous motion controller
-- previous sensor fusion
-- generic hardware wrapper
-- USART1 wrapper
-- old timer abstraction
-
-The `main` branch remains the complete reference implementation.
-
 ## Build
 
-```bash
+```powershell
 git fetch origin
 git switch giomuadongbac
+git pull origin giomuadongbac
 
-pio run
+python -m platformio run -t clean
+python -m platformio run
 ```
 
 Upload with ST-Link:
 
-```bash
-pio run -t upload
-```
-
-Clean rebuild:
-
-```bash
-pio run -t clean
-pio run
+```powershell
+python -m platformio run -t upload
 ```
 
 ## Bring-up order
 
-1. Power the PCB with wheels lifted.
-2. Confirm boot message over JDY-33.
-3. Send `S` and confirm both PWM channels are zero.
-4. Verify encoder signs by rotating both wheels forward by hand.
-5. Verify MPU yaw/gyro telemetry while rotating the robot.
-6. Verify all six IR values with a wall/object.
-7. Test `F` with wheels lifted, then on the floor at low speed.
-8. Test `L` and `R`.
-9. Only after these tests pass, reintroduce wall control and navigation.
+1. Verify MPU6050/I2C and yaw output.
+2. Verify encoder sign/count.
+3. Verify motor direction and PWM with wheels lifted.
+4. Verify TIM11 control-loop timing.
+5. Verify IR scanning.
+6. Test straight motion at low speed.
+7. Test left/right turns.
+8. Reintroduce wall control and navigation only after the baseline is stable.
 
-See `docs/architecture.md` for module ownership rules.
+See `docs/architecture.md` for ownership rules.

@@ -2,81 +2,108 @@
 
 ## Objective
 
-The `giomuadongbac` branch intentionally reduces the firmware to the smallest useful real-time core. Pin assignments remain fixed because they correspond to the existing PCB.
+The `giomuadongbac` branch keeps the firmware small enough to audit at register level while preserving the fixed PCB pin mapping.
 
-## Ownership
+## Layering
 
 ```text
-Application/main
-    |
-    +-- sends motion commands
-    +-- BLE debug at low rate
-    |
-    v
-Motion
-    |
-    +-- owns motion state and PID state
-    +-- produces motor command
-    |
-    v
-Drivers
-    +-- motor
-    +-- encoder
-    +-- IR
-    +-- MPU6050/I2C
-    +-- BLE
-    |
-    v
-Board/registers
+main.c
+  |
+  | commands / initialization
+  v
+control.c
+  |
+  | deterministic 1 kHz scheduling
+  v
+motion.c
+  |
+  | control decision
+  v
+pid.c + motor.c
 ```
 
-### Rule 1: one writer for encoder state
+Sensors feed the control loop through their own drivers:
 
-Only `Encoder_Update()` advances encoder totals and speed. All encoder getters are read-only.
+```text
+encoder.c -----\
+mpu6050.c ------> control.c -> motion.c
+ir_sensor.c ----/
+```
 
-### Rule 2: motion commands are atomic
+## Ownership rules
 
-`Motion_CommandStraight()`, `Motion_CommandTurn()` and `Motion_Stop()` protect state changes from TIM11. Motion state is published only after all parameters are initialized.
+### Rule 1: one peripheral owner
 
-### Rule 3: the ISR does not format logs
+Each hardware peripheral has one software owner.
+
+| Peripheral | Owner |
+| --- | --- |
+| TIM2 | motor |
+| TIM3/TIM4 | encoder |
+| TIM5 | system_timer |
+| TIM10 | ir_sensor |
+| TIM11 | control |
+| ADC1 + DMA2 Stream0 | ir_sensor |
+| I2C1 | i2c |
+| USART2 | bt_debug |
+
+`board.c` does not reconfigure those peripherals. It provides board-wide services such as PCB LED/button initialization, RCC clock queries and HardFault motor shutdown.
+
+### Rule 2: control owns timing, not control law
+
+`control.c` answers **when** periodic work runs. It owns TIM11 and its ISR.
+
+It does not contain straight/turn PID logic.
+
+### Rule 3: motion owns behavior
+
+`motion.c` answers **what the robot should do**. It owns motion state, command transitions and the use of PID outputs to generate motor commands.
+
+### Rule 4: PID is hardware independent
+
+`pid.c` only implements PID mathematics. It receives `dt`; it does not know about TIM11, STM32 registers or interrupts.
+
+### Rule 5: one writer for encoder state
+
+Only `Encoder_Update()` advances encoder totals and speed. All getters are read-only.
+
+### Rule 6: motion commands are atomic
+
+`Motion_CommandStraight()`, `Motion_CommandTurn()` and `Motion_Stop()` protect state transitions against the TIM11 ISR.
+
+### Rule 7: no formatted logging in hard real-time code
 
 TIM11 performs acquisition and control only. `BT_Printf()` runs from the main loop at 10 Hz.
 
-### Rule 4: no OLED in the baseline runtime
+### Rule 8: fixed PCB mapping stays in pinout.h
 
-MPU6050 is the only active I2C client while moving. OLED code is retained in `legacy/` until an explicit bus scheduling policy is introduced.
+Drivers read their port/pin/timer assignments from `pinout.h`. The refactor does not remap PCB pins.
 
-### Rule 5: no hard-coded 96 MHz control timers
+## Current execution path
 
-TIM10 and TIM11 use the RCC-derived APB timer clocks from `board.c`.
-
-## Active modules
-
-| Module | Responsibility |
-| --- | --- |
-| board | PCB-level GPIO initialization and clock queries |
-| motor | TIM2 PWM and TB6612 direction signals |
-| encoder | TIM3/TIM4 quadrature counters and speed snapshots |
-| ir_sensor | ADC1 + DMA2 Stream0 + TIM10 paired IR scan |
-| i2c | I2C1 transaction layer |
-| mpu6050 | gyro acquisition, filtering and yaw integration |
-| pid | one reusable PID implementation |
-| motion | straight/turn state machine and motor control |
-| system_timer | TIM5 micros/millis timebase |
-| bt_debug | low-rate BLE diagnostics |
-| main | initialization, TIM11 scheduler and operator commands |
+```text
+TIM11 IRQ @ 1 kHz
+    |
+    +-- Encoder_Update(dt)
+    +-- MPU6050_Update()
+    +-- IR_GetLatest() / IR_StartScan()
+    |
+    +-- Motion_Update(...)
+            |
+            +-- PID_Compute(...)
+            |
+            +-- Motor_SetPair(...)
+```
 
 ## Reintroduction order
 
-Do not restore all legacy modules at once. Recommended order:
+After the baseline is verified on hardware:
 
 1. wall steering
 2. calibration
-3. binary RAM logger / external SPI logger
-4. maze map + flood-fill
+3. binary logger
+4. maze/flood-fill
 5. persistent storage
 6. OLED
 7. advanced turns/alignment
 8. A* speedrun
-
-Each feature should be reintroduced only after the previous baseline still passes timing and motion tests.
