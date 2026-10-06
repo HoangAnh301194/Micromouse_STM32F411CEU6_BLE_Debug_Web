@@ -1,169 +1,116 @@
-/**
- * @file encoder.c
- * @brief Encoder Driver Implementation (Fixed C89 & Logic)
- */
-
 #include "encoder.h"
-#include "system_timer.h"
+#include "pinout.h"
+#include "stm32f4xx.h"
 
-/* ============================================================================ */
-/* INTERNAL FUNCTIONS                                                           */
-/* ============================================================================ */
+#define SPEED_LPF_ALPHA 0.30f
 
-/**
- * @brief Configure GPIO for encoder input
- */
-static void Encoder_GPIO_Init(Encoder_Select_t encoder) {
-    if (encoder == ENCODER_RIGHT) {
-        /* Enable GPIOB clock */
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-        
-        /* PB4, PB5 - Alternate Function mode */
-        GPIOB->MODER &= ~((3UL << 8) | (3UL << 10));
-        GPIOB->MODER |= (2UL << 8) | (2UL << 10);
-        
-        /* High speed */
-        GPIOB->OSPEEDR |= (3UL << 8) | (3UL << 10);
-        
-        /* Pull-up */
-        GPIOB->PUPDR &= ~((3UL << 8) | (3UL << 10));
-        GPIOB->PUPDR |= (1UL << 8) | (1UL << 10);
-        
-        /* AF2 = TIM3 */
-        GPIOB->AFR[0] &= ~((0xFUL << 16) | (0xFUL << 20));
-        GPIOB->AFR[0] |= (2UL << 16) | (2UL << 20);
-    }
-    else {
-        /* Enable GPIOB clock */
-        RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-        
-        /* PB6, PB7 - Alternate Function mode */
-        GPIOB->MODER &= ~((3UL << 12) | (3UL << 14));
-        GPIOB->MODER |= (2UL << 12) | (2UL << 14);
-        
-        /* High speed */
-        GPIOB->OSPEEDR |= (3UL << 12) | (3UL << 14);
-        
-        /* Pull-up */
-        GPIOB->PUPDR &= ~((3UL << 12) | (3UL << 14));
-        GPIOB->PUPDR |= (1UL << 12) | (1UL << 14);
-        
-        /* AF2 = TIM4 */
-        GPIOB->AFR[0] &= ~((0xFUL << 24) | (0xFUL << 28));
-        GPIOB->AFR[0] |= (2UL << 24) | (2UL << 28);
-    }
-}
+static volatile int32_t total_left = 0;
+static volatile int32_t total_right = 0;
+static volatile float speed_left_pps = 0.0f;
+static volatile float speed_right_pps = 0.0f;
 
-/* ============================================================================ */
-/* PUBLIC FUNCTIONS                                                             */
-/* ============================================================================ */
+static int16_t last_left_raw = 0;
+static int16_t last_right_raw = 0;
 
-void Encoder_Init(Encoder_Handle_t *handle, Encoder_Select_t encoder, uint16_t resolution) {
-    /* Set parameters */
-    handle->resolution = resolution;
-    handle->last_count = 0;
-    handle->prev_speed_total = 0;
-    handle->last_update_time = micros();
-    handle->speed_pps = 0.0f;
-    
-    /* Select timer */
-    if (encoder == ENCODER_RIGHT) {
-        handle->timer = TIM3;
-        RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+static void GPIO_EncoderAF(GPIO_TypeDef *port, uint8_t pin, uint8_t af)
+{
+    uint32_t shift;
+
+    port->MODER &= ~(3UL << (pin * 2U));
+    port->MODER |=  (2UL << (pin * 2U));
+    port->OSPEEDR |= (3UL << (pin * 2U));
+    port->PUPDR &= ~(3UL << (pin * 2U));
+    port->PUPDR |=  (1UL << (pin * 2U));
+
+    if (pin < 8U) {
+        shift = pin * 4U;
+        port->AFR[0] &= ~(0xFUL << shift);
+        port->AFR[0] |= ((uint32_t)af << shift);
     } else {
-        handle->timer = TIM4;
-        RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
+        shift = (pin - 8U) * 4U;
+        port->AFR[1] &= ~(0xFUL << shift);
+        port->AFR[1] |= ((uint32_t)af << shift);
     }
-    
-    /* Configure GPIO */
-    Encoder_GPIO_Init(encoder);
-    
-    /* Disable timer */
-    handle->timer->CR1 &= ~(1 << 0);
-    
-    /* Set timer to Encoder Mode 3 */
-    handle->timer->SMCR &= ~(7UL << 0);
-    handle->timer->SMCR |= (3UL << 0);
-    
-    /* Configure input capture */
-    handle->timer->CCMR1 &= ~((3UL << 0) | (3UL << 8));
-    handle->timer->CCMR1 |= (1UL << 0) | (1UL << 8);
-    
-    /* No input filter */
-    handle->timer->CCMR1 &= ~((0xFUL << 4) | (0xFUL << 12));
-    
-    /* Enable capture */
-    handle->timer->CCER |= (1UL << 0) | (1UL << 1) | (1UL << 4);
-    
-    /* Set ARR to max */
-    handle->timer->ARR = 0xFFFF;
-    handle->timer->CNT = 0;
-    handle->timer->EGR = (1 << 0);
-    handle->timer->SR = 0;
-    
-    /* Enable timer */
-    handle->timer->CR1 |= (1 << 0);
 }
 
-int16_t Encoder_GetCount(Encoder_Handle_t *handle) {
-    return (int16_t)(handle->timer->CNT);
+static void Encoder_TimerInit(TIM_TypeDef *tim)
+{
+    tim->CR1 &= ~TIM_CR1_CEN;
+    tim->SMCR = (tim->SMCR & ~TIM_SMCR_SMS) | (3UL << 0);
+    tim->CCMR1 = (tim->CCMR1 & ~((3UL << 0) | (3UL << 8))) |
+                 (1UL << 0) | (1UL << 8);
+    tim->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2E;
+    tim->ARR = 0xFFFFU;
+    tim->CNT = 0;
+    tim->EGR = TIM_EGR_UG;
+    tim->SR = 0;
+    tim->CR1 |= TIM_CR1_CEN;
 }
 
-int32_t Encoder_GetTotalCount(Encoder_Handle_t *handle) {
-    /* [FIX C89] Declare variables at top of block */
-    int16_t current_count;
-    int16_t delta;
-    
-    current_count = Encoder_GetCount(handle);
-    /* Tnh delta d?a trn b? d?m 16-bit raw */
-    delta = current_count - (int16_t)handle->last_count;
-    
-    handle->total_count += delta;
-    handle->last_count = current_count;
-    
-    return handle->total_count;
+void Encoder_Init(void)
+{
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN | RCC_APB1ENR_TIM4EN;
+
+    GPIO_EncoderAF(ENCODER_R_CHA_PORT, ENCODER_R_CHA_PIN, ENCODER_R_CHA_AF);
+    GPIO_EncoderAF(ENCODER_R_CHB_PORT, ENCODER_R_CHB_PIN, ENCODER_R_CHB_AF);
+    GPIO_EncoderAF(ENCODER_L_CHA_PORT, ENCODER_L_CHA_PIN, ENCODER_L_CHA_AF);
+    GPIO_EncoderAF(ENCODER_L_CHB_PORT, ENCODER_L_CHB_PIN, ENCODER_L_CHB_AF);
+
+    Encoder_TimerInit(ENCODER_R_TIMER);
+    Encoder_TimerInit(ENCODER_L_TIMER);
+
+    last_right_raw = (int16_t)ENCODER_R_TIMER->CNT;
+    last_left_raw = (int16_t)ENCODER_L_TIMER->CNT;
+    Encoder_Reset();
 }
 
-void Encoder_Reset(Encoder_Handle_t *handle) {
-    /* Do NOT reset CNT - let hardware counter run freely.
-     * Snapshot current position as new zero reference.
-     * Unsigned->signed subtraction handles 16-bit wrap correctly. */
-    handle->last_count = (int16_t)(handle->timer->CNT);
-    handle->total_count = 0;
-    handle->prev_speed_total = 0;
-    handle->speed_pps = 0;
+void Encoder_Update(float dt_s)
+{
+    int16_t raw_left;
+    int16_t raw_right;
+    int16_t delta_left;
+    int16_t delta_right;
+    float raw_left_pps;
+    float raw_right_pps;
+
+    if (dt_s <= 0.0f) return;
+
+    raw_left = (int16_t)ENCODER_L_TIMER->CNT;
+    raw_right = (int16_t)ENCODER_R_TIMER->CNT;
+
+    delta_left = (int16_t)(raw_left - last_left_raw);
+    delta_right = (int16_t)(raw_right - last_right_raw);
+
+    last_left_raw = raw_left;
+    last_right_raw = raw_right;
+
+    total_left += ((int32_t)delta_left * ENCODER_LEFT_DIRECTION);
+    total_right += ((int32_t)delta_right * ENCODER_RIGHT_DIRECTION);
+
+    raw_left_pps = ((float)delta_left * ENCODER_LEFT_DIRECTION) / dt_s;
+    raw_right_pps = ((float)delta_right * ENCODER_RIGHT_DIRECTION) / dt_s;
+
+    speed_left_pps += SPEED_LPF_ALPHA * (raw_left_pps - speed_left_pps);
+    speed_right_pps += SPEED_LPF_ALPHA * (raw_right_pps - speed_right_pps);
 }
 
-/**
- * @brief Update speed calculation (Fixed C89 & Logic)
- */
-void Encoder_UpdateSpeed(Encoder_Handle_t *handle) {
-    uint32_t current_time;
-    uint32_t dt_us;
-    int32_t current_total;
-    int32_t delta_ticks;
-    float raw_pps;
-    float smooth_pps;
+void Encoder_Reset(void)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
 
-    current_time = micros();
-    dt_us = current_time - handle->last_update_time;
-    
-    if (dt_us == 0) return; 
+    last_left_raw = (int16_t)ENCODER_L_TIMER->CNT;
+    last_right_raw = (int16_t)ENCODER_R_TIMER->CNT;
+    total_left = 0;
+    total_right = 0;
+    speed_left_pps = 0.0f;
+    speed_right_pps = 0.0f;
 
-    current_total = Encoder_GetTotalCount(handle);
-    
-    delta_ticks = current_total - handle->prev_speed_total;
-    handle->prev_speed_total = current_total;
-    
-    raw_pps = (float)delta_ticks * 1000000.0f / (float)dt_us;
-    
-    smooth_pps = (LOW_PASS_ALPHA * raw_pps) + ((1.0f - LOW_PASS_ALPHA) * handle->speed_pps); 
-    
-    handle->speed_pps = smooth_pps; 
-    handle->last_update_time = current_time;
+    if (!primask) __enable_irq();
 }
 
-
-float Encoder_GetSpeedPPS(Encoder_Handle_t *handle) {
-    return handle->speed_pps; 
-}
+int32_t Encoder_GetLeftCount(void) { return total_left; }
+int32_t Encoder_GetRightCount(void) { return total_right; }
+float Encoder_GetLeftSpeedPPS(void) { return speed_left_pps; }
+float Encoder_GetRightSpeedPPS(void) { return speed_right_pps; }

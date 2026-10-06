@@ -1,186 +1,283 @@
-/**
- * @file ir_sensor.c
- * @brief IR Sensors Processing with 7-State Paired Pulsing (TIM10)
- *        Pairs: L90+R45, L45+R90, L0+R0 (opposite/staggered = no cross-talk)
- *        Scan time: 7 x 100us = 0.7ms (was 1.3ms)
- */
-
 #include "ir_sensor.h"
-#include "hardware.h"
-#include <string.h>
+#include "board.h"
+#include "stm32f4xx.h"
 
-static volatile IR_Sensor_Handle_t ir_handle;
+typedef enum {
+    IR_IDLE = 0,
+    IR_AMBIENT,
+    IR_PAIR1_ON,
+    IR_PAIR1_READ,
+    IR_PAIR2_ON,
+    IR_PAIR2_READ,
+    IR_PAIR3_ON,
+    IR_PAIR3_READ,
+    IR_READY
+} IR_State_t;
 
-static const uint8_t adc_channels[6] = {
-    IR_RX_L90_ADC_CHANNEL, IR_RX_L45_ADC_CHANNEL, IR_RX_L0_ADC_CHANNEL, 
-    IR_RX_R0_ADC_CHANNEL,  IR_RX_R45_ADC_CHANNEL, IR_RX_R90_ADC_CHANNEL 
+static volatile IR_State_t state = IR_IDLE;
+static volatile uint16_t dma_buffer[IR_SENSOR_COUNT];
+static volatile uint16_t ambient[IR_SENSOR_COUNT];
+static volatile uint16_t result[IR_SENSOR_COUNT];
+static volatile uint32_t scan_count = 0;
+
+static const uint8_t adc_channels[IR_SENSOR_COUNT] = {
+    IR_RX_L90_ADC_CHANNEL,
+    IR_RX_L45_ADC_CHANNEL,
+    IR_RX_L0_ADC_CHANNEL,
+    IR_RX_R0_ADC_CHANNEL,
+    IR_RX_R45_ADC_CHANNEL,
+    IR_RX_R90_ADC_CHANNEL
 };
 
-#ifndef RCC_APB2ENR_TIM10EN
-#define RCC_APB2ENR_TIM10EN (1 << 17)
-#endif
-
-static void ADC_DMA_Config(void) {
-    volatile uint32_t wait = 10000;
-    RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-    
-    ADC1->CR1 = 0; ADC1->CR2 = 0;
-    ADC1->CR1 |= ADC_CR1_SCAN;
-    ADC1->CR2 |= ADC_CR2_DMA | ADC_CR2_DDS;
-    ADC1->SMPR2 = 0x04924924; ADC1->SMPR1 = 0x04924924; 
-    ADC1->SQR1 = (6 - 1) << 20;
-    ADC1->SQR3 = (adc_channels[0] << 0) | (adc_channels[1] << 5) | (adc_channels[2] << 10) |
-                 (adc_channels[3] << 15) | (adc_channels[4] << 20) | (adc_channels[5] << 25);   
-    ADC1->CR2 |= ADC_CR2_ADON;
-    while(wait--);
-    
-    DMA2_Stream0->CR &= ~DMA_SxCR_EN;
-    while (DMA2_Stream0->CR & DMA_SxCR_EN); 
-    DMA2->LIFCR = 0x3D; 
-    DMA2_Stream0->CR = 0;
-    DMA2_Stream0->CR |= (0 << 25) | (1 << 13) | (1 << 11) | (1 << 10) | DMA_SxCR_MINC; 
-    DMA2_Stream0->PAR = (uint32_t)&ADC1->DR;
-    DMA2_Stream0->M0AR = (uint32_t)ir_handle.dma_buffer;
+static void GPIO_Output(GPIO_TypeDef *port, uint8_t pin)
+{
+    port->MODER &= ~(3UL << (pin * 2U));
+    port->MODER |=  (1UL << (pin * 2U));
+    port->OTYPER &= ~(1UL << pin);
+    port->PUPDR &= ~(3UL << (pin * 2U));
+    port->BSRR = (1UL << (pin + 16U));
 }
 
-static void ADC_TriggerAndWait(void) {
+static void GPIO_Analog(GPIO_TypeDef *port, uint8_t pin)
+{
+    port->MODER |= (3UL << (pin * 2U));
+    port->PUPDR &= ~(3UL << (pin * 2U));
+}
+
+static void AllEmittersOff(void)
+{
+    IR_LED_OFF(IR_LED_L90_PORT, IR_LED_L90_PIN);
+    IR_LED_OFF(IR_LED_L45_PORT, IR_LED_L45_PIN);
+    IR_LED_OFF(IR_LED_L0_PORT, IR_LED_L0_PIN);
+    IR_LED_OFF(IR_LED_R0_PORT, IR_LED_R0_PIN);
+    IR_LED_OFF(IR_LED_R45_PORT, IR_LED_R45_PIN);
+    IR_LED_OFF(IR_LED_R90_PORT, IR_LED_R90_PIN);
+}
+
+static uint8_t ADC_TriggerAndWait(void)
+{
+    uint32_t timeout = 2000U;
+
     DMA2_Stream0->CR &= ~DMA_SxCR_EN;
-    while(DMA2_Stream0->CR & DMA_SxCR_EN); 
-    
-    DMA2->LIFCR = 0x3D;
-    DMA2_Stream0->NDTR = 6;
+    while ((DMA2_Stream0->CR & DMA_SxCR_EN) && timeout) {
+        timeout--;
+    }
+    if (timeout == 0U) return 0U;
+
+    DMA2->LIFCR = 0x3DU;
+    DMA2_Stream0->NDTR = IR_SENSOR_COUNT;
     DMA2_Stream0->CR |= DMA_SxCR_EN;
     ADC1->CR2 |= ADC_CR2_SWSTART;
-    
-    /* Synchronous block for DMA transfer completion (takes ~6-10us) */
-    while((DMA2->LISR & (1 << 5)) == 0);
-    DMA2->LIFCR = 0x3D;
+
+    timeout = 4000U;
+    while (((DMA2->LISR & (1UL << 5)) == 0U) && timeout) {
+        timeout--;
+    }
+
+    DMA2->LIFCR = 0x3DU;
+    return (timeout != 0U) ? 1U : 0U;
 }
 
-static void TIM10_Config(void) {
+static void ADC_DMA_Init(void)
+{
+    uint32_t wait = 10000U;
+
+    RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+    ADC1->CR1 = ADC_CR1_SCAN;
+    ADC1->CR2 = ADC_CR2_DMA | ADC_CR2_DDS;
+    ADC1->SMPR2 = 0x04924924UL;
+    ADC1->SMPR1 = 0x04924924UL;
+    ADC1->SQR1 = ((IR_SENSOR_COUNT - 1U) << 20);
+    ADC1->SQR3 = ((uint32_t)adc_channels[0] << 0) |
+                 ((uint32_t)adc_channels[1] << 5) |
+                 ((uint32_t)adc_channels[2] << 10) |
+                 ((uint32_t)adc_channels[3] << 15) |
+                 ((uint32_t)adc_channels[4] << 20) |
+                 ((uint32_t)adc_channels[5] << 25);
+
+    ADC1->CR2 |= ADC_CR2_ADON;
+    while (wait--) {
+        __NOP();
+    }
+
+    DMA2_Stream0->CR &= ~DMA_SxCR_EN;
+    while (DMA2_Stream0->CR & DMA_SxCR_EN) {
+    }
+
+    DMA2->LIFCR = 0x3DU;
+    DMA2_Stream0->CR = 0;
+    DMA2_Stream0->CR |= (1UL << 13) | (1UL << 11) | DMA_SxCR_MINC;
+    DMA2_Stream0->PAR = (uint32_t)&ADC1->DR;
+    DMA2_Stream0->M0AR = (uint32_t)dma_buffer;
+}
+
+static void TIM10_Init(void)
+{
+    uint32_t timer_clock = Board_GetAPB2TimerClockHz();
+    uint32_t prescaler = timer_clock / 1000000UL;
+
+    if (prescaler == 0U) prescaler = 1U;
+
     RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
 
-    TIM10->PSC = 96 - 1; /* Clock APB2 = 96MHz => 1MHz (1us/tick) */
-    TIM10->ARR = 100 - 1; /* Chu ky 100us */
-    TIM10->DIER |= TIM_DIER_UIE; 
+    TIM10->CR1 = 0;
+    TIM10->PSC = prescaler - 1U;
+    TIM10->ARR = 100U - 1U;
+    TIM10->EGR = TIM_EGR_UG;
+    TIM10->SR = 0;
+    TIM10->DIER = TIM_DIER_UIE;
 
-    NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 1); 
+    NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 1);
     NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
-
-    TIM10->CR1 |= TIM_CR1_CEN; 
 }
 
-void TIM1_UP_TIM10_IRQHandler(void) {
-    if (TIM10->SR & TIM_SR_UIF) {
+void IR_Init(void)
+{
+    uint8_t i;
+
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN;
+
+    GPIO_Output(IR_LED_L90_PORT, IR_LED_L90_PIN);
+    GPIO_Output(IR_LED_L45_PORT, IR_LED_L45_PIN);
+    GPIO_Output(IR_LED_L0_PORT, IR_LED_L0_PIN);
+    GPIO_Output(IR_LED_R0_PORT, IR_LED_R0_PIN);
+    GPIO_Output(IR_LED_R45_PORT, IR_LED_R45_PIN);
+    GPIO_Output(IR_LED_R90_PORT, IR_LED_R90_PIN);
+
+    GPIO_Analog(IR_RX_L90_PORT, IR_RX_L90_PIN);
+    GPIO_Analog(IR_RX_L45_PORT, IR_RX_L45_PIN);
+    GPIO_Analog(IR_RX_L0_PORT, IR_RX_L0_PIN);
+    GPIO_Analog(IR_RX_R0_PORT, IR_RX_R0_PIN);
+    GPIO_Analog(IR_RX_R45_PORT, IR_RX_R45_PIN);
+    GPIO_Analog(IR_RX_R90_PORT, IR_RX_R90_PIN);
+
+    AllEmittersOff();
+
+    for (i = 0; i < IR_SENSOR_COUNT; i++) {
+        ambient[i] = 0;
+        result[i] = 0;
+        dma_buffer[i] = 0;
+    }
+
+    ADC_DMA_Init();
+    TIM10_Init();
+    state = IR_IDLE;
+}
+
+void IR_StartScan(void)
+{
+    if (state == IR_IDLE) {
+        state = IR_AMBIENT;
+        TIM10->CNT = 0;
         TIM10->SR &= ~TIM_SR_UIF;
-
-        if (ir_handle.state == IR_STATE_IDLE || ir_handle.state == IR_STATE_READY) {
-            return;
-        }
-
-        switch (ir_handle.state) {
-            case IR_STATE_AMBIENT:
-                Hardware_IRLedAllOff();
-                ADC_TriggerAndWait(); 
-                memcpy((void*)ir_handle.ambient, (void*)ir_handle.dma_buffer, 12);
-                ir_handle.state = IR_STATE_PAIR1_ON;
-                break;
-
-            /* === Pair 1: L90 (front-left) + R45 (diagonal-right) === */
-            case IR_STATE_PAIR1_ON:
-                Hardware_IRLedOn(IR_L90);
-                Hardware_IRLedOn(IR_R45);
-                ir_handle.state = IR_STATE_PAIR1_READ;
-                break;
-
-            case IR_STATE_PAIR1_READ:
-                ADC_TriggerAndWait();
-                if (ir_handle.dma_buffer[0] > ir_handle.ambient[0])
-                    ir_handle.result[0] = ir_handle.dma_buffer[0] - ir_handle.ambient[0];
-                else ir_handle.result[0] = 0;
-                if (ir_handle.dma_buffer[4] > ir_handle.ambient[4])
-                    ir_handle.result[4] = ir_handle.dma_buffer[4] - ir_handle.ambient[4];
-                else ir_handle.result[4] = 0;
-                Hardware_IRLedOff(IR_L90);
-                Hardware_IRLedOff(IR_R45);
-                ir_handle.state = IR_STATE_PAIR2_ON;
-                break;
-
-            /* === Pair 2: L45 (diagonal-left) + R90 (front-right) === */
-            case IR_STATE_PAIR2_ON:
-                Hardware_IRLedOn(IR_L45);
-                Hardware_IRLedOn(IR_R90);
-                ir_handle.state = IR_STATE_PAIR2_READ;
-                break;
-
-            case IR_STATE_PAIR2_READ:
-                ADC_TriggerAndWait();
-                if (ir_handle.dma_buffer[1] > ir_handle.ambient[1])
-                    ir_handle.result[1] = ir_handle.dma_buffer[1] - ir_handle.ambient[1];
-                else ir_handle.result[1] = 0;
-                if (ir_handle.dma_buffer[5] > ir_handle.ambient[5])
-                    ir_handle.result[5] = ir_handle.dma_buffer[5] - ir_handle.ambient[5];
-                else ir_handle.result[5] = 0;
-                Hardware_IRLedOff(IR_L45);
-                Hardware_IRLedOff(IR_R90);
-                ir_handle.state = IR_STATE_PAIR3_ON;
-                break;
-
-            /* === Pair 3: L0 (side-left) + R0 (side-right) === */
-            case IR_STATE_PAIR3_ON:
-                Hardware_IRLedOn(IR_L0);
-                Hardware_IRLedOn(IR_R0);
-                ir_handle.state = IR_STATE_PAIR3_READ;
-                break;
-
-            case IR_STATE_PAIR3_READ:
-                ADC_TriggerAndWait();
-                if (ir_handle.dma_buffer[2] > ir_handle.ambient[2])
-                    ir_handle.result[2] = ir_handle.dma_buffer[2] - ir_handle.ambient[2];
-                else ir_handle.result[2] = 0;
-                if (ir_handle.dma_buffer[3] > ir_handle.ambient[3])
-                    ir_handle.result[3] = ir_handle.dma_buffer[3] - ir_handle.ambient[3];
-                else ir_handle.result[3] = 0;
-                Hardware_IRLedOff(IR_L0);
-                Hardware_IRLedOff(IR_R0);
-                ir_handle.scan_count++;
-                ir_handle.state = IR_STATE_READY;
-                break;
-
-            default: break;
-        }
+        TIM10->CR1 |= TIM_CR1_CEN;
     }
 }
 
-void IR_Sensor_Init(void) {
-    memset((void*)&ir_handle, 0, sizeof(ir_handle));
-    ir_handle.state = IR_STATE_IDLE;
-    ADC_DMA_Config();
-    TIM10_Config();
+void IR_Stop(void)
+{
+    TIM10->CR1 &= ~TIM_CR1_CEN;
+    AllEmittersOff();
+    state = IR_IDLE;
 }
 
-void IR_Sensor_StartScan(void) {
-    if (ir_handle.state == IR_STATE_IDLE || ir_handle.state == IR_STATE_READY) {
-        ir_handle.state = IR_STATE_AMBIENT;
+uint8_t IR_IsReady(void)
+{
+    return (state == IR_READY) ? 1U : 0U;
+}
+
+uint8_t IR_GetLatest(IR_Data_t *out)
+{
+    uint8_t i;
+
+    if (out == 0 || state != IR_READY) return 0U;
+
+    for (i = 0; i < IR_SENSOR_COUNT; i++) {
+        out->value[i] = result[i];
     }
+    out->scan_count = scan_count;
+    state = IR_IDLE;
+    return 1U;
 }
 
-uint8_t IR_Sensor_IsReady(void) {
-    return (ir_handle.state == IR_STATE_READY);
-}
+void TIM1_UP_TIM10_IRQHandler(void)
+{
+    uint8_t i;
 
-void IR_Sensor_GetResults(uint16_t *output) {
-    if (output) memcpy(output, (void*)ir_handle.result, 12);
-    ir_handle.state = IR_STATE_IDLE;
-}
+    if ((TIM10->SR & TIM_SR_UIF) == 0U) return;
+    TIM10->SR &= ~TIM_SR_UIF;
 
-uint16_t IR_Sensor_Read(IR_Sensor_t sensor) {
-    if (sensor >= 6) return 0;
-    return ir_handle.result[sensor];
-}
+    switch (state) {
+    case IR_AMBIENT:
+        AllEmittersOff();
+        if (ADC_TriggerAndWait()) {
+            for (i = 0; i < IR_SENSOR_COUNT; i++) ambient[i] = dma_buffer[i];
+            state = IR_PAIR1_ON;
+        } else {
+            IR_Stop();
+        }
+        break;
 
-void IR_Sensor_Reset(void) {
-    Hardware_IRLedAllOff();
-    ir_handle.state = IR_STATE_IDLE;
+    case IR_PAIR1_ON:
+        IR_LED_ON(IR_LED_L90_PORT, IR_LED_L90_PIN);
+        IR_LED_ON(IR_LED_R45_PORT, IR_LED_R45_PIN);
+        state = IR_PAIR1_READ;
+        break;
+
+    case IR_PAIR1_READ:
+        if (ADC_TriggerAndWait()) {
+            result[0] = (dma_buffer[0] > ambient[0]) ? (dma_buffer[0] - ambient[0]) : 0U;
+            result[4] = (dma_buffer[4] > ambient[4]) ? (dma_buffer[4] - ambient[4]) : 0U;
+            IR_LED_OFF(IR_LED_L90_PORT, IR_LED_L90_PIN);
+            IR_LED_OFF(IR_LED_R45_PORT, IR_LED_R45_PIN);
+            state = IR_PAIR2_ON;
+        } else {
+            IR_Stop();
+        }
+        break;
+
+    case IR_PAIR2_ON:
+        IR_LED_ON(IR_LED_L45_PORT, IR_LED_L45_PIN);
+        IR_LED_ON(IR_LED_R90_PORT, IR_LED_R90_PIN);
+        state = IR_PAIR2_READ;
+        break;
+
+    case IR_PAIR2_READ:
+        if (ADC_TriggerAndWait()) {
+            result[1] = (dma_buffer[1] > ambient[1]) ? (dma_buffer[1] - ambient[1]) : 0U;
+            result[5] = (dma_buffer[5] > ambient[5]) ? (dma_buffer[5] - ambient[5]) : 0U;
+            IR_LED_OFF(IR_LED_L45_PORT, IR_LED_L45_PIN);
+            IR_LED_OFF(IR_LED_R90_PORT, IR_LED_R90_PIN);
+            state = IR_PAIR3_ON;
+        } else {
+            IR_Stop();
+        }
+        break;
+
+    case IR_PAIR3_ON:
+        IR_LED_ON(IR_LED_L0_PORT, IR_LED_L0_PIN);
+        IR_LED_ON(IR_LED_R0_PORT, IR_LED_R0_PIN);
+        state = IR_PAIR3_READ;
+        break;
+
+    case IR_PAIR3_READ:
+        if (ADC_TriggerAndWait()) {
+            result[2] = (dma_buffer[2] > ambient[2]) ? (dma_buffer[2] - ambient[2]) : 0U;
+            result[3] = (dma_buffer[3] > ambient[3]) ? (dma_buffer[3] - ambient[3]) : 0U;
+            IR_LED_OFF(IR_LED_L0_PORT, IR_LED_L0_PIN);
+            IR_LED_OFF(IR_LED_R0_PORT, IR_LED_R0_PIN);
+            scan_count++;
+            state = IR_READY;
+            TIM10->CR1 &= ~TIM_CR1_CEN;
+        } else {
+            IR_Stop();
+        }
+        break;
+
+    default:
+        TIM10->CR1 &= ~TIM_CR1_CEN;
+        break;
+    }
 }
