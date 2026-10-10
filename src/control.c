@@ -5,6 +5,7 @@
 #include "ir_sensor.h"
 #include "motion.h"
 #include "motor_test.h"
+#include "motor.h"
 #include "stm32f4xx.h"
 
 static MPU6050_Handle_t *control_mpu = 0;
@@ -112,6 +113,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         IR_StartScan();
     }
 
+    Motor_Update1ms();
     MotorTest_Tick1ms();
     if (MotorTest_IsRunning()) return;
 
