@@ -132,6 +132,17 @@ void Motor_Init(void)
 void Motor_SetPairPermille(int16_t left, int16_t right)
 {
     uint32_t x = LockIRQ();
+    if (brake_latched) {
+        uint32_t neutral = 0;
+        /* Brake duty was 100%. Clear preload and neutralize the bridge
+         * before any new direction can be enabled on the next 1 kHz tick. */
+        TIM2->CCR1 = TIM2->CCR2 = 0;
+        AddDirection(&neutral, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, 0);
+        AddDirection(&neutral, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, 0);
+        GPIOB->BSRR = neutral;
+        wheel_l.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
+        wheel_r.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
+    }
     brake_latched = 0;
     wheel_l.target = ClampCmd(left);
     wheel_r.target = ClampCmd(right);
