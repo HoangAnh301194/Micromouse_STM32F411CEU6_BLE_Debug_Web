@@ -82,8 +82,9 @@ static void HandleMotorLine(const char *line)
     if (strcmp(line, "MT BRAKE") == 0) {
         if (!MotorTest_IsRunning()) {
             BT_SendString("MTERR,NOT_RUNNING\r\n");
+        } else if (!MotorTest_BrakePulse()) {
+            BT_SendString("MTERR,BRAKE_REQUIRES_LOW_SPEED\r\n");
         } else {
-            MotorTest_BrakePulse();
             BT_SendString("MTACK,BRAKE\r\n");
         }
         return;
