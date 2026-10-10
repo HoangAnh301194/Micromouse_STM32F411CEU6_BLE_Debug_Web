@@ -8,6 +8,8 @@
 #define CONTROL_DT_S          (1.0f / (float)CONTROL_FREQUENCY_HZ)
 
 void Control_Init(MPU6050_Handle_t *mpu_handle);
+/* Diagnostics: timer ticks only, skip encoder/motor/IR/motion processing. */
+void Control_SetDiagnosticOnly(uint8_t enable);
 void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
