@@ -19,6 +19,7 @@
 #define DEBUG_PERIOD_MS 100UL
 
 static MPU6050_Handle_t mpu;
+static uint8_t mpu_ready = 0;
 static char rx_line[80];
 static uint8_t rx_len = 0;
 static uint32_t last_motor_report_ms = 0;
@@ -223,8 +224,13 @@ static void PollMotorTelemetry(uint32_t now)
 
 static void HandleBleCommand(char c)
 {
-    float yaw = MPU6050_GetYaw(&mpu);
+    float yaw;
     if (MotorTest_IsRunning()) return;
+    if (!mpu_ready) {
+        BT_SendString("WARN,MPU_UNAVAILABLE_MOTOR_TEST_ONLY\r\n");
+        return;
+    }
+    yaw = MPU6050_GetYaw(&mpu);
 
     switch (c) {
     case 'f':
@@ -281,13 +287,11 @@ int main(void)
 
     Motion_Init();
 
-    if (mpu_status != MPU6050_OK) {
+    mpu_ready = (mpu_status == MPU6050_OK) ? 1U : 0U;
+    if (!mpu_ready) {
         Motor_Stop();
         Board_StatusLed(1);
-        BT_SendString("[BOOT] MPU6050 init/calibration failed\r\n");
-
-        while (1) {
-        }
+        BT_SendString("[BOOT] MPU6050 unavailable. Motor Debug remains enabled; F/L/R/Z disabled.\r\n");
     }
 
     /*
@@ -296,7 +300,7 @@ int main(void)
      * main.c only performs system orchestration.
      */
     IR_StartScan();
-    Control_Init(&mpu);
+    Control_Init(mpu_ready ? &mpu : 0);
     Control_Start();
 
     BT_SendString("\r\n[BOOT] Minimal core ready\r\n");
@@ -330,8 +334,8 @@ int main(void)
 
             left_count = Encoder_GetLeftCount();
             right_count = Encoder_GetRightCount();
-            yaw = MPU6050_GetYaw(&mpu);
-            gyro = MPU6050_GetGyroZ(&mpu);
+            yaw = mpu_ready ? MPU6050_GetYaw(&mpu) : 0.0f;
+            gyro = mpu_ready ? MPU6050_GetGyroZ(&mpu) : 0.0f;
             distance = Motion_GetDistanceMm();
             angle_error = Motion_GetAngleErrorDeg();
             state = Motion_GetState();
