@@ -1,53 +1,57 @@
-# Motor Debug — bounded diagnostic mode
+# Motor Debug — full PWM range, continuous test, BLE heartbeat
 
-Branch: `feature/motor-debug-console`, based on `giomuadongbac`.
+Branch: `feature/motor-debug-console` (based on `giomuadongbac`).
+
+## What changed
+
+- Signed motor test commands: **-100% to +100%** (full command range, no 30% software cap).
+- Test duration is a 32-bit unsigned integer in milliseconds. **0 means continuous** until STOP, heartbeat loss or Control_Stop; positive values stop at their set duration (no 1000 ms cap).
+- **Separate safety watchdog:** browser sends `MT HB` about every 400 ms while running. TIM11 stops motors if no heartbeat for **1500 ms**. This is not a test-duration limit.
+- BLE telemetry remains **1–10 Hz**, default **5 Hz**, formatted in the **main loop**, not in the 1 kHz control ISR.
+- `Control_Stop()` stops any running Motor Test before disabling TIM11.
+- The Web Motor Debug tab includes a STOP button, auto-scrolling log, encoder/PPS/RPM readouts, and CSV export.
 
 ## Usage
 
-1. Check TB6612FNG VM/GND/STBY wiring and confirm the motor's voltage/current rating before running sustained tests. A 2S battery reaches about 8.4 V fully charged. The firmware cannot measure VM or motor current.
-2. Lift **both wheels clear of the ground** and keep hands away from rotating wheels.
-3. Build and flash the feature branch with PlatformIO. Start `tools/ble_debug_console.html` through a browser environment supporting Web Bluetooth and local JavaScript file loading (Chrome/Edge, secure origin if required).
-4. Select the **Motor Debug** top-level tab. Connect JDY-33 BLE and choose **Verify firmware**. RUN is disabled until `MTREADY,1` arrives.
-5. Begin with a single wheel at low PWM and a short duration. Verify direction and counts. Negative duty commands reverse direction; do not reverse abruptly during a running test.
-6. Observe the separate auto-scrolling motor terminal, export data as CSV, and test the other wheel. Do not run both wheels on the ground until the direction mapping has been verified.
+1. Confirm TB6612FNG wiring, supply, motor rated voltage/current. A 2S lithium battery can supply **8.4 V when full**; unknown N20 motor voltage ratings mean 100% PWM may exceed the motor's intended voltage or driver current.
+2. Lift both wheels clear of the ground, keep hands away and prepare a physical power disconnect. Start with modest PWM, then increase only if measured conditions justify it.
+3. Build/flash the branch and open `tools/ble_debug_console.html` using a browser supporting Web Bluetooth and JavaScript from the chosen origin.
+4. Open the **Motor Debug** tab, connect BLE, then **Verify firmware**. The updated firmware responds `MTREADY,2`.
+5. Set Wheel, PWM L/R (%), Duration (ms; 0 = continuous), Log period (100–1000 ms) and encoder counts/rev. Press RUN and monitor telemetry.
+6. Press STOP to terminate. Switching tabs, hiding the browser tab or disconnecting from the Motor Debug connect button requests STOP; loss of heartbeat is a fallback after 1.5 s.
 
-## Inputs
-
-- Wheel: Left/Right/Both. The unselected wheel gets PWM 0.
-- Signed left and right PWM: integer -30..30 percent; at least one must be nonzero.
-- Duration: 100..1000 ms. Firmware TIM11 controls the deadline.
-- Telemetry interval: 100..1000 ms (default 200 ms, 5 Hz).
-- Encoder counts per wheel revolution: default 1430 is **unverified** and affects only the browser RPM calculation, not firmware.
-
-## BLE line protocol (ASCII, newline-delimited)
+## BLE protocol (ASCII, newline-delimited)
 
 Commands:
-
 ```
 MT PING
-MT RUN <left_pwm> <right_pwm> <duration_ms> <log_interval_ms>
+MT RUN <left_percent> <right_percent> <duration_ms> <log_interval_ms>
+MT HB
 MT STOP
 ```
 
-Responses:
-
+Example full-duty continuous run for the left wheel alone:
 ```
-MTREADY,1
-MTACK,RUN,<left_pwm>,<right_pwm>,<duration_ms>,<log_interval_ms>
+MT RUN 100 0 0 200
+```
+The browser sends `MT HB` periodically while running. The firmware does **not** accept unlimited running without this keepalive.
+
+Responses:
+```
+MTREADY,2
+MTACK,RUN,<left_percent>,<right_percent>,<duration_ms>,<log_interval_ms>
 MTACK,STOP
 MTERR,<reason>
-MTDATA,<elapsed_ms>,<left_pwm>,<right_pwm>,<encoder_left>,<encoder_right>,<left_pps>,<right_pps>,<delta_ms>
+MTDATA,<elapsed_ms>,<pwm_left>,<pwm_right>,<encoder_left>,<encoder_right>,<left_pps>,<right_pps>,<delta_ms>
 MTEND,TIMEOUT
 MTEND,STOP
+MTEND,HEARTBEAT_LOST
 ```
 
-Motor test is open-loop; it is mutually exclusive with motion primitives. TIM11 at 1 kHz updates encoder/IMU/IR as usual, executes a constant-time test deadline check, and skips `Motion_Update` while the test runs. Telemetry snapshot, integer formatting and non-blocking BLE queue writes happen in the **main loop**, never in the 1 kHz ISR. USART2 TX remains lower interrupt priority than TIM11. RX uses a small IRQ ring buffer to avoid losing packet bytes during main-loop work.
+## Notes and limitations
 
-## Caveats
-
-- BLE disconnect may prevent an immediate remote STOP; the currently active command is bounded to at most 1000 ms by firmware. The software cannot guarantee stopping on a stalled TIM11 ISR, lost MCU power, or driver electrical faults.
-- STOP by itself is not a permanent inhibit: future valid commands may start new runs.
-- The motor driver in the baseline is not yet protected against immediate direction reversal at the hardware PWM level. Run low-duty, single-direction tests first.
-- The firmware still boots through MPU6050 initialization and calibration; a failed MPU boot prevents motor test mode.
-- No battery voltage, motor current, temperature, stall current, or true duty waveform is measured.
-- Real hardware testing and a full PlatformIO build have **not yet been performed**.
+- `src/motor.c` and `include/motor.h` have **not** been changed in this branch: the new test accepts the full existing percentage API. The user's separate permille/deadband patch is **not included** here.
+- No direction reversal interlock, motor-current limit, VM reading, hardware watchdog, stall protection, or acceleration ramp has been added. Do not directly command high-speed reversal.
+- Heartbeat depends on TIM11 and browser BLE availability. It cannot protect against all electrical or MCU faults.
+- The existing firmware still requires successful MPU6050 initialization/calibration before entering the main loop.
+- Firmware has been committed but **has not been verified by a complete PlatformIO build or physical STM32 test**.
