@@ -790,13 +790,16 @@ I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us)
         /* Main-context timeout recovery: NEVER reset I2C inside TIM11 ISR. */
         NVIC_DisableIRQ(I2C1_EV_IRQn);
         NVIC_DisableIRQ(I2C1_ER_IRQn);
-        I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
-        I2C1->CR1 |= I2C_CR1_STOP;
-        I2C_BusRecovery();
-        I2C_Init(I2C_1, i2c2_fast_mode);
-        i2c2_duration_us = micros() - i2c2_start_us;
-        i2c2_result = I2C_TIMEOUT;
-        i2c2_phase = I2C2_DONE;
+        /* Completion IRQ may have arrived just before IRQ masking. */
+        if (i2c2_phase != I2C2_DONE) {
+            I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
+            I2C1->CR1 |= I2C_CR1_STOP;
+            I2C_BusRecovery();
+            I2C_Init(I2C_1, i2c2_fast_mode);
+            i2c2_duration_us = micros() - i2c2_start_us;
+            i2c2_result = I2C_TIMEOUT;
+            i2c2_phase = I2C2_DONE;
+        }
         NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
         NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
     }
