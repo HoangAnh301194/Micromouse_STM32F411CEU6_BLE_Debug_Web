@@ -12,4 +12,7 @@ void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
 
+/* Total number of serviced TIM11 control cycles, sampled from main loop. */
+uint32_t Control_GetTickCount(void);
+
 #endif

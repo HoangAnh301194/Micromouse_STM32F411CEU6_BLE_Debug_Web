@@ -95,8 +95,15 @@ void Board_StatusLed(uint8_t on)
 
 void HardFault_Handler(void)
 {
+    /* Do not rely on CCR preload alone: disabling CC outputs is immediate.
+     * Force direction pins low (coast) and stop the 1 kHz scheduler. */
+    TIM2->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC2E);
     TIM2->CCR1 = 0;
     TIM2->CCR2 = 0;
+    GPIOB->BSRR = (1UL << (MOTOR_L_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_L_IN2_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN2_PIN + 16U));
     TIM11->CR1 &= ~TIM_CR1_CEN;
     TIM10->CR1 &= ~TIM_CR1_CEN;
 

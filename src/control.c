@@ -4,10 +4,14 @@
 #include "encoder.h"
 #include "ir_sensor.h"
 #include "motion.h"
+#include "motor_test.h"
+#include "motor_trace.h"
+#include "motor.h"
 #include "stm32f4xx.h"
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
+static volatile uint32_t control_tick_count = 0;
 static volatile IR_Data_t ir_latest;
 
 void Control_Init(MPU6050_Handle_t *mpu_handle)
@@ -18,6 +22,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     control_mpu = mpu_handle;
     control_running = 0;
+    control_tick_count = 0;
 
     timer_clock = Board_GetAPB2TimerClockHz();
 
@@ -48,10 +53,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
 void Control_Start(void)
 {
-    if (control_mpu == 0) {
-        return;
-    }
-
+    /* Motor diagnostics and encoder timing remain available without IMU. */
     TIM11->CNT = 0;
     TIM11->SR &= ~TIM_SR_UIF;
     control_running = 1U;
@@ -65,6 +67,7 @@ void Control_Stop(void)
      * force the motor command to zero; otherwise the last PWM value could
      * remain latched after TIM11 stops.
      */
+    MotorTest_Stop();
     Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
     control_running = 0U;
@@ -73,6 +76,12 @@ void Control_Stop(void)
 uint8_t Control_IsRunning(void)
 {
     return control_running;
+}
+
+uint32_t Control_GetTickCount(void)
+{
+    /* Atomic 32-bit read on Cortex-M4. Monotonic counter, wraps naturally. */
+    return control_tick_count;
 }
 
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
@@ -85,9 +94,12 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 
     TIM11->SR &= ~TIM_SR_UIF;
 
-    if (!control_running || control_mpu == 0) {
+    if (!control_running) {
         return;
     }
+
+    /* Only count here; frequency calculation and UART are in main loop. */
+    control_tick_count++;
 
     /*
      * Hard real-time path:
@@ -97,7 +109,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * 4. Execute the motion controller using one coherent sensor snapshot.
      */
     Encoder_Update(CONTROL_DT_S);
-    MPU6050_Update(control_mpu);
+    if (control_mpu != 0) MPU6050_Update(control_mpu);
 
     if (IR_GetLatest(&sample)) {
         uint8_t i;
@@ -110,9 +122,16 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         IR_StartScan();
     }
 
-    Motion_Update(CONTROL_DT_S,
-                  Encoder_GetLeftCount(),
-                  Encoder_GetRightCount(),
-                  MPU6050_GetYaw(control_mpu),
-                  MPU6050_GetGyroZ(control_mpu));
+    Motor_Update1ms();
+    MotorTrace_Record1ms();
+    MotorTest_Tick1ms();
+    if (MotorTest_IsRunning()) return;
+
+    if (control_mpu != 0) {
+        Motion_Update(CONTROL_DT_S,
+                      Encoder_GetLeftCount(),
+                      Encoder_GetRightCount(),
+                      MPU6050_GetYaw(control_mpu),
+                      MPU6050_GetGyroZ(control_mpu));
+    }
 }

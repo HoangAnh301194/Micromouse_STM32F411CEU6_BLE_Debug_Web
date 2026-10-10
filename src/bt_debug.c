@@ -16,6 +16,10 @@
 /* Private data                                                                 */
 /* ============================================================================ */
 
+static volatile uint8_t bt_rx_buffer[BT_RX_BUF_SIZE];
+static volatile uint16_t bt_rx_head = 0;
+static volatile uint16_t bt_rx_tail = 0;
+
 static uint8_t  bt_tx_buffer[BT_TX_BUF_SIZE];
 static volatile uint16_t bt_tx_head = 0;   /* Write index (main context)   */
 static volatile uint16_t bt_tx_tail = 0;   /* Read index  (ISR context)    */
@@ -112,7 +116,7 @@ void BT_Init(void) {
     USART2->BRR = brr_value;
 
     /* Enable TX and RX */
-    USART2->CR1 |= USART_CR1_TE | USART_CR1_RE;
+    USART2->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
 
     /* Enable USART2 */
     USART2->CR1 |= USART_CR1_UE;
@@ -130,6 +134,14 @@ void BT_Init(void) {
 /* ============================================================================ */
 
 void USART2_IRQHandler(void) {
+    if (USART2->SR & USART_SR_RXNE) {
+        uint8_t value = (uint8_t)USART2->DR;
+        uint16_t next = (uint16_t)((bt_rx_head + 1U) % BT_RX_BUF_SIZE);
+        if (next != bt_rx_tail) {
+            bt_rx_buffer[bt_rx_head] = value;
+            bt_rx_head = next;
+        }
+    }
     /* TXE: transmit data register empty — ready for next byte */
     if ((USART2->SR & USART_SR_TXE) && (USART2->CR1 & USART_CR1_TXEIE)) {
         if (bt_tx_head != bt_tx_tail) {
@@ -199,10 +211,13 @@ void BT_SendChar(char c) {
 }
 
 uint8_t BT_Available(void) {
-    return (USART2->SR & USART_SR_RXNE) ? 1 : 0;
+    return bt_rx_head != bt_rx_tail;
 }
 
 char BT_ReceiveChar(void) {
-    while (!(USART2->SR & USART_SR_RXNE));
-    return (char)(USART2->DR & 0xFF);
+    char value;
+    if (bt_rx_head == bt_rx_tail) return 0;
+    value = (char)bt_rx_buffer[bt_rx_tail];
+    bt_rx_tail = (uint16_t)((bt_rx_tail + 1U) % BT_RX_BUF_SIZE);
+    return value;
 }
