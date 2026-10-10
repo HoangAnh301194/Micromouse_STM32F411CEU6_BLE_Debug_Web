@@ -86,27 +86,28 @@ static void I2C_ClearErrors(uint32_t i2c_base) {
 
 static void I2C_BusRecovery(void) {
     uint8_t i;
-    
-    GPIOB_MODER &= ~(3UL << 16);
-    GPIOB_MODER |= (1UL << 16);
-    GPIOB_OTYPER |= (1 << 8);
-    
-    for (i = 0; i < 9; i++) {
-        GPIOB_ODR &= ~(1 << 8);
+    /* Called only from main on an idle/failed transaction. Never from TIM11. */
+    I2C1->CR1 &= ~I2C_CR1_PE;
+    GPIOB_OTYPER |= (1UL << 8) | (1UL << 9);
+    GPIOB_ODR |= (1UL << 8) | (1UL << 9);
+    GPIOB_MODER = (GPIOB_MODER & ~((3UL << 16) | (3UL << 18))) |
+                  (1UL << 16) | (1UL << 18);
+    delay_us_blocking(5);
+    for (i = 0U; i < 9U; i++) {
+        if (GPIOB_IDR & (1UL << 9)) break; /* SDA has been released */
+        GPIOB_ODR &= ~(1UL << 8);
         delay_us_blocking(5);
-        GPIOB_ODR |= (1 << 8);
+        GPIOB_ODR |= (1UL << 8);
         delay_us_blocking(5);
     }
-    
-    GPIOB_ODR &= ~(1 << 9);
+    /* Software STOP: drive SDA low, release SCL, then release SDA. */
+    GPIOB_ODR &= ~(1UL << 9);
     delay_us_blocking(5);
-    GPIOB_ODR |= (1 << 8);
+    GPIOB_ODR |= (1UL << 8);
     delay_us_blocking(5);
-    GPIOB_ODR |= (1 << 9);
+    GPIOB_ODR |= (1UL << 9);
     delay_us_blocking(5);
-    
-    GPIOB_MODER &= ~(3UL << 16);
-    GPIOB_MODER |= (2UL << 16);
+    /* I2C_Init() restores PB8/PB9 alternate functions after this call. */
 }
 
 static I2C_Status I2C_WaitBusFree(uint32_t i2c_base) {
@@ -664,6 +665,7 @@ static volatile uint8_t i2c2_addr, i2c2_reg;
 static volatile uint8_t i2c2_bytes[2];
 static volatile uint32_t i2c2_start_us, i2c2_duration_us;
 static uint8_t i2c2_fast_mode = 1U;
+static uint32_t i2c2_busy_since_us = 0U;
 
 static void I2C2_Finish(I2C_Status result)
 {
@@ -677,7 +679,18 @@ static void I2C2_Finish(I2C_Status result)
 I2C_Status I2C_Read2Async_Start(uint8_t addr, uint8_t reg)
 {
     if (i2c2_phase != I2C2_IDLE) return I2C_BUSY;
-    if (i2c_dma_busy || (I2C1->SR2 & I2C_SR2_BUSY)) return I2C_BUSY;
+    if (i2c_dma_busy || (I2C1->SR2 & I2C_SR2_BUSY)) {
+        uint32_t now = micros();
+        if (!i2c2_busy_since_us) i2c2_busy_since_us = now;
+        if ((uint32_t)(now - i2c2_busy_since_us) > 5000UL &&
+            !i2c_dma_busy) {
+            I2C_BusRecovery();
+            I2C_Init(I2C_1, i2c2_fast_mode);
+            i2c2_busy_since_us = 0U;
+        }
+        return I2C_BUSY;
+    }
+    i2c2_busy_since_us = 0U;
     if (addr >= 0x80U) return I2C_ERROR;
 
     i2c2_addr = addr;
@@ -779,6 +792,7 @@ I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us)
         NVIC_DisableIRQ(I2C1_ER_IRQn);
         I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
         I2C1->CR1 |= I2C_CR1_STOP;
+        I2C_BusRecovery();
         I2C_Init(I2C_1, i2c2_fast_mode);
         i2c2_duration_us = micros() - i2c2_start_us;
         i2c2_result = I2C_TIMEOUT;
