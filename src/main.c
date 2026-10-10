@@ -41,7 +41,7 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     delta_ms = (uint16_t)(s->elapsed_ms - last_motor_elapsed);
     dleft = left - last_motor_left;
     dright = right - last_motor_right;
-    BT_Printf("MTDATA,%u,%d,%d,%ld,%ld,%ld,%ld,%u\\r\\n",
+    BT_Printf("MTDATA,%u,%d,%d,%ld,%ld,%ld,%ld,%u\r\n",
               (unsigned)s->elapsed_ms, (int)s->pwm_left, (int)s->pwm_right,
               (long)left, (long)right,
               (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
@@ -51,7 +51,7 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     last_motor_right = right;
     last_motor_elapsed = s->elapsed_ms;
     if (finished) {
-        BT_Printf("MTEND,%s\\r\\n",
+        BT_Printf("MTEND,%s\r\n",
                   s->reason == MOTOR_TEST_END_TIMEOUT ? "TIMEOUT" : "STOP");
         MotorTest_AcknowledgeEnd();
     }
@@ -64,11 +64,11 @@ static void HandleMotorLine(const char *line)
     if (strcmp(line, "MT STOP") == 0) {
         MotorTest_Stop();
         Motion_Stop();
-        BT_SendString("MTACK,STOP\\r\\n");
+        BT_SendString("MTACK,STOP\r\n");
         return;
     }
     if (strcmp(line, "MT PING") == 0) {
-        BT_SendString("MTREADY,1\\r\\n");
+        BT_SendString("MTREADY,1\r\n");
         return;
     }
     if (sscanf(line, "MT RUN %d %d %d %d",
@@ -79,27 +79,27 @@ static void HandleMotorLine(const char *line)
             duration < 100 || duration > 1000 ||
             interval < 100 || interval > 1000 ||
             (left == 0 && right == 0)) {
-            BT_SendString("MTERR,INVALID_OR_BUSY\\r\\n");
+            BT_SendString("MTERR,INVALID_OR_BUSY\r\n");
             return;
         }
         MotorTest_GetSnapshot(&s);
         if (s.state != MOTOR_TEST_IDLE) {
-            BT_SendString("MTERR,BUSY\\r\\n");
+            BT_SendString("MTERR,BUSY\r\n");
             return;
         }
         if (!MotorTest_Start((int16_t)left, (int16_t)right,
                              (uint16_t)duration, (uint16_t)interval)) {
-            BT_SendString("MTERR,REJECTED\\r\\n");
+            BT_SendString("MTERR,REJECTED\r\n");
             return;
         }
         last_motor_report_ms = millis();
         last_motor_left = last_motor_right = 0;
         last_motor_elapsed = 0;
-        BT_Printf("MTACK,RUN,%d,%d,%d,%d\\r\\n",
+        BT_Printf("MTACK,RUN,%d,%d,%d,%d\r\n",
                   left, right, duration, interval);
         return;
     }
-    BT_SendString("MTERR,UNKNOWN\\r\\n");
+    BT_SendString("MTERR,UNKNOWN\r\n");
 }
 
 static void ProcessBleByte(char ch)
@@ -111,7 +111,7 @@ static void ProcessBleByte(char ch)
         rx_len = 0;
         return;
     }
-    if (ch == '\\r' || ch == '\\n') {
+    if (ch == '\r' || ch == '\n') {
         if (rx_len) {
             rx_line[rx_len] = 0;
             if (strncmp(rx_line, "MT ", 3) == 0) {
