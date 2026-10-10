@@ -106,7 +106,7 @@ static void HandleMotorLine(const char *line)
     }
     if (strncmp(line, "MT CFG ", 7) == 0) {
         unsigned int dl, dr, rise, fall;
-        if (MotorTest_IsRunning() ||
+        if (MotorTest_IsRunning() || !Motion_IsDone() ||
             sscanf(line, "MT CFG %u %u %u %u", &dl, &dr, &rise, &fall) != 4 ||
             dl > 500U || dr > 500U || rise == 0U || rise > 1000U ||
             fall == 0U || fall > 1000U) {
