@@ -5,6 +5,7 @@
 #include "ir_sensor.h"
 #include "motion.h"
 #include "motor_test.h"
+#include "motor_trace.h"
 #include "motor.h"
 #include "stm32f4xx.h"
 
@@ -114,6 +115,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     }
 
     Motor_Update1ms();
+    MotorTrace_Record1ms();
     MotorTest_Tick1ms();
     if (MotorTest_IsRunning()) return;
 
