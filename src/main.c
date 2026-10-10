@@ -30,6 +30,7 @@ static void HandleBleCommand(char c);
 static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
 {
     int32_t left, right;
+    int16_t applied_l, applied_r;
     uint32_t delta_ms;
     int32_t dleft, dright;
     uint32_t key = __get_PRIMASK();
@@ -38,11 +39,14 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     right = Encoder_GetRightCount();
     if (!key) __enable_irq();
 
+    Motor_GetAppliedPairPermille(&applied_l, &applied_r);
     delta_ms = s->elapsed_ms - last_motor_elapsed;
     dleft = left - last_motor_left;
     dright = right - last_motor_right;
-    BT_Printf("MTDATA,%lu,%d,%d,%ld,%ld,%ld,%ld,%lu\r\n",
-              (unsigned long)s->elapsed_ms, (int)s->pwm_left, (int)s->pwm_right,
+    BT_Printf("MTDATA3,%lu,%d,%d,%d,%d,%ld,%ld,%ld,%ld,%lu\r\n",
+              (unsigned long)s->elapsed_ms,
+              (int)s->pwm_left, (int)s->pwm_right,
+              (int)applied_l, (int)applied_r,
               (long)left, (long)right,
               (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
               (long)(delta_ms ? dright * 1000L / delta_ms : 0),
@@ -52,7 +56,8 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     last_motor_elapsed = s->elapsed_ms;
     if (finished) {
         const char *why = s->reason == MOTOR_TEST_END_TIMEOUT ? "TIMEOUT" :
-                          s->reason == MOTOR_TEST_END_HEARTBEAT ? "HEARTBEAT_LOST" : "STOP";
+                          s->reason == MOTOR_TEST_END_HEARTBEAT ? "HEARTBEAT_LOST" :
+                          s->reason == MOTOR_TEST_END_BRAKE ? "BRAKE" : "STOP";
         BT_Printf("MTEND,%s\r\n", why);
         MotorTest_AcknowledgeEnd();
     }
@@ -64,6 +69,15 @@ static void HandleMotorLine(const char *line)
     unsigned long duration;
     unsigned int interval;
     MotorTest_Snapshot_t s;
+    if (strcmp(line, "MT BRAKE") == 0) {
+        if (!MotorTest_IsRunning()) {
+            BT_SendString("MTERR,NOT_RUNNING\r\n");
+        } else {
+            MotorTest_BrakePulse();
+            BT_SendString("MTACK,BRAKE\r\n");
+        }
+        return;
+    }
     if (strcmp(line, "MT STOP") == 0) {
         MotorTest_Stop();
         Motion_Stop();
@@ -71,11 +85,59 @@ static void HandleMotorLine(const char *line)
         return;
     }
     if (strcmp(line, "MT PING") == 0) {
-        BT_SendString("MTREADY,2\r\n");
+        BT_SendString("MTREADY,3\r\n");
         return;
     }
     if (strcmp(line, "MT HB") == 0) {
         MotorTest_Heartbeat();
+        return;
+    }
+    if (strncmp(line, "MT CFG ", 7) == 0) {
+        unsigned int dl, dr, rise, fall;
+        if (MotorTest_IsRunning() ||
+            sscanf(line, "MT CFG %u %u %u %u", &dl, &dr, &rise, &fall) != 4 ||
+            dl > 500U || dr > 500U || rise == 0U || rise > 1000U ||
+            fall == 0U || fall > 1000U) {
+            BT_SendString("MTERR,CONFIG_INVALID_OR_BUSY\r\n");
+        } else {
+            Motor_SetDeadband((uint16_t)dl, (uint16_t)dr);
+            Motor_SetSlewRates((uint16_t)rise, (uint16_t)fall);
+            BT_Printf("MTACK,CFG,%u,%u,%u,%u\r\n", dl, dr, rise, fall);
+        }
+        return;
+    }
+    if (strncmp(line, "MT SETP ", 8) == 0) {
+        int lc, rc;
+        if (sscanf(line, "MT SETP %d %d", &lc, &rc) != 2 ||
+            lc < -1000 || lc > 1000 || rc < -1000 || rc > 1000 ||
+            !MotorTest_SetPermille((int16_t)lc, (int16_t)rc)) {
+            BT_SendString("MTERR,SET_INVALID_OR_NOT_RUNNING\r\n");
+        } else {
+            BT_Printf("MTACK,SETP,%d,%d\r\n", lc, rc);
+        }
+        return;
+    }
+    if (strncmp(line, "MT RUNP ", 8) == 0) {
+        int lc, rc;
+        unsigned long duration_ms;
+        unsigned int log_ms;
+        MotorTest_GetSnapshot(&s);
+        if (sscanf(line, "MT RUNP %d %d %lu %u", &lc, &rc,
+                   &duration_ms, &log_ms) != 4 ||
+            !Motion_IsDone() || !Control_IsRunning() ||
+            s.state != MOTOR_TEST_IDLE ||
+            lc < -1000 || lc > 1000 || rc < -1000 || rc > 1000 ||
+            log_ms < 100U || log_ms > 1000U ||
+            !MotorTest_StartPermille((int16_t)lc, (int16_t)rc,
+                                     (uint32_t)duration_ms, (uint16_t)log_ms)) {
+            BT_SendString("MTERR,RUN_INVALID_OR_BUSY\r\n");
+        } else {
+            last_motor_report_ms = millis();
+            last_motor_left = last_motor_right = 0;
+            last_motor_elapsed = 0;
+            BT_Printf("MTACK,RUNP,%d,%d,%lu,%u\r\n",
+                      lc, rc, duration_ms, log_ms);
+        }
         return;
     }
     if (sscanf(line, "MT RUN %d %d %lu %u",
