@@ -59,7 +59,8 @@
  * - 500:  Good balance (~1.5s)
  * - 1000: High accuracy (~3s)
  */
-#define CALIBRATION_SAMPLES 200 /* 100 samples - fast startup */
+#define CALIBRATION_SAMPLES 200 /* Number of successful asynchronous samples */
+#define MPU_SAMPLE_PERIOD_US 1000UL /* Target 1 kHz register reads in main */
 
 /* ========================================================================== */
 /* HARDWARE CONFIGURATION                                                     */
@@ -101,7 +102,24 @@ typedef struct {
   /* DMA Variables */
   uint8_t dma_rx_buf[2];        /* Buffer for DMA to write raw gyro data to */
   volatile uint8_t dma_running; /* Flag to indicate DMA transfer is active */
-  uint32_t last_dma_req_us;     /* Timestamp of last DMA request */
+  uint32_t last_dma_req_us;     /* Legacy field, unused by IRQ path */
+
+  /* IRQ-driven acquisition and debug statistics; producer/consumer is main. */
+  uint32_t last_request_us;
+  uint32_t last_good_us;
+  uint32_t last_transfer_us;
+  uint32_t max_transfer_us;
+  uint32_t good_reads;
+  uint32_t error_reads;
+  uint32_t busy_retries;
+  uint32_t timeout_reads;
+  I2C_Status last_i2c_error;
+
+  /* Nonblocking startup bias calibration: no 200 reads in a tight loop. */
+  int32_t calibration_sum;
+  uint16_t calibration_count;
+  uint8_t calibrating;
+  uint8_t calibrated;
 } MPU6050_Handle_t;
 
 /* ========================================================================== */
@@ -128,7 +146,8 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *handle);
  * @return MPU6050_Status
  *
  * IMPORTANT: Robot MUST be stationary during calibration!
- * Collects CALIBRATION_SAMPLES readings to calculate offset
+ * Starts NON-BLOCKING calibration: offset becomes valid when calibrated=1.
+ * Collects CALIBRATION_SAMPLES successful asynchronous gyro samples.
  */
 MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *handle);
 
@@ -137,8 +156,8 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *handle);
  * @param handle Pointer to MPU6050 handle
  * @return MPU6050_Status
  *
- * Call this function as fast as possible (1kHz recommended)
- * Uses DMA for non-blocking reads
+ * Call frequently in main loop, NEVER inside TIM11 ISR.
+ * Drives interrupt-based I2C reads and consumes successful samples.
  */
 MPU6050_Status MPU6050_Update(MPU6050_Handle_t *handle);
 
