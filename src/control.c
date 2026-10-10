@@ -66,6 +66,7 @@ void Control_Stop(void)
      * force the motor command to zero; otherwise the last PWM value could
      * remain latched after TIM11 stops.
      */
+    MotorTest_Stop();
     Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
     control_running = 0U;
