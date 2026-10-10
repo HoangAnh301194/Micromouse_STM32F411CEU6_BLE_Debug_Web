@@ -51,10 +51,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
 void Control_Start(void)
 {
-    if (control_mpu == 0) {
-        return;
-    }
-
+    /* Motor diagnostics and encoder timing remain available without IMU. */
     TIM11->CNT = 0;
     TIM11->SR &= ~TIM_SR_UIF;
     control_running = 1U;
@@ -89,7 +86,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 
     TIM11->SR &= ~TIM_SR_UIF;
 
-    if (!control_running || control_mpu == 0) {
+    if (!control_running) {
         return;
     }
 
@@ -101,7 +98,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * 4. Execute the motion controller using one coherent sensor snapshot.
      */
     Encoder_Update(CONTROL_DT_S);
-    MPU6050_Update(control_mpu);
+    if (control_mpu != 0) MPU6050_Update(control_mpu);
 
     if (IR_GetLatest(&sample)) {
         uint8_t i;
@@ -119,9 +116,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     MotorTest_Tick1ms();
     if (MotorTest_IsRunning()) return;
 
-    Motion_Update(CONTROL_DT_S,
-                  Encoder_GetLeftCount(),
-                  Encoder_GetRightCount(),
-                  MPU6050_GetYaw(control_mpu),
-                  MPU6050_GetGyroZ(control_mpu));
+    if (control_mpu != 0) {
+        Motion_Update(CONTROL_DT_S,
+                      Encoder_GetLeftCount(),
+                      Encoder_GetRightCount(),
+                      MPU6050_GetYaw(control_mpu),
+                      MPU6050_GetGyroZ(control_mpu));
+    }
 }
