@@ -17,6 +17,7 @@
 #include "stm32f4xx.h"
 
 #define DEBUG_PERIOD_MS 100UL
+#define CONTROL_FREQ_REPORT_US 1000000UL
 
 static MPU6050_Handle_t mpu;
 static uint8_t mpu_ready = 0;
@@ -282,6 +283,8 @@ static void HandleBleCommand(char c)
 int main(void)
 {
     uint32_t last_debug_ms = 0;
+    uint32_t last_control_report_us = 0;
+    uint32_t last_control_tick_count = 0;
     MPU6050_Status mpu_status;
 
     Board_Init();
@@ -318,6 +321,8 @@ int main(void)
     IR_StartScan();
     Control_Init(mpu_ready ? &mpu : 0);
     Control_Start();
+    last_control_report_us = micros();
+    last_control_tick_count = Control_GetTickCount();
 
     BT_SendString("\r\n[BOOT] Minimal core ready\r\n");
     BT_SendString("Debug mode: KEY press starts motor test automatically. BLE is for telemetry only.\r\n");
@@ -325,6 +330,30 @@ int main(void)
     while (1) {
         uint32_t now = millis();
         uint8_t key_pressed = Board_ButtonPressed();
+
+        /*
+         * Debug observed TIM11 rate with TIM5, without UART in the ISR.
+         * Keep the KEY motor test and motor timing exactly as before.
+         */
+        uint32_t control_now_us = micros();
+        uint32_t control_elapsed_us = control_now_us - last_control_report_us;
+        if (control_elapsed_us >= CONTROL_FREQ_REPORT_US) {
+            uint32_t current_ticks = Control_GetTickCount();
+            uint32_t delta_ticks = current_ticks - last_control_tick_count;
+            uint32_t measured_hz = (uint32_t)(
+                ((uint64_t)delta_ticks * 1000000ULL + control_elapsed_us / 2U)
+                / control_elapsed_us
+            );
+
+            BT_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu\r\n",
+                      (unsigned long)CONTROL_FREQUENCY_HZ,
+                      (unsigned long)measured_hz,
+                      (unsigned long)delta_ticks,
+                      (unsigned long)control_elapsed_us);
+
+            last_control_report_us = control_now_us;
+            last_control_tick_count = current_ticks;
+        }
 
         if (key_pressed && !last_key_state) {
             StartAutoMotorDebugTest();
