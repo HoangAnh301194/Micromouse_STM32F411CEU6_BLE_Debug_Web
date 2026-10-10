@@ -15,7 +15,7 @@ connection rather than requiring a successful handshake. Firmware v3 responds
 integer-percent tests. If the connection is real but there is no MTREADY,
 check the serial RX wiring (JDY-33 TX -> STM32 USART2 PA3), that the latest
 branch was successfully **flashed** (GitHub push alone does not flash the
-board), and the BLE Log tab. A RUN without a firmware acknowledgment reports
+board), and the BLE Log tab. Motor Debug now also runs independently if MPU6050 init fails; navigation commands that need yaw remain disabled. A RUN without a firmware acknowledgment reports
 a timeout; it does **not** confirm that a test started.
 
 Use Chrome/Edge Web Bluetooth in a supported secure-origin environment.
@@ -31,7 +31,7 @@ cache-busting v3 query parameter.
   are different when deadband is nonzero.
 - `Motor_SetSlewRates(rise,fall)`: configurable 1..1000 permille/ms,
   default rise=20, fall=30. `Motor_Update1ms()` runs in TIM11.
-- Reversals must ramp command duty to zero and remain neutral at least
+- Test-only deadband and slew settings reset to defaults after a completed Motor Test; navigation does not inherit those experimental parameters.\n- Reversals must ramp command duty to zero and remain neutral at least
   **30 ms** before the opposite command is applied. This is **not**
   a guarantee the rotating shaft has stopped at high speed: an encoder-based
   speed interlock remains a future safety improvement.
@@ -118,7 +118,7 @@ overwritten. Trace requests are rejected while a test is running.
 4. Test update step and a low-PWM reverse. Avoid high-speed reversals
    until mechanical braking and encoder sign are validated.
 5. Test BRAKE and view final encoder response; release should occur
-   after 50 ms.
+   after 50 ms. Firmware rejects short-brake tests if applied command exceeds 30% or observed encoder speed exceeds 1000 pulses/s in either direction; this is not a current measurement.
 6. Run a 1–3s test, retrieve the 1 kHz RAM trace and check overshoot,
    ramp time, and wheel asymmetry.
 
