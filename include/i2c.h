@@ -21,7 +21,8 @@ typedef enum {
     I2C_ERROR,
     I2C_BUSY,
     I2C_TIMEOUT,
-    I2C_NACK
+    I2C_NACK,
+    I2C_IDLE /* No pending asynchronous transaction */
 } I2C_Status;
 
 /**
@@ -169,5 +170,16 @@ void I2C_SetCallback_DMA_RX(I2C_DMA_Callback_t callback);
  * @return 1 if busy, 0 if idle
  */
 uint8_t I2C_IsBusy_DMA(I2C_Instance instance);
+
+
+/* Lightweight IRQ-driven two-byte register read (I2C1 only).
+ * START/ADDR/repeated-START/data/STOP are advanced by I2C1 EV/ER IRQ;
+ * neither API waits for bus flags. Call Poll() often from main, NEVER TIM11.
+ * Poll consumes the completion result. I2C_IDLE: nothing pending;
+ * I2C_BUSY: ongoing; I2C_OK: two valid bytes in out[].
+ */
+I2C_Status I2C_Read2Async_Start(uint8_t address_7bit, uint8_t reg);
+I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us);
+uint32_t I2C_GetConfiguredSclHz(void);
 
 #endif /* I2C_H */
