@@ -5,8 +5,9 @@
 
 static volatile MotorTest_State_t state = MOTOR_TEST_IDLE;
 static volatile MotorTest_EndReason_t reason = MOTOR_TEST_END_TIMEOUT;
-static volatile uint16_t elapsed_ms = 0;
-static volatile uint16_t duration_ms = 0;
+static volatile uint32_t elapsed_ms = 0;
+static volatile uint32_t duration_ms = 0;
+static volatile uint16_t heartbeat_age_ms = 0;
 static volatile uint16_t log_interval_ms = 200;
 static volatile int16_t pwm_left = 0;
 static volatile int16_t pwm_right = 0;
@@ -24,14 +25,12 @@ static void UnlockIRQ(uint32_t primask)
 }
 
 uint8_t MotorTest_Start(int16_t left, int16_t right,
-                        uint16_t duration, uint16_t log_interval)
+                        uint32_t duration, uint16_t log_interval)
 {
     uint32_t mask;
     if (left < -MOTOR_TEST_MAX_PWM || left > MOTOR_TEST_MAX_PWM ||
         right < -MOTOR_TEST_MAX_PWM || right > MOTOR_TEST_MAX_PWM ||
         (left == 0 && right == 0) ||
-        duration < MOTOR_TEST_MIN_DURATION_MS ||
-        duration > MOTOR_TEST_MAX_DURATION_MS ||
         log_interval < MOTOR_TEST_MIN_LOG_MS ||
         log_interval > MOTOR_TEST_MAX_LOG_MS) {
         return 0;
@@ -46,6 +45,7 @@ uint8_t MotorTest_Start(int16_t left, int16_t right,
     Encoder_Reset();
     elapsed_ms = 0;
     duration_ms = duration;
+    heartbeat_age_ms = 0;
     log_interval_ms = log_interval;
     pwm_left = left;
     pwm_right = right;
@@ -67,10 +67,27 @@ void MotorTest_Stop(void)
     UnlockIRQ(mask);
 }
 
+void MotorTest_Heartbeat(void)
+{
+    uint32_t mask = LockIRQ();
+    if (state == MOTOR_TEST_RUNNING) heartbeat_age_ms = 0;
+    UnlockIRQ(mask);
+}
+
 void MotorTest_Tick1ms(void)
 {
     if (state != MOTOR_TEST_RUNNING) return;
-    if (++elapsed_ms >= duration_ms) {
+
+    /* Constant-time work inside TIM11; no UART, no formatting, no waits.
+     * duration 0 disables the test-duration limit, NOT the safety watchdog. */
+    elapsed_ms++;
+    heartbeat_age_ms++;
+
+    if (heartbeat_age_ms >= MOTOR_TEST_HEARTBEAT_TIMEOUT_MS) {
+        Motor_Stop();
+        reason = MOTOR_TEST_END_HEARTBEAT;
+        state = MOTOR_TEST_ENDED;
+    } else if (duration_ms != 0U && elapsed_ms >= duration_ms) {
         Motor_Stop();
         reason = MOTOR_TEST_END_TIMEOUT;
         state = MOTOR_TEST_ENDED;
