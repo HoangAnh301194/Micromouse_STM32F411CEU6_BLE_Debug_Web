@@ -116,7 +116,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * 4. Execute the motion controller using one coherent sensor snapshot.
      */
     Encoder_Update(CONTROL_DT_S);
-    if (control_mpu != 0) MPU6050_Update(control_mpu);
+    /* MPU6050_Update is executed only in main (I2C completion + recovery).
+     * This ISR must NEVER launch/repair an I2C transaction. It only consumes
+     * the most recently completed gyro/yaw snapshot in Motion_Update below. */
 
     if (IR_GetLatest(&sample)) {
         uint8_t i;
