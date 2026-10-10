@@ -11,6 +11,7 @@
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
+static volatile uint32_t control_tick_count = 0;
 static volatile IR_Data_t ir_latest;
 
 void Control_Init(MPU6050_Handle_t *mpu_handle)
@@ -21,6 +22,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     control_mpu = mpu_handle;
     control_running = 0;
+    control_tick_count = 0;
 
     timer_clock = Board_GetAPB2TimerClockHz();
 
@@ -76,6 +78,12 @@ uint8_t Control_IsRunning(void)
     return control_running;
 }
 
+uint32_t Control_GetTickCount(void)
+{
+    /* Atomic 32-bit read on Cortex-M4. Monotonic counter, wraps naturally. */
+    return control_tick_count;
+}
+
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     IR_Data_t sample;
@@ -89,6 +97,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     if (!control_running) {
         return;
     }
+
+    /* Only count here; frequency calculation and UART are in main loop. */
+    control_tick_count++;
 
     /*
      * Hard real-time path:
