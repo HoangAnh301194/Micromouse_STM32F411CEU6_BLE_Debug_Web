@@ -377,7 +377,7 @@ int main(void)
     if (init_status != MPU6050_OK) {
         UART_Printf("[IMU_INIT_FAIL] status=%d scl_nominal=%lu Hz\r\n",
                     (int)init_status, (unsigned long)I2C_GetConfiguredSclHz());
-        while (1) { /* No motors or timer-based control started on failure. */ }
+        while (1) { __WFI(); } /* Remain idle; motors never started. */
     }
 
     MPU6050_Calibrate(&imu_test);
@@ -414,7 +414,7 @@ int main(void)
           "IMU,read_hz=%lu good=%lu err=%lu busy=%lu timeout=%lu "
           "age_us=%lu i2c_last_us=%lu i2c_max_us=%lu update_max_us=%lu "
           "cal=%u cal_n=%u bias_mdps=%ld gz_mdps=%ld yaw_mdeg=%ld "
-          "ctrl_hz=%lu uart_drop=%lu uart_dma_err=%lu\r\n",
+          "ctrl_hz=%lu last_i2c_error=%u uart_drop=%lu uart_dma_err=%lu\r\n",
           (unsigned long)((good_diff * 1000000ULL) / duration),
           (unsigned long)imu_test.good_reads,
           (unsigned long)(imu_test.error_reads - last_err),
@@ -430,6 +430,7 @@ int main(void)
           (long)(MPU6050_GetGyroZ(&imu_test) * 1000.0f),
           (long)(MPU6050_GetYaw(&imu_test) * 1000.0f),
           (unsigned long)((ticks_diff * 1000000ULL) / duration),
+          (unsigned)imu_test.last_i2c_error,
           (unsigned long)UART_GetDroppedMessages(),
           (unsigned long)UART_GetDmaErrors()
         );
