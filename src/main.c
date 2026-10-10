@@ -13,6 +13,8 @@
 
 #include "stm32f4xx.h"
 
+/* Old motor + encoder diagnostic harness is intentionally disabled. */
+#if 0
 #define DEBUG_PERIOD_MS 100UL
 #define CONTROL_FREQ_REPORT_US 1000000UL
 
@@ -346,5 +348,98 @@ int main(void)
                         (unsigned long)now, (unsigned)state,
                         (long)left_count, (long)right_count);
         }
+    }
+}
+
+#endif /* old motor diagnostic harness */
+
+#include "mpu6050.h"
+
+/* Isolated MPU6050 + I2C1 throughput/latency/error test.
+ * No Motor_Init(), Encoder_Init(), MotorTest or motion execution.
+ * TIM11 runs at 1kHz in counter-only diagnostic mode.
+ */
+static MPU6050_Handle_t imu_test;
+
+int main(void)
+{
+    uint32_t last_report_us, last_ticks, last_good;
+    uint32_t last_err, last_busy, last_timeout;
+    uint32_t max_update_us = 0U;
+    MPU6050_Status init_status;
+
+    Board_Init();
+    SystemTimer_Init();
+    UART_Init(); /* USART1 PA9: USB-TTL 115200, no BLE required. */
+
+    UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\\r\\n");
+    init_status = MPU6050_Init(&imu_test);
+    if (init_status != MPU6050_OK) {
+        UART_Printf("[IMU_INIT_FAIL] status=%d scl_nominal=%lu Hz\\r\\n",
+                    (int)init_status, (unsigned long)I2C_GetConfiguredSclHz());
+        while (1) { /* No motors or timer-based control started on failure. */ }
+    }
+
+    MPU6050_Calibrate(&imu_test);
+    Control_Init(0);
+    Control_SetDiagnosticOnly(1U);
+    Control_Start();
+
+    UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%lu Hz sensor_odr=1000Hz read_target=1000Hz\\r\\n",
+                (unsigned long)I2C_GetConfiguredSclHz());
+    last_report_us = micros();
+    last_ticks = Control_GetTickCount();
+    last_good = imu_test.good_reads;
+    last_err = last_busy = last_timeout = 0U;
+
+    while (1) {
+        uint32_t start_us = micros();
+        uint32_t now, elapsed, duration, good_diff, ticks_diff, age_us;
+        uint32_t update_us;
+        MPU6050_Update(&imu_test); /* I2C IRQ-driven, never busy-waits. */
+        update_us = micros() - start_us;
+        if (update_us > max_update_us) max_update_us = update_us;
+
+        now = micros();
+        elapsed = now - last_report_us;
+        if (elapsed < 1000000UL) continue;
+
+        duration = elapsed;
+        good_diff = imu_test.good_reads - last_good;
+        ticks_diff = Control_GetTickCount() - last_ticks;
+        age_us = imu_test.last_good_us ?
+                 (uint32_t)(now - imu_test.last_good_us) : 0xFFFFFFFFUL;
+
+        UART_Printf(
+          "IMU,read_hz=%lu good=%lu err=%lu busy=%lu timeout=%lu "
+          "age_us=%lu i2c_last_us=%lu i2c_max_us=%lu update_max_us=%lu "
+          "cal=%u cal_n=%u bias_mdps=%ld gz_mdps=%ld yaw_mdeg=%ld "
+          "ctrl_hz=%lu uart_drop=%lu uart_dma_err=%lu\\r\\n",
+          (unsigned long)((good_diff * 1000000ULL) / duration),
+          (unsigned long)imu_test.good_reads,
+          (unsigned long)(imu_test.error_reads - last_err),
+          (unsigned long)(imu_test.busy_retries - last_busy),
+          (unsigned long)(imu_test.timeout_reads - last_timeout),
+          (unsigned long)age_us,
+          (unsigned long)imu_test.last_transfer_us,
+          (unsigned long)imu_test.max_transfer_us,
+          (unsigned long)max_update_us,
+          (unsigned)imu_test.calibrated,
+          (unsigned)imu_test.calibration_count,
+          (long)(imu_test.gyro_z_offset * 1000.0f),
+          (long)(MPU6050_GetGyroZ(&imu_test) * 1000.0f),
+          (long)(MPU6050_GetYaw(&imu_test) * 1000.0f),
+          (unsigned long)((ticks_diff * 1000000ULL) / duration),
+          (unsigned long)UART_GetDroppedMessages(),
+          (unsigned long)UART_GetDmaErrors()
+        );
+
+        last_report_us = now;
+        last_good = imu_test.good_reads;
+        last_err = imu_test.error_reads;
+        last_busy = imu_test.busy_retries;
+        last_timeout = imu_test.timeout_reads;
+        last_ticks = Control_GetTickCount();
+        max_update_us = 0U;
     }
 }
