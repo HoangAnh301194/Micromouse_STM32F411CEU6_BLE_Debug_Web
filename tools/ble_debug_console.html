@@ -543,9 +543,8 @@
 
         <!-- Send bar -->
         <div class="send-bar">
-            <input type="text" id="sendInput" placeholder="Send command to Nezumi_Chan..." disabled
-                   onkeydown="if(event.key==='Enter') sendData()">
-            <button class="btn" onclick="sendData()" id="btnSend" disabled>Send</button>
+            <input type="text" id="sendInput" placeholder="Telemetry-only debug mode" disabled>
+            <button class="btn" id="btnSend" disabled>Send</button>
         </div>
 
     </div><!-- ctrl-side -->
@@ -1328,10 +1327,10 @@ document.addEventListener('mouseup', () => {
 
 /* ─── BLE check ─────────────────────────────── */
 if (!navigator.bluetooth) {
-    addBLEEntry('❌ Web Bluetooth NOT supported in this browser!', 'err');
-    addBLEEntry('💡 Use Chrome/Edge desktop, or Chrome on Android', 'sys');
+    addBLEEntry(' Web Bluetooth NOT supported in this browser!', 'err');
+    addBLEEntry(' Use Chrome/Edge desktop, or Chrome on Android', 'sys');
 } else {
-    addBLEEntry('✅ Web Bluetooth ready. Connect your Nezumi_Chan!', 'sys');
+    addBLEEntry(' Web Bluetooth ready. Connect your Nezumi_Chan!', 'sys');
 }
 </script>
 <script src="motor_debug.js?v=3"></script>

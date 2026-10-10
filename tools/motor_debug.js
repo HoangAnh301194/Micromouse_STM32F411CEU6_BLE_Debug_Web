@@ -37,8 +37,8 @@ const page=document.createElement('section');page.id='motorView';page.innerHTML=
  <label>Deadband Right (0..500 ‰)<input id="mtDbR" type="number" min="0" max="500" step="1" value="0"></label>
  <label>Rise rate (‰ / ms)<input id="mtRise" type="number" min="1" max="1000" step="1" value="20"></label>
  <label>Fall rate (‰ / ms)<input id="mtFall" type="number" min="1" max="1000" step="1" value="30"></label>
- </div><div class="actions"><button class="btn btn-ble" id="mtConnect">Connect BLE</button><button class="btn" id="mtPing">Verify firmware</button><button class="btn btn-run" id="mtRun" disabled>RUN TEST</button><button class="btn" id="mtUpdate" disabled>UPDATE PWM</button><button class="btn btn-pause" id="mtBrake" disabled>BRAKE 50ms</button><button class="btn" id="mtTrace">GET 1kHz TRACE</button><button class="btn btn-reset" id="mtStop">STOP</button></div>
-<p class="hint">RUN becomes available when BLE connects. Verify firmware automatically (v3 enables fine PWM, config, brake and live PWM). Control loop remains at 1 kHz. Telemetry is generated in main loop only. Firmware heartbeat watchdog stops if browser updates stop for 1.5 s. Finite duration or STOP also ends the test.</p></div>
+ </div><div class="actions"><button class="btn btn-ble" id="mtConnect">Connect BLE</button><button class="btn" id="mtClear">Clear</button><button class="btn" id="mtExport">Export CSV</button></div>
+<p class="hint">Debug-only mode: no command strings are sent from the browser. The MCU auto-starts the motor test when the KEY button is pressed and streams telemetry here.</p></div>
 <div class="panel"><h3>DIAGNOSTICS</h3><p class="hint">PWM requested/applied, elapsed time, signed encoder counts, pulses/s, and RPM estimate (browser-only). Confirm counts/rev before trusting RPM.</p></div></aside>
 <article><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:#161b22">
 <strong>MOTOR TERMINAL</strong><div style="display:flex;align-items:center;gap:8px"><label><input id="mtAuto" type="checkbox" checked> Auto-scroll</label><button class="btn" id="mtClear">Clear</button><button class="btn" id="mtExport">Export CSV</button></div></div>
@@ -51,8 +51,8 @@ let ready=false,fwVersion=0,running=false,pending=false,samples=[],traceSamples=
 function isConnected(){return !!(bleChar&&bleDevice&&bleDevice.gatt.connected)}
 function print(t){let n=document.createElement('div');n.textContent='['+new Date().toLocaleTimeString('en-GB')+'] '+t;$('motorLog').appendChild(n);while($('motorLog').children.length>600)$('motorLog').firstChild.remove();if($('mtAuto').checked)$('motorLog').scrollTop=$('motorLog').scrollHeight}
 function status(t){$('mtStatus').textContent=t}
-function refresh(){$('mtRun').disabled=!isConnected()||running||pending;$('mtTrace').disabled=!isConnected()||running||pending||fwVersion<3;$('mtUpdate').disabled=!running||fwVersion<3;$('mtBrake').disabled=!running||fwVersion<3;$('mtConnect').textContent=isConnected()?'Disconnect BLE':'Connect BLE'}
-function write(cmd){let job=writeTail.catch(()=>{}).then(async()=>{if(!isConnected())throw Error('BLE disconnected');let b=new TextEncoder().encode(cmd+'\n');for(let i=0;i<b.length;i+=20)await bleChar.writeValue(b.slice(i,i+20))});writeTail=job;return job}
+function refresh(){const c=$('mtConnect'); if(c) c.textContent=isConnected()?'Disconnect BLE':'Connect BLE';}
+function write(cmd){return Promise.resolve();}
 function clearHeartbeat(){if(heartbeatTimer!==null){clearInterval(heartbeatTimer);heartbeatTimer=null}}
 function heartbeat(){if(running&&isConnected())write('MT HB').catch(e=>print('Heartbeat lost: '+e.message));else clearHeartbeat()}
 function startHeartbeat(){clearHeartbeat();heartbeat();heartbeatTimer=setInterval(heartbeat,400)}
@@ -158,7 +158,7 @@ function process(line){
 }
 function pageSwitch(open){if(!open&&(running||pending)){stop();clearHeartbeat();}page.classList.toggle('open',open);document.querySelector('.workspace').style.display=open?'none':'flex';if(!open){sizeCanvas();renderMaze()}else if(isConnected()&&!ready)ping();refresh()}
 window.motorSwitchPage=()=>pageSwitch(!page.classList.contains('open'));
-$('mtConnect').onclick=async()=>{if(isConnected()&&(running||pending)){try{await write('MT STOP')}catch(e){print('STOP send failed: '+e.message)}clearHeartbeat()}toggleConnection()};$('mtPing').onclick=ping;$('mtRun').onclick=run;$('mtUpdate').onclick=updatePWM;$('mtBrake').onclick=brake;$('mtTrace').onclick=requestTrace;$('mtStop').onclick=stop;
+$('mtConnect').onclick=async()=>{toggleConnection()};
 $('mtClear').onclick=()=>{$('motorLog').textContent='';samples=[];traceSamples=[]};
 $('mtExport').onclick=()=>{let high=traceSamples.length>0;
  let csv=high?['sample_index,cmd_left_permille,cmd_right_permille,applied_left_permille,applied_right_permille,encoder_left,encoder_right',...traceSamples.map(a=>a.join(','))].join('\n'):['elapsed_ms,requested_left_permille,requested_right_permille,applied_left_permille,applied_right_permille,encoder_left,encoder_right,pps_left,pps_right,dt_ms',...samples.map(a=>a.join(','))].join('\n');
@@ -174,11 +174,11 @@ bleConnect=async function(...args){
  if(isConnected()){
    bleDevice.addEventListener('gattserverdisconnected',()=>{
      clearHeartbeat();ready=false;fwVersion=0;running=false;pending=false;
-     status('BLE disconnected; MCU heartbeat should stop test within 1.5s');
+     status('BLE disconnected; MCU telemetry stream ended');
      refresh();
    },{once:true});
-   print('BLE connected');
-   ping();
+   print('BLE connected - debug mode active');
+   status('BLE connected - waiting for motor telemetry');
  }
 };
 refresh();

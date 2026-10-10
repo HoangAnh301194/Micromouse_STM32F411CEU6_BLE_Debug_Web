@@ -26,8 +26,24 @@ static uint32_t last_motor_report_ms = 0;
 static int32_t last_motor_left = 0;
 static int32_t last_motor_right = 0;
 static uint32_t last_motor_elapsed = 0;
+static uint8_t last_key_state = 0U;
+static uint8_t auto_motor_test_active = 0U;
 
 static void HandleBleCommand(char c);
+
+static void StartAutoMotorDebugTest(void)
+{
+    if (MotorTest_IsRunning() || !Motion_IsDone()) {
+        return;
+    }
+
+    if (MotorTest_StartPermille(1000, 1000, 1500U, 200U)) {
+        auto_motor_test_active = 1U;
+        BT_SendString("AUTO,RUN,1000,1000,1500,200\r\n");
+    } else {
+        BT_SendString("AUTO,REJECTED\r\n");
+    }
+}
 
 static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
 {
@@ -304,10 +320,24 @@ int main(void)
     Control_Start();
 
     BT_SendString("\r\n[BOOT] Minimal core ready\r\n");
-    BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw\r\n");
+    BT_SendString("Debug mode: KEY press starts motor test automatically. BLE is for telemetry only.\r\n");
 
     while (1) {
         uint32_t now = millis();
+        uint8_t key_pressed = Board_ButtonPressed();
+
+        if (key_pressed && !last_key_state) {
+            StartAutoMotorDebugTest();
+        }
+        last_key_state = key_pressed;
+
+        if (auto_motor_test_active) {
+            if (MotorTest_IsRunning()) {
+                MotorTest_Heartbeat();
+            } else {
+                auto_motor_test_active = 0U;
+            }
+        }
 
         if (BT_Available()) {
             ProcessBleByte(BT_ReceiveChar());
