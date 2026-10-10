@@ -20,6 +20,7 @@ static Wheel_t wheel_l, wheel_r;
 static volatile uint16_t rise_rate = 20U;
 static volatile uint16_t fall_rate = 30U;
 static volatile uint8_t brake_latched = 0;
+static volatile uint8_t brake_release_ticks = 0;
 
 static uint32_t LockIRQ(void)
 {
@@ -142,6 +143,7 @@ void Motor_SetPairPermille(int16_t left, int16_t right)
         GPIOB->BSRR = neutral;
         wheel_l.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
         wheel_r.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
+        brake_release_ticks = 2U; /* >= one full 20 kHz update before drive */
     }
     brake_latched = 0;
     wheel_l.target = ClampCmd(left);
@@ -208,6 +210,10 @@ void Motor_Update1ms(void)
 {
     uint32_t bsrr = 0;
     if (brake_latched) return;
+    if (brake_release_ticks > 0U) {
+        brake_release_ticks--;
+        return;
+    }
     UpdateWheel(&wheel_l);
     UpdateWheel(&wheel_r);
 
@@ -242,6 +248,7 @@ void Motor_Stop(void)
     wheel_l.target = wheel_r.target = 0;
     wheel_l.applied = wheel_r.applied = 0;
     brake_latched = 0;
+    brake_release_ticks = 0;
     AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, 0);
     AddDirection(&bsrr, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, 0);
     TIM2->CCR1 = TIM2->CCR2 = 0;
