@@ -13,5 +13,9 @@ void UART_Printf(const char *format, ...);
 /* Diagnostic counters, main-context reads. A full queue drops whole messages. */
 uint32_t UART_GetDroppedMessages(void);
 uint32_t UART_GetDmaErrors(void);
+uint32_t UART_GetDmaFifoErrors(void);
+uint32_t UART_GetDmaTransferErrors(void);
+uint32_t UART_GetDmaDirectErrors(void);
+uint32_t UART_GetDmaCompleteCount(void);
 
 #endif
