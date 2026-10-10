@@ -7,6 +7,7 @@
 #include "motion.h"
 #include "motor.h"
 #include "motor_test.h"
+#include "motor_trace.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -69,6 +70,15 @@ static void HandleMotorLine(const char *line)
     unsigned long duration;
     unsigned int interval;
     MotorTest_Snapshot_t s;
+    if (strcmp(line, "MT TRACE") == 0) {
+        if (MotorTest_IsRunning()) {
+            BT_SendString("MTERR,TRACE_BUSY\r\n");
+        } else {
+            MotorTrace_RequestDump();
+            BT_SendString("MTACK,TRACE\r\n");
+        }
+        return;
+    }
     if (strcmp(line, "MT BRAKE") == 0) {
         if (!MotorTest_IsRunning()) {
             BT_SendString("MTERR,NOT_RUNNING\r\n");
@@ -132,6 +142,7 @@ static void HandleMotorLine(const char *line)
                                      (uint32_t)duration_ms, (uint16_t)log_ms)) {
             BT_SendString("MTERR,RUN_INVALID_OR_BUSY\r\n");
         } else {
+            MotorTrace_Reset();
             last_motor_report_ms = millis();
             last_motor_left = last_motor_right = 0;
             last_motor_elapsed = 0;
@@ -160,6 +171,7 @@ static void HandleMotorLine(const char *line)
             BT_SendString("MTERR,REJECTED\r\n");
             return;
         }
+        MotorTrace_Reset();
         last_motor_report_ms = millis();
         last_motor_left = last_motor_right = 0;
         last_motor_elapsed = 0;
@@ -296,6 +308,7 @@ int main(void)
             ProcessBleByte(BT_ReceiveChar());
         }
         PollMotorTelemetry(now);
+        MotorTrace_Poll(now);
 
 
         if (!MotorTest_IsRunning() && (now - last_debug_ms) >= DEBUG_PERIOD_MS) {
