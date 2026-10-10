@@ -48,7 +48,7 @@
 #define MOTOR_L_IN2_PIN         12          /* PB12 */
 
 /* PWM Configuration */
-#define MOTOR_PWM_FREQUENCY     25000
+#define MOTOR_PWM_FREQUENCY     30000
 #define MOTOR_PWM_PRESCALER     0
 #define MOTOR_PWM_PERIOD        4999
 

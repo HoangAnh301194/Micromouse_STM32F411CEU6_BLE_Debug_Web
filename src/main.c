@@ -41,6 +41,10 @@ static void StartAutoMotorDebugTest(void)
 
     if (MotorTest_StartPermille(1000, 1000, 1500U, 200U)) {
         auto_motor_test_active = 1U;
+        last_motor_report_ms = millis();
+        last_motor_left = Encoder_GetLeftCount();
+        last_motor_right = Encoder_GetRightCount();
+        last_motor_elapsed = 0U;
         BT_SendString("AUTO,RUN,1000,1000,1500,200\r\n");
         UART_SendString("AUTO,RUN,1000,1000,1500,200\r\n");
     } else {
@@ -55,6 +59,7 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     int16_t applied_l, applied_r;
     uint32_t delta_ms;
     int32_t dleft, dright;
+    int32_t speed_left_pps, speed_right_pps;
     uint32_t key = __get_PRIMASK();
     __disable_irq();
     left = Encoder_GetLeftCount();
@@ -65,21 +70,25 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     delta_ms = s->elapsed_ms - last_motor_elapsed;
     dleft = left - last_motor_left;
     dright = right - last_motor_right;
+    speed_left_pps = delta_ms ?
+        (int32_t)(((int64_t)dleft * 1000LL) / (int64_t)delta_ms) : 0;
+    speed_right_pps = delta_ms ?
+        (int32_t)(((int64_t)dright * 1000LL) / (int64_t)delta_ms) : 0;
     BT_Printf("MTDATA3,%lu,%d,%d,%d,%d,%ld,%ld,%ld,%ld,%lu\r\n",
               (unsigned long)s->elapsed_ms,
               (int)s->pwm_left, (int)s->pwm_right,
               (int)applied_l, (int)applied_r,
               (long)left, (long)right,
-              (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
-              (long)(delta_ms ? dright * 1000L / delta_ms : 0),
+              (long)speed_left_pps,
+              (long)speed_right_pps,
               (unsigned long)delta_ms);
         UART_Printf("MTDATA3,%lu,%d,%d,%d,%d,%ld,%ld,%ld,%ld,%lu\r\n",
                     (unsigned long)s->elapsed_ms,
                     (int)s->pwm_left, (int)s->pwm_right,
                     (int)applied_l, (int)applied_r,
                     (long)left, (long)right,
-                    (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
-                    (long)(delta_ms ? dright * 1000L / delta_ms : 0),
+                    (long)speed_left_pps,
+                    (long)speed_right_pps,
                     (unsigned long)delta_ms);
     last_motor_left = left;
     last_motor_right = right;
@@ -297,7 +306,6 @@ int main(void)
     uint32_t last_debug_ms = 0;
     uint32_t last_control_report_us = 0;
     uint32_t last_control_tick_count = 0;
-    MPU6050_Status mpu_status;
 
     Board_Init();
     SystemTimer_Init();
@@ -305,34 +313,33 @@ int main(void)
     Motor_Init();
     Encoder_Init();
 
-    I2C_Init(I2C_1, 1);
-    I2C_DMA_Init(I2C_1);
+    // I2C_Init(I2C_1, 1);
+    // I2C_DMA_Init(I2C_1);
 
     BT_Init();
     UART_Init();
-    IR_Init();
+    // IR_Init();
 
-    mpu_status = MPU6050_Init(&mpu);
-    if (mpu_status == MPU6050_OK) {
-        mpu_status = MPU6050_Calibrate(&mpu);
-    }
+    // mpu_status = MPU6050_Init(&mpu);
+    // if (mpu_status == MPU6050_OK) {
+    //     mpu_status = MPU6050_Calibrate(&mpu);
+    // }
 
     Motion_Init();
 
-    mpu_ready = (mpu_status == MPU6050_OK) ? 1U : 0U;
-    if (!mpu_ready) {
-        Motor_Stop();
-        Board_StatusLed(1);
-        BT_SendString("[BOOT] MPU6050 unavailable. Motor Debug remains enabled; F/L/R/Z disabled.\r\n");
-        UART_SendString("[BOOT] MPU6050 unavailable. Motor Debug remains enabled; F/L/R/Z disabled.\r\n");
-    }
+    // mpu_ready = (mpu_status == MPU6050_OK) ? 1U : 0U;
+    // if (!mpu_ready) {
+    //     Motor_Stop();
+    //     Board_StatusLed(1);
+    //     BT_SendString("[BOOT] MPU6050 unavailable. Motor Debug remains enabled; F/L/R/Z disabled.\r\n");
+    // }
 
     /*
      * TIM10 belongs to ir_sensor.c.
      * TIM11 belongs to control.c.
      * main.c only performs system orchestration.
      */
-    IR_StartScan();
+    // IR_StartScan();
     Control_Init(mpu_ready ? &mpu : 0);
     Control_Start();
     last_control_report_us = micros();
@@ -361,11 +368,16 @@ int main(void)
                 / control_elapsed_us
             );
 
-            BT_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu\r\n",
-                      (unsigned long)CONTROL_FREQUENCY_HZ,
-                      (unsigned long)measured_hz,
-                      (unsigned long)delta_ticks,
-                      (unsigned long)control_elapsed_us);
+            // BT_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu\r\n",
+            //           (unsigned long)CONTROL_FREQUENCY_HZ,
+            //           (unsigned long)measured_hz,
+            //           (unsigned long)delta_ticks,
+            //           (unsigned long)control_elapsed_us);
+            UART_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu\r\n",
+                        (unsigned long)CONTROL_FREQUENCY_HZ,
+                        (unsigned long)measured_hz,
+                        (unsigned long)delta_ticks,
+                        (unsigned long)control_elapsed_us);
 
             last_control_report_us = control_now_us;
             last_control_tick_count = current_ticks;
@@ -419,15 +431,15 @@ int main(void)
                 __enable_irq();
             }
 
-            BT_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
-                      (unsigned long)now,
-                      (unsigned int)state,
-                      (long)left_count,
-                      (long)right_count,
-                      yaw,
-                      gyro,
-                      distance,
-                      angle_error);
+            // BT_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
+            //           (unsigned long)now,
+            //           (unsigned int)state,
+            //           (long)left_count,
+            //           (long)right_count,
+            //           yaw,
+            //           gyro,
+            //           distance,
+            //           angle_error);
             UART_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
                         (unsigned long)now,
                         (unsigned int)state,
