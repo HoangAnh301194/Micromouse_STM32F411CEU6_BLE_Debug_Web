@@ -25,6 +25,8 @@ static int32_t last_motor_left = 0;
 static int32_t last_motor_right = 0;
 static uint16_t last_motor_elapsed = 0;
 
+static void HandleBleCommand(char c);
+
 static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
 {
     int32_t left, right;
@@ -102,7 +104,7 @@ static void HandleMotorLine(const char *line)
 
 static void ProcessBleByte(char ch)
 {
-    if (ch == 'S' || ch == 's') {
+    if (rx_len == 0 && (ch == 'S' || ch == 's')) {
         /* Emergency stop remains a one-byte command (also handled in legacy UI). */
         MotorTest_Stop();
         Motion_Stop();
@@ -137,8 +139,6 @@ static void PollMotorTelemetry(uint32_t now)
     }
 }
 
-
-static void HandleBleCommand(char c); 
 
 static void HandleBleCommand(char c)
 {
