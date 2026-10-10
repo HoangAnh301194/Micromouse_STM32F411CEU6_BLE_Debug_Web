@@ -8,6 +8,7 @@
 #include "motor.h"
 #include "motor_test.h"
 #include "motor_trace.h"
+#include "uart.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -41,8 +42,10 @@ static void StartAutoMotorDebugTest(void)
     if (MotorTest_StartPermille(1000, 1000, 1500U, 200U)) {
         auto_motor_test_active = 1U;
         BT_SendString("AUTO,RUN,1000,1000,1500,200\r\n");
+        UART_SendString("AUTO,RUN,1000,1000,1500,200\r\n");
     } else {
         BT_SendString("AUTO,REJECTED\r\n");
+        UART_SendString("AUTO,REJECTED\r\n");
     }
 }
 
@@ -70,6 +73,14 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
               (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
               (long)(delta_ms ? dright * 1000L / delta_ms : 0),
               (unsigned long)delta_ms);
+        UART_Printf("MTDATA3,%lu,%d,%d,%d,%d,%ld,%ld,%ld,%ld,%lu\r\n",
+                    (unsigned long)s->elapsed_ms,
+                    (int)s->pwm_left, (int)s->pwm_right,
+                    (int)applied_l, (int)applied_r,
+                    (long)left, (long)right,
+                    (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
+                    (long)(delta_ms ? dright * 1000L / delta_ms : 0),
+                    (unsigned long)delta_ms);
     last_motor_left = left;
     last_motor_right = right;
     last_motor_elapsed = s->elapsed_ms;
@@ -78,6 +89,7 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
                           s->reason == MOTOR_TEST_END_HEARTBEAT ? "HEARTBEAT_LOST" :
                           s->reason == MOTOR_TEST_END_BRAKE ? "BRAKE" : "STOP";
         BT_Printf("MTEND,%s\r\n", why);
+        UART_Printf("MTEND,%s\r\n", why);
         MotorTest_AcknowledgeEnd();
     }
 }
@@ -297,6 +309,7 @@ int main(void)
     I2C_DMA_Init(I2C_1);
 
     BT_Init();
+    UART_Init();
     IR_Init();
 
     mpu_status = MPU6050_Init(&mpu);
@@ -311,6 +324,7 @@ int main(void)
         Motor_Stop();
         Board_StatusLed(1);
         BT_SendString("[BOOT] MPU6050 unavailable. Motor Debug remains enabled; F/L/R/Z disabled.\r\n");
+        UART_SendString("[BOOT] MPU6050 unavailable. Motor Debug remains enabled; F/L/R/Z disabled.\r\n");
     }
 
     /*
@@ -326,6 +340,8 @@ int main(void)
 
     BT_SendString("\r\n[BOOT] Minimal core ready\r\n");
     BT_SendString("Debug mode: KEY press starts motor test automatically. BLE is for telemetry only.\r\n");
+    UART_SendString("\r\n[BOOT] Minimal core ready\r\n");
+    UART_SendString("Debug mode: KEY press starts motor test automatically. BLE is for telemetry only.\r\n");
 
     while (1) {
         uint32_t now = millis();
@@ -412,6 +428,15 @@ int main(void)
                       gyro,
                       distance,
                       angle_error);
+            UART_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
+                        (unsigned long)now,
+                        (unsigned int)state,
+                        (long)left_count,
+                        (long)right_count,
+                        yaw,
+                        gyro,
+                        distance,
+                        angle_error);
         }
     }
 }
