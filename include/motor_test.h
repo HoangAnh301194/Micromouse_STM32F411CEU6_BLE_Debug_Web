@@ -41,7 +41,7 @@ uint8_t MotorTest_StartPermille(int16_t left_cmd, int16_t right_cmd,
                                uint32_t duration_ms, uint16_t log_interval_ms);
 uint8_t MotorTest_SetPermille(int16_t left_cmd, int16_t right_cmd);
 void MotorTest_Stop(void);
-void MotorTest_BrakePulse(void); /* 50 ms BRAKE, then coast */
+uint8_t MotorTest_BrakePulse(void); /* low-speed only; 50 ms BRAKE, then coast */
 void MotorTest_Heartbeat(void);
 void MotorTest_Tick1ms(void);
 uint8_t MotorTest_IsRunning(void);
