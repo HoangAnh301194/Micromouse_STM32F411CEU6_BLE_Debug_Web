@@ -12,8 +12,13 @@
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
 #define UART_TX_BUFFER_SIZE 1024U
+/* DMA2 HISR/HIFCR flags for Stream7 (STM32F411 RM0383). */
 #define UART_DMA7_TCIF  (1UL << 27)
-#define UART_DMA7_ERROR ((1UL << 25) | (1UL << 24) | (1UL << 22))
+#define UART_DMA7_TEIF  (1UL << 25)
+#define UART_DMA7_DMEIF (1UL << 24)
+#define UART_DMA7_FEIF  (1UL << 22)
+#define UART_DMA7_FATAL (UART_DMA7_TEIF | UART_DMA7_DMEIF)
+#define UART_DMA7_ERROR (UART_DMA7_FATAL | UART_DMA7_FEIF)
 #define UART_DMA7_FLAGS 0x0F400000UL
 
 static uint8_t tx_buffer[UART_TX_BUFFER_SIZE];
@@ -23,6 +28,10 @@ static volatile uint16_t dma_length;
 static volatile uint8_t dma_busy;
 static volatile uint32_t tx_dropped_messages;
 static volatile uint32_t dma_errors;
+static volatile uint32_t dma_fe_errors;
+static volatile uint32_t dma_te_errors;
+static volatile uint32_t dma_dme_errors;
+static volatile uint32_t dma_complete_count;
 
 static uint32_t UART_LockIRQ(void)
 {
@@ -56,7 +65,11 @@ static void UART_DMA_StartNext(void)
     DMA2_Stream7->NDTR = length;
     dma_length = length;
     dma_busy = 1U;
+    /* ST AN4031 §4.3: stream EN must precede the peripheral DMA request.
+     * Keeping USART DMAT enabled while no stream is armed can set FEIF7
+     * once per message when USART TXE is already asserted. */
     DMA2_Stream7->CR |= DMA_SxCR_EN;
+    USART1->CR3 |= USART_CR3_DMAT;
 }
 
 void UART_Init(void)
@@ -98,8 +111,10 @@ void UART_Init(void)
     tx_head = tx_tail = dma_length = 0;
     dma_busy = 0U;
     tx_dropped_messages = dma_errors = 0U;
+    dma_fe_errors = dma_te_errors = dma_dme_errors = 0U;
+    dma_complete_count = 0U;
 
-    USART1->CR3 |= USART_CR3_DMAT;
+    /* DMAT stays disabled until UART_DMA_StartNext() arms the DMA stream. */
     NVIC_SetPriority(DMA2_Stream7_IRQn, 7U);
     NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 }
@@ -166,6 +181,11 @@ uint32_t UART_GetDmaErrors(void)
     return dma_errors;
 }
 
+uint32_t UART_GetDmaFifoErrors(void) { return dma_fe_errors; }
+uint32_t UART_GetDmaTransferErrors(void) { return dma_te_errors; }
+uint32_t UART_GetDmaDirectErrors(void) { return dma_dme_errors; }
+uint32_t UART_GetDmaCompleteCount(void) { return dma_complete_count; }
+
 void DMA2_Stream7_IRQHandler(void)
 {
     uint32_t flags = DMA2->HISR & UART_DMA7_FLAGS;
@@ -173,17 +193,31 @@ void DMA2_Stream7_IRQHandler(void)
 
     DMA2->HIFCR = UART_DMA7_FLAGS;
 
-    if (dma_busy && ((flags & UART_DMA7_TCIF) ||
-                     (flags & UART_DMA7_ERROR))) {
-        DMA2_Stream7->CR &= ~DMA_SxCR_EN;
+    /* Count each hardware flag separately, including FEIF + TCIF on the
+     * same interrupt. A FIFO flag alone must NOT abort an otherwise
+     * successful transfer. */
+    if (flags & UART_DMA7_FEIF) dma_fe_errors++;
+    if (flags & UART_DMA7_TEIF) dma_te_errors++;
+    if (flags & UART_DMA7_DMEIF) dma_dme_errors++;
+    if (flags & UART_DMA7_ERROR) dma_errors++;
+    if (flags & UART_DMA7_TCIF) dma_complete_count++;
 
-        /* On a DMA error the partial message is discarded rather than
-         * replaying an unknown number of already-transmitted bytes. */
-        if (flags & UART_DMA7_ERROR) dma_errors++;
+    if (!dma_busy) return;
 
+    if ((flags & UART_DMA7_TCIF) || (flags & UART_DMA7_FATAL)) {
+        /* Prevent a pending USART TX request with DMA stream disabled. */
+        USART1->CR3 &= ~USART_CR3_DMAT;
+        if (flags & UART_DMA7_FATAL) {
+            /* Discard this incomplete chunk, then resume queued messages. */
+            DMA2_Stream7->CR &= ~DMA_SxCR_EN;
+        }
+
+        /* DMA owns the source until completion or an explicit abort. */
         tx_tail = (uint16_t)((tx_tail + dma_length) % UART_TX_BUFFER_SIZE);
         dma_length = 0U;
         dma_busy = 0U;
+
+        /* Re-arm first; only then request data from USART1. */
         UART_DMA_StartNext();
     }
 }
