@@ -3,11 +3,19 @@
 #include "stm32f4xx.h"
 
 #define SPEED_LPF_ALPHA 0.30f
+#define SPEED_WINDOW_SAMPLES 10U
 
 static volatile int32_t total_left = 0;
 static volatile int32_t total_right = 0;
 static volatile float speed_left_pps = 0.0f;
 static volatile float speed_right_pps = 0.0f;
+
+static int16_t speed_hist_left[SPEED_WINDOW_SAMPLES];
+static int16_t speed_hist_right[SPEED_WINDOW_SAMPLES];
+static int32_t speed_sum_left = 0;
+static int32_t speed_sum_right = 0;
+static uint8_t speed_hist_index = 0;
+static uint8_t speed_hist_count = 0;
 
 static int16_t last_left_raw = 0;
 static int16_t last_right_raw = 0;
@@ -88,8 +96,19 @@ void Encoder_Update(float dt_s)
     total_left += ((int32_t)delta_left * ENCODER_LEFT_DIRECTION);
     total_right += ((int32_t)delta_right * ENCODER_RIGHT_DIRECTION);
 
-    raw_left_pps = ((float)delta_left * ENCODER_LEFT_DIRECTION) / dt_s;
-    raw_right_pps = ((float)delta_right * ENCODER_RIGHT_DIRECTION) / dt_s;
+    /* Sliding 10 ms window: 10x finer single-count speed quantization
+     * than an instantaneous 1 ms delta. Preserves 1 kHz update rate. */
+    speed_sum_left -= speed_hist_left[speed_hist_index];
+    speed_sum_right -= speed_hist_right[speed_hist_index];
+    speed_hist_left[speed_hist_index] = delta_left * ENCODER_LEFT_DIRECTION;
+    speed_hist_right[speed_hist_index] = delta_right * ENCODER_RIGHT_DIRECTION;
+    speed_sum_left += speed_hist_left[speed_hist_index];
+    speed_sum_right += speed_hist_right[speed_hist_index];
+    speed_hist_index = (uint8_t)((speed_hist_index + 1U) % SPEED_WINDOW_SAMPLES);
+    if (speed_hist_count < SPEED_WINDOW_SAMPLES) speed_hist_count++;
+
+    raw_left_pps = (float)speed_sum_left / (dt_s * (float)speed_hist_count);
+    raw_right_pps = (float)speed_sum_right / (dt_s * (float)speed_hist_count);
 
     speed_left_pps += SPEED_LPF_ALPHA * (raw_left_pps - speed_left_pps);
     speed_right_pps += SPEED_LPF_ALPHA * (raw_right_pps - speed_right_pps);
@@ -106,6 +125,15 @@ void Encoder_Reset(void)
     total_right = 0;
     speed_left_pps = 0.0f;
     speed_right_pps = 0.0f;
+    speed_sum_left = speed_sum_right = 0;
+    speed_hist_index = speed_hist_count = 0;
+    {
+        uint8_t i;
+        for (i = 0; i < SPEED_WINDOW_SAMPLES; i++) {
+            speed_hist_left[i] = 0;
+            speed_hist_right[i] = 0;
+        }
+    }
 
     if (!primask) __enable_irq();
 }
