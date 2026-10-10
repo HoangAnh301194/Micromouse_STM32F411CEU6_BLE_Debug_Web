@@ -372,10 +372,10 @@ int main(void)
     SystemTimer_Init();
     UART_Init(); /* USART1 PA9: USB-TTL 115200, no BLE required. */
 
-    UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\\r\\n");
+    UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\r\n");
     init_status = MPU6050_Init(&imu_test);
     if (init_status != MPU6050_OK) {
-        UART_Printf("[IMU_INIT_FAIL] status=%d scl_nominal=%lu Hz\\r\\n",
+        UART_Printf("[IMU_INIT_FAIL] status=%d scl_nominal=%lu Hz\r\n",
                     (int)init_status, (unsigned long)I2C_GetConfiguredSclHz());
         while (1) { /* No motors or timer-based control started on failure. */ }
     }
@@ -385,7 +385,7 @@ int main(void)
     Control_SetDiagnosticOnly(1U);
     Control_Start();
 
-    UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%lu Hz sensor_odr=1000Hz read_target=1000Hz\\r\\n",
+    UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%lu Hz sensor_odr=1000Hz read_target=1000Hz\r\n",
                 (unsigned long)I2C_GetConfiguredSclHz());
     last_report_us = micros();
     last_ticks = Control_GetTickCount();
@@ -402,7 +402,7 @@ int main(void)
 
         now = micros();
         elapsed = now - last_report_us;
-        if (elapsed < 1000000UL) continue;
+        if (elapsed < 1000000UL) { __WFI(); continue; }
 
         duration = elapsed;
         good_diff = imu_test.good_reads - last_good;
@@ -414,7 +414,7 @@ int main(void)
           "IMU,read_hz=%lu good=%lu err=%lu busy=%lu timeout=%lu "
           "age_us=%lu i2c_last_us=%lu i2c_max_us=%lu update_max_us=%lu "
           "cal=%u cal_n=%u bias_mdps=%ld gz_mdps=%ld yaw_mdeg=%ld "
-          "ctrl_hz=%lu uart_drop=%lu uart_dma_err=%lu\\r\\n",
+          "ctrl_hz=%lu uart_drop=%lu uart_dma_err=%lu\r\n",
           (unsigned long)((good_diff * 1000000ULL) / duration),
           (unsigned long)imu_test.good_reads,
           (unsigned long)(imu_test.error_reads - last_err),
