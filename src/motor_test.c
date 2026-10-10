@@ -150,10 +150,17 @@ void MotorTest_GetSnapshot(MotorTest_Snapshot_t *out)
 }
 void MotorTest_AcknowledgeEnd(void)
 {
+    uint8_t finished = 0;
     uint32_t x = LockIRQ();
     if (state == MOTOR_TEST_ENDED) {
         pwm_left = pwm_right = 0;
         state = MOTOR_TEST_IDLE;
+        finished = 1U;
     }
     UnlockIRQ(x);
+    /* Keep test-only calibration from silently changing later navigation. */
+    if (finished) {
+        Motor_SetDeadband(0U, 0U);
+        Motor_SetSlewRates(20U, 30U);
+    }
 }
