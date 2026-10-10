@@ -294,16 +294,13 @@ int main(void)
                 / control_elapsed_us
             );
 
-            // BT_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu\r\n",
-            //           (unsigned long)CONTROL_FREQUENCY_HZ,
-            //           (unsigned long)measured_hz,
-            //           (unsigned long)delta_ticks,
-            //           (unsigned long)control_elapsed_us);
-            UART_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu\r\n",
+            UART_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu tx_drop=%lu dma_err=%lu\r\n",
                         (unsigned long)CONTROL_FREQUENCY_HZ,
                         (unsigned long)measured_hz,
                         (unsigned long)delta_ticks,
-                        (unsigned long)control_elapsed_us);
+                        (unsigned long)control_elapsed_us,
+                        (unsigned long)UART_GetDroppedMessages(),
+                        (unsigned long)UART_GetDmaErrors());
 
             last_control_report_us = control_now_us;
             last_control_tick_count = current_ticks;
