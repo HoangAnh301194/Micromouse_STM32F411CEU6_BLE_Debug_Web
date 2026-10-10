@@ -11,6 +11,7 @@
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
+static volatile uint8_t control_diagnostic_only = 0;
 static volatile uint32_t control_tick_count = 0;
 static volatile IR_Data_t ir_latest;
 
@@ -49,6 +50,11 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     NVIC_SetPriority(TIM1_TRG_COM_TIM11_IRQn, 0);
     NVIC_EnableIRQ(TIM1_TRG_COM_TIM11_IRQn);
+}
+
+void Control_SetDiagnosticOnly(uint8_t enable)
+{
+    control_diagnostic_only = enable ? 1U : 0U;
 }
 
 void Control_Start(void)
@@ -100,6 +106,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 
     /* Only count here; frequency calculation and UART are in main loop. */
     control_tick_count++;
+    if (control_diagnostic_only) return;
 
     /*
      * Hard real-time path:
