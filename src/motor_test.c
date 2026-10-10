@@ -76,16 +76,30 @@ void MotorTest_Stop(void)
     }
     UnlockIRQ(x);
 }
-void MotorTest_BrakePulse(void)
+uint8_t MotorTest_BrakePulse(void)
 {
-    uint32_t x = LockIRQ();
+    uint32_t x;
+    int16_t al, ar;
+    float vl, vr;
+    Motor_GetAppliedPairPermille(&al, &ar);
+    vl = Encoder_GetLeftSpeedPPS();
+    vr = Encoder_GetRightSpeedPPS();
+    /* Braking current is unmeasured. Allow only low commanded duty and
+     * low observed encoder speed until the motor/driver are characterized. */
+    if (al > 300 || al < -300 || ar > 300 || ar < -300 ||
+        vl > 1000.0f || vl < -1000.0f ||
+        vr > 1000.0f || vr < -1000.0f) return 0;
+    x = LockIRQ();
     if (state == MOTOR_TEST_RUNNING) {
         Motor_Brake();
         pwm_left = pwm_right = 0;
         brake_age_ms = 0;
         state = MOTOR_TEST_BRAKING;
+        UnlockIRQ(x);
+        return 1;
     }
     UnlockIRQ(x);
+    return 0;
 }
 void MotorTest_Heartbeat(void)
 {
