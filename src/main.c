@@ -23,14 +23,14 @@ static uint8_t rx_len = 0;
 static uint32_t last_motor_report_ms = 0;
 static int32_t last_motor_left = 0;
 static int32_t last_motor_right = 0;
-static uint16_t last_motor_elapsed = 0;
+static uint32_t last_motor_elapsed = 0;
 
 static void HandleBleCommand(char c);
 
 static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
 {
     int32_t left, right;
-    uint16_t delta_ms;
+    uint32_t delta_ms;
     int32_t dleft, dright;
     uint32_t key = __get_PRIMASK();
     __disable_irq();
@@ -38,28 +38,31 @@ static void ReportMotor(const MotorTest_Snapshot_t *s, uint8_t finished)
     right = Encoder_GetRightCount();
     if (!key) __enable_irq();
 
-    delta_ms = (uint16_t)(s->elapsed_ms - last_motor_elapsed);
+    delta_ms = s->elapsed_ms - last_motor_elapsed;
     dleft = left - last_motor_left;
     dright = right - last_motor_right;
-    BT_Printf("MTDATA,%u,%d,%d,%ld,%ld,%ld,%ld,%u\r\n",
-              (unsigned)s->elapsed_ms, (int)s->pwm_left, (int)s->pwm_right,
+    BT_Printf("MTDATA,%lu,%d,%d,%ld,%ld,%ld,%ld,%lu\r\n",
+              (unsigned long)s->elapsed_ms, (int)s->pwm_left, (int)s->pwm_right,
               (long)left, (long)right,
               (long)(delta_ms ? dleft * 1000L / delta_ms : 0),
               (long)(delta_ms ? dright * 1000L / delta_ms : 0),
-              (unsigned)delta_ms);
+              (unsigned long)delta_ms);
     last_motor_left = left;
     last_motor_right = right;
     last_motor_elapsed = s->elapsed_ms;
     if (finished) {
-        BT_Printf("MTEND,%s\r\n",
-                  s->reason == MOTOR_TEST_END_TIMEOUT ? "TIMEOUT" : "STOP");
+        const char *why = s->reason == MOTOR_TEST_END_TIMEOUT ? "TIMEOUT" :
+                          s->reason == MOTOR_TEST_END_HEARTBEAT ? "HEARTBEAT_LOST" : "STOP";
+        BT_Printf("MTEND,%s\r\n", why);
         MotorTest_AcknowledgeEnd();
     }
 }
 
 static void HandleMotorLine(const char *line)
 {
-    int left, right, duration, interval;
+    int left, right;
+    unsigned long duration;
+    unsigned int interval;
     MotorTest_Snapshot_t s;
     if (strcmp(line, "MT STOP") == 0) {
         MotorTest_Stop();
@@ -68,15 +71,18 @@ static void HandleMotorLine(const char *line)
         return;
     }
     if (strcmp(line, "MT PING") == 0) {
-        BT_SendString("MTREADY,1\r\n");
+        BT_SendString("MTREADY,2\r\n");
         return;
     }
-    if (sscanf(line, "MT RUN %d %d %d %d",
+    if (strcmp(line, "MT HB") == 0) {
+        MotorTest_Heartbeat();
+        return;
+    }
+    if (sscanf(line, "MT RUN %d %d %lu %u",
                &left, &right, &duration, &interval) == 4) {
         if (!Motion_IsDone() || MotorTest_IsRunning() ||
             !Control_IsRunning() ||
-            left < -30 || left > 30 || right < -30 || right > 30 ||
-            duration < 100 || duration > 1000 ||
+            left < -100 || left > 100 || right < -100 || right > 100 ||
             interval < 100 || interval > 1000 ||
             (left == 0 && right == 0)) {
             BT_SendString("MTERR,INVALID_OR_BUSY\r\n");
@@ -88,14 +94,14 @@ static void HandleMotorLine(const char *line)
             return;
         }
         if (!MotorTest_Start((int16_t)left, (int16_t)right,
-                             (uint16_t)duration, (uint16_t)interval)) {
+                             (uint32_t)duration, (uint16_t)interval)) {
             BT_SendString("MTERR,REJECTED\r\n");
             return;
         }
         last_motor_report_ms = millis();
         last_motor_left = last_motor_right = 0;
         last_motor_elapsed = 0;
-        BT_Printf("MTACK,RUN,%d,%d,%d,%d\r\n",
+        BT_Printf("MTACK,RUN,%d,%d,%lu,%u\r\n",
                   left, right, duration, interval);
         return;
     }
