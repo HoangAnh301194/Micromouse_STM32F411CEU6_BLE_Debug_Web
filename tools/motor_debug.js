@@ -110,7 +110,7 @@ function stop(){if(!isConnected()){print('STOP unavailable (disconnected); firmw
 function process(line){
  if(line.startsWith('MTREADY,')){
    fwVersion=Number(line.slice(8))||0;ready=true;
-   if(ackTimeout!==null)clearTimeout(ackTimeout);
+   if(ackTimeout!==null && !pending)clearTimeout(ackTimeout);
    status('Firmware v'+fwVersion+' ready'+(fwVersion<3?' (legacy: no fine PWM/ramp config)':''));
    print(line);
  }else if(line.startsWith('MTACK,RUN')){
