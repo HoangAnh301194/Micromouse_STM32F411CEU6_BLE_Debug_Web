@@ -641,3 +641,158 @@ I2C_Status I2C_IsDeviceReady(I2C_Instance instance, uint8_t slave_addr) {
     
     return status;
 }
+
+/* ==========================================================================
+ * IRQ-driven I2C1: read exactly TWO bytes from one register (MPU gyro Z).
+ * 6 short peripheral events, no software wait loop and no DMA setup cost.
+ * Completion is consumed by main; never call from TIM11.
+ * ========================================================================== */
+typedef enum {
+    I2C2_IDLE = 0,
+    I2C2_START_W,
+    I2C2_ADDR_W,
+    I2C2_REG_BTF,
+    I2C2_RESTART,
+    I2C2_ADDR_R,
+    I2C2_RX_BTF,
+    I2C2_DONE
+} I2C2_Phase;
+
+static volatile I2C2_Phase i2c2_phase = I2C2_IDLE;
+static volatile I2C_Status i2c2_result = I2C_IDLE;
+static volatile uint8_t i2c2_addr, i2c2_reg;
+static volatile uint8_t i2c2_bytes[2];
+static volatile uint32_t i2c2_start_us, i2c2_duration_us;
+static uint8_t i2c2_fast_mode = 1U;
+
+static void I2C2_Finish(I2C_Status result)
+{
+    I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
+    if (result != I2C_OK) I2C1->CR1 |= I2C_CR1_STOP;
+    i2c2_duration_us = micros() - i2c2_start_us;
+    i2c2_result = result;
+    i2c2_phase = I2C2_DONE;
+}
+
+I2C_Status I2C_Read2Async_Start(uint8_t addr, uint8_t reg)
+{
+    if (i2c2_phase != I2C2_IDLE) return I2C_BUSY;
+    if (i2c_dma_busy || (I2C1->SR2 & I2C_SR2_BUSY)) return I2C_BUSY;
+    if (addr >= 0x80U) return I2C_ERROR;
+
+    i2c2_addr = addr;
+    i2c2_reg = reg;
+    i2c2_duration_us = 0;
+    i2c2_start_us = micros();
+    i2c2_result = I2C_BUSY;
+    i2c2_phase = I2C2_START_W;
+    I2C1->CR1 &= ~(I2C_CR1_POS | I2C_CR1_STOP);
+    I2C1->CR1 |= I2C_CR1_ACK;
+    I2C_ClearErrors(I2C1_BASE);
+    NVIC_SetPriority(I2C1_EV_IRQn, 3);
+    NVIC_SetPriority(I2C1_ER_IRQn, 3);
+    NVIC_EnableIRQ(I2C1_EV_IRQn);
+    NVIC_EnableIRQ(I2C1_ER_IRQn);
+    I2C1->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
+    I2C1->CR1 |= I2C_CR1_START;
+    return I2C_OK;
+}
+
+void I2C1_EV_IRQHandler(void)
+{
+    uint32_t sr1 = I2C1->SR1;
+    switch (i2c2_phase) {
+    case I2C2_START_W:
+        if (sr1 & I2C_SR1_SB) {
+            I2C1->DR = ((uint32_t)i2c2_addr << 1);
+            i2c2_phase = I2C2_ADDR_W;
+        }
+        break;
+    case I2C2_ADDR_W:
+        if (sr1 & I2C_SR1_ADDR) {
+            (void)I2C1->SR2;  /* SR1 was already read; clear ADDR. */
+            I2C1->DR = i2c2_reg;
+            i2c2_phase = I2C2_REG_BTF;
+        }
+        break;
+    case I2C2_REG_BTF:
+        if (sr1 & I2C_SR1_BTF) {
+            I2C1->CR1 |= I2C_CR1_START;  /* repeated START, no STOP */
+            i2c2_phase = I2C2_RESTART;
+        }
+        break;
+    case I2C2_RESTART:
+        if (sr1 & I2C_SR1_SB) {
+            I2C1->CR1 |= I2C_CR1_POS | I2C_CR1_ACK;
+            I2C1->DR = ((uint32_t)i2c2_addr << 1) | 1UL;
+            i2c2_phase = I2C2_ADDR_R;
+        }
+        break;
+    case I2C2_ADDR_R:
+        if (sr1 & I2C_SR1_ADDR) {
+            /* Two-byte RX, NACK for second byte: POS=1, ACK=0 before ADDR clear. */
+            I2C1->CR1 |= I2C_CR1_POS;
+            I2C1->CR1 &= ~I2C_CR1_ACK;
+            (void)I2C1->SR2;
+            i2c2_phase = I2C2_RX_BTF;
+        }
+        break;
+    case I2C2_RX_BTF:
+        if (sr1 & I2C_SR1_BTF) {
+            I2C1->CR1 |= I2C_CR1_STOP;
+            i2c2_bytes[0] = (uint8_t)I2C1->DR;
+            i2c2_bytes[1] = (uint8_t)I2C1->DR;
+            I2C1->CR1 &= ~I2C_CR1_POS;
+            I2C1->CR1 |= I2C_CR1_ACK;
+            I2C2_Finish(I2C_OK);
+        }
+        break;
+    default:
+        I2C1->CR2 &= ~I2C_CR2_ITEVTEN;
+        break;
+    }
+}
+
+void I2C1_ER_IRQHandler(void)
+{
+    uint32_t flags = I2C1->SR1 & (I2C_SR1_BERR | I2C_SR1_ARLO |
+                                    I2C_SR1_AF | I2C_SR1_OVR | I2C_SR1_TIMEOUT);
+    if (flags) {
+        /* Only write error bits back as 0; do not clear the event flags. */
+        I2C1->SR1 &= ~flags;
+        if (i2c2_phase != I2C2_IDLE && i2c2_phase != I2C2_DONE) {
+            I2C2_Finish((flags & I2C_SR1_AF) ? I2C_NACK : I2C_ERROR);
+        } else {
+            I2C1->CR2 &= ~I2C_CR2_ITERREN;
+        }
+    }
+}
+
+I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us)
+{
+    I2C_Status status;
+    if (i2c2_phase == I2C2_IDLE) return I2C_IDLE;
+    if (i2c2_phase != I2C2_DONE) {
+        if ((uint32_t)(micros() - i2c2_start_us) <= 2000UL) return I2C_BUSY;
+        /* Main-context timeout recovery: NEVER reset I2C inside TIM11 ISR. */
+        NVIC_DisableIRQ(I2C1_EV_IRQn);
+        NVIC_DisableIRQ(I2C1_ER_IRQn);
+        I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
+        I2C1->CR1 |= I2C_CR1_STOP;
+        I2C_Init(I2C_1, i2c2_fast_mode);
+        i2c2_duration_us = micros() - i2c2_start_us;
+        i2c2_result = I2C_TIMEOUT;
+        i2c2_phase = I2C2_DONE;
+        NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
+        NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
+    }
+    status = i2c2_result;
+    if (duration_us) *duration_us = i2c2_duration_us;
+    if (out && status == I2C_OK) {
+        out[0] = i2c2_bytes[0];
+        out[1] = i2c2_bytes[1];
+    }
+    i2c2_result = I2C_IDLE;
+    i2c2_phase = I2C2_IDLE;
+    return status;
+}
