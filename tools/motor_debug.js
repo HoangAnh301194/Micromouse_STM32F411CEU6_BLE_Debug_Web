@@ -37,7 +37,7 @@ const page=document.createElement('section');page.id='motorView';page.innerHTML=
  <label>Deadband Right (0..500 ‰)<input id="mtDbR" type="number" min="0" max="500" step="1" value="0"></label>
  <label>Rise rate (‰ / ms)<input id="mtRise" type="number" min="1" max="1000" step="1" value="20"></label>
  <label>Fall rate (‰ / ms)<input id="mtFall" type="number" min="1" max="1000" step="1" value="30"></label>
- </div><div class="actions"><button class="btn btn-ble" id="mtConnect">Connect BLE</button><button class="btn" id="mtPing">Verify firmware</button><button class="btn btn-run" id="mtRun" disabled>RUN TEST</button><button class="btn" id="mtUpdate" disabled>UPDATE PWM</button><button class="btn btn-pause" id="mtBrake" disabled>BRAKE 50ms</button><button class="btn btn-reset" id="mtStop">STOP</button></div>
+ </div><div class="actions"><button class="btn btn-ble" id="mtConnect">Connect BLE</button><button class="btn" id="mtPing">Verify firmware</button><button class="btn btn-run" id="mtRun" disabled>RUN TEST</button><button class="btn" id="mtUpdate" disabled>UPDATE PWM</button><button class="btn btn-pause" id="mtBrake" disabled>BRAKE 50ms</button><button class="btn" id="mtTrace">GET 1kHz TRACE</button><button class="btn btn-reset" id="mtStop">STOP</button></div>
 <p class="hint">RUN becomes available when BLE connects. Verify firmware automatically (v3 enables fine PWM, config, brake and live PWM). Control loop remains at 1 kHz. Telemetry is generated in main loop only. Firmware heartbeat watchdog stops if browser updates stop for 1.5 s. Finite duration or STOP also ends the test.</p></div>
 <div class="panel"><h3>DIAGNOSTICS</h3><p class="hint">PWM requested/applied, elapsed time, signed encoder counts, pulses/s, and RPM estimate (browser-only). Confirm counts/rev before trusting RPM.</p></div></aside>
 <article><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:#161b22">
@@ -47,11 +47,11 @@ const page=document.createElement('section');page.id='motorView';page.innerHTML=
 <div id="motorLog">Connect BLE and verify firmware.\n</div></article>`;
 document.querySelector('.workspace').after(page);
 const $=id=>document.getElementById(id);
-let ready=false,fwVersion=0,running=false,pending=false,samples=[],writeTail=Promise.resolve(),heartbeatTimer=null,ackTimeout=null;
+let ready=false,fwVersion=0,running=false,pending=false,samples=[],traceSamples=[],writeTail=Promise.resolve(),heartbeatTimer=null,ackTimeout=null;
 function isConnected(){return !!(bleChar&&bleDevice&&bleDevice.gatt.connected)}
 function print(t){let n=document.createElement('div');n.textContent='['+new Date().toLocaleTimeString('en-GB')+'] '+t;$('motorLog').appendChild(n);while($('motorLog').children.length>600)$('motorLog').firstChild.remove();if($('mtAuto').checked)$('motorLog').scrollTop=$('motorLog').scrollHeight}
 function status(t){$('mtStatus').textContent=t}
-function refresh(){$('mtRun').disabled=!isConnected()||running||pending;$('mtUpdate').disabled=!running||fwVersion<3;$('mtBrake').disabled=!running||fwVersion<3;$('mtConnect').textContent=isConnected()?'Disconnect BLE':'Connect BLE'}
+function refresh(){$('mtRun').disabled=!isConnected()||running||pending;$('mtTrace').disabled=!isConnected()||running||pending||fwVersion<3;$('mtUpdate').disabled=!running||fwVersion<3;$('mtBrake').disabled=!running||fwVersion<3;$('mtConnect').textContent=isConnected()?'Disconnect BLE':'Connect BLE'}
 function write(cmd){let job=writeTail.catch(()=>{}).then(async()=>{if(!isConnected())throw Error('BLE disconnected');let b=new TextEncoder().encode(cmd+'\n');for(let i=0;i<b.length;i+=20)await bleChar.writeValue(b.slice(i,i+20))});writeTail=job;return job}
 function clearHeartbeat(){if(heartbeatTimer!==null){clearInterval(heartbeatTimer);heartbeatTimer=null}}
 function heartbeat(){if(running&&isConnected())write('MT HB').catch(e=>print('Heartbeat lost: '+e.message));else clearHeartbeat()}
@@ -61,7 +61,7 @@ function ping(){
    ready=false;fwVersion=0;refresh();status('BLE connected; checking firmware protocol…');
    write('MT PING').then(()=>print('TX MT PING')).catch(e=>print('ERROR '+e.message));
    if(ackTimeout!==null)clearTimeout(ackTimeout);
-   ackTimeout=setTimeout(()=>{if(!ready&&isConnected())status('No MTREADY received. Check uploaded firmware, JDY-33 RX wiring and BLE logs; RUN can still send a command for diagnosis.')},2200)
+   ackTimeout=setTimeout(()=>{if(!ready&&isConnected())status('No MTREADY received: probably old firmware or BLE RX path issue. RUN remains clickable for diagnosis.')},2200)
   }
 function permille(id){const val=Number($(id).value);const p=Math.round(val*10);if(!Number.isFinite(val)||p < -1000 || p > 1000 || Math.abs(val*10-p)>0.00001)throw Error(id+' must be within ±100% with 0.1% steps');return p}
 function cfg(){return [num('mtDbL',0,500),num('mtDbR',0,500),num('mtRise',1,1000),num('mtFall',1,1000)]}
@@ -100,6 +100,12 @@ async function brake(){
  if(!running||fwVersion<3)return;
  try{await write('MT BRAKE');print('TX BRAKE 50ms then coast')}catch(e){print('BRAKE ERROR '+e.message)}
 }
+async function requestTrace() {
+ if(!isConnected()||running||pending||fwVersion<3){print('Trace available after finishing a test on firmware v3');return}
+ traceSamples=[];
+ try{await write('MT TRACE');print('Requested 1 kHz RAM trace (latest 512 ms)')}
+ catch(e){print('TRACE ERROR '+e.message)}
+}
 function stop(){if(!isConnected()){print('STOP unavailable (disconnected); firmware timeout applies');return}write('MT STOP').then(()=>print('TX STOP')).catch(e=>print('ERROR '+e.message))}
 function process(line){
  if(line.startsWith('MTREADY,')){
@@ -118,6 +124,15 @@ function process(line){
  }else if(line.startsWith('MTEND,')){
    running=false;pending=false;clearHeartbeat();
    status('FINISHED: '+line.slice(6));print(line);
+ }else if(line.startsWith('MTTRACE,')){
+   const a=line.slice(8).split(',').map(Number);
+   if(a.length===7 && a.every(Number.isFinite))traceSamples.push(a);
+   else print('Malformed trace: '+line);
+   return;
+ }else if(line==='MTTRACEEND'){
+   status('Trace received: '+traceSamples.length+' samples (1 ms intervals)');
+   print('TRACE END: '+traceSamples.length+' RAM samples. Click Export CSV to save.');
+   return;
  }else if(line.startsWith('MTDATA3,')){
    const a=line.slice(8).split(',').map(Number);
    if(a.length!==10||a.some(x=>!Number.isFinite(x))){print('Malformed '+line);return}
@@ -143,10 +158,12 @@ function process(line){
 }
 function pageSwitch(open){if(!open&&(running||pending)){stop();clearHeartbeat();}page.classList.toggle('open',open);document.querySelector('.workspace').style.display=open?'none':'flex';if(!open){sizeCanvas();renderMaze()}else if(isConnected()&&!ready)ping();refresh()}
 window.motorSwitchPage=()=>pageSwitch(!page.classList.contains('open'));
-$('mtConnect').onclick=async()=>{if(isConnected()&&(running||pending)){try{await write('MT STOP')}catch(e){print('STOP send failed: '+e.message)}clearHeartbeat()}toggleConnection()};$('mtPing').onclick=ping;$('mtRun').onclick=run;$('mtUpdate').onclick=updatePWM;$('mtBrake').onclick=brake;$('mtStop').onclick=stop;
-$('mtClear').onclick=()=>{$('motorLog').textContent='';samples=[]};
-$('mtExport').onclick=()=>{let csv=['elapsed_ms,requested_left_permille,requested_right_permille,applied_left_permille,applied_right_permille,encoder_left,encoder_right,pps_left,pps_right,dt_ms',...samples.map(a=>a.join(','))].join('\n'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),a=document.createElement('a');a.href=u;a.download='motor_'+Date.now()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
-const oldLog=addBLEEntry;addBLEEntry=function(line,type){oldLog(line,type);if(/^MT(READY|ACK|ERR|END|DATA3|DATA),/.test(line))process(line)};
+$('mtConnect').onclick=async()=>{if(isConnected()&&(running||pending)){try{await write('MT STOP')}catch(e){print('STOP send failed: '+e.message)}clearHeartbeat()}toggleConnection()};$('mtPing').onclick=ping;$('mtRun').onclick=run;$('mtUpdate').onclick=updatePWM;$('mtBrake').onclick=brake;$('mtTrace').onclick=requestTrace;$('mtStop').onclick=stop;
+$('mtClear').onclick=()=>{$('motorLog').textContent='';samples=[];traceSamples=[]};
+$('mtExport').onclick=()=>{let high=traceSamples.length>0;
+ let csv=high?['sample_index,cmd_left_permille,cmd_right_permille,applied_left_permille,applied_right_permille,encoder_left,encoder_right',...traceSamples.map(a=>a.join(','))].join('\n'):['elapsed_ms,requested_left_permille,requested_right_permille,applied_left_permille,applied_right_permille,encoder_left,encoder_right,pps_left,pps_right,dt_ms',...samples.map(a=>a.join(','))].join('\n');
+ let u=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),a=document.createElement('a');a.href=u;a.download=(high?'motor_trace_1khz_':'motor_telemetry_')+Date.now()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);};
+const oldLog=addBLEEntry;addBLEEntry=function(line,type){oldLog(line,type);if(/^MT(READY|ACK|ERR|END|DATA3|DATA|TRACE),/.test(line)||line==='MTTRACEEND')process(line)};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(running||pending)){stop();clearHeartbeat();print('Background tab: STOP requested')}});
 const oldDisconnect=onBLEDisconnected;onBLEDisconnected=function(){oldDisconnect();clearHeartbeat();ready=false;fwVersion=0;running=false;pending=false;status('BLE disconnected; firmware timeout applies');refresh();print('Disconnected')};
 // Original BLE connect handler does not automatically ping from Motor tab.
