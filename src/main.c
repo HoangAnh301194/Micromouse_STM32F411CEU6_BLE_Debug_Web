@@ -294,13 +294,17 @@ int main(void)
                 / control_elapsed_us
             );
 
-            UART_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu tx_drop=%lu dma_err=%lu\r\n",
+            UART_Printf("[CTRL] target=%lu Hz actual=%lu Hz ticks=%lu window_us=%lu tx_drop=%lu dma_err=%lu fe=%lu te=%lu dme=%lu tc=%lu\r\n",
                         (unsigned long)CONTROL_FREQUENCY_HZ,
                         (unsigned long)measured_hz,
                         (unsigned long)delta_ticks,
                         (unsigned long)control_elapsed_us,
                         (unsigned long)UART_GetDroppedMessages(),
-                        (unsigned long)UART_GetDmaErrors());
+                        (unsigned long)UART_GetDmaErrors(),
+                        (unsigned long)UART_GetDmaFifoErrors(),
+                        (unsigned long)UART_GetDmaTransferErrors(),
+                        (unsigned long)UART_GetDmaDirectErrors(),
+                        (unsigned long)UART_GetDmaCompleteCount());
 
             last_control_report_us = control_now_us;
             last_control_tick_count = current_ticks;
