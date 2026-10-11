@@ -5,6 +5,8 @@
 #include <stdint.h>
 
 void Board_Init(void);
+/* Zero = clock PLL 100MHz success, nonzero = startup stage failure. */
+uint32_t Board_GetClockFault(void);
 uint8_t Board_ButtonPressed(void);
 void Board_StatusLed(uint8_t on);
 
