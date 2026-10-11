@@ -655,13 +655,14 @@ typedef enum {
     I2C2_REG_BTF,
     I2C2_RESTART,
     I2C2_ADDR_R,
+    I2C2_RX_1,
     I2C2_RX_BTF,
     I2C2_DONE
 } I2C2_Phase;
 
 static volatile I2C2_Phase i2c2_phase = I2C2_IDLE;
 static volatile I2C_Status i2c2_result = I2C_IDLE;
-static volatile uint8_t i2c2_addr, i2c2_reg;
+static volatile uint8_t i2c2_addr, i2c2_reg, i2c2_count;
 static volatile uint8_t i2c2_bytes[2];
 static volatile uint32_t i2c2_start_us, i2c2_duration_us;
 static uint8_t i2c2_fast_mode = 1U;
@@ -678,6 +679,12 @@ static void I2C2_Finish(I2C_Status result)
 
 I2C_Status I2C_Read2Async_Start(uint8_t addr, uint8_t reg)
 {
+    return I2C_ReadRegAsync_Start(addr, reg, 2U);
+}
+
+I2C_Status I2C_ReadRegAsync_Start(uint8_t addr, uint8_t reg, uint8_t count)
+{
+    if (count != 1U && count != 2U) return I2C_ERROR;
     if (i2c2_phase != I2C2_IDLE) return I2C_BUSY;
     if (i2c_dma_busy || (I2C1->SR2 & I2C_SR2_BUSY)) {
         uint32_t now = micros();
@@ -695,6 +702,7 @@ I2C_Status I2C_Read2Async_Start(uint8_t addr, uint8_t reg)
 
     i2c2_addr = addr;
     i2c2_reg = reg;
+    i2c2_count = count;
     i2c2_duration_us = 0;
     i2c2_start_us = micros();
     i2c2_result = I2C_BUSY;
@@ -743,11 +751,28 @@ void I2C1_EV_IRQHandler(void)
         break;
     case I2C2_ADDR_R:
         if (sr1 & I2C_SR1_ADDR) {
-            /* Two-byte RX, NACK for second byte: POS=1, ACK=0 before ADDR clear. */
-            I2C1->CR1 |= I2C_CR1_POS;
-            I2C1->CR1 &= ~I2C_CR1_ACK;
-            (void)I2C1->SR2;
-            i2c2_phase = I2C2_RX_BTF;
+            if (i2c2_count == 1U) {
+                /* 1-byte receive: NACK before clearing ADDR; then STOP.
+                 * RXNE requires ITBUFEN, otherwise no byte IRQ is generated. */
+                I2C1->CR1 &= ~(I2C_CR1_ACK | I2C_CR1_POS);
+                (void)I2C1->SR2;
+                I2C1->CR1 |= I2C_CR1_STOP;
+                I2C1->CR2 |= I2C_CR2_ITBUFEN;
+                i2c2_phase = I2C2_RX_1;
+            } else {
+                /* 2 bytes: POS=1 and ACK=0 before clearing ADDR. */
+                I2C1->CR1 |= I2C_CR1_POS;
+                I2C1->CR1 &= ~I2C_CR1_ACK;
+                (void)I2C1->SR2;
+                i2c2_phase = I2C2_RX_BTF;
+            }
+        }
+        break;
+    case I2C2_RX_1:
+        if (sr1 & I2C_SR1_RXNE) {
+            i2c2_bytes[0] = (uint8_t)I2C1->DR;
+            I2C1->CR1 |= I2C_CR1_ACK;
+            I2C2_Finish(I2C_OK);
         }
         break;
     case I2C2_RX_BTF:
