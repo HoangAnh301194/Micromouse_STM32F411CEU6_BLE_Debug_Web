@@ -384,7 +384,8 @@ int main(void)
     uint32_t last_err, last_busy, last_timeout, last_fresh = 0U;
     uint32_t last_status_not_ready = 0U;
     uint32_t max_update_us = 0U;
-    uint32_t last_dynamic_log_us = 0U, dynamic_until_us = 0U;
+    uint32_t last_dynamic_log_us = 0U, last_motion_trigger_us = 0U;
+    uint8_t dynamic_trace_active = 0U;
     uint32_t last_dynamic_good = 0U;
     uint8_t zeroed_after_cal = 0U;
     uint32_t calibration_done_us = 0U;
@@ -552,9 +553,17 @@ int main(void)
         if (imu_test.calibrated && imu_test.good_reads != last_dynamic_good) {
             last_dynamic_good = imu_test.good_reads;
             if (imu_test.gyro_z_raw_corrected > 10.0f ||
-                imu_test.gyro_z_raw_corrected < -10.0f)
-                dynamic_until_us = now + 1500000UL;
-            if ((int32_t)(dynamic_until_us - now) > 0 &&
+                imu_test.gyro_z_raw_corrected < -10.0f) {
+                last_motion_trigger_us = now;
+                dynamic_trace_active = 1U;
+            }
+            /* Unsigned elapsed-time arithmetic is rollover-safe for 1.5s.
+             * The former signed deadline comparison incorrectly enabled
+             * D traces after micros() crossed 2^31 (~35m47s uptime). */
+            if (dynamic_trace_active &&
+                (uint32_t)(now - last_motion_trigger_us) > 1500000UL)
+                dynamic_trace_active = 0U;
+            if (dynamic_trace_active &&
                 (uint32_t)(now - last_dynamic_log_us) >= 10000UL) {
                 last_dynamic_log_us = now;
                 UART_Printf("D,%lu,%ld,%ld\r\n",
