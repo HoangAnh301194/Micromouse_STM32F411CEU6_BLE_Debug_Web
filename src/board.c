@@ -74,6 +74,12 @@ static void Board_SetMaxClock100MHz(void)
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     (void)RCC->APB1ENR;
     PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS;
+#ifdef PWR_CSR_VOSRDY
+    /* Wait for voltage scaling to settle before increasing core clock. */
+    timeout = 1000000UL;
+    while (!(PWR->CSR & PWR_CSR_VOSRDY) && --timeout) {}
+    if (!timeout) return;
+#endif
     /* 3 flash wait states at 2.7V-3.6V for 100MHz, enable caches. */
     FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) |
                  FLASH_ACR_LATENCY_3WS |
