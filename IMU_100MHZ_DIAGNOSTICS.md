@@ -183,3 +183,25 @@ drift. Do not infer a precision grade from a visual turn.
 `CAL_CHECK,raw_mdeg_per_min` is calculated as integrated raw-deadzone-free
 yaw divided by actual elapsed time. A better value than the prior ~0.6°/min
 is **not guaranteed** until measured under comparable conditions.
+
+## COM7 capture and automatic CSV/plot export
+
+`tools/imu_capture_plot.py` captures UART telemetry, stores
+`raw_serial.log`, separates `IMU/FRESH/NOISE/TIMING/CAL/CAL_DONE/CAL_CHECK/D`
+into per-kind CSV files, and generates PNG charts after recording.
+It also works offline with a previously saved terminal log.
+
+```powershell
+python -m pip install pyserial matplotlib
+# Stop PlatformIO serial monitor before opening COM7 in Python.
+python tools/imu_capture_plot.py --port COM7 --baud 115200 --seconds 180
+# Optional live yaw display
+python tools/imu_capture_plot.py --port COM7 --seconds 0 --live
+# Offline from a text capture
+python tools/imu_capture_plot.py --input "imu_log.txt"
+```
+
+Output is written under `imu_logs/<timestamp>/`. The firmware's
+`NOISE` and `FRESH` records remain 1Hz aggregated statistics rather
+than the original 1000 individual samples per second. Binary/raw streaming
+would require a separate firmware transport change.
