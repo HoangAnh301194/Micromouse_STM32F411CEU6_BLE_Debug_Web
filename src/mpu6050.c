@@ -142,7 +142,7 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     if (I2C_WriteRegister(h->i2c, h->address, MPU6050_CONFIG, MPU6050_DLPF_CFG) != I2C_OK)
         return MPU6050_ERROR;
     /* With DLPF enabled the gyro output rate is 1kHz at DIV=0.
-     * Deliberately retain the original gyro bandwidth 42 Hz for this test. */
+     * Choose hardware 42Hz (CFG=3) or 98Hz (CFG=2) for A/B test. */
     if (I2C_WriteRegister(h->i2c, h->address, MPU6050_SMPLRT_DIV, 0U) != I2C_OK)
         return MPU6050_ERROR;
     if (I2C_ReadRegister(h->i2c, h->address, MPU6050_GYRO_CONFIG, &cfg) != I2C_OK ||
@@ -177,6 +177,9 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->gyro_z_filtered = 0.0f;
     h->gyro_z_lpf = 0.0f;
     h->yaw = 0.0f;
+    h->yaw_no_deadzone = 0.0f;
+    h->yaw_raw = 0.0f;
+    h->gyro_z_raw_corrected = 0.0f;
     h->last_update_us = 0U;
     MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
