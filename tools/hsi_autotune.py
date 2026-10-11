@@ -212,7 +212,10 @@ def validate_measurement(report: dict, *, seconds: float) -> dict:
     if report["fit_records"] < MIN_RECORDS or report["seq_missing_count"]:
         raise TuningError("Not enough consecutive clock records; stop autotune.")
     if report["tx_drop_delta"] != 0:
-        raise TuningError("UART CLK drop detected; stop autotune.")
+        raise TuningError(
+            f"Firmware UART TX queue dropped {int(report['tx_drop_delta'])} messages; "
+            f"CLK sequence missing={int(report['seq_missing_count'])}. "
+            "Autotune refuses to continue until TX congestion is resolved.")
     if not math.isfinite(hz) or not math.isfinite(ratio) or hz <= 0:
         raise TuningError("Invalid frequency estimate; stop autotune.")
     if robust30 is None or abs(robust30 - ratio) > 0.003:
@@ -338,6 +341,16 @@ def self_test():
     analysis, *_ = analyze(synthetic)
     metrics = validate_measurement(analysis, seconds=70)
     assert abs(metrics["clock_error_pct"] + 0.497512) < 0.01, metrics
+    # A dropped non-CLK UART message is a valid reason to abort a calibration
+    # survey, even when the CLK sequence itself has no gaps.
+    injected_bad_report = dict(analysis)
+    injected_bad_report["tx_drop_delta"] = 2
+    try:
+        validate_measurement(injected_bad_report, seconds=70)
+    except TuningError as exc:
+        assert "dropped 2 messages" in str(exc), exc
+    else:
+        raise AssertionError("UART queue overrun must stop autotune")
     print("SELF-TEST PASSED: dynamic project config, tagged CLK parser,"
           " serial slope, safety metrics.")
     print("No board was flashed. No motor was enabled.")
