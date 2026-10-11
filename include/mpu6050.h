@@ -80,6 +80,21 @@ typedef enum {
   MPU6050_NOT_FOUND
 } MPU6050_Status;
 
+/* Statistics from successful gyro-Z register reads.
+ * Noise figures apply only while the robot is physically stationary.
+ * At motion these statistics describe both true angular motion and noise. */
+typedef struct {
+  uint32_t n;
+  float mean_dps;
+  float std_dps;
+  float min_dps;
+  float max_dps;
+  float mean_corrected_dps;
+  uint32_t equal_consecutive_raw; /* Equal codes do NOT imply stale samples */
+  uint32_t interval_min_us;
+  uint32_t interval_max_us;
+} MPU6050_NoiseStats_t;
+
 typedef struct {
   /* I2C Configuration */
   I2C_Instance i2c;
@@ -120,6 +135,19 @@ typedef struct {
   uint16_t calibration_count;
   uint8_t calibrating;
   uint8_t calibrated;
+
+  /* 1-second raw-sample diagnostic window (main-loop only). */
+  int64_t raw_sum;
+  uint64_t raw_sum_squares;
+  uint32_t raw_stat_n;
+  int16_t raw_stat_min;
+  int16_t raw_stat_max;
+  int16_t last_raw;
+  uint8_t raw_has_previous;
+  uint32_t raw_equal_count;
+  uint32_t last_raw_timestamp_us;
+  uint32_t raw_interval_min_us;
+  uint32_t raw_interval_max_us;
 } MPU6050_Handle_t;
 
 /* ========================================================================== */
@@ -174,6 +202,11 @@ float MPU6050_GetYaw(MPU6050_Handle_t *handle);
  * @return Filtered angular velocity in deg/s
  */
 float MPU6050_GetGyroZ(MPU6050_Handle_t *handle);
+
+/* Return raw gyro noise statistics for the previous window, then reset.
+ * No UART printing or blocking I2C occurs inside the MPU driver. */
+void MPU6050_GetNoiseWindow(MPU6050_Handle_t *handle,
+                            MPU6050_NoiseStats_t *out);
 
 /**
  * @brief Reset yaw angle to zero
