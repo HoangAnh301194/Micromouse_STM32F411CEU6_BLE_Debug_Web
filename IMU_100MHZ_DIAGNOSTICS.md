@@ -118,3 +118,35 @@ MPU startup stages: 1=address probe, 2=WHO_AM_I, 3=reset,
 
 No ARM toolchain or board was available for build/bench testing in the
 assistant's environment. Confirm the startup log first before longer IMU tests.
+
+## MPU address NACK immediately after 100MHz PLL
+
+Observed log: `BOOT_FAIL_ALIVE,clock_fault=0 imu_step=1 i2c_status=4`.
+According to `include/i2c.h`, status 4 = `I2C_NACK`:
+the probe sent address 0x68 but the slave did not acknowledge.
+`clock_fault=0` means the clock sequence did not report failure, but
+verify actual `CLOCK,sysclk=100000000` after opening serial and resetting
+the board.
+
+The startup driver now **auto-tests** 400, 300, 200, and 100 kHz,
+requiring BOTH address ACK and a correct WHO_AM_I (0x68).
+`I2C_PROBE` prints for each rate:
+- `400_a` / `300_a` / etc: address status, 0=OK, 4=NACK.
+- `400_w` / etc: WHO_AM_I I2C status. 255 = skipped when probe failed.
+- `400_id` / etc: WHO_AM_I value. 0xFF = not tried.
+- `selected`: index 0=400, 1=300, 2=200, 3=100, 255=none.
+- `selected_scl`: selected actual nominal SCL from configured CCR.
+`I2C_LINES` reports PB8 SCL, PB9 SDA digital input levels sampled at
+the end of boot. In an **idle** I2C bus both pins should normally read 1.
+If `I2C_PROBE` fails at **every** speed, inspect MPU VDD, common ground,
+AD0 address strap (0x68 vs 0x69), PB8/PB9 continuity, and external pull-ups,
+rather than lowering CPU frequency.
+
+The I2C driver retains the selected bus speed across its recovery path.
+If only 100 or 200 kHz works, the new two-transaction DATA_RDY+gyro
+diagnostic may read substantially fewer than 1000 gyro samples/s.
+The exact sample rate must be established from measured `read_hz`, not
+assumed from `SMPLRT_DIV=0`.
+
+To capture boot output on COM7: open `python -m platformio device monitor
+-p COM7 -b 115200`, **then press RESET** on the MCU board.
