@@ -33,5 +33,19 @@ typedef struct {
 
 void Control_GetTiming(Control_Timing_t *out);
 
+#if defined(MPU_FRESHNESS_DIAG)
+/* Diagnostic-only: count TIM11 cycles with the same accepted gyro sample.
+ * age_us is measured since MCU completed I2C gyro read, not sensor acquisition.
+ * No motor/encoder/IR code is enabled by this statistics interface. */
+typedef struct {
+    uint32_t control_ticks;
+    uint32_t reused_sample_ticks;
+    uint32_t age_over1000_ticks;
+    uint32_t age_over1500_ticks;
+    uint32_t age_max_us;
+} Control_ImuSync_t;
+void Control_GetImuSync(Control_ImuSync_t *out);
+#endif
+
 
 #endif
