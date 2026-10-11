@@ -239,3 +239,93 @@ record beginning before a manual KEY press does not contain it.
 The TIM11 period of 1000us is derived from the MCU clock and is not
 independent proof of physical 1000Hz; compare to an external timing
 reference (logic analyzer/scope) before final timing validation.
+
+
+## PC vs STM32 clock-rate verification (no oscilloscope required)
+
+**Purpose:** Investigate the observed ~4.5% difference between 1 s of nominal
+TIM5 time and the Windows serial-timestamp interval. This is a long-term
+frequency comparison, not a precision measurement of TIM11 ISR jitter.
+The USART/USB converter and Windows scheduler introduce receive-time latency.
+
+Current diagnostic firmware emits once per nominal MCU second, **before**
+the bulk diagnostic output:
+
+`CLK,seq=N,us=TIM5_CNT,ticks=TIM11_COUNT,tx_drop=N`
+
+No UART code runs inside TIM11 ISR; the IMU and motor-off safety settings
+are unchanged. USART1 USB–TTL on PA9/PA10 at 115200 baud; TIM5 count wraps
+at 2^32 us (~71.6 nominal minutes). Python separates RESET sessions and
+unwraps TIM5 rollover.
+
+### Procedure on Windows / PowerShell
+
+1. Update the correct Git branch and build/upload the new MCU firmware:
+
+```powershell
+git switch feature/motor-debug-console
+git pull --ff-only origin feature/motor-debug-console
+python -m platformio run
+python -m platformio run --target upload
+python -m pip install pyserial matplotlib
+```
+
+2. Close PlatformIO Serial Monitor and any other COM7 user.
+3. Leave the robot still and motors OFF. Start the recorder **before**
+   pressing the hardware RESET button once:
+
+```powershell
+python tools/clock_serial_test.py --port COM7 --baud 115200 --seconds 240
+```
+
+Do not press KEY or RESET a second time during the measurement. Keep the
+USB cable connected, avoid CPU-heavy work on the PC and wait for capture
+to finish. The recorder prints one progress message for every 20 CLK
+frames. Four minutes is recommended; >=30 usable ticks are the minimum.
+
+4. See the new timestamped folder under `clock_logs/`:
+
+- `clock_samples.csv` — PC perf_counter time + STM32 TIM5/TIM11 timestamps
+- `clock_summary.txt` — regression, 30/60s robust checks, jitter
+- `01_clock_drift.png` — accumulated PC-minus-MCU time error
+- `02_serial_timestamp_jitter.png` — UART/USB host timing residual
+- `raw_serial.log` — all received serial lines (not just CLK)
+
+Repeat offline without opening COM7:
+
+```powershell
+python tools/clock_serial_test.py --input "clock_logs\SESSION\clock_samples.csv"
+```
+
+Built-in synthetic self-check without a board:
+
+```powershell
+python tools/clock_serial_test.py --self-test
+```
+
+### Interpretation and limitations
+
+- `pc_seconds_per_mcu_second` is the physical time on PC per
+  1 nominal TIM5 second. Example 1.045 means a 4.5% longer period.
+- `effective_tim5_hz` is TIM5's approximate physical tick rate
+  inferred from Windows' monotonic clock. If the ratio is 1.045,
+  expected rate is about 956.9 kHz versus nominal 1 MHz.
+- `mcu_clock_rate_error_pct` uses frequency as the denominator.
+  A +4.5% *period* deviation corresponds to about -4.3% *frequency* deviation;
+  do not confuse the two.
+- `effective_tim11_hz` gives physical TIM11 interrupts/s;
+  ~956–958Hz alongside ~957kHz TIM5 would indicate a shared clock-rate issue.
+- `fit_residual_p95_ms` quantifies UART/USB/OS timestamp jitter,
+  **not** genuine TIM11 ISR timing.
+- A single short UART gap, USB buffering or missed serial records must not
+  be interpreted as MCU frequency drift. Use a 240s least-squares slope,
+  30s and 60s cross-checks, repeated runs and `tx_drop` checks.
+- The PC's monotonic clock is independently sourced but itself imperfect,
+  and this is **not metrology-grade**. Confirm with an external oscillator,
+  logic analyzer or scope before adjusting hardware clock calibration.
+- For safety, do **not** change the STM32 PLL, TIM5 prescaler or PID timing
+  merely because this script flags a frequency difference. Diagnose first.
+
+For analysis, send **`clock_samples.csv` and
+`clock_summary.txt`** from the same session. If a reset,
+UART loss or malformed records are suspected, also send `raw_serial.log`.
