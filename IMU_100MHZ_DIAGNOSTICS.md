@@ -465,3 +465,64 @@ python -m platformio run -e genericSTM32F411CE --target upload
 
 Upload `clock_samples.csv`, `clock_summary.txt` and, for boot
 verification, `raw_serial.log` or the single `CLOCK_TRIM` line.
+
+
+## Stage 3: HSITRIM=19 (after confirmed trim18 UART log)
+
+Measurements from the current isolated diagnostic test (all figures are
+PC-monotonic estimates, not oscilloscope-certified frequencies):
+
+| HSITRIM | clock session | effective TIM5 (Hz) | effective TIM11 (Hz) | nominal freq error |
+|---|---|---:|---:|---:|
+| 16 | 20261011_202835 | 956028.315 | 956.047 | -4.3972% |
+| 17 | 20261011_211801 | 960808.939 | 960.747 | -3.9191% |
+| 17 | 20261011_212343 | 960871.921 | 960.855 | -3.9128% |
+| 18 | 20261011_213837 | 963885.784 | 963.869 | -3.6114% |
+
+For the trim18 run, `raw_serial.log` explicitly confirms
+`CLOCK_TRIM,mode=override requested=18 active=18 hsical=127`;
+startup reports `CLOCK_DIAG,fault=0`, successful 4k-sample calibration,
+no serial CLK sequence gaps or UART drops, and no I2C read errors.
+A +1 trim increment 17 -> 18 increased estimated TIM5 rate by +0.3137%.
+Response is not guaranteed linear.
+
+Stage-3 **opt-in** trim19 environment is now defined in `platformio.ini`.
+The standard environment stays unmodified and motors remain OFF.
+
+```powershell
+git switch feature/motor-debug-console
+git status -sb
+git pull --ff-only origin feature/motor-debug-console
+
+python -m platformio run -e clock_hsi_trim19
+python -m platformio run -e clock_hsi_trim19 --target upload
+
+# Close PlatformIO Serial Monitor, then start 180 s capture.
+python tools/clock_serial_test.py --port COM7 --baud 115200 --seconds 180
+```
+
+On COM7 open, press RESET once; confirm the latest
+`clock_logs/<timestamp>/raw_serial.log` has
+`CLOCK_TRIM,mode=override requested=19 active=19`.
+
+Compare against measured trim18 baseline:
+
+```powershell
+$run = Get-ChildItem .\clock_logs -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Select-String -Path "$($run.FullName)\raw_serial.log" -Pattern "CLOCK_TRIM"
+python tools/clock_trim_compare.py --baseline ".\clock_logs\20261011_213837\clock_summary.txt" --candidate "$($run.FullName)\clock_summary.txt"
+```
+
+If `git pull --ff-only` reports diverging branches, STOP and preserve
+all local commits and working-tree modifications; merge/rebase deliberately
+rather than resetting or force-pushing.
+
+After the measurement, revert by re-flashing the original, no-override build:
+
+```powershell
+python -m platformio run -e genericSTM32F411CE --target upload
+```
+
+Never auto-sweep through multiple trim values and never persist HSI trim
+calibration before testing across temperature and supply voltage. STM32F411
+SYSCLK limit is 100MHz; stop if a candidate approaches/exceeds this limit.
