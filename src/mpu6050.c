@@ -82,6 +82,120 @@ void MPU6050_GetNoiseWindow(MPU6050_Handle_t *h, MPU6050_NoiseStats_t *out)
 }
 
 
+/* Calibration checks only the gyro Z stream. They detect obvious motion,
+ * but cannot distinguish a perfectly constant slow turn from sensor bias.
+ * Therefore all calibrations must be performed on a physically fixed robot. */
+static void MPU6050_ResetCalSamples(MPU6050_Handle_t *h)
+{
+    h->calibration_sum = 0;
+    h->calibration_count = 0U;
+    h->cal_block_samples = 0U;
+    h->cal_block_sum = 0;
+    h->cal_block_sum_sq = 0U;
+    h->cal_block_min = 32767;
+    h->cal_block_max = -32768;
+    h->cal_mean_min_dps = 0.0f;
+    h->cal_mean_max_dps = 0.0f;
+    h->cal_last_std_dps = 0.0f;
+    h->cal_max_std_dps = 0.0f;
+    h->cal_last_span_dps = 0.0f;
+    h->cal_last_mean_span_dps = 0.0f;
+    h->cal_valid_blocks = 0U;
+}
+
+static void MPU6050_CalibrationRetry(MPU6050_Handle_t *h, uint8_t reason,
+                                      uint32_t now_ms)
+{
+    h->cal_failure_reason = reason;
+    h->cal_retries++;
+    if (h->cal_retries >= MPU_CAL_MAX_RETRIES) {
+        h->cal_state = 4U; /* failed: require a deliberate KEY retry */
+        h->calibrating = 0U;
+        h->calibrated = 0U;
+        return;
+    }
+    h->cal_state = 1U; /* discard suspect samples and warm up again */
+    h->cal_started_ms = now_ms;
+    MPU6050_ResetCalSamples(h);
+}
+
+static void MPU6050_AccumulateCalibration(MPU6050_Handle_t *h,
+                                          int16_t raw, uint32_t now_ms)
+{
+    double mean_counts, var_counts;
+    float mean_dps, std_dps, span_dps;
+    if (h->cal_state == 1U) {
+        if ((uint32_t)(now_ms - h->cal_started_ms) < MPU_CAL_WARMUP_MS)
+            return;
+        h->cal_state = 2U;
+        MPU6050_ResetCalSamples(h);
+    }
+    if (h->cal_state != 2U) return;
+
+    h->calibration_sum += raw;
+    h->calibration_count++;
+    h->cal_block_sum += raw;
+    h->cal_block_sum_sq += (uint64_t)((int32_t)raw * (int32_t)raw);
+    h->cal_block_samples++;
+    if (raw < h->cal_block_min) h->cal_block_min = raw;
+    if (raw > h->cal_block_max) h->cal_block_max = raw;
+    if (h->cal_block_samples != MPU_CAL_BLOCK_SAMPLES) return;
+
+    mean_counts = (double)h->cal_block_sum / MPU_CAL_BLOCK_SAMPLES;
+    var_counts = ((double)h->cal_block_sum_sq / MPU_CAL_BLOCK_SAMPLES)
+                 - mean_counts * mean_counts;
+    if (var_counts < 0.0) var_counts = 0.0;
+    mean_dps = (float)(mean_counts / h->gyro_scale);
+    std_dps = (float)(sqrt(var_counts) / h->gyro_scale);
+    span_dps = (float)((int32_t)h->cal_block_max -
+                       (int32_t)h->cal_block_min) / h->gyro_scale;
+    h->cal_last_std_dps = std_dps;
+    h->cal_last_span_dps = span_dps;
+    if (std_dps > h->cal_max_std_dps) h->cal_max_std_dps = std_dps;
+    if (std_dps > MPU_CAL_BLOCK_MAX_STD_DPS ||
+        span_dps > MPU_CAL_BLOCK_MAX_SPAN_DPS) {
+        MPU6050_CalibrationRetry(h, 1U, now_ms);
+        return;
+    }
+
+    if (h->cal_valid_blocks == 0U) {
+        h->cal_mean_min_dps = mean_dps;
+        h->cal_mean_max_dps = mean_dps;
+    } else {
+        if (mean_dps < h->cal_mean_min_dps) h->cal_mean_min_dps = mean_dps;
+        if (mean_dps > h->cal_mean_max_dps) h->cal_mean_max_dps = mean_dps;
+    }
+    h->cal_last_mean_span_dps = h->cal_mean_max_dps -
+                                h->cal_mean_min_dps;
+    if (h->cal_last_mean_span_dps > MPU_CAL_BLOCK_MEAN_SPAN_DPS) {
+        MPU6050_CalibrationRetry(h, 2U, now_ms);
+        return;
+    }
+    h->cal_valid_blocks++;
+    h->cal_block_samples = 0U;
+    h->cal_block_sum = 0;
+    h->cal_block_sum_sq = 0U;
+    h->cal_block_min = 32767;
+    h->cal_block_max = -32768;
+
+    if (h->calibration_count >= CALIBRATION_SAMPLES) {
+        h->gyro_z_offset = (float)h->calibration_sum /
+            ((float)h->calibration_count * h->gyro_scale);
+        h->calibrating = 0U;
+        h->calibrated = 1U;
+        h->cal_state = 3U;
+        h->cal_completed_ms = now_ms;
+        h->gyro_z_lpf = 0.0f;
+        h->gyro_z_filtered = 0.0f;
+        h->gyro_z_raw_corrected = 0.0f;
+        h->yaw = 0.0f;
+        h->yaw_no_deadzone = 0.0f;
+        h->yaw_raw = 0.0f;
+        h->last_update_us = 0U;
+        MPU6050_ClearNoiseWindow(h);
+    }
+}
+
 MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
 {
     uint8_t who = 0U, cfg = 0U;
@@ -113,6 +227,13 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->calibration_count = 0U;
     h->calibrating = 0U;
     h->calibrated = 0U;
+    h->cal_state = 0U;
+    h->cal_retries = 0U;
+    h->cal_failure_reason = 0U;
+    h->cal_started_ms = 0U;
+    h->cal_completed_ms = 0U;
+    h->cal_previous_bias_dps = 0.0f;
+    MPU6050_ResetCalSamples(h);
     h->dma_running = 0U;
     h->last_dma_req_us = 0U;
     h->sample_phase = 0U;
@@ -223,19 +344,26 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
 
 MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
 {
-    /* This call STARTS asynchronous calibration, does not busy-wait. */
+    /* Nonblocking startup / deliberate user recalibration.
+     * Keep previous bias for post-calibration comparison; no bias update
+     * occurs during motion because cal=0 disables yaw integration. */
     if (!h) return MPU6050_ERROR;
-    h->calibration_sum = 0;
-    h->calibration_count = 0U;
-    h->calibrated = 0U;
+    h->cal_previous_bias_dps = h->gyro_z_offset;
+    h->cal_retries = 0U;
+    h->cal_failure_reason = 0U;
+    h->cal_started_ms = millis();
+    h->cal_completed_ms = 0U;
+    h->cal_state = 1U;
     h->calibrating = 1U;
+    h->calibrated = 0U;
+    MPU6050_ResetCalSamples(h);
     h->gyro_z_offset = 0.0f;
     h->gyro_z_filtered = 0.0f;
     h->gyro_z_lpf = 0.0f;
+    h->gyro_z_raw_corrected = 0.0f;
     h->yaw = 0.0f;
     h->yaw_no_deadzone = 0.0f;
     h->yaw_raw = 0.0f;
-    h->gyro_z_raw_corrected = 0.0f;
     h->last_update_us = 0U;
     MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
@@ -293,21 +421,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
 
         if (!h->calibrating) MPU6050_TrackRaw(h, raw, now);
         if (h->calibrating) {
-            /* Bias calibration uses only samples preceded by DATA_RDY=1. */
-            if (h->last_status_ready) {
-                h->calibration_sum += raw;
-                h->calibration_count++;
-                if (h->calibration_count >= CALIBRATION_SAMPLES) {
-                    h->gyro_z_offset = (float)h->calibration_sum /
-                        ((float)h->calibration_count * h->gyro_scale);
-                    h->calibrating = 0U;
-                    h->calibrated = 1U;
-                    h->gyro_z_lpf = 0.0f;
-                    h->gyro_z_filtered = 0.0f;
-                    h->last_update_us = 0U;
-                    MPU6050_ClearNoiseWindow(h);
-                }
-            }
+            /* Only completed, DATA_RDY-confirmed samples are eligible. */
+            if (h->last_status_ready)
+                MPU6050_AccumulateCalibration(h, raw, millis());
         } else if (h->calibrated && h->last_status_ready) {
             h->gyro_z_raw_corrected =
                 ((float)raw / h->gyro_scale) - h->gyro_z_offset;
