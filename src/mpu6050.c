@@ -245,6 +245,19 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->stale_gyro_reads = 0U;
     h->data_read_start_us = 0U;
     h->dlpf_cfg = MPU6050_DLPF_CFG;
+#if defined(MPU_FRESHNESS_DIAG)
+    h->diag_fresh_sequence = 0U;
+    h->diag_last_fresh_us = 0U;
+    h->diag_previous_fresh_us = 0U;
+    h->diag_fresh_gap_min_us = 0xFFFFFFFFUL;
+    h->diag_fresh_gap_max_us = 0U;
+    h->diag_fresh_gap_gt1500 = 0U;
+    h->diag_fresh_gap_gt2000 = 0U;
+    h->diag_previous_status_us = 0U;
+    h->diag_status_gap_max_us = 0U;
+    h->diag_notready_run = 0U;
+    h->diag_notready_run_max = 0U;
+#endif
     MPU6050_ClearNoiseWindow(h);
 
     h->init_step = 0U;
@@ -400,6 +413,23 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
             h->last_status_ready = (bytes[0] & 1U) ? 1U : 0U;
             if (h->last_status_ready) h->status_ready_reads++;
             else h->status_not_ready_reads++;
+#if defined(MPU_FRESHNESS_DIAG)
+            /* Timestamp when the asynchronous INT_STATUS transaction completes.
+             * This polls sensor status at MCU time; not an actual DATA_RDY IRQ. */
+            if (h->diag_previous_status_us != 0U) {
+                uint32_t gap = now - h->diag_previous_status_us;
+                if (gap > h->diag_status_gap_max_us)
+                    h->diag_status_gap_max_us = gap;
+            }
+            h->diag_previous_status_us = now;
+            if (h->last_status_ready) {
+                h->diag_notready_run = 0U;
+            } else {
+                ++h->diag_notready_run;
+                if (h->diag_notready_run > h->diag_notready_run_max)
+                    h->diag_notready_run_max = h->diag_notready_run;
+            }
+#endif
             /* Async transfer has completed, but STOP may need a few us.
              * Next main iteration starts the 2-byte gyro transaction.
              */
@@ -417,6 +447,29 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         raw = (int16_t)(((uint16_t)bytes[0] << 8) | bytes[1]);
         if (h->last_status_ready) h->fresh_gyro_reads++;
         else h->stale_gyro_reads++;
+#if defined(MPU_FRESHNESS_DIAG)
+        if (h->last_status_ready) {
+            if (h->diag_previous_fresh_us != 0U) {
+                uint32_t gap = now - h->diag_previous_fresh_us;
+                if (gap < h->diag_fresh_gap_min_us)
+                    h->diag_fresh_gap_min_us = gap;
+                if (gap > h->diag_fresh_gap_max_us)
+                    h->diag_fresh_gap_max_us = gap;
+                if (gap > 1500U) ++h->diag_fresh_gap_gt1500;
+                if (gap > 2000U) ++h->diag_fresh_gap_gt2000;
+            }
+            h->diag_previous_fresh_us = now;
+            /* Publish timestamp + sequence atomically against TIM11 IRQ;
+             * no I2C waits and only two 32-bit writes in a brief critical section. */
+            {
+                uint32_t primask = __get_PRIMASK();
+                __disable_irq();
+                h->diag_last_fresh_us = now;
+                ++h->diag_fresh_sequence;
+                if (primask == 0U) __enable_irq();
+            }
+        }
+#endif
         h->sample_phase = 0U;
 
         if (!h->calibrating) MPU6050_TrackRaw(h, raw, now);
