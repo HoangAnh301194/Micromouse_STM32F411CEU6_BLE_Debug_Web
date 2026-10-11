@@ -671,6 +671,11 @@ int main(void)
           (long)(imu_test.yaw * 1000.0f),
           (long)(imu_test.yaw_no_deadzone * 1000.0f),
           (long)(imu_test.yaw_raw * 1000.0f));
+        /* Detailed 1Hz NOISE/CAL telemetry is retained in the standard
+         * firmware. Omit only these burst messages for the isolated 96MHz
+         * validation profile, leaving IMU, FRESH, TIMING, CLK, CAL_DONE and
+         * CAL_CHECK available for host-side validation. */
+#if !defined(CLOCK_VALIDATE_96M)
         UART_Printf(
           "NOISE,n=%lu raw_mean_mdps=%ld raw_std_mdps=%ld "
           "raw_min_mdps=%ld raw_max_mdps=%ld corrected_mean_mdps=%ld "
@@ -703,6 +708,7 @@ int main(void)
           (long)(imu_test.cal_last_span_dps * 1000.0f),
           (long)(imu_test.cal_last_mean_span_dps * 1000.0f),
           (long)(imu_test.gyro_z_offset * 1000.0f));
+#endif /* verbose NOISE/CAL suppressed in 96MHz validation only */
         UART_Printf(
           "TIMING,period_min_us=%lu period_max_us=%lu "
           "late_50us=%lu gap_over_1500us=%lu "
