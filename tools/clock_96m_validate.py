@@ -32,8 +32,12 @@ def payloads(raw_log: str) -> list[str]:
 
 
 def fields(message: str) -> dict[str, str]:
+    """Firmware mixes comma-separated and space-separated key=value tokens."""
     result = {}
-    for item in message.split(",")[1:]:
+    # CLOCK_PROFILE is comma-separated; CLOCK_TRIM/CAL_DONE/IMU combine
+    # commas with spaces. Split BOTH, or boot and sensor checks silently fail.
+    import re
+    for item in re.split(r"[,\\s]+", message):
         key, sep, value = item.partition("=")
         if sep:
             result[key.strip()] = value.strip()
@@ -182,13 +186,14 @@ def self_test():
         "[BOOT] Isolated MPU6050/I2C test (motors disabled)",
         "CLOCK_TRIM,mode=override requested=25 active=25 hsical=127",
         "CLOCK_PROFILE,mode=validate96,trim=25,plln=192,nominal_hz=96000000,motor_off=1",
-        "CLOCK_DIAG,fault=0",
+        "CLOCK_DIAG,fault=0 rcc_cr=0x0300809B",
         "CLK,seq=1,us=1153613,ticks=1000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000",
         "CAL_DONE,n=4000 blocks=8 retries=0",
         "CAL_CHECK,elapsed_ms=120000 raw_drift_mdeg=20",
     ]
-    lines += ["IMU,err=0,timeout=0,uart_drop=0,uart_dma_err=0"] * 220
-    lines += ["TIMING,late_50us=0,gap_over_1500us=0"] * 220
+    lines += ["IMU,read_hz=1000 good=2000 err=0 busy=0 timeout=0 "
+              "uart_drop=0 uart_dma_err=0"] * 220
+    lines += ["TIMING,period_min_us=1000 late_50us=0 gap_over_1500us=0"] * 220
     bad, _, _ = check(good, lines)
     assert not bad, bad
     wrong = dict(good, seq_missing_count=1)
