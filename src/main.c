@@ -616,6 +616,12 @@ int main(void)
                     (unsigned long)Board_GetClockFault(),
                     (unsigned long)SystemCoreClock);
 
+        /* Autotune runs the same IMU/control loop but intentionally only
+         * transmits CLK telemetry once per second. Normally there are six
+         * 1Hz burst messages plus CAL_DONE/CAL_CHECK, which filled the 1024B
+         * DMA TX ring in observed trim20 logs at seq=10 and seq=40.
+         * Never discard a real missing CLK or overclock detection. */
+#if !defined(CLOCK_AUTOTUNE)
         UART_Printf(
           "IMU,read_hz=%lu good=%lu err=%lu busy=%lu timeout=%lu "
           "age_us=%lu i2c_last_us=%lu i2c_max_us=%lu update_max_us=%lu "
@@ -704,6 +710,8 @@ int main(void)
           (unsigned long)timing.exec_max_cycles,
           (unsigned long)timing.core_hz
         );
+
+#endif /* !CLOCK_AUTOTUNE: restore full MPU diagnostics */
 
         last_report_us = now;
         last_good = imu_test.good_reads;
