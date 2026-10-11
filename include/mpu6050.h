@@ -49,17 +49,18 @@
  */
 #define GYRO_Z_AVG_SAMPLES 3
 
-/**
- * @brief Calibration Sample Count
- * Number of samples to collect for offset calculation
- * More samples = better accuracy but slower calibration
- *
- * Recommended values:
- * - 100:  Fast test (~0.3s)
- * - 500:  Good balance (~1.5s)
- * - 1000: High accuracy (~3s)
+/* Zero-rate bias calibration: wait for gyro warm-up, then 8 half-second
+ * blocks at 1kHz. Reject nonstationary blocks and block-mean disagreements.
+ * These are empirical thresholds, NOT proof of physical stillness.
  */
-#define CALIBRATION_SAMPLES 200 /* Number of successful asynchronous samples */
+#define MPU_CAL_WARMUP_MS              2500UL
+#define CALIBRATION_SAMPLES            4000U
+#define MPU_CAL_BLOCK_SAMPLES          500U
+#define MPU_CAL_MAX_RETRIES            3U
+#define MPU_CAL_BLOCK_MAX_STD_DPS      0.40f
+#define MPU_CAL_BLOCK_MAX_SPAN_DPS     2.00f
+#define MPU_CAL_BLOCK_MEAN_SPAN_DPS    0.12f
+
 /* Change to 2 (98Hz) for controlled A/B filter comparison, default 3 (42Hz).
  * MPU6050 hardware output rate remains 1kHz for both values. */
 #define MPU6050_DLPF_CFG 3U
@@ -141,6 +142,27 @@ typedef struct {
   uint16_t calibration_count;
   uint8_t calibrating;
   uint8_t calibrated;
+
+  /* Automatic bias calibration state; main loop remains nonblocking.
+   * 0=idle, 1=warmup, 2=collect, 3=done, 4=failed. */
+  uint8_t cal_state;
+  uint8_t cal_retries;
+  uint8_t cal_failure_reason; /* 1=within-block std/span, 2=block mean spread */
+  uint32_t cal_started_ms;
+  uint32_t cal_completed_ms;
+  float cal_previous_bias_dps;
+  uint32_t cal_block_samples;
+  int32_t cal_block_sum;
+  uint64_t cal_block_sum_sq;
+  int16_t cal_block_min;
+  int16_t cal_block_max;
+  float cal_mean_min_dps;
+  float cal_mean_max_dps;
+  float cal_last_std_dps;
+  float cal_max_std_dps;
+  float cal_last_span_dps;
+  float cal_last_mean_span_dps;
+  uint8_t cal_valid_blocks;
 
   /* Nonblocking two-step test: INT_STATUS DATA_RDY then GYRO_Z 16-bit. */
   uint8_t sample_phase;  /* 0=idle 1=status_pending 2=data_pending 3=start_data */
