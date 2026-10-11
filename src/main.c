@@ -419,7 +419,7 @@ int main(void)
         "300_a=%u 300_w=%u 300_id=0x%02X "
         "200_a=%u 200_w=%u 200_id=0x%02X "
         "100_a=%u 100_w=%u 100_id=0x%02X "
-        "selected=%u selected_scl=%lu\\r\\n",
+        "selected=%u selected_scl=%lu\r\n",
         (unsigned)imu_test.probe_address_status[0],
         (unsigned)imu_test.probe_who_status[0],
         (unsigned)imu_test.probe_who_value[0],
@@ -434,7 +434,7 @@ int main(void)
         (unsigned)imu_test.probe_who_value[3],
         (unsigned)imu_test.selected_speed_index,
         (unsigned long)I2C_GetConfiguredSclHz());
-    UART_Printf("I2C_LINES,scl_pb8=%u sda_pb9=%u idr=0x%08lX\\r\\n",
+    UART_Printf("I2C_LINES,scl_pb8=%u sda_pb9=%u idr=0x%08lX\r\n",
         (unsigned)((GPIOB->IDR >> 8) & 1U),
         (unsigned)((GPIOB->IDR >> 9) & 1U),
         (unsigned long)GPIOB->IDR);
