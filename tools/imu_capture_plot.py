@@ -172,7 +172,7 @@ class Recorder:
             f.close()
         self.raw_file.close()
 
-    def receive(self, line: str, offline: bool = False):
+    def receive(self, line: str, offline: bool = False, original_host_time: str | None = None, original_elapsed: float | None = None):
         self.line_no += 1
         line = line.rstrip("\r\n")
         host_time = dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds")
@@ -184,6 +184,10 @@ class Recorder:
             elapsed_s = max(0.0, self.offline_time_s)
         else:
             elapsed_s = time.monotonic() - self.start_monotonic
+        if original_host_time is not None:
+            host_time = original_host_time
+        if original_elapsed is not None:
+            elapsed_s = original_elapsed
         self.raw_file.write(f"{host_time}\t{elapsed_s:.6f}\t{line}\n")
 
         parsed = parse_line(line)
@@ -385,6 +389,17 @@ def main():
         if args.input is not None:
             with args.input.open("r", encoding="utf-8", errors="replace") as source_file:
                 for line in source_file:
+                    fields = line.rstrip("\r\n").split("\t", 2)
+                    if len(fields) == 3:
+                        try:
+                            recorded_elapsed = float(fields[1])
+                        except ValueError:
+                            recorded_elapsed = None
+                        if recorded_elapsed is not None:
+                            rec.receive(fields[2], offline=True,
+                                        original_host_time=fields[0],
+                                        original_elapsed=recorded_elapsed)
+                            continue
                     rec.receive(line, offline=True)
             print(f"Imported {rec.line_no} lines from {args.input}")
         else:
