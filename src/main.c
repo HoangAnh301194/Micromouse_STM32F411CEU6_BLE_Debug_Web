@@ -393,6 +393,9 @@ int main(void)
     uint8_t cal_eval30_printed = 0U;
     uint8_t cal_eval120_printed = 0U;
     MPU6050_Status init_status;
+#if defined(MPU_FRESHNESS_DIAG)
+    Control_ImuSync_t imu_sync;
+#endif
 
     Board_Init();
     SystemTimer_Init();
@@ -431,6 +434,11 @@ int main(void)
                 (unsigned long)PWR->CR,
                 (unsigned long)PWR->CSR,
                 (unsigned long)FLASH->ACR);
+#if defined(MPU_FRESHNESS_DIAG)
+    UART_Printf("MPU_SYNC_DIAG,mode=status_poll,trim=%lu,sysclk_nominal=%lu,motors_off=1\r\n",
+                (unsigned long)Board_GetHsiTrim(),
+                (unsigned long)SystemCoreClock);
+#endif
 
     init_status = MPU6050_Init(&imu_test);
     UART_Printf(
@@ -484,7 +492,12 @@ int main(void)
     }
 
     MPU6050_Calibrate(&imu_test);
+#if defined(MPU_FRESHNESS_DIAG)
+    /* Snapshot-only 1kHz TIM11: count sample ages, never run motors. */
+    Control_Init(&imu_test);
+#else
     Control_Init(0);
+#endif
     Control_SetDiagnosticOnly(1U);
     Control_Start();
 
@@ -659,6 +672,34 @@ int main(void)
          * This is NOT a 1Hz downsample: statistics include all valid reads. */
         MPU6050_GetNoiseWindow(&imu_test, &noise);
         Control_GetTiming(&timing);
+#if defined(MPU_FRESHNESS_DIAG)
+        Control_GetImuSync(&imu_sync);
+        /* Sensor-accepted samples and actual completion gaps; independent
+         * from the sequence TIM11 consumes. Counts are cumulative. */
+        UART_Printf(
+          "SYNC_SENSOR,ready=%lu,notready=%lu,fresh=%lu,stale=%lu,"
+          "fgap_min=%lu,fgap_max=%lu,fgap_gt1500=%lu,fgap_gt2000=%lu,"
+          "poll_gap_max=%lu,nr_run_max=%lu\r\n",
+          (unsigned long)imu_test.status_ready_reads,
+          (unsigned long)imu_test.status_not_ready_reads,
+          (unsigned long)imu_test.fresh_gyro_reads,
+          (unsigned long)imu_test.stale_gyro_reads,
+          (unsigned long)(imu_test.diag_fresh_gap_min_us == 0xFFFFFFFFUL
+                          ? 0UL : imu_test.diag_fresh_gap_min_us),
+          (unsigned long)imu_test.diag_fresh_gap_max_us,
+          (unsigned long)imu_test.diag_fresh_gap_gt1500,
+          (unsigned long)imu_test.diag_fresh_gap_gt2000,
+          (unsigned long)imu_test.diag_status_gap_max_us,
+          (unsigned long)imu_test.diag_notready_run_max);
+        UART_Printf(
+          "SYNC_CTRL,ticks=%lu,repeat=%lu,age_max=%lu,"
+          "age_gt1000=%lu,age_gt1500=%lu\r\n",
+          (unsigned long)imu_sync.control_ticks,
+          (unsigned long)imu_sync.reused_sample_ticks,
+          (unsigned long)imu_sync.age_max_us,
+          (unsigned long)imu_sync.age_over1000_ticks,
+          (unsigned long)imu_sync.age_over1500_ticks);
+#else
         UART_Printf(
           "FRESH,status=%lu ready=%lu not_ready=%lu fresh=%lu stale=%lu "
           "yaw_deadzone_mdeg=%ld yaw_lpf_no_deadzone_mdeg=%ld "
@@ -671,6 +712,7 @@ int main(void)
           (long)(imu_test.yaw * 1000.0f),
           (long)(imu_test.yaw_no_deadzone * 1000.0f),
           (long)(imu_test.yaw_raw * 1000.0f));
+#endif /* MPU_FRESHNESS_DIAG */
         /* Detailed 1Hz NOISE/CAL telemetry is retained in the standard
          * firmware. Omit only these burst messages for the isolated 96MHz
          * validation profile, leaving IMU, FRESH, TIMING, CLK, CAL_DONE and
