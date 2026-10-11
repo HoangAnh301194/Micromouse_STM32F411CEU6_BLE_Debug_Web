@@ -53,7 +53,7 @@
  * blocks at 1kHz. Reject nonstationary blocks and block-mean disagreements.
  * These are empirical thresholds, NOT proof of physical stillness.
  */
-#define MPU_CAL_WARMUP_MS              2500UL
+#define MPU_CAL_WARMUP_MS              5000UL
 #define CALIBRATION_SAMPLES            4000U
 #define MPU_CAL_BLOCK_SAMPLES          500U
 #define MPU_CAL_MAX_RETRIES            3U
@@ -137,7 +137,7 @@ typedef struct {
   uint32_t timeout_reads;
   I2C_Status last_i2c_error;
 
-  /* Nonblocking startup bias calibration: no 200 reads in a tight loop. */
+  /* Nonblocking, stationarity-checked startup zero-rate calibration. */
   int32_t calibration_sum;
   uint16_t calibration_count;
   uint8_t calibrating;
