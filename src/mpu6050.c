@@ -12,6 +12,9 @@
 #define MPU6050_CONFIG        0x1AU
 #define MPU6050_SMPLRT_DIV    0x19U
 #define MPU6050_GYRO_ZOUT_H   0x47U
+#define MPU6050_INT_STATUS    0x3AU
+#define MPU6050_INT_ENABLE    0x38U
+#define MPU6050_INT_PIN_CFG   0x37U
 
 static const float gyro_scales[4] = {131.0f, 65.5f, 32.8f, 16.4f};
 
@@ -91,6 +94,9 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->gyro_z_filtered = 0.0f;
     h->gyro_z_avg_idx = 0U;
     h->yaw = 0.0f;
+    h->yaw_no_deadzone = 0.0f;
+    h->yaw_raw = 0.0f;
+    h->gyro_z_raw_corrected = 0.0f;
     h->last_update_us = 0U;
     h->last_request_us = 0U;
     h->last_good_us = 0U;
@@ -107,6 +113,15 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->calibrated = 0U;
     h->dma_running = 0U;
     h->last_dma_req_us = 0U;
+    h->sample_phase = 0U;
+    h->last_status_ready = 0U;
+    h->status_reads = 0U;
+    h->status_ready_reads = 0U;
+    h->status_not_ready_reads = 0U;
+    h->fresh_gyro_reads = 0U;
+    h->stale_gyro_reads = 0U;
+    h->data_read_start_us = 0U;
+    h->dlpf_cfg = MPU6050_DLPF_CFG;
     MPU6050_ClearNoiseWindow(h);
 
     I2C_Init(h->i2c, 1U);
@@ -124,7 +139,7 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     if (I2C_WriteRegister(h->i2c, h->address, MPU6050_GYRO_CONFIG,
                           (uint8_t)(MPU6050_GYRO_RANGE << 3)) != I2C_OK)
         return MPU6050_ERROR;
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_CONFIG, 0x03U) != I2C_OK)
+    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_CONFIG, MPU6050_DLPF_CFG) != I2C_OK)
         return MPU6050_ERROR;
     /* With DLPF enabled the gyro output rate is 1kHz at DIV=0.
      * Deliberately retain the original gyro bandwidth 42 Hz for this test. */
@@ -133,6 +148,17 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     if (I2C_ReadRegister(h->i2c, h->address, MPU6050_GYRO_CONFIG, &cfg) != I2C_OK ||
         cfg != (uint8_t)(MPU6050_GYRO_RANGE << 3))
         return MPU6050_ERROR;
+    if (I2C_ReadRegister(h->i2c, h->address, MPU6050_CONFIG, &cfg) != I2C_OK ||
+        (cfg & 0x07U) != MPU6050_DLPF_CFG)
+        return MPU6050_ERROR;
+    /* INT_STATUS bit0 reports data updates since the previous status read.
+     * Bit4 of INT_PIN_CFG=0: interrupt status clears on INT_STATUS read only.
+     * No physical INT pin is required for this polling diagnostic.
+     */
+    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_INT_PIN_CFG, 0x00U) != I2C_OK ||
+        I2C_WriteRegister(h->i2c, h->address, MPU6050_INT_ENABLE, 0x01U) != I2C_OK)
+        return MPU6050_ERROR;
+
 
     /* Schedule first request from main without blocking. */
     h->last_request_us = micros() - MPU_SAMPLE_PERIOD_US;
@@ -156,78 +182,139 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     return MPU6050_OK;
 }
 
+/* nonblocking acquisition in main, two transactions per 1ms target.
+ * INT_STATUS(1 byte) -> GYRO_ZOUT_H/L(2 bytes) using I2C EV/ER IRQs.
+ * A repeated raw code is not itself proof of a duplicate sensor sample.
+ */
 MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
 {
-    uint8_t bytes[2];
-    uint32_t duration = 0U;
-    uint32_t now;
+    uint8_t bytes[2] = {0U, 0U};
+    uint32_t duration_us = 0U;
+    uint32_t now = micros();
+    float dt;
     int16_t raw;
-    float gz, dt;
-    I2C_Status result, start_result;
+    I2C_Status status, start;
     if (!h) return MPU6050_ERROR;
 
-    /* Poll never waits: returns BUSY, IDLE, or one terminal result. */
-    result = I2C_Read2Async_Poll(bytes, &duration);
-    now = micros();
-    if (result == I2C_OK) {
+    if (h->sample_phase == 1U || h->sample_phase == 2U) {
+        status = I2C_Read2Async_Poll(bytes, &duration_us);
+        if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
+        now = micros();
+        if (status != I2C_OK) {
+            h->error_reads++;
+            if (status == I2C_TIMEOUT) h->timeout_reads++;
+            h->last_i2c_error = status;
+            h->sample_phase = 0U;
+            return MPU6050_ERROR;
+        }
+
+        if (h->sample_phase == 1U) {
+            h->status_reads++;
+            h->last_status_ready = (bytes[0] & 1U) ? 1U : 0U;
+            if (h->last_status_ready) h->status_ready_reads++;
+            else h->status_not_ready_reads++;
+            /* Async transfer has completed, but STOP may need a few us.
+             * Next main iteration starts the 2-byte gyro transaction.
+             */
+            h->sample_phase = 3U;
+            return MPU6050_OK;
+        }
+
+        /* Successful gyro transaction. For this experiment record even
+         * status=0 (not-new) transfers and explicitly mark them as stale.
+         */
         h->good_reads++;
         h->last_good_us = now;
-        h->last_transfer_us = duration;
-        if (duration > h->max_transfer_us) h->max_transfer_us = duration;
-        raw = (int16_t)(((uint16_t)bytes[0] << 8) | (uint16_t)bytes[1]);
-        /* Collect raw data BEFORE LPF/deadzone. Calibration records are
-         * excluded from this post-calibration noise window. */
+        h->last_transfer_us = duration_us;
+        if (duration_us > h->max_transfer_us) h->max_transfer_us = duration_us;
+        raw = (int16_t)(((uint16_t)bytes[0] << 8) | bytes[1]);
+        if (h->last_status_ready) h->fresh_gyro_reads++;
+        else h->stale_gyro_reads++;
+        h->sample_phase = 0U;
+
         if (!h->calibrating) MPU6050_TrackRaw(h, raw, now);
         if (h->calibrating) {
-            h->calibration_sum += (int32_t)raw;
-            h->calibration_count++;
-            if (h->calibration_count >= CALIBRATION_SAMPLES) {
-                h->gyro_z_offset = (float)h->calibration_sum /
-                                    ((float)h->calibration_count * h->gyro_scale);
-                h->calibrating = 0U;
-                h->calibrated = 1U;
-                h->gyro_z_lpf = 0.0f;
-                h->gyro_z_filtered = 0.0f;
-                h->last_update_us = now;
-                MPU6050_ClearNoiseWindow(h);
+            /* Bias calibration uses only samples preceded by DATA_RDY=1. */
+            if (h->last_status_ready) {
+                h->calibration_sum += raw;
+                h->calibration_count++;
+                if (h->calibration_count >= CALIBRATION_SAMPLES) {
+                    h->gyro_z_offset = (float)h->calibration_sum /
+                        ((float)h->calibration_count * h->gyro_scale);
+                    h->calibrating = 0U;
+                    h->calibrated = 1U;
+                    h->gyro_z_lpf = 0.0f;
+                    h->gyro_z_filtered = 0.0f;
+                    h->last_update_us = 0U;
+                    MPU6050_ClearNoiseWindow(h);
+                }
             }
-        } else if (h->calibrated) {
-            gz = ((float)raw / h->gyro_scale) - h->gyro_z_offset;
-            h->gyro_z_lpf += GYRO_Z_LPF_ALPHA * (gz - h->gyro_z_lpf);
-            gz = (fabsf(h->gyro_z_lpf) < GYRO_Z_DEADZONE) ?
-                 0.0f : h->gyro_z_lpf;
-            h->gyro_z_filtered = gz;
+        } else if (h->calibrated && h->last_status_ready) {
+            h->gyro_z_raw_corrected =
+                ((float)raw / h->gyro_scale) - h->gyro_z_offset;
+            h->gyro_z_lpf += GYRO_Z_LPF_ALPHA *
+                              (h->gyro_z_raw_corrected - h->gyro_z_lpf);
+            h->gyro_z_filtered =
+                (fabsf(h->gyro_z_lpf) < GYRO_Z_DEADZONE) ?
+                0.0f : h->gyro_z_lpf;
             if (h->last_update_us != 0U) {
                 dt = (float)(now - h->last_update_us) / 1000000.0f;
-                /* Do not integrate a large gap caused by an I2C outage. */
-                if (dt > 0.0f && dt <= 0.020f) h->yaw += gz * dt;
+                if (dt > 0.0f && dt <= 0.020f) {
+                    h->yaw += h->gyro_z_filtered * dt;
+                    h->yaw_no_deadzone += h->gyro_z_lpf * dt;
+                    h->yaw_raw += h->gyro_z_raw_corrected * dt;
+                }
             }
             h->last_update_us = now;
         }
-    } else if (result != I2C_BUSY && result != I2C_IDLE) {
-        h->error_reads++;
-        if (result == I2C_TIMEOUT) h->timeout_reads++;
-        h->last_i2c_error = result;
     }
 
-    /* Request periodic gyro Z reads from main, never from TIM11.
-     * A missed scheduling opportunity is counted, not busy-waited. */
-    if ((uint32_t)(now - h->last_request_us) >= MPU_SAMPLE_PERIOD_US &&
-        result != I2C_BUSY) {
-        start_result = I2C_Read2Async_Start(h->address, MPU6050_GYRO_ZOUT_H);
-        h->last_request_us = now;
-        if (start_result == I2C_BUSY) h->busy_retries++;
-        else if (start_result != I2C_OK) {
+    if (h->sample_phase == 3U) {
+        /* STOP was sent in the prior transaction; retry without waiting. */
+        start = I2C_ReadRegAsync_Start(h->address, MPU6050_GYRO_ZOUT_H, 2U);
+        if (start == I2C_OK) {
+            h->data_read_start_us = micros();
+            h->sample_phase = 2U;
+        } else if (start != I2C_BUSY) {
             h->error_reads++;
-            h->last_i2c_error = start_result;
+            h->last_i2c_error = start;
+            h->sample_phase = 0U;
+        }
+        return MPU6050_OK;
+    }
+
+    now = micros();
+    if (h->sample_phase == 0U &&
+        (uint32_t)(now - h->last_request_us) >= MPU_SAMPLE_PERIOD_US) {
+        start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
+        if (start == I2C_OK) {
+            h->last_request_us = now;
+            h->sample_phase = 1U;
+        } else if (start == I2C_BUSY) {
+            h->busy_retries++;
+        } else {
+            h->error_reads++;
+            h->last_i2c_error = start;
         }
     }
     return MPU6050_OK;
 }
 
+uint8_t MPU6050_NeedsImmediatePoll(MPU6050_Handle_t *h)
+{
+    return (h && h->sample_phase == 3U) ? 1U : 0U;
+}
+
 float MPU6050_GetYaw(MPU6050_Handle_t *h) { return h ? h->yaw : 0.0f; }
 float MPU6050_GetGyroZ(MPU6050_Handle_t *h) { return h ? h->gyro_z_filtered : 0.0f; }
-void MPU6050_ResetYaw(MPU6050_Handle_t *h) { if (h) h->yaw = 0.0f; }
+void MPU6050_ResetYaw(MPU6050_Handle_t *h)
+{
+    if (!h) return;
+    h->yaw = 0.0f;
+    h->yaw_no_deadzone = 0.0f;
+    h->yaw_raw = 0.0f;
+    h->last_update_us = 0U;
+}
 void MPU6050_SetYaw(MPU6050_Handle_t *h, float angle) { if (h) h->yaw = angle; }
 
 MPU6050_Status MPU6050_IsReady(MPU6050_Handle_t *h)
