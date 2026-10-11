@@ -124,41 +124,72 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->dlpf_cfg = MPU6050_DLPF_CFG;
     MPU6050_ClearNoiseWindow(h);
 
+    h->init_step = 0U;
+    h->init_register = 0U;
+    h->init_expected = 0U;
+    h->init_read_value = 0U;
+    h->init_i2c_status = I2C_OK;
     I2C_Init(h->i2c, 1U);
-    if (I2C_IsDeviceReady(h->i2c, h->address) != I2C_OK) return MPU6050_NOT_FOUND;
-    if (I2C_ReadRegister(h->i2c, h->address, MPU6050_WHO_AM_I, &who) != I2C_OK ||
-        who != 0x68U) return MPU6050_NOT_FOUND;
 
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_PWR_MGMT_1, 0x80U) != I2C_OK)
-        return MPU6050_ERROR;
+    /* Keep the exact failing step/register/status for USART diagnostics.
+     * 1=address, 2=WHO_AM_I, 3=reset, 4=wake, 5=gyro range,
+     * 6=DLPF, 7=sample divider, 8=gyro range verify,
+     * 9=DLPF verify, 10=INT pin config, 11=INT enable. */
+#define MPU_BOOT_WRITE(step_, reg_, value_) do {                          \
+        h->init_step = (step_);                                         \
+        h->init_register = (reg_);                                     \
+        h->init_expected = (value_);                                   \
+        h->init_i2c_status = I2C_WriteRegister(h->i2c, h->address,      \
+                                                (reg_), (value_));     \
+        if (h->init_i2c_status != I2C_OK) return MPU6050_ERROR;         \
+    } while (0)
+
+    h->init_step = 1U;
+    h->init_i2c_status = I2C_IsDeviceReady(h->i2c, h->address);
+    if (h->init_i2c_status != I2C_OK) return MPU6050_NOT_FOUND;
+
+    h->init_step = 2U;
+    h->init_register = MPU6050_WHO_AM_I;
+    h->init_expected = 0x68U;
+    h->init_i2c_status = I2C_ReadRegister(h->i2c, h->address,
+                                          MPU6050_WHO_AM_I, &who);
+    h->init_read_value = who;
+    if (h->init_i2c_status != I2C_OK || who != 0x68U)
+        return MPU6050_NOT_FOUND;
+
+    MPU_BOOT_WRITE(3U, MPU6050_PWR_MGMT_1, 0x80U);
     delay_ms_blocking(100U);
-    /* Gyro Z PLL clock source; wake MPU6050. */
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_PWR_MGMT_1, 0x03U) != I2C_OK)
-        return MPU6050_ERROR;
+    MPU_BOOT_WRITE(4U, MPU6050_PWR_MGMT_1, 0x03U);
     delay_ms_blocking(50U);
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_GYRO_CONFIG,
-                          (uint8_t)(MPU6050_GYRO_RANGE << 3)) != I2C_OK)
+    MPU_BOOT_WRITE(5U, MPU6050_GYRO_CONFIG,
+                   (uint8_t)(MPU6050_GYRO_RANGE << 3));
+    MPU_BOOT_WRITE(6U, MPU6050_CONFIG, MPU6050_DLPF_CFG);
+    MPU_BOOT_WRITE(7U, MPU6050_SMPLRT_DIV, 0U);
+
+    h->init_step = 8U;
+    h->init_register = MPU6050_GYRO_CONFIG;
+    h->init_expected = (uint8_t)(MPU6050_GYRO_RANGE << 3);
+    h->init_i2c_status = I2C_ReadRegister(h->i2c, h->address,
+                                          MPU6050_GYRO_CONFIG, &cfg);
+    h->init_read_value = cfg;
+    if (h->init_i2c_status != I2C_OK || cfg != h->init_expected)
         return MPU6050_ERROR;
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_CONFIG, MPU6050_DLPF_CFG) != I2C_OK)
-        return MPU6050_ERROR;
-    /* With DLPF enabled the gyro output rate is 1kHz at DIV=0.
-     * Choose hardware 42Hz (CFG=3) or 98Hz (CFG=2) for A/B test. */
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_SMPLRT_DIV, 0U) != I2C_OK)
-        return MPU6050_ERROR;
-    if (I2C_ReadRegister(h->i2c, h->address, MPU6050_GYRO_CONFIG, &cfg) != I2C_OK ||
-        cfg != (uint8_t)(MPU6050_GYRO_RANGE << 3))
-        return MPU6050_ERROR;
-    if (I2C_ReadRegister(h->i2c, h->address, MPU6050_CONFIG, &cfg) != I2C_OK ||
+
+    h->init_step = 9U;
+    h->init_register = MPU6050_CONFIG;
+    h->init_expected = MPU6050_DLPF_CFG;
+    h->init_i2c_status = I2C_ReadRegister(h->i2c, h->address,
+                                          MPU6050_CONFIG, &cfg);
+    h->init_read_value = cfg;
+    if (h->init_i2c_status != I2C_OK ||
         (cfg & 0x07U) != MPU6050_DLPF_CFG)
         return MPU6050_ERROR;
-    /* INT_STATUS bit0 reports data updates since the previous status read.
-     * Bit4 of INT_PIN_CFG=0: interrupt status clears on INT_STATUS read only.
-     * No physical INT pin is required for this polling diagnostic.
-     */
-    if (I2C_WriteRegister(h->i2c, h->address, MPU6050_INT_PIN_CFG, 0x00U) != I2C_OK ||
-        I2C_WriteRegister(h->i2c, h->address, MPU6050_INT_ENABLE, 0x01U) != I2C_OK)
-        return MPU6050_ERROR;
 
+    /* Enable DATA_RDY status: no MPU INT wire required on the board. */
+    MPU_BOOT_WRITE(10U, MPU6050_INT_PIN_CFG, 0x00U);
+    MPU_BOOT_WRITE(11U, MPU6050_INT_ENABLE, 0x01U);
+#undef MPU_BOOT_WRITE
+    h->init_step = 0U; /* All MPU startup steps passed. */
 
     /* Schedule first request from main without blocking. */
     h->last_request_us = micros() - MPU_SAMPLE_PERIOD_US;
