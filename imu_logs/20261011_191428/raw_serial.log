@@ -1,0 +1,1417 @@
+2026-10-11T12:14:28.958+00:00	0.891192	IMU,read_hz=999 good=2099880 err=0 busy=0 timeout=0 age_us=837 i2c_last_us=159 i2c_max_us=161 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1483 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:28.973+00:00	0.905563	FRESH,status=2099881 ready=2099881 not_ready=0 fresh=999 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=17634 yaw_raw_no_deadzone_mdeg=17629
+2026-10-11T12:14:28.987+00:00	0.920057	NOISE,n=999 raw_mean_mdps=-1471 raw_std_mdps=65 raw_min_mdps=-1707 raw_max_mdps=-1219 corrected_mean_mdps=11 same_code=734 sample_min_us=310 sample_max_us=1964
+2026-10-11T12:14:29.004+00:00	0.937283	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=2102001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=45 last_span_mdps=182 block_mean_span_mdps=23 bias_mdps=-1483
+2026-10-11T12:14:29.807+00:00	1.739407	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:30.003+00:00	1.935828	IMU,read_hz=999 good=2100879 err=0 busy=0 timeout=0 age_us=837 i2c_last_us=159 i2c_max_us=161 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1483 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:30.110+00:00	2.043355	FRESH,status=2100880 ready=2100880 not_ready=0 fresh=999 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=17644 yaw_raw_no_deadzone_mdeg=17639
+2026-10-11T12:14:30.113+00:00	2.046156	NOISE,n=999 raw_mean_mdps=-1472 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=10 same_code=768 sample_min_us=310 sample_max_us=1963
+2026-10-11T12:14:30.213+00:00	2.145493	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=2103001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=45 last_span_mdps=182 block_mean_span_mdps=23 bias_mdps=-1483
+2026-10-11T12:14:30.417+00:00	2.350099	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:30.661+00:00	2.594322	CAL_RESTART,old_bias_mdps=-1483
+2026-10-11T12:14:31.048+00:00	2.980871	IMU,read_hz=998 good=2101878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=16 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:31.071+00:00	3.003504	FRESH,status=2101879 ready=2101879 not_ready=0 fresh=999 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:31.086+00:00	3.018426	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:31.093+00:00	3.025990	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=354 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2026-10-11T12:14:31.124+00:00	3.056835	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:32.093+00:00	4.025752	IMU,read_hz=1000 good=2102878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:32.107+00:00	4.039835	FRESH,status=2102879 ready=2102879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:32.119+00:00	4.051645	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:32.133+00:00	4.065988	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=1354 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2026-10-11T12:14:32.145+00:00	4.077685	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:33.137+00:00	5.069955	IMU,read_hz=1000 good=2103878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:33.151+00:00	5.084266	FRESH,status=2103879 ready=2103879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:33.163+00:00	5.095972	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:33.178+00:00	5.110414	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=2354 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2026-10-11T12:14:33.189+00:00	5.122163	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:34.182+00:00	6.114431	IMU,read_hz=1000 good=2104878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=4 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:34.196+00:00	6.128816	FRESH,status=2104879 ready=2104879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:34.208+00:00	6.140417	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:34.222+00:00	6.155125	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=3354 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2026-10-11T12:14:34.234+00:00	6.166725	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:35.227+00:00	7.159468	IMU,read_hz=1000 good=2105878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:35.241+00:00	7.173755	FRESH,status=2105879 ready=2105879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:35.253+00:00	7.185452	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:35.267+00:00	7.200016	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=4354 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2026-10-11T12:14:35.279+00:00	7.211664	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:36.271+00:00	8.204044	IMU,read_hz=1000 good=2106878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=4 cal=0 cal_n=354 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:36.286+00:00	8.218450	FRESH,status=2106879 ready=2106879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:36.297+00:00	8.230023	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:36.312+00:00	8.244590	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=5354 accepted=354/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2026-10-11T12:14:36.324+00:00	8.256908	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:37.316+00:00	9.249007	IMU,read_hz=1000 good=2107878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=52 cal=0 cal_n=1354 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:37.330+00:00	9.263220	FRESH,status=2107879 ready=2107879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:37.342+00:00	9.274991	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:37.357+00:00	9.289633	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=6354 accepted=1354/4000 valid_blocks=2/8 last_std_mdps=41 last_span_mdps=243 block_mean_span_mdps=1 bias_mdps=0
+2026-10-11T12:14:37.370+00:00	9.302509	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:38.361+00:00	10.293860	IMU,read_hz=1000 good=2108878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=53 cal=0 cal_n=2354 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:38.375+00:00	10.308023	FRESH,status=2108879 ready=2108879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:38.387+00:00	10.319874	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:38.401+00:00	10.334383	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=7354 accepted=2354/4000 valid_blocks=4/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=6 bias_mdps=0
+2026-10-11T12:14:38.414+00:00	10.346939	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:39.406+00:00	11.339290	IMU,read_hz=1000 good=2109878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=53 cal=0 cal_n=3354 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:39.420+00:00	11.353043	FRESH,status=2109879 ready=2109879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:39.432+00:00	11.364808	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2026-10-11T12:14:39.447+00:00	11.379479	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=8354 accepted=3354/4000 valid_blocks=6/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=9 bias_mdps=0
+2026-10-11T12:14:39.459+00:00	11.392108	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:40.074+00:00	12.006921	CAL_DONE,n=4000 blocks=8 retries=0 bias_mdps=-1479 previous_bias_mdps=-1483 delta_bias_mdps=3 max_block_std_mdps=51 block_mean_span_mdps=15
+2026-10-11T12:14:40.088+00:00	12.020595	DRIFT_START,bias_mdps=-1479,dlpf=3
+2026-10-11T12:14:40.451+00:00	12.383804	IMU,read_hz=999 good=2110878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=56 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:40.465+00:00	12.397997	FRESH,status=2110879 ready=2110879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2026-10-11T12:14:40.480+00:00	12.412523	NOISE,n=354 raw_mean_mdps=-1476 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=287 sample_min_us=1000 sample_max_us=1000
+2026-10-11T12:14:40.494+00:00	12.427204	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=9354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:40.507+00:00	12.439625	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:41.496+00:00	13.428580	IMU,read_hz=1000 good=2111878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:41.510+00:00	13.442816	FRESH,status=2111879 ready=2111879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=10 yaw_raw_no_deadzone_mdeg=11
+2026-10-11T12:14:41.524+00:00	13.457349	NOISE,n=1000 raw_mean_mdps=-1469 raw_std_mdps=45 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=10 same_code=757 sample_min_us=420 sample_max_us=1000
+2026-10-11T12:14:41.539+00:00	13.472107	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=10354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:41.551+00:00	13.483693	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:42.542+00:00	14.475302	IMU,read_hz=1000 good=2112878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:42.554+00:00	14.487278	FRESH,status=2112879 ready=2112879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-36 yaw_raw_no_deadzone_mdeg=-36
+2026-10-11T12:14:42.569+00:00	14.501774	NOISE,n=1000 raw_mean_mdps=-1526 raw_std_mdps=132 raw_min_mdps=-2378 raw_max_mdps=-1341 corrected_mean_mdps=-47 same_code=740 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:14:42.586+00:00	14.518959	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=11354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:42.597+00:00	14.529599	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:43.587+00:00	15.519601	IMU,read_hz=1000 good=2113878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:43.599+00:00	15.531519	FRESH,status=2113879 ready=2113879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-37 yaw_raw_no_deadzone_mdeg=-36
+2026-10-11T12:14:43.613+00:00	15.546042	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=45 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=748 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:14:43.631+00:00	15.563493	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=12354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:43.641+00:00	15.573493	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:44.630+00:00	16.563372	IMU,read_hz=1000 good=2114878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:44.642+00:00	16.575290	FRESH,status=2114879 ready=2114879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-32 yaw_raw_no_deadzone_mdeg=-32
+2026-10-11T12:14:44.657+00:00	16.589835	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=47 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=737 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:44.674+00:00	16.606850	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=13354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:44.684+00:00	16.617276	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:45.674+00:00	17.607297	IMU,read_hz=1000 good=2115878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:45.686+00:00	17.619285	FRESH,status=2115879 ready=2115879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-31 yaw_raw_no_deadzone_mdeg=-31
+2026-10-11T12:14:45.701+00:00	17.633688	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=758 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:14:45.718+00:00	17.650895	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=14354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:45.728+00:00	17.661291	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:46.719+00:00	18.651746	IMU,read_hz=1000 good=2116878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:46.731+00:00	18.663549	FRESH,status=2116879 ready=2116879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-20 yaw_raw_no_deadzone_mdeg=-20
+2026-10-11T12:14:46.745+00:00	18.678171	NOISE,n=1000 raw_mean_mdps=-1468 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=10 same_code=744 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:14:46.762+00:00	18.695241	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=15354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:46.773+00:00	18.705729	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:47.763+00:00	19.695829	IMU,read_hz=1000 good=2117878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:47.775+00:00	19.707909	FRESH,status=2117879 ready=2117879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-22 yaw_raw_no_deadzone_mdeg=-22
+2026-10-11T12:14:47.789+00:00	19.722207	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=753 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:47.807+00:00	19.739452	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=16354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:47.817+00:00	19.749918	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:48.808+00:00	20.740501	IMU,read_hz=1000 good=2118878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:48.820+00:00	20.752570	FRESH,status=2118879 ready=2118879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-14 yaw_raw_no_deadzone_mdeg=-14
+2026-10-11T12:14:48.834+00:00	20.767158	NOISE,n=1000 raw_mean_mdps=-1471 raw_std_mdps=45 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=8 same_code=742 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:48.851+00:00	20.784103	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=17354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:48.862+00:00	20.794514	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:49.853+00:00	21.785411	IMU,read_hz=1000 good=2119878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:49.864+00:00	21.797308	FRESH,status=2119879 ready=2119879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-8 yaw_raw_no_deadzone_mdeg=-8
+2026-10-11T12:14:49.879+00:00	21.811919	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=761 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:14:49.896+00:00	21.828858	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=18354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:49.906+00:00	21.839211	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:50.897+00:00	22.829948	IMU,read_hz=1000 good=2120878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:50.909+00:00	22.841879	FRESH,status=2120879 ready=2120879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-6 yaw_raw_no_deadzone_mdeg=-6
+2026-10-11T12:14:50.923+00:00	22.856359	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=47 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=731 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:50.941+00:00	22.873440	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=19354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:50.951+00:00	22.883790	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:51.942+00:00	23.874746	IMU,read_hz=1000 good=2121878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:51.954+00:00	23.886539	FRESH,status=2121879 ready=2121879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-6 yaw_raw_no_deadzone_mdeg=-6
+2026-10-11T12:14:51.968+00:00	23.901029	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=740 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:14:51.985+00:00	23.918104	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=20354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:51.995+00:00	23.928380	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:52.986+00:00	24.918747	IMU,read_hz=1000 good=2122878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:52.998+00:00	24.930555	FRESH,status=2122879 ready=2122879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=-2 yaw_raw_no_deadzone_mdeg=-2
+2026-10-11T12:14:53.012+00:00	24.945125	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=744 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:14:53.029+00:00	24.962180	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=21354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:53.040+00:00	24.972556	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:54.030+00:00	25.963133	IMU,read_hz=1000 good=2123878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:54.042+00:00	25.975103	FRESH,status=2123879 ready=2123879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=9 yaw_raw_no_deadzone_mdeg=9
+2026-10-11T12:14:54.057+00:00	25.989553	NOISE,n=1000 raw_mean_mdps=-1466 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=12 same_code=768 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:54.071+00:00	26.004370	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=22354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:54.085+00:00	26.017462	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:55.075+00:00	27.007506	IMU,read_hz=1000 good=2124878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:55.086+00:00	27.019375	FRESH,status=2124879 ready=2124879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=12 yaw_raw_no_deadzone_mdeg=12
+2026-10-11T12:14:55.101+00:00	27.033860	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=747 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:55.118+00:00	27.051013	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=23354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:55.128+00:00	27.061256	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:56.119+00:00	28.051686	IMU,read_hz=1000 good=2125878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:56.147+00:00	28.079814	FRESH,status=2125879 ready=2125879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=16 yaw_raw_no_deadzone_mdeg=16
+2026-10-11T12:14:56.151+00:00	28.084174	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=771 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:56.162+00:00	28.095107	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=24354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:56.173+00:00	28.105472	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:57.163+00:00	29.095667	IMU,read_hz=1000 good=2126878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:57.175+00:00	29.107919	FRESH,status=2126879 ready=2126879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=22 yaw_raw_no_deadzone_mdeg=22
+2026-10-11T12:14:57.189+00:00	29.122035	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=746 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:14:57.206+00:00	29.139114	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=25354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:57.216+00:00	29.149343	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:58.207+00:00	30.139508	IMU,read_hz=1000 good=2127878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:58.219+00:00	30.151415	FRESH,status=2127879 ready=2127879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=29 yaw_raw_no_deadzone_mdeg=29
+2026-10-11T12:14:58.233+00:00	30.165914	NOISE,n=1000 raw_mean_mdps=-1472 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=762 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:14:58.250+00:00	30.182961	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=26354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:58.260+00:00	30.193259	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:14:59.251+00:00	31.183760	IMU,read_hz=1000 good=2128878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:14:59.263+00:00	31.195536	FRESH,status=2128879 ready=2128879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=30 yaw_raw_no_deadzone_mdeg=30
+2026-10-11T12:14:59.277+00:00	31.210089	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=751 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:14:59.294+00:00	31.227228	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=27354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:14:59.305+00:00	31.237454	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:00.295+00:00	32.228230	IMU,read_hz=1000 good=2129878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:00.307+00:00	32.240145	FRESH,status=2129879 ready=2129879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=34 yaw_raw_no_deadzone_mdeg=34
+2026-10-11T12:15:00.322+00:00	32.254668	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=779 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:00.339+00:00	32.271703	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=28354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:00.349+00:00	32.282048	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:01.340+00:00	33.272589	IMU,read_hz=1000 good=2130878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:01.352+00:00	33.284515	FRESH,status=2130879 ready=2130879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=39 yaw_raw_no_deadzone_mdeg=40
+2026-10-11T12:15:01.366+00:00	33.298998	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=47 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=759 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:01.383+00:00	33.316098	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=29354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:01.393+00:00	33.326280	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:02.384+00:00	34.317149	IMU,read_hz=1000 good=2131878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:02.396+00:00	34.328920	FRESH,status=2131879 ready=2131879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=44 yaw_raw_no_deadzone_mdeg=44
+2026-10-11T12:15:02.411+00:00	34.343518	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=45 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=744 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:02.428+00:00	34.360631	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=30354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:02.438+00:00	34.370866	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:03.429+00:00	35.361874	IMU,read_hz=1000 good=2132878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:03.441+00:00	35.373721	FRESH,status=2132879 ready=2132879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=39 yaw_raw_no_deadzone_mdeg=39
+2026-10-11T12:15:03.455+00:00	35.388328	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-4 same_code=732 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:03.473+00:00	35.405429	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=31354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:03.483+00:00	35.415742	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:04.474+00:00	36.406537	IMU,read_hz=1000 good=2133878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:04.486+00:00	36.418466	FRESH,status=2133879 ready=2133879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+2026-10-11T12:15:04.500+00:00	36.433007	NOISE,n=1000 raw_mean_mdps=-1472 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=7 same_code=776 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:04.517+00:00	36.450042	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=32354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:04.527+00:00	36.460277	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:05.519+00:00	37.452169	IMU,read_hz=1000 good=2134878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:05.530+00:00	37.463300	FRESH,status=2134879 ready=2134879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=49 yaw_raw_no_deadzone_mdeg=49
+2026-10-11T12:15:05.545+00:00	37.477847	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=745 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:05.562+00:00	37.494898	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=33354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:05.572+00:00	37.505244	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:06.563+00:00	38.495794	IMU,read_hz=1000 good=2135878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:06.589+00:00	38.521603	FRESH,status=2135879 ready=2135879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=55 yaw_raw_no_deadzone_mdeg=55
+2026-10-11T12:15:06.592+00:00	38.525005	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=46 raw_min_mdps=-1646 raw_max_mdps=-1280 corrected_mean_mdps=5 same_code=732 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:15:06.606+00:00	38.539332	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=34354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:06.630+00:00	38.562719	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:07.607+00:00	39.539836	IMU,read_hz=1000 good=2136878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:07.619+00:00	39.552160	FRESH,status=2136879 ready=2136879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=59
+2026-10-11T12:15:07.633+00:00	39.566389	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=764 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:07.650+00:00	39.583315	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=35354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:07.661+00:00	39.593556	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:08.652+00:00	40.584415	IMU,read_hz=1000 good=2137878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:08.672+00:00	40.604678	FRESH,status=2137879 ready=2137879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=69 yaw_raw_no_deadzone_mdeg=70
+2026-10-11T12:15:08.697+00:00	40.629887	NOISE,n=1000 raw_mean_mdps=-1469 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=10 same_code=753 sample_min_us=418 sample_max_us=1000
+2026-10-11T12:15:08.714+00:00	40.646978	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=36354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:08.735+00:00	40.668361	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:09.696+00:00	41.628655	IMU,read_hz=1000 good=2138878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:09.708+00:00	41.640554	FRESH,status=2138879 ready=2138879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=70 yaw_raw_no_deadzone_mdeg=70
+2026-10-11T12:15:09.722+00:00	41.655066	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=731 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:09.739+00:00	41.672166	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=37354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:09.749+00:00	41.682350	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:10.740+00:00	42.673207	IMU,read_hz=1000 good=2139878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=159 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:10.752+00:00	42.685145	FRESH,status=2139879 ready=2139879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=74 yaw_raw_no_deadzone_mdeg=74
+2026-10-11T12:15:10.767+00:00	42.699687	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=739 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:10.784+00:00	42.716645	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=38354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:10.794+00:00	42.727298	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:11.403+00:00	43.336330	CAL_CHECK,elapsed_ms=30000 raw_drift_mdeg=80 lpf_no_deadzone_mdeg=80 raw_mdeg_per_min=160 current_bias_mdps=-1479
+2026-10-11T12:15:11.785+00:00	43.717484	IMU,read_hz=1000 good=2140878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:11.819+00:00	43.751583	FRESH,status=2140879 ready=2140879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=80 yaw_raw_no_deadzone_mdeg=80
+2026-10-11T12:15:11.824+00:00	43.757272	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=47 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=723 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:11.831+00:00	43.764374	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=39354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:11.838+00:00	43.771298	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:12.829+00:00	44.762004	IMU,read_hz=1000 good=2141878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:12.841+00:00	44.773874	FRESH,status=2141879 ready=2141879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=89 yaw_raw_no_deadzone_mdeg=89
+2026-10-11T12:15:12.855+00:00	44.788387	NOISE,n=1000 raw_mean_mdps=-1471 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=8 same_code=749 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:12.873+00:00	44.805433	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=40354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:12.883+00:00	44.815844	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:13.874+00:00	45.806424	IMU,read_hz=1000 good=2142878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:13.885+00:00	45.818273	FRESH,status=2142879 ready=2142879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=92 yaw_raw_no_deadzone_mdeg=92
+2026-10-11T12:15:13.900+00:00	45.832813	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=757 sample_min_us=417 sample_max_us=1002
+2026-10-11T12:15:13.917+00:00	45.849935	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=41354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:13.927+00:00	45.860092	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:14.918+00:00	46.851064	IMU,read_hz=1000 good=2143878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:14.930+00:00	46.862758	FRESH,status=2143879 ready=2143879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=100 yaw_raw_no_deadzone_mdeg=100
+2026-10-11T12:15:14.944+00:00	46.877349	NOISE,n=1000 raw_mean_mdps=-1471 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=7 same_code=747 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:14.962+00:00	46.894502	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=42354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:14.972+00:00	46.904951	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:15.963+00:00	47.895408	IMU,read_hz=1000 good=2144878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:15.974+00:00	47.907208	FRESH,status=2144879 ready=2144879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=102 yaw_raw_no_deadzone_mdeg=102
+2026-10-11T12:15:15.989+00:00	47.921760	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=766 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:16.006+00:00	47.938910	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=43354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:16.016+00:00	47.949289	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:16.285+00:00	48.218027	D,2147484057,15,15
+2026-10-11T12:15:16.296+00:00	48.228679	D,2147494057,-45,-40
+2026-10-11T12:15:16.306+00:00	48.239056	D,2147504057,-45,-44
+2026-10-11T12:15:16.317+00:00	48.249561	D,2147514057,-45,-32
+2026-10-11T12:15:16.327+00:00	48.259920	D,2147524057,15,15
+2026-10-11T12:15:16.338+00:00	48.270420	D,2147534057,-45,-44
+2026-10-11T12:15:16.348+00:00	48.280721	D,2147544057,15,15
+2026-10-11T12:15:16.358+00:00	48.291144	D,2147554057,15,21
+2026-10-11T12:15:16.369+00:00	48.301477	D,2147564058,15,3
+2026-10-11T12:15:16.416+00:00	48.348696	D,2147575057,15,15
+2026-10-11T12:15:16.417+00:00	48.349630	D,2147585057,-45,-26
+2026-10-11T12:15:16.417+00:00	48.350271	D,2147595057,76,69
+2026-10-11T12:15:16.461+00:00	48.393863	D,2147605057,15,16
+2026-10-11T12:15:16.509+00:00	48.441405	D,2147615057,15,15
+2026-10-11T12:15:16.517+00:00	48.449906	D,2147625057,-106,-87
+2026-10-11T12:15:16.554+00:00	48.487003	D,2147635057,-45,-39
+2026-10-11T12:15:16.561+00:00	48.493720	D,2147645057,-45,-43
+2026-10-11T12:15:16.565+00:00	48.497667	D,2147655057,-45,-45
+2026-10-11T12:15:16.574+00:00	48.506935	D,2147665057,15,21
+2026-10-11T12:15:16.576+00:00	48.508722	D,2147675057,-106,-103
+2026-10-11T12:15:16.579+00:00	48.511666	D,2147685057,-45,-43
+2026-10-11T12:15:16.580+00:00	48.512475	D,2147695057,-45,-26
+2026-10-11T12:15:16.582+00:00	48.515084	D,2147705057,15,14
+2026-10-11T12:15:16.591+00:00	48.523430	D,2147715057,15,15
+2026-10-11T12:15:16.592+00:00	48.524744	D,2147725057,-45,-44
+2026-10-11T12:15:16.593+00:00	48.525542	D,2147735057,-45,-61
+2026-10-11T12:15:16.593+00:00	48.526204	D,2147745057,15,10
+2026-10-11T12:15:16.595+00:00	48.528049	D,2147755057,15,17
+2026-10-11T12:15:16.596+00:00	48.528958	D,2147765057,15,17
+2026-10-11T12:15:16.597+00:00	48.529656	D,2147775057,76,76
+2026-10-11T12:15:16.599+00:00	48.532391	D,2147785057,76,71
+2026-10-11T12:15:16.610+00:00	48.542835	D,2147795057,15,12
+2026-10-11T12:15:16.621+00:00	48.553434	D,2147805057,-45,-48
+2026-10-11T12:15:16.631+00:00	48.564040	D,2147815057,-106,-100
+2026-10-11T12:15:16.641+00:00	48.574055	D,2147825057,76,76
+2026-10-11T12:15:16.652+00:00	48.584632	D,2147835057,15,15
+2026-10-11T12:15:16.663+00:00	48.595471	D,2147845057,-106,-105
+2026-10-11T12:15:16.673+00:00	48.605434	D,2147855057,15,10
+2026-10-11T12:15:16.683+00:00	48.616004	D,2147865057,15,10
+2026-10-11T12:15:16.693+00:00	48.626264	D,2147875057,15,14
+2026-10-11T12:15:16.704+00:00	48.636870	D,2147885057,15,17
+2026-10-11T12:15:16.714+00:00	48.647370	D,2147895057,15,-2
+2026-10-11T12:15:16.725+00:00	48.658014	D,2147905057,-45,-37
+2026-10-11T12:15:16.735+00:00	48.668046	D,2147915057,15,-2
+2026-10-11T12:15:16.746+00:00	48.678578	D,2147925057,15,28
+2026-10-11T12:15:16.756+00:00	48.689305	D,2147935057,-45,-43
+2026-10-11T12:15:16.767+00:00	48.699476	D,2147945057,15,19
+2026-10-11T12:15:16.777+00:00	48.709915	D,2147955057,15,15
+2026-10-11T12:15:16.788+00:00	48.720539	D,2147965057,-45,-26
+2026-10-11T12:15:16.798+00:00	48.730898	D,2147975057,76,71
+2026-10-11T12:15:16.808+00:00	48.741332	D,2147985057,76,75
+2026-10-11T12:15:16.819+00:00	48.752091	D,2147995057,-106,-86
+2026-10-11T12:15:16.829+00:00	48.762131	D,2148005057,15,10
+2026-10-11T12:15:16.840+00:00	48.773071	D,2148015057,-45,-45
+2026-10-11T12:15:16.850+00:00	48.783089	D,2148025057,15,10
+2026-10-11T12:15:16.861+00:00	48.793442	D,2148035057,15,21
+2026-10-11T12:15:16.871+00:00	48.803851	D,2148045057,15,10
+2026-10-11T12:15:16.881+00:00	48.814339	D,2148055057,76,75
+2026-10-11T12:15:16.892+00:00	48.825204	D,2148065057,-106,-100
+2026-10-11T12:15:16.902+00:00	48.835366	D,2148075057,15,10
+2026-10-11T12:15:16.913+00:00	48.845931	D,2148085057,-45,-44
+2026-10-11T12:15:16.923+00:00	48.856129	D,2148095057,76,71
+2026-10-11T12:15:16.934+00:00	48.866931	D,2148105057,-45,-39
+2026-10-11T12:15:16.944+00:00	48.877161	D,2148115057,15,21
+2026-10-11T12:15:16.955+00:00	48.887550	D,2148125057,76,58
+2026-10-11T12:15:16.965+00:00	48.897858	D,2148135057,15,15
+2026-10-11T12:15:16.976+00:00	48.908579	D,2148145057,-45,-49
+2026-10-11T12:15:16.986+00:00	48.918681	D,2148155057,15,15
+2026-10-11T12:15:17.006+00:00	48.939064	IMU,read_hz=1000 good=2145878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:17.020+00:00	48.953323	FRESH,status=2145879 ready=2145879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=103 yaw_raw_no_deadzone_mdeg=103
+2026-10-11T12:15:17.035+00:00	48.967871	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=46 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=736 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:17.050+00:00	48.982697	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=44354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:17.061+00:00	48.994089	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:17.064+00:00	48.996921	D,2148165057,15,15
+2026-10-11T12:15:17.067+00:00	48.999716	D,2148175057,-106,-87
+2026-10-11T12:15:17.070+00:00	49.003239	D,2148185057,-106,-87
+2026-10-11T12:15:17.071+00:00	49.003848	D,2148195057,15,34
+2026-10-11T12:15:17.073+00:00	49.005965	D,2148205057,15,16
+2026-10-11T12:15:17.074+00:00	49.006725	D,2148215057,-45,-44
+2026-10-11T12:15:17.076+00:00	49.008472	D,2148225057,15,15
+2026-10-11T12:15:17.077+00:00	49.009901	D,2148235059,-45,-45
+2026-10-11T12:15:17.081+00:00	49.013921	D,2148246057,15,15
+2026-10-11T12:15:17.091+00:00	49.024300	D,2148256057,76,71
+2026-10-11T12:15:17.102+00:00	49.035074	D,2148266057,-45,-48
+2026-10-11T12:15:17.113+00:00	49.045772	D,2148276057,-45,-45
+2026-10-11T12:15:17.123+00:00	49.055998	D,2148286057,-45,-44
+2026-10-11T12:15:17.133+00:00	49.066205	D,2148296057,15,15
+2026-10-11T12:15:17.144+00:00	49.076652	D,2148306057,15,17
+2026-10-11T12:15:17.154+00:00	49.087097	D,2148316057,15,15
+2026-10-11T12:15:17.165+00:00	49.097812	D,2148326057,-45,-26
+2026-10-11T12:15:17.175+00:00	49.108261	D,2148336057,-45,-44
+2026-10-11T12:15:17.186+00:00	49.118446	D,2148346057,15,16
+2026-10-11T12:15:17.196+00:00	49.129043	D,2148356057,-45,-26
+2026-10-11T12:15:17.206+00:00	49.139277	D,2148366057,15,15
+2026-10-11T12:15:17.217+00:00	49.149951	D,2148376057,15,34
+2026-10-11T12:15:17.228+00:00	49.160491	D,2148386057,-45,-44
+2026-10-11T12:15:17.238+00:00	49.170659	D,2148396057,15,15
+2026-10-11T12:15:17.248+00:00	49.181284	D,2148406057,-45,-28
+2026-10-11T12:15:17.259+00:00	49.191842	D,2148416057,15,15
+2026-10-11T12:15:17.269+00:00	49.202262	D,2148426057,-106,-87
+2026-10-11T12:15:17.280+00:00	49.212455	D,2148436057,15,-7
+2026-10-11T12:15:17.290+00:00	49.222903	D,2148446057,15,15
+2026-10-11T12:15:17.300+00:00	49.233331	D,2148456057,15,19
+2026-10-11T12:15:17.311+00:00	49.244129	D,2148466057,-45,-45
+2026-10-11T12:15:17.322+00:00	49.254510	D,2148476057,-45,-45
+2026-10-11T12:15:17.332+00:00	49.264710	D,2148486057,15,15
+2026-10-11T12:15:17.342+00:00	49.275309	D,2148496057,-45,-26
+2026-10-11T12:15:17.353+00:00	49.285913	D,2148506057,-166,-139
+2026-10-11T12:15:17.363+00:00	49.296300	D,2148516057,-45,-45
+2026-10-11T12:15:17.374+00:00	49.306699	D,2148526057,-45,-45
+2026-10-11T12:15:17.384+00:00	49.316888	D,2148536057,76,70
+2026-10-11T12:15:17.394+00:00	49.327381	D,2148546057,15,15
+2026-10-11T12:15:17.405+00:00	49.337728	D,2148556057,76,58
+2026-10-11T12:15:17.415+00:00	49.348144	D,2148566057,15,15
+2026-10-11T12:15:17.426+00:00	49.358721	D,2148576057,15,28
+2026-10-11T12:15:17.436+00:00	49.369169	D,2148586057,15,15
+2026-10-11T12:15:17.447+00:00	49.380129	D,2148596057,-45,-44
+2026-10-11T12:15:17.457+00:00	49.389968	D,2148606057,76,58
+2026-10-11T12:15:17.468+00:00	49.400556	D,2148616057,-45,-43
+2026-10-11T12:15:17.478+00:00	49.410974	D,2148626057,15,28
+2026-10-11T12:15:17.488+00:00	49.421381	D,2148636057,15,15
+2026-10-11T12:15:17.499+00:00	49.431990	D,2148646057,-45,-43
+2026-10-11T12:15:17.509+00:00	49.442184	D,2148656057,15,15
+2026-10-11T12:15:17.520+00:00	49.452577	D,2148666057,76,76
+2026-10-11T12:15:17.530+00:00	49.462998	D,2148676057,15,17
+2026-10-11T12:15:17.541+00:00	49.473555	D,2148686057,76,71
+2026-10-11T12:15:17.558+00:00	49.490738	D,2148696057,15,-2
+2026-10-11T12:15:17.562+00:00	49.494690	D,2148706057,-45,-43
+2026-10-11T12:15:17.572+00:00	49.504818	D,2148716057,15,14
+2026-10-11T12:15:17.583+00:00	49.515632	D,2148726057,-45,-44
+2026-10-11T12:15:17.594+00:00	49.527035	D,2148736057,76,57
+2026-10-11T12:15:17.604+00:00	49.536426	D,2148746057,-45,-26
+2026-10-11T12:15:17.614+00:00	49.547047	D,2148756057,-106,-82
+2026-10-11T12:15:17.624+00:00	49.557061	D,2148766057,76,71
+2026-10-11T12:15:17.635+00:00	49.567528	D,2148776057,15,17
+2026-10-11T12:15:17.647+00:00	49.579483	D,2148786057,-45,-45
+2026-10-11T12:15:17.656+00:00	49.588905	D,2148796057,-45,-40
+2026-10-11T12:15:17.666+00:00	49.598891	D,2148806057,76,76
+2026-10-11T12:15:17.680+00:00	49.612416	D,2148816057,-45,-28
+2026-10-11T12:15:17.687+00:00	49.619659	D,2148826057,15,14
+2026-10-11T12:15:17.697+00:00	49.630231	D,2148836058,15,-3
+2026-10-11T12:15:17.709+00:00	49.641887	D,2148847058,-45,-50
+2026-10-11T12:15:17.720+00:00	49.653091	D,2148858057,15,10
+2026-10-11T12:15:17.731+00:00	49.663521	D,2148868057,15,15
+2026-10-11T12:15:17.741+00:00	49.674318	D,2148878057,-45,-44
+2026-10-11T12:15:17.751+00:00	49.684362	D,2148888057,15,0
+2026-10-11T12:15:17.762+00:00	49.694938	D,2148898057,15,14
+2026-10-11T12:15:17.773+00:00	49.705560	D,2148908057,-45,-39
+2026-10-11T12:15:17.783+00:00	49.716136	D,2148918057,-45,-45
+2026-10-11T12:15:17.793+00:00	49.726361	D,2148928057,76,57
+2026-10-11T12:15:17.804+00:00	49.736930	D,2148938057,-45,-44
+2026-10-11T12:15:17.814+00:00	49.747135	D,2148948057,76,75
+2026-10-11T12:15:17.825+00:00	49.757549	D,2148958057,76,75
+2026-10-11T12:15:17.835+00:00	49.767989	D,2148968057,76,80
+2026-10-11T12:15:17.846+00:00	49.778762	D,2148978057,-45,-39
+2026-10-11T12:15:17.856+00:00	49.789198	D,2148988057,-45,-45
+2026-10-11T12:15:17.867+00:00	49.799542	D,2148998057,-45,-45
+2026-10-11T12:15:17.877+00:00	49.810012	D,2149008057,-45,-45
+2026-10-11T12:15:17.887+00:00	49.820166	D,2149018057,76,56
+2026-10-11T12:15:17.898+00:00	49.831015	D,2149028057,-45,-44
+2026-10-11T12:15:17.908+00:00	49.841187	D,2149038057,15,15
+2026-10-11T12:15:17.919+00:00	49.851589	D,2149048057,15,15
+2026-10-11T12:15:17.929+00:00	49.862214	D,2149058057,-45,-45
+2026-10-11T12:15:17.940+00:00	49.872792	D,2149068057,-45,-46
+2026-10-11T12:15:17.988+00:00	49.921300	D,2149078057,-45,-44
+2026-10-11T12:15:17.989+00:00	49.921931	D,2149088057,15,-2
+2026-10-11T12:15:17.990+00:00	49.922529	D,2149098057,15,14
+2026-10-11T12:15:17.990+00:00	49.923081	D,2149108057,15,-2
+2026-10-11T12:15:17.992+00:00	49.924747	D,2149118057,15,21
+2026-10-11T12:15:18.032+00:00	49.965057	D,2149128057,15,14
+2026-10-11T12:15:18.036+00:00	49.968658	D,2149138057,-45,-44
+2026-10-11T12:15:18.087+00:00	50.019428	D,2149148057,-45,-45
+2026-10-11T12:15:18.139+00:00	50.071542	IMU,read_hz=1000 good=2146878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:18.179+00:00	50.111797	FRESH,status=2146879 ready=2146879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=98 yaw_raw_no_deadzone_mdeg=98
+2026-10-11T12:15:18.186+00:00	50.118503	NOISE,n=1000 raw_mean_mdps=-1484 raw_std_mdps=46 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-4 same_code=762 sample_min_us=417 sample_max_us=1002
+2026-10-11T12:15:18.201+00:00	50.133857	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=45354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:18.211+00:00	50.144346	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:18.226+00:00	50.158580	D,2149158057,15,14
+2026-10-11T12:15:18.227+00:00	50.160358	D,2149168057,15,16
+2026-10-11T12:15:18.228+00:00	50.161333	D,2149178057,15,16
+2026-10-11T12:15:18.229+00:00	50.162274	D,2149188057,15,16
+2026-10-11T12:15:18.230+00:00	50.163106	D,2149198057,-45,-44
+2026-10-11T12:15:18.231+00:00	50.163739	D,2149208057,-45,-26
+2026-10-11T12:15:18.231+00:00	50.164304	D,2149218057,15,15
+2026-10-11T12:15:18.240+00:00	50.172763	D,2149228057,-45,-44
+2026-10-11T12:15:18.246+00:00	50.179116	D,2149238057,-45,-39
+2026-10-11T12:15:18.247+00:00	50.179811	D,2149248057,-45,-61
+2026-10-11T12:15:18.248+00:00	50.180407	D,2149258057,-45,-41
+2026-10-11T12:15:18.248+00:00	50.181032	D,2149268057,15,15
+2026-10-11T12:15:18.251+00:00	50.184303	D,2149278057,15,14
+2026-10-11T12:15:18.257+00:00	50.189931	D,2149288057,-45,-39
+2026-10-11T12:15:18.258+00:00	50.190721	D,2149298057,15,15
+2026-10-11T12:15:18.258+00:00	50.191171	D,2149308057,15,15
+2026-10-11T12:15:18.259+00:00	50.191598	D,2149318057,76,71
+2026-10-11T12:15:18.259+00:00	50.192036	D,2149328057,15,16
+2026-10-11T12:15:18.260+00:00	50.192486	D,2149338057,15,15
+2026-10-11T12:15:18.260+00:00	50.193050	D,2149348057,-45,-45
+2026-10-11T12:15:18.261+00:00	50.193623	D,2149358057,76,75
+2026-10-11T12:15:18.261+00:00	50.194144	D,2149368057,-45,-39
+2026-10-11T12:15:18.263+00:00	50.196281	D,2149378057,15,21
+2026-10-11T12:15:18.274+00:00	50.206938	D,2149388057,15,15
+2026-10-11T12:15:18.284+00:00	50.217368	D,2149398057,76,71
+2026-10-11T12:15:18.295+00:00	50.227976	D,2149408057,-45,-42
+2026-10-11T12:15:18.305+00:00	50.238105	D,2149418057,15,20
+2026-10-11T12:15:18.316+00:00	50.248699	D,2149428057,15,10
+2026-10-11T12:15:18.326+00:00	50.259124	D,2149438057,15,16
+2026-10-11T12:15:18.337+00:00	50.269747	D,2149448057,-45,-44
+2026-10-11T12:15:18.347+00:00	50.280207	D,2149458057,-45,-26
+2026-10-11T12:15:18.358+00:00	50.290410	D,2149468057,15,15
+2026-10-11T12:15:18.368+00:00	50.301099	D,2149478057,-106,-86
+2026-10-11T12:15:18.378+00:00	50.311157	D,2149488058,15,2
+2026-10-11T12:15:18.390+00:00	50.323007	D,2149499057,-45,-45
+2026-10-11T12:15:18.401+00:00	50.333563	D,2149509057,-45,-45
+2026-10-11T12:15:18.411+00:00	50.343757	D,2149519057,76,57
+2026-10-11T12:15:18.421+00:00	50.354172	D,2149529057,76,70
+2026-10-11T12:15:18.432+00:00	50.364584	D,2149539057,15,10
+2026-10-11T12:15:18.442+00:00	50.374995	D,2149549057,15,-2
+2026-10-11T12:15:18.453+00:00	50.385570	D,2149559057,15,10
+2026-10-11T12:15:18.463+00:00	50.396004	D,2149569057,15,15
+2026-10-11T12:15:18.473+00:00	50.406382	D,2149579057,15,15
+2026-10-11T12:15:18.484+00:00	50.416792	D,2149589057,15,15
+2026-10-11T12:15:18.495+00:00	50.427454	D,2149599057,-45,-26
+2026-10-11T12:15:18.505+00:00	50.437825	D,2149609057,76,76
+2026-10-11T12:15:18.516+00:00	50.448417	D,2149619057,-45,-25
+2026-10-11T12:15:18.526+00:00	50.458638	D,2149629057,76,76
+2026-10-11T12:15:18.536+00:00	50.469037	D,2149639057,76,71
+2026-10-11T12:15:18.547+00:00	50.479699	D,2149649057,15,15
+2026-10-11T12:15:18.557+00:00	50.490289	D,2149659057,-45,-26
+2026-10-11T12:15:18.568+00:00	50.500424	D,2149669057,76,75
+2026-10-11T12:15:18.578+00:00	50.510890	D,2149679057,15,20
+2026-10-11T12:15:18.589+00:00	50.521426	D,2149689057,15,10
+2026-10-11T12:15:18.599+00:00	50.532017	D,2149699057,-45,-28
+2026-10-11T12:15:18.610+00:00	50.542428	D,2149709057,-45,-45
+2026-10-11T12:15:18.620+00:00	50.552663	D,2149719057,15,15
+2026-10-11T12:15:18.631+00:00	50.563655	D,2149729057,-45,-45
+2026-10-11T12:15:18.641+00:00	50.573473	D,2149739057,15,21
+2026-10-11T12:15:18.651+00:00	50.584066	D,2149749057,15,16
+2026-10-11T12:15:18.662+00:00	50.594448	D,2149759057,15,19
+2026-10-11T12:15:18.672+00:00	50.605104	D,2149769057,-45,-25
+2026-10-11T12:15:18.682+00:00	50.615302	D,2149779057,15,10
+2026-10-11T12:15:18.693+00:00	50.626075	D,2149789057,-45,-26
+2026-10-11T12:15:18.703+00:00	50.636289	D,2149799057,15,27
+2026-10-11T12:15:18.714+00:00	50.646884	D,2149809057,-45,-21
+2026-10-11T12:15:18.724+00:00	50.657120	D,2149819057,15,15
+2026-10-11T12:15:18.735+00:00	50.667901	D,2149829057,-45,-26
+2026-10-11T12:15:18.745+00:00	50.678164	D,2149839057,15,-2
+2026-10-11T12:15:18.756+00:00	50.688511	D,2149849057,76,76
+2026-10-11T12:15:18.766+00:00	50.699146	D,2149859057,-45,-45
+2026-10-11T12:15:18.776+00:00	50.709407	D,2149869057,15,-1
+2026-10-11T12:15:18.787+00:00	50.720084	D,2149879057,-45,-39
+2026-10-11T12:15:18.797+00:00	50.730304	D,2149889057,15,10
+2026-10-11T12:15:18.808+00:00	50.740740	D,2149899057,15,16
+2026-10-11T12:15:18.818+00:00	50.751122	D,2149909057,15,15
+2026-10-11T12:15:18.829+00:00	50.761688	D,2149919057,15,16
+2026-10-11T12:15:18.839+00:00	50.772293	D,2149929058,-45,-50
+2026-10-11T12:15:18.851+00:00	50.783551	D,2149940057,15,10
+2026-10-11T12:15:18.861+00:00	50.793947	D,2149950057,15,33
+2026-10-11T12:15:18.872+00:00	50.804529	D,2149960057,15,15
+2026-10-11T12:15:18.882+00:00	50.815266	D,2149970057,15,16
+2026-10-11T12:15:18.893+00:00	50.825553	D,2149980057,-45,-26
+2026-10-11T12:15:18.903+00:00	50.835759	D,2149990057,15,15
+2026-10-11T12:15:18.913+00:00	50.846337	D,2150000057,15,15
+2026-10-11T12:15:18.924+00:00	50.856770	D,2150010057,15,15
+2026-10-11T12:15:18.934+00:00	50.867209	D,2150020057,15,15
+2026-10-11T12:15:18.945+00:00	50.877545	D,2150030057,15,0
+2026-10-11T12:15:18.955+00:00	50.888210	D,2150040057,-45,-46
+2026-10-11T12:15:18.966+00:00	50.898529	D,2150050057,15,15
+2026-10-11T12:15:18.976+00:00	50.909020	D,2150060057,15,32
+2026-10-11T12:15:18.987+00:00	50.919595	D,2150070057,-45,-21
+2026-10-11T12:15:18.997+00:00	50.930019	D,2150080057,-45,-45
+2026-10-11T12:15:19.007+00:00	50.940225	D,2150090057,15,10
+2026-10-11T12:15:19.018+00:00	50.950799	D,2150100057,15,14
+2026-10-11T12:15:19.029+00:00	50.961404	D,2150110057,-45,-44
+2026-10-11T12:15:19.039+00:00	50.971627	D,2150120057,15,14
+2026-10-11T12:15:19.049+00:00	50.982186	D,2150130057,15,19
+2026-10-11T12:15:19.060+00:00	50.992435	D,2150140057,15,0
+2026-10-11T12:15:19.070+00:00	51.002985	D,2150150057,15,15
+2026-10-11T12:15:19.096+00:00	51.029070	IMU,read_hz=1000 good=2147878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:19.108+00:00	51.040982	FRESH,status=2147879 ready=2147879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=104 yaw_raw_no_deadzone_mdeg=104
+2026-10-11T12:15:19.123+00:00	51.055459	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=759 sample_min_us=416 sample_max_us=1002
+2026-10-11T12:15:19.140+00:00	51.072557	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=46354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:19.151+00:00	51.084293	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:19.152+00:00	51.085218	D,2150160058,15,-2
+2026-10-11T12:15:19.154+00:00	51.087195	D,2150171057,15,15
+2026-10-11T12:15:19.157+00:00	51.089874	D,2150181057,15,17
+2026-10-11T12:15:19.159+00:00	51.091947	D,2150191057,-45,-22
+2026-10-11T12:15:19.162+00:00	51.095124	D,2150201057,-106,-87
+2026-10-11T12:15:19.165+00:00	51.098022	D,2150211057,-45,-43
+2026-10-11T12:15:19.168+00:00	51.100661	D,2150221057,76,75
+2026-10-11T12:15:19.169+00:00	51.101855	D,2150231057,-45,-45
+2026-10-11T12:15:19.170+00:00	51.103341	D,2150241057,15,15
+2026-10-11T12:15:19.176+00:00	51.108672	D,2150251057,-45,-45
+2026-10-11T12:15:19.186+00:00	51.119075	D,2150261057,-45,-45
+2026-10-11T12:15:19.196+00:00	51.129293	D,2150271057,15,-2
+2026-10-11T12:15:19.207+00:00	51.139703	D,2150281057,15,15
+2026-10-11T12:15:19.217+00:00	51.150294	D,2150291057,15,15
+2026-10-11T12:15:19.228+00:00	51.160729	D,2150301057,15,14
+2026-10-11T12:15:19.238+00:00	51.171052	D,2150311057,15,17
+2026-10-11T12:15:19.249+00:00	51.181527	D,2150321057,15,15
+2026-10-11T12:15:19.259+00:00	51.192324	D,2150331057,-106,-80
+2026-10-11T12:15:19.270+00:00	51.202742	D,2150341057,-45,-61
+2026-10-11T12:15:19.280+00:00	51.212698	D,2150351057,15,0
+2026-10-11T12:15:19.291+00:00	51.223551	D,2150361057,-45,-39
+2026-10-11T12:15:19.301+00:00	51.233712	D,2150371057,15,15
+2026-10-11T12:15:19.311+00:00	51.244138	D,2150381057,76,58
+2026-10-11T12:15:19.322+00:00	51.254543	D,2150391057,15,15
+2026-10-11T12:15:19.332+00:00	51.265121	D,2150401057,15,-2
+2026-10-11T12:15:19.343+00:00	51.275535	D,2150411057,15,10
+2026-10-11T12:15:19.353+00:00	51.285952	D,2150421057,15,14
+2026-10-11T12:15:19.363+00:00	51.296369	D,2150431057,76,58
+2026-10-11T12:15:19.374+00:00	51.307135	D,2150441057,-106,-87
+2026-10-11T12:15:19.384+00:00	51.317192	D,2150451057,15,14
+2026-10-11T12:15:19.395+00:00	51.327575	D,2150461057,15,17
+2026-10-11T12:15:19.405+00:00	51.338359	D,2150471057,-45,-43
+2026-10-11T12:15:19.416+00:00	51.348956	D,2150481057,-45,-42
+2026-10-11T12:15:19.426+00:00	51.358979	D,2150491057,15,10
+2026-10-11T12:15:19.437+00:00	51.369419	D,2150501057,15,15
+2026-10-11T12:15:19.447+00:00	51.379809	D,2150511057,76,58
+2026-10-11T12:15:19.458+00:00	51.390436	D,2150521057,-45,-39
+2026-10-11T12:15:19.468+00:00	51.401084	D,2150531057,-45,-45
+2026-10-11T12:15:19.478+00:00	51.411237	D,2150541057,76,53
+2026-10-11T12:15:19.489+00:00	51.421654	D,2150551057,15,15
+2026-10-11T12:15:19.499+00:00	51.432046	D,2150561057,15,15
+2026-10-11T12:15:19.510+00:00	51.442439	D,2150571057,15,17
+2026-10-11T12:15:19.520+00:00	51.452846	D,2150581057,15,15
+2026-10-11T12:15:19.531+00:00	51.463669	D,2150591057,-106,-86
+2026-10-11T12:15:19.541+00:00	51.473903	D,2150601057,-45,-43
+2026-10-11T12:15:19.551+00:00	51.484256	D,2150611057,15,15
+2026-10-11T12:15:19.562+00:00	51.494607	D,2150621057,15,-2
+2026-10-11T12:15:19.572+00:00	51.505062	D,2150631057,15,15
+2026-10-11T12:15:19.583+00:00	51.515815	D,2150641057,-45,-43
+2026-10-11T12:15:19.593+00:00	51.526241	D,2150651057,-45,-44
+2026-10-11T12:15:19.604+00:00	51.536673	D,2150661057,-45,-43
+2026-10-11T12:15:19.614+00:00	51.547129	D,2150671057,-45,-26
+2026-10-11T12:15:19.624+00:00	51.557320	D,2150681057,15,15
+2026-10-11T12:15:19.635+00:00	51.567721	D,2150691057,15,15
+2026-10-11T12:15:19.646+00:00	51.578510	D,2150701057,-106,-85
+2026-10-11T12:15:19.656+00:00	51.588911	D,2150711057,-106,-87
+2026-10-11T12:15:19.666+00:00	51.599074	D,2150721057,15,15
+2026-10-11T12:15:19.677+00:00	51.609576	D,2150731057,15,28
+2026-10-11T12:15:19.687+00:00	51.620148	D,2150741057,-45,-39
+2026-10-11T12:15:19.697+00:00	51.630346	D,2150751057,15,19
+2026-10-11T12:15:19.708+00:00	51.640737	D,2150761057,15,15
+2026-10-11T12:15:19.718+00:00	51.651322	D,2150771057,-45,-43
+2026-10-11T12:15:19.729+00:00	51.661731	D,2150781057,-45,-62
+2026-10-11T12:15:19.739+00:00	51.671949	D,2150791057,15,0
+2026-10-11T12:15:19.750+00:00	51.682668	D,2150801057,76,76
+2026-10-11T12:15:19.760+00:00	51.693197	D,2150811057,137,126
+2026-10-11T12:15:19.770+00:00	51.703387	D,2150821057,76,71
+2026-10-11T12:15:19.781+00:00	51.713767	D,2150831057,15,17
+2026-10-11T12:15:19.791+00:00	51.724213	D,2150841057,15,14
+2026-10-11T12:15:19.802+00:00	51.734961	D,2150851057,-45,-45
+2026-10-11T12:15:19.812+00:00	51.745174	D,2150861057,15,10
+2026-10-11T12:15:19.823+00:00	51.755584	D,2150871057,76,56
+2026-10-11T12:15:19.833+00:00	51.766202	D,2150881057,-45,-45
+2026-10-11T12:15:19.844+00:00	51.776609	D,2150891057,-45,-43
+2026-10-11T12:15:19.854+00:00	51.787190	D,2150901057,-45,-44
+2026-10-11T12:15:19.865+00:00	51.797419	D,2150911057,15,15
+2026-10-11T12:15:19.875+00:00	51.807797	D,2150921057,15,15
+2026-10-11T12:15:19.885+00:00	51.818208	D,2150931057,15,33
+2026-10-11T12:15:19.896+00:00	51.828627	D,2150941057,15,12
+2026-10-11T12:15:19.907+00:00	51.839488	D,2150951057,-45,-38
+2026-10-11T12:15:19.917+00:00	51.849662	D,2150961057,15,10
+2026-10-11T12:15:19.927+00:00	51.860252	D,2150971057,-45,-39
+2026-10-11T12:15:19.938+00:00	51.870683	D,2150981057,-45,-43
+2026-10-11T12:15:19.948+00:00	51.880863	D,2150991057,76,58
+2026-10-11T12:15:19.958+00:00	51.891221	D,2151001057,15,0
+2026-10-11T12:15:19.969+00:00	51.901821	D,2151011057,15,32
+2026-10-11T12:15:19.979+00:00	51.912236	D,2151021057,15,16
+2026-10-11T12:15:19.990+00:00	51.922858	D,2151031057,-45,-45
+2026-10-11T12:15:20.000+00:00	51.933054	D,2151041057,15,32
+2026-10-11T12:15:20.011+00:00	51.943435	D,2151051057,15,15
+2026-10-11T12:15:20.021+00:00	51.954259	D,2151061057,-45,-46
+2026-10-11T12:15:20.032+00:00	51.964482	D,2151071057,15,15
+2026-10-11T12:15:20.042+00:00	51.975101	D,2151081057,-45,-44
+2026-10-11T12:15:20.052+00:00	51.985285	D,2151091057,76,60
+2026-10-11T12:15:20.063+00:00	51.995864	D,2151101057,-45,-39
+2026-10-11T12:15:20.073+00:00	52.006099	D,2151111057,76,58
+2026-10-11T12:15:20.084+00:00	52.016666	D,2151121057,15,32
+2026-10-11T12:15:20.094+00:00	52.027084	D,2151131057,15,15
+2026-10-11T12:15:20.105+00:00	52.037470	D,2151141057,15,20
+2026-10-11T12:15:20.115+00:00	52.047933	D,2151151057,76,58
+2026-10-11T12:15:20.140+00:00	52.072991	IMU,read_hz=1000 good=2148878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:20.152+00:00	52.084893	FRESH,status=2148879 ready=2148879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=101 yaw_raw_no_deadzone_mdeg=101
+2026-10-11T12:15:20.167+00:00	52.099415	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=732 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:20.184+00:00	52.116644	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=47354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:20.195+00:00	52.128071	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:20.196+00:00	52.128566	D,2151161057,76,71
+2026-10-11T12:15:20.198+00:00	52.131103	D,2151171057,15,16
+2026-10-11T12:15:20.201+00:00	52.133883	D,2151181057,15,21
+2026-10-11T12:15:20.201+00:00	52.134358	D,2151191057,15,15
+2026-10-11T12:15:20.204+00:00	52.136868	D,2151201057,76,75
+2026-10-11T12:15:20.204+00:00	52.137312	D,2151211057,137,130
+2026-10-11T12:15:20.207+00:00	52.139918	D,2151221057,15,19
+2026-10-11T12:15:20.211+00:00	52.143786	D,2151231057,-45,-44
+2026-10-11T12:15:20.211+00:00	52.144158	D,2151241057,15,28
+2026-10-11T12:15:20.220+00:00	52.152573	D,2151251057,-45,-44
+2026-10-11T12:15:20.230+00:00	52.162941	D,2151261057,-45,-44
+2026-10-11T12:15:20.240+00:00	52.173341	D,2151271057,15,15
+2026-10-11T12:15:20.251+00:00	52.183757	D,2151281057,15,15
+2026-10-11T12:15:20.261+00:00	52.194375	D,2151291057,-45,-39
+2026-10-11T12:15:20.272+00:00	52.204471	D,2151301057,15,15
+2026-10-11T12:15:20.282+00:00	52.214918	D,2151311057,76,76
+2026-10-11T12:15:20.293+00:00	52.225551	D,2151321057,15,14
+2026-10-11T12:15:20.303+00:00	52.236171	D,2151331057,-45,-45
+2026-10-11T12:15:20.313+00:00	52.246385	D,2151341057,15,-1
+2026-10-11T12:15:20.324+00:00	52.256776	D,2151351057,15,14
+2026-10-11T12:15:20.347+00:00	52.279425	D,2151361057,15,14
+2026-10-11T12:15:20.350+00:00	52.282606	D,2151371057,15,15
+2026-10-11T12:15:20.355+00:00	52.288369	D,2151381057,-45,-26
+2026-10-11T12:15:20.399+00:00	52.331550	D,2151391057,15,15
+2026-10-11T12:15:20.409+00:00	52.342386	D,2151401057,-45,-45
+2026-10-11T12:15:20.436+00:00	52.369143	D,2151411057,15,15
+2026-10-11T12:15:20.452+00:00	52.384470	D,2151421057,15,34
+2026-10-11T12:15:20.466+00:00	52.399229	D,2151431057,-45,-39
+2026-10-11T12:15:20.515+00:00	52.447995	D,2151441057,15,0
+2026-10-11T12:15:20.561+00:00	52.493963	D,2151451057,-45,-40
+2026-10-11T12:15:20.597+00:00	52.530319	D,2151461057,76,78
+2026-10-11T12:15:20.629+00:00	52.561833	D,2151471057,15,32
+2026-10-11T12:15:20.635+00:00	52.568143	D,2151481057,15,10
+2026-10-11T12:15:20.647+00:00	52.579947	D,2151491057,15,15
+2026-10-11T12:15:20.648+00:00	52.580625	D,2151501057,15,14
+2026-10-11T12:15:20.648+00:00	52.581121	D,2151511057,15,12
+2026-10-11T12:15:20.649+00:00	52.581641	D,2151521057,15,15
+2026-10-11T12:15:20.650+00:00	52.582739	D,2151531057,15,14
+2026-10-11T12:15:20.651+00:00	52.583757	D,2151541057,15,-1
+2026-10-11T12:15:20.652+00:00	52.585092	D,2151551057,15,16
+2026-10-11T12:15:20.653+00:00	52.586058	D,2151561057,15,10
+2026-10-11T12:15:20.654+00:00	52.586655	D,2151571057,137,108
+2026-10-11T12:15:20.659+00:00	52.591914	D,2151581057,76,71
+2026-10-11T12:15:20.660+00:00	52.592640	D,2151591057,15,14
+2026-10-11T12:15:20.660+00:00	52.593153	D,2151601057,15,15
+2026-10-11T12:15:20.661+00:00	52.593604	D,2151611057,76,58
+2026-10-11T12:15:20.661+00:00	52.594034	D,2151621057,76,76
+2026-10-11T12:15:20.662+00:00	52.594507	D,2151631057,-45,-45
+2026-10-11T12:15:20.662+00:00	52.594987	D,2151641057,76,75
+2026-10-11T12:15:20.662+00:00	52.595336	D,2151651057,15,21
+2026-10-11T12:15:20.663+00:00	52.595664	D,2151661057,76,71
+2026-10-11T12:15:20.663+00:00	52.596130	D,2151671057,-45,-44
+2026-10-11T12:15:20.669+00:00	52.601680	D,2151681057,15,13
+2026-10-11T12:15:20.679+00:00	52.612142	D,2151691057,15,16
+2026-10-11T12:15:20.701+00:00	52.633551	D,2151701057,-45,-39
+2026-10-11T12:15:20.714+00:00	52.646721	D,2151711057,-45,-45
+2026-10-11T12:15:20.714+00:00	52.647184	D,2151721057,15,14
+2026-10-11T12:15:20.737+00:00	52.669619	D,2151731057,15,15
+2026-10-11T12:15:20.739+00:00	52.671820	D,2151741057,-45,-44
+2026-10-11T12:15:20.742+00:00	52.674650	D,2151751057,15,15
+2026-10-11T12:15:20.752+00:00	52.685151	D,2151761057,15,34
+2026-10-11T12:15:20.763+00:00	52.695743	D,2151771057,76,57
+2026-10-11T12:15:20.773+00:00	52.706122	D,2151781057,15,32
+2026-10-11T12:15:20.784+00:00	52.716614	D,2151791057,15,15
+2026-10-11T12:15:20.794+00:00	52.727016	D,2151801057,-45,-39
+2026-10-11T12:15:20.804+00:00	52.737353	D,2151811057,15,28
+2026-10-11T12:15:20.815+00:00	52.747930	D,2151821057,15,10
+2026-10-11T12:15:20.825+00:00	52.758332	D,2151831057,15,15
+2026-10-11T12:15:20.836+00:00	52.768738	D,2151841057,76,71
+2026-10-11T12:15:20.846+00:00	52.779056	D,2151851057,15,-1
+2026-10-11T12:15:20.857+00:00	52.789723	D,2151861057,76,71
+2026-10-11T12:15:20.867+00:00	52.800311	D,2151871057,-45,-26
+2026-10-11T12:15:20.878+00:00	52.810982	D,2151881057,-106,-86
+2026-10-11T12:15:20.888+00:00	52.820952	D,2151891057,15,-1
+2026-10-11T12:15:20.918+00:00	52.850623	D,2151901057,-106,-100
+2026-10-11T12:15:20.918+00:00	52.851189	D,2151911057,-45,-26
+2026-10-11T12:15:20.961+00:00	52.893441	D,2151921057,76,52
+2026-10-11T12:15:20.993+00:00	52.926178	D,2151931057,15,16
+2026-10-11T12:15:21.028+00:00	52.960802	D,2151941057,-45,-26
+2026-10-11T12:15:21.029+00:00	52.961630	D,2151951057,-45,-39
+2026-10-11T12:15:21.029+00:00	52.962270	D,2151961057,-106,-86
+2026-10-11T12:15:21.030+00:00	52.963140	D,2151971057,15,17
+2026-10-11T12:15:21.031+00:00	52.963647	D,2151981057,15,15
+2026-10-11T12:15:21.031+00:00	52.964208	D,2151991057,-45,-39
+2026-10-11T12:15:21.032+00:00	52.965236	D,2152001057,76,89
+2026-10-11T12:15:21.033+00:00	52.966006	D,2152011057,15,17
+2026-10-11T12:15:21.034+00:00	52.967194	D,2152021057,15,17
+2026-10-11T12:15:21.035+00:00	52.967853	D,2152031057,15,15
+2026-10-11T12:15:21.045+00:00	52.977795	D,2152041057,15,15
+2026-10-11T12:15:21.055+00:00	52.988154	D,2152051057,15,-1
+2026-10-11T12:15:21.077+00:00	53.009932	D,2152061057,15,15
+2026-10-11T12:15:21.078+00:00	53.010728	D,2152071057,15,17
+2026-10-11T12:15:21.087+00:00	53.019597	D,2152081057,15,19
+2026-10-11T12:15:21.097+00:00	53.030009	D,2152091057,15,16
+2026-10-11T12:15:21.107+00:00	53.040348	D,2152101057,15,10
+2026-10-11T12:15:21.118+00:00	53.050801	D,2152111057,76,75
+2026-10-11T12:15:21.128+00:00	53.061375	D,2152121057,15,-2
+2026-10-11T12:15:21.139+00:00	53.072042	D,2152131057,-45,-61
+2026-10-11T12:15:21.150+00:00	53.082641	D,2152141057,15,32
+2026-10-11T12:15:21.160+00:00	53.092666	D,2152151057,76,70
+2026-10-11T12:15:21.185+00:00	53.117745	IMU,read_hz=1000 good=2149878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:21.197+00:00	53.129590	FRESH,status=2149879 ready=2149879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=109 yaw_raw_no_deadzone_mdeg=109
+2026-10-11T12:15:21.211+00:00	53.144185	NOISE,n=1000 raw_mean_mdps=-1471 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=7 same_code=743 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:21.228+00:00	53.161318	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=48354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:21.240+00:00	53.172915	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:21.241+00:00	53.173417	D,2152161057,-45,-44
+2026-10-11T12:15:21.243+00:00	53.176011	D,2152171057,-45,-45
+2026-10-11T12:15:21.246+00:00	53.178768	D,2152181057,-106,-105
+2026-10-11T12:15:21.246+00:00	53.179244	D,2152191057,-45,-43
+2026-10-11T12:15:21.249+00:00	53.181828	D,2152201057,76,71
+2026-10-11T12:15:21.252+00:00	53.184653	D,2152211057,-45,-39
+2026-10-11T12:15:21.252+00:00	53.185107	D,2152221057,15,34
+2026-10-11T12:15:21.255+00:00	53.187622	D,2152231057,15,10
+2026-10-11T12:15:21.256+00:00	53.189060	D,2152241057,15,14
+2026-10-11T12:15:21.264+00:00	53.197082	D,2152251057,15,21
+2026-10-11T12:15:21.275+00:00	53.207700	D,2152261057,15,15
+2026-10-11T12:15:21.285+00:00	53.218186	D,2152271057,15,-2
+2026-10-11T12:15:21.296+00:00	53.228561	D,2152281057,-45,-44
+2026-10-11T12:15:21.306+00:00	53.238954	D,2152291057,15,19
+2026-10-11T12:15:21.317+00:00	53.249654	D,2152301057,76,76
+2026-10-11T12:15:21.327+00:00	53.259870	D,2152311057,15,17
+2026-10-11T12:15:21.337+00:00	53.270287	D,2152321057,76,71
+2026-10-11T12:15:21.348+00:00	53.280677	D,2152331057,15,15
+2026-10-11T12:15:21.358+00:00	53.291176	D,2152341057,-45,-43
+2026-10-11T12:15:21.369+00:00	53.301890	D,2152351057,-45,-26
+2026-10-11T12:15:21.379+00:00	53.312110	D,2152361057,15,15
+2026-10-11T12:15:21.390+00:00	53.322770	D,2152371057,-45,-26
+2026-10-11T12:15:21.400+00:00	53.332928	D,2152381057,15,33
+2026-10-11T12:15:21.410+00:00	53.343220	D,2152391057,15,15
+2026-10-11T12:15:21.421+00:00	53.353760	D,2152401057,76,58
+2026-10-11T12:15:21.431+00:00	53.364296	D,2152411057,15,15
+2026-10-11T12:15:21.442+00:00	53.375079	D,2152421057,15,16
+2026-10-11T12:15:21.452+00:00	53.385119	D,2152431057,15,34
+2026-10-11T12:15:21.463+00:00	53.395518	D,2152441057,15,-2
+2026-10-11T12:15:21.473+00:00	53.406024	D,2152451057,76,76
+2026-10-11T12:15:21.484+00:00	53.416542	D,2152461057,15,14
+2026-10-11T12:15:21.494+00:00	53.426983	D,2152471057,15,10
+2026-10-11T12:15:21.504+00:00	53.437381	D,2152481057,15,15
+2026-10-11T12:15:21.515+00:00	53.448150	D,2152491057,-45,-43
+2026-10-11T12:15:21.525+00:00	53.458208	D,2152501057,76,71
+2026-10-11T12:15:21.536+00:00	53.468999	D,2152511057,-45,-39
+2026-10-11T12:15:21.546+00:00	53.479178	D,2152521057,15,28
+2026-10-11T12:15:21.557+00:00	53.489804	D,2152531057,-45,-28
+2026-10-11T12:15:21.567+00:00	53.500024	D,2152541057,15,14
+2026-10-11T12:15:21.578+00:00	53.510816	D,2152551057,-45,-45
+2026-10-11T12:15:21.588+00:00	53.520918	D,2152561057,15,15
+2026-10-11T12:15:21.598+00:00	53.531319	D,2152571057,15,10
+2026-10-11T12:15:21.609+00:00	53.542011	D,2152581057,-45,-44
+2026-10-11T12:15:21.619+00:00	53.552212	D,2152591057,76,71
+2026-10-11T12:15:21.630+00:00	53.562995	D,2152601057,-106,-98
+2026-10-11T12:15:21.640+00:00	53.573149	D,2152611057,15,16
+2026-10-11T12:15:21.651+00:00	53.583685	D,2152621057,76,76
+2026-10-11T12:15:21.661+00:00	53.594009	D,2152631057,76,71
+2026-10-11T12:15:21.672+00:00	53.604600	D,2152641057,76,76
+2026-10-11T12:15:21.682+00:00	53.615210	D,2152651057,-45,-26
+2026-10-11T12:15:21.693+00:00	53.625438	D,2152661057,15,16
+2026-10-11T12:15:21.703+00:00	53.635857	D,2152671057,15,17
+2026-10-11T12:15:21.713+00:00	53.646233	D,2152681057,15,19
+2026-10-11T12:15:21.724+00:00	53.656817	D,2152691057,15,14
+2026-10-11T12:15:21.734+00:00	53.667390	D,2152701057,-45,-45
+2026-10-11T12:15:21.745+00:00	53.677638	D,2152711057,15,15
+2026-10-11T12:15:21.755+00:00	53.688259	D,2152721057,-45,-26
+2026-10-11T12:15:21.766+00:00	53.698850	D,2152731057,-45,-45
+2026-10-11T12:15:21.776+00:00	53.709029	D,2152741057,15,10
+2026-10-11T12:15:21.786+00:00	53.719332	D,2152751057,15,19
+2026-10-11T12:15:21.797+00:00	53.729882	D,2152761057,15,10
+2026-10-11T12:15:21.807+00:00	53.740290	D,2152771057,76,71
+2026-10-11T12:15:21.818+00:00	53.750688	D,2152781057,15,15
+2026-10-11T12:15:21.828+00:00	53.761169	D,2152791057,15,-1
+2026-10-11T12:15:21.839+00:00	53.771811	D,2152801057,-45,-39
+2026-10-11T12:15:21.850+00:00	53.782559	D,2152811057,-45,-45
+2026-10-11T12:15:21.860+00:00	53.792416	D,2152821057,76,76
+2026-10-11T12:15:21.870+00:00	53.802980	D,2152831057,76,60
+2026-10-11T12:15:21.881+00:00	53.813553	D,2152841057,-45,-37
+2026-10-11T12:15:21.891+00:00	53.823836	D,2152851057,76,76
+2026-10-11T12:15:21.902+00:00	53.834461	D,2152861057,-45,-44
+2026-10-11T12:15:21.912+00:00	53.844632	D,2152871057,15,10
+2026-10-11T12:15:21.922+00:00	53.855123	D,2152881057,76,71
+2026-10-11T12:15:21.933+00:00	53.865895	D,2152891057,15,15
+2026-10-11T12:15:21.943+00:00	53.876050	D,2152901057,15,15
+2026-10-11T12:15:21.954+00:00	53.886915	D,2152911057,76,75
+2026-10-11T12:15:21.964+00:00	53.896959	D,2152921057,15,15
+2026-10-11T12:15:21.974+00:00	53.907328	D,2152931057,76,76
+2026-10-11T12:15:21.985+00:00	53.917880	D,2152941057,15,16
+2026-10-11T12:15:21.996+00:00	53.928411	D,2152951057,15,14
+2026-10-11T12:15:22.006+00:00	53.938707	D,2152961057,15,14
+2026-10-11T12:15:22.016+00:00	53.949183	D,2152971057,15,20
+2026-10-11T12:15:22.027+00:00	53.959615	D,2152981057,76,71
+2026-10-11T12:15:22.037+00:00	53.970277	D,2152991057,-45,-26
+2026-10-11T12:15:22.048+00:00	53.980454	D,2153001057,15,34
+2026-10-11T12:15:22.058+00:00	53.990992	D,2153011057,15,15
+2026-10-11T12:15:22.069+00:00	54.001725	D,2153021057,-106,-109
+2026-10-11T12:15:22.079+00:00	54.011810	D,2153031057,15,33
+2026-10-11T12:15:22.089+00:00	54.022132	D,2153041058,15,3
+2026-10-11T12:15:22.101+00:00	54.033642	D,2153052057,15,-1
+2026-10-11T12:15:22.112+00:00	54.044470	D,2153062057,-45,-46
+2026-10-11T12:15:22.122+00:00	54.054544	D,2153072057,15,15
+2026-10-11T12:15:22.132+00:00	54.065122	D,2153082057,15,15
+2026-10-11T12:15:22.143+00:00	54.075740	D,2153092057,-45,-57
+2026-10-11T12:15:22.153+00:00	54.085998	D,2153102057,15,15
+2026-10-11T12:15:22.164+00:00	54.096402	D,2153112057,15,15
+2026-10-11T12:15:22.174+00:00	54.106765	D,2153122057,15,15
+2026-10-11T12:15:22.184+00:00	54.117217	D,2153132057,15,21
+2026-10-11T12:15:22.195+00:00	54.127980	D,2153142057,-45,-43
+2026-10-11T12:15:22.205+00:00	54.138259	D,2153152057,15,10
+2026-10-11T12:15:22.229+00:00	54.162266	IMU,read_hz=1000 good=2150878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:22.241+00:00	54.174099	FRESH,status=2150879 ready=2150879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=118 yaw_raw_no_deadzone_mdeg=118
+2026-10-11T12:15:22.256+00:00	54.188546	NOISE,n=1000 raw_mean_mdps=-1470 raw_std_mdps=43 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=8 same_code=764 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:22.273+00:00	54.205782	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=49354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:22.284+00:00	54.217385	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:22.285+00:00	54.217815	D,2153162057,15,17
+2026-10-11T12:15:22.287+00:00	54.220371	D,2153172057,15,12
+2026-10-11T12:15:22.290+00:00	54.223137	D,2153182057,76,71
+2026-10-11T12:15:22.291+00:00	54.223424	D,2153192057,76,71
+2026-10-11T12:15:22.293+00:00	54.226182	D,2153202057,15,15
+2026-10-11T12:15:22.294+00:00	54.226537	D,2153212058,15,3
+2026-10-11T12:15:22.296+00:00	54.229181	D,2153223058,15,3
+2026-10-11T12:15:22.297+00:00	54.230369	D,2153234057,15,-2
+2026-10-11T12:15:22.301+00:00	54.234272	D,2153244057,76,76
+2026-10-11T12:15:22.312+00:00	54.244667	D,2153254057,15,32
+2026-10-11T12:15:22.322+00:00	54.255160	D,2153264057,15,10
+2026-10-11T12:15:22.333+00:00	54.265793	D,2153274057,15,-2
+2026-10-11T12:15:22.343+00:00	54.276204	D,2153284057,15,15
+2026-10-11T12:15:22.354+00:00	54.286700	D,2153294057,-45,-21
+2026-10-11T12:15:22.364+00:00	54.296785	D,2153304057,76,56
+2026-10-11T12:15:22.375+00:00	54.307560	D,2153314057,15,32
+2026-10-11T12:15:22.385+00:00	54.317895	D,2153324057,15,10
+2026-10-11T12:15:22.395+00:00	54.328292	D,2153334057,76,75
+2026-10-11T12:15:22.406+00:00	54.338874	D,2153344057,-45,-21
+2026-10-11T12:15:22.416+00:00	54.349197	D,2153354057,15,-2
+2026-10-11T12:15:22.427+00:00	54.360105	D,2153364057,-106,-104
+2026-10-11T12:15:22.437+00:00	54.370102	D,2153374057,15,-1
+2026-10-11T12:15:22.448+00:00	54.380492	D,2153384057,15,15
+2026-10-11T12:15:22.458+00:00	54.391116	D,2153394057,-45,-28
+2026-10-11T12:15:22.469+00:00	54.401564	D,2153404057,15,14
+2026-10-11T12:15:22.479+00:00	54.411911	D,2153414057,76,71
+2026-10-11T12:15:22.489+00:00	54.422324	D,2153424057,15,21
+2026-10-11T12:15:22.500+00:00	54.432913	D,2153434057,-45,-43
+2026-10-11T12:15:22.510+00:00	54.443311	D,2153444057,15,14
+2026-10-11T12:15:22.521+00:00	54.453618	D,2153454057,15,15
+2026-10-11T12:15:22.531+00:00	54.464239	D,2153464057,-45,-44
+2026-10-11T12:15:22.542+00:00	54.474614	D,2153474057,15,14
+2026-10-11T12:15:22.552+00:00	54.484959	D,2153484057,15,20
+2026-10-11T12:15:22.563+00:00	54.495604	D,2153494057,15,15
+2026-10-11T12:15:22.573+00:00	54.506232	D,2153504057,-45,-45
+2026-10-11T12:15:22.584+00:00	54.516531	D,2153514057,-45,-44
+2026-10-11T12:15:22.594+00:00	54.526869	D,2153524057,15,28
+2026-10-11T12:15:22.605+00:00	54.537856	D,2153534057,-45,-26
+2026-10-11T12:15:22.615+00:00	54.548207	D,2153544057,-106,-100
+2026-10-11T12:15:22.625+00:00	54.558288	D,2153554057,15,-1
+2026-10-11T12:15:22.636+00:00	54.568644	D,2153564057,15,16
+2026-10-11T12:15:22.646+00:00	54.579387	D,2153574057,-45,-43
+2026-10-11T12:15:22.657+00:00	54.589468	D,2153584057,76,75
+2026-10-11T12:15:22.667+00:00	54.599931	D,2153594057,15,16
+2026-10-11T12:15:22.678+00:00	54.610510	D,2153604057,15,-2
+2026-10-11T12:15:22.688+00:00	54.620868	D,2153614057,15,15
+2026-10-11T12:15:22.698+00:00	54.631318	D,2153624057,15,12
+2026-10-11T12:15:22.709+00:00	54.641747	D,2153634057,76,58
+2026-10-11T12:15:22.719+00:00	54.652365	D,2153644057,-45,-41
+2026-10-11T12:15:22.730+00:00	54.662802	D,2153654057,-45,-43
+2026-10-11T12:15:22.740+00:00	54.673380	D,2153664057,-45,-62
+2026-10-11T12:15:22.751+00:00	54.683593	D,2153674057,76,71
+2026-10-11T12:15:22.761+00:00	54.693956	D,2153684057,76,58
+2026-10-11T12:15:22.772+00:00	54.704504	D,2153694057,76,60
+2026-10-11T12:15:22.782+00:00	54.714980	D,2153704057,15,15
+2026-10-11T12:15:22.793+00:00	54.725523	D,2153714057,15,15
+2026-10-11T12:15:22.803+00:00	54.736026	D,2153724057,-45,-26
+2026-10-11T12:15:22.813+00:00	54.746312	D,2153734057,15,15
+2026-10-11T12:15:22.824+00:00	54.756671	D,2153744057,15,17
+2026-10-11T12:15:22.834+00:00	54.767229	D,2153754057,15,34
+2026-10-11T12:15:22.845+00:00	54.777759	D,2153764057,15,16
+2026-10-11T12:15:22.855+00:00	54.788299	D,2153774057,-45,-39
+2026-10-11T12:15:22.866+00:00	54.798394	D,2153784057,76,58
+2026-10-11T12:15:22.876+00:00	54.809079	D,2153794057,-45,-26
+2026-10-11T12:15:22.886+00:00	54.819386	D,2153804057,76,53
+2026-10-11T12:15:22.897+00:00	54.830081	D,2153814057,-45,-45
+2026-10-11T12:15:22.907+00:00	54.840226	D,2153824057,15,-2
+2026-10-11T12:15:22.918+00:00	54.850659	D,2153834057,15,15
+2026-10-11T12:15:22.929+00:00	54.861451	D,2153844057,-45,-39
+2026-10-11T12:15:22.939+00:00	54.871537	D,2153854057,15,16
+2026-10-11T12:15:22.949+00:00	54.881960	D,2153864057,15,17
+2026-10-11T12:15:22.960+00:00	54.892503	D,2153874057,15,16
+2026-10-11T12:15:22.970+00:00	54.902814	D,2153884057,15,16
+2026-10-11T12:15:22.981+00:00	54.913472	D,2153894057,15,15
+2026-10-11T12:15:22.991+00:00	54.923960	D,2153904057,15,15
+2026-10-11T12:15:23.001+00:00	54.934285	D,2153914057,15,17
+2026-10-11T12:15:23.012+00:00	54.944698	D,2153924057,15,15
+2026-10-11T12:15:23.022+00:00	54.955262	D,2153934057,15,20
+2026-10-11T12:15:23.033+00:00	54.965725	D,2153944057,15,21
+2026-10-11T12:15:23.043+00:00	54.976254	D,2153954057,-45,-44
+2026-10-11T12:15:23.054+00:00	54.986959	D,2153964057,-45,-26
+2026-10-11T12:15:23.064+00:00	54.996933	D,2153974057,76,76
+2026-10-11T12:15:23.075+00:00	55.007610	D,2153984057,15,10
+2026-10-11T12:15:23.085+00:00	55.018065	D,2153994057,-45,-43
+2026-10-11T12:15:23.096+00:00	55.028497	D,2154004057,15,14
+2026-10-11T12:15:23.106+00:00	55.038839	D,2154014057,15,15
+2026-10-11T12:15:23.116+00:00	55.049218	D,2154024057,76,76
+2026-10-11T12:15:23.127+00:00	55.059817	D,2154034057,15,15
+2026-10-11T12:15:23.138+00:00	55.070564	D,2154044057,-106,-98
+2026-10-11T12:15:23.148+00:00	55.080674	D,2154054057,15,15
+2026-10-11T12:15:23.158+00:00	55.091329	D,2154064057,-45,-44
+2026-10-11T12:15:23.169+00:00	55.101534	D,2154074057,15,15
+2026-10-11T12:15:23.179+00:00	55.112081	D,2154084057,15,16
+2026-10-11T12:15:23.190+00:00	55.122568	D,2154094057,15,10
+2026-10-11T12:15:23.200+00:00	55.133100	D,2154104057,-45,-44
+2026-10-11T12:15:23.211+00:00	55.143447	D,2154114057,15,15
+2026-10-11T12:15:23.221+00:00	55.154084	D,2154124057,-45,-39
+2026-10-11T12:15:23.231+00:00	55.164329	D,2154134057,15,34
+2026-10-11T12:15:23.242+00:00	55.174733	D,2154144057,15,21
+2026-10-11T12:15:23.252+00:00	55.185275	D,2154154057,15,15
+2026-10-11T12:15:23.273+00:00	55.205609	IMU,read_hz=1000 good=2151878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:23.287+00:00	55.220089	FRESH,status=2151879 ready=2151879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=125 yaw_raw_no_deadzone_mdeg=125
+2026-10-11T12:15:23.302+00:00	55.234561	NOISE,n=1000 raw_mean_mdps=-1472 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=6 same_code=748 sample_min_us=417 sample_max_us=1000
+2026-10-11T12:15:23.316+00:00	55.249166	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=50354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:23.328+00:00	55.260690	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:23.331+00:00	55.263529	D,2154164057,15,34
+2026-10-11T12:15:23.333+00:00	55.266398	D,2154174057,-45,-44
+2026-10-11T12:15:23.337+00:00	55.269861	D,2154184057,15,28
+2026-10-11T12:15:23.338+00:00	55.271243	D,2154194058,15,0
+2026-10-11T12:15:23.340+00:00	55.272616	D,2154205057,15,17
+2026-10-11T12:15:23.340+00:00	55.273228	D,2154215057,15,15
+2026-10-11T12:15:23.343+00:00	55.275840	D,2154225057,15,17
+2026-10-11T12:15:23.343+00:00	55.276283	D,2154235057,76,76
+2026-10-11T12:15:23.347+00:00	55.280384	D,2154245057,15,15
+2026-10-11T12:15:23.358+00:00	55.290827	D,2154255057,15,15
+2026-10-11T12:15:23.368+00:00	55.301174	D,2154265057,15,15
+2026-10-11T12:15:23.379+00:00	55.311979	D,2154275057,-45,-45
+2026-10-11T12:15:23.389+00:00	55.322230	D,2154285057,15,10
+2026-10-11T12:15:23.400+00:00	55.332800	D,2154295057,-45,-26
+2026-10-11T12:15:23.410+00:00	55.343332	D,2154305057,-106,-87
+2026-10-11T12:15:23.421+00:00	55.353809	D,2154315057,-45,-26
+2026-10-11T12:15:23.432+00:00	55.364396	D,2154325057,-106,-104
+2026-10-11T12:15:23.442+00:00	55.374452	D,2154335057,15,-2
+2026-10-11T12:15:23.452+00:00	55.384790	D,2154345057,15,15
+2026-10-11T12:15:23.463+00:00	55.395425	D,2154355057,76,71
+2026-10-11T12:15:23.473+00:00	55.405776	D,2154365057,15,14
+2026-10-11T12:15:23.484+00:00	55.416605	D,2154375057,-45,-44
+2026-10-11T12:15:23.494+00:00	55.426652	D,2154385057,76,58
+2026-10-11T12:15:23.504+00:00	55.437339	D,2154395057,137,137
+2026-10-11T12:15:23.515+00:00	55.447650	D,2154405057,15,17
+2026-10-11T12:15:23.525+00:00	55.458120	D,2154415057,15,15
+2026-10-11T12:15:23.536+00:00	55.468451	D,2154425057,15,14
+2026-10-11T12:15:23.546+00:00	55.478838	D,2154435057,15,15
+2026-10-11T12:15:23.557+00:00	55.489456	D,2154445057,76,76
+2026-10-11T12:15:23.567+00:00	55.499804	D,2154455057,15,15
+2026-10-11T12:15:23.577+00:00	55.510358	D,2154465057,15,28
+2026-10-11T12:15:23.588+00:00	55.520721	D,2154475057,15,0
+2026-10-11T12:15:23.598+00:00	55.531284	D,2154485057,15,-2
+2026-10-11T12:15:23.609+00:00	55.541623	D,2154495057,15,34
+2026-10-11T12:15:23.619+00:00	55.552197	D,2154505057,-45,-32
+2026-10-11T12:15:23.630+00:00	55.562768	D,2154515057,-45,-39
+2026-10-11T12:15:23.640+00:00	55.573286	D,2154525057,-45,-44
+2026-10-11T12:15:23.651+00:00	55.583447	D,2154535057,15,15
+2026-10-11T12:15:23.661+00:00	55.593870	D,2154545057,15,15
+2026-10-11T12:15:23.672+00:00	55.604542	D,2154555057,-45,-39
+2026-10-11T12:15:23.682+00:00	55.614813	D,2154565058,-45,-50
+2026-10-11T12:15:23.693+00:00	55.626357	D,2154576057,15,15
+2026-10-11T12:15:23.704+00:00	55.636702	D,2154586057,15,15
+2026-10-11T12:15:23.714+00:00	55.647185	D,2154596057,15,-2
+2026-10-11T12:15:23.725+00:00	55.657578	D,2154606057,76,75
+2026-10-11T12:15:23.735+00:00	55.667856	D,2154616057,15,10
+2026-10-11T12:15:23.746+00:00	55.678806	D,2154626057,-45,-25
+2026-10-11T12:15:23.756+00:00	55.688962	D,2154636057,15,32
+2026-10-11T12:15:23.767+00:00	55.699481	D,2154646057,-45,-49
+2026-10-11T12:15:23.777+00:00	55.709744	D,2154656057,15,28
+2026-10-11T12:15:23.787+00:00	55.720204	D,2154666057,15,15
+2026-10-11T12:15:23.798+00:00	55.730574	D,2154676057,15,10
+2026-10-11T12:15:23.808+00:00	55.741195	D,2154686057,15,15
+2026-10-11T12:15:23.819+00:00	55.751928	D,2154696057,-106,-87
+2026-10-11T12:15:23.829+00:00	55.761995	D,2154706057,15,34
+2026-10-11T12:15:23.839+00:00	55.772360	D,2154716057,15,17
+2026-10-11T12:15:23.850+00:00	55.782885	D,2154726057,76,75
+2026-10-11T12:15:23.860+00:00	55.793341	D,2154736057,15,15
+2026-10-11T12:15:23.871+00:00	55.803980	D,2154746057,-45,-26
+2026-10-11T12:15:23.881+00:00	55.814028	D,2154756057,15,15
+2026-10-11T12:15:23.892+00:00	55.824589	D,2154766057,15,15
+2026-10-11T12:15:23.902+00:00	55.835190	D,2154776057,15,15
+2026-10-11T12:15:23.913+00:00	55.845541	D,2154786057,15,16
+2026-10-11T12:15:23.923+00:00	55.856205	D,2154796057,-45,-28
+2026-10-11T12:15:23.934+00:00	55.866401	D,2154806057,15,28
+2026-10-11T12:15:23.944+00:00	55.876905	D,2154816057,15,0
+2026-10-11T12:15:23.955+00:00	55.887432	D,2154826057,15,17
+2026-10-11T12:15:23.965+00:00	55.897801	D,2154836057,15,34
+2026-10-11T12:15:23.975+00:00	55.908114	D,2154846057,76,58
+2026-10-11T12:15:23.986+00:00	55.918803	D,2154856057,-45,-39
+2026-10-11T12:15:23.996+00:00	55.929223	D,2154866057,-45,-26
+2026-10-11T12:15:24.007+00:00	55.939697	D,2154876057,15,15
+2026-10-11T12:15:24.017+00:00	55.950221	D,2154886057,-45,-28
+2026-10-11T12:15:24.028+00:00	55.960659	D,2154896057,-45,-39
+2026-10-11T12:15:24.038+00:00	55.970924	D,2154906057,15,15
+2026-10-11T12:15:24.049+00:00	55.981471	D,2154916057,-45,-39
+2026-10-11T12:15:24.059+00:00	55.992056	D,2154926057,-45,-26
+2026-10-11T12:15:24.070+00:00	56.002467	D,2154936057,-45,-44
+2026-10-11T12:15:24.080+00:00	56.012690	D,2154946057,15,32
+2026-10-11T12:15:24.090+00:00	56.023058	D,2154956057,15,15
+2026-10-11T12:15:24.101+00:00	56.033807	D,2154966057,-45,-43
+2026-10-11T12:15:24.111+00:00	56.044168	D,2154976057,15,-2
+2026-10-11T12:15:24.122+00:00	56.054565	D,2154986057,15,10
+2026-10-11T12:15:24.132+00:00	56.065097	D,2154996057,-45,-46
+2026-10-11T12:15:24.143+00:00	56.075606	D,2155006057,-45,-44
+2026-10-11T12:15:24.153+00:00	56.085864	D,2155016057,15,15
+2026-10-11T12:15:24.164+00:00	56.096592	D,2155026057,-106,-86
+2026-10-11T12:15:24.174+00:00	56.106941	D,2155036057,-45,-45
+2026-10-11T12:15:24.184+00:00	56.117304	D,2155046057,-45,-31
+2026-10-11T12:15:24.195+00:00	56.127893	D,2155056057,-45,-26
+2026-10-11T12:15:24.205+00:00	56.137990	D,2155066057,15,15
+2026-10-11T12:15:24.216+00:00	56.148484	D,2155076057,76,74
+2026-10-11T12:15:24.226+00:00	56.159007	D,2155086057,15,15
+2026-10-11T12:15:24.237+00:00	56.169503	D,2155096057,-45,-57
+2026-10-11T12:15:24.247+00:00	56.179925	D,2155106057,15,-2
+2026-10-11T12:15:24.257+00:00	56.190358	D,2155116057,15,21
+2026-10-11T12:15:24.268+00:00	56.200680	D,2155126057,15,14
+2026-10-11T12:15:24.278+00:00	56.211054	D,2155136057,15,9
+2026-10-11T12:15:24.289+00:00	56.221813	D,2155146057,15,16
+2026-10-11T12:15:24.319+00:00	56.251948	IMU,read_hz=1000 good=2152878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:24.331+00:00	56.263681	FRESH,status=2152879 ready=2152879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=130 yaw_raw_no_deadzone_mdeg=130
+2026-10-11T12:15:24.345+00:00	56.278204	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=753 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:24.363+00:00	56.295449	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=51354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:24.374+00:00	56.307071	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:24.375+00:00	56.307586	D,2155156641,-45,-26
+2026-10-11T12:15:24.377+00:00	56.310168	D,2155167057,76,76
+2026-10-11T12:15:24.380+00:00	56.312845	D,2155177057,15,32
+2026-10-11T12:15:24.381+00:00	56.313694	D,2155187057,-45,-39
+2026-10-11T12:15:24.383+00:00	56.316253	D,2155197057,-45,-43
+2026-10-11T12:15:24.386+00:00	56.318730	D,2155207057,76,77
+2026-10-11T12:15:24.386+00:00	56.319182	D,2155217057,-45,-37
+2026-10-11T12:15:24.389+00:00	56.321777	D,2155227057,76,71
+2026-10-11T12:15:24.390+00:00	56.323133	D,2155237058,-45,-44
+2026-10-11T12:15:24.395+00:00	56.328245	D,2155248057,-45,-46
+2026-10-11T12:15:24.406+00:00	56.338546	D,2155258057,76,58
+2026-10-11T12:15:24.416+00:00	56.349163	D,2155268057,-45,-26
+2026-10-11T12:15:24.426+00:00	56.359360	D,2155278057,76,40
+2026-10-11T12:15:24.437+00:00	56.370018	D,2155288057,15,-2
+2026-10-11T12:15:24.447+00:00	56.380372	D,2155298057,15,16
+2026-10-11T12:15:24.458+00:00	56.390762	D,2155308057,76,71
+2026-10-11T12:15:24.468+00:00	56.401192	D,2155318057,15,15
+2026-10-11T12:15:24.479+00:00	56.411652	D,2155328057,15,17
+2026-10-11T12:15:24.490+00:00	56.422511	D,2155338057,-45,-39
+2026-10-11T12:15:24.499+00:00	56.432391	D,2155348057,15,0
+2026-10-11T12:15:24.510+00:00	56.443036	D,2155358057,15,14
+2026-10-11T12:15:24.521+00:00	56.453574	D,2155368057,-45,-39
+2026-10-11T12:15:24.531+00:00	56.464057	D,2155378057,15,10
+2026-10-11T12:15:24.541+00:00	56.474274	D,2155388058,15,3
+2026-10-11T12:15:24.553+00:00	56.485818	D,2155399057,15,17
+2026-10-11T12:15:24.563+00:00	56.496200	D,2155409057,15,14
+2026-10-11T12:15:24.574+00:00	56.506975	D,2155419057,15,32
+2026-10-11T12:15:24.584+00:00	56.517259	D,2155429057,15,17
+2026-10-11T12:15:24.614+00:00	56.546944	D,2155439058,15,3
+2026-10-11T12:15:24.619+00:00	56.552160	D,2155450057,-106,-87
+2026-10-11T12:15:24.620+00:00	56.552631	D,2155460057,15,15
+2026-10-11T12:15:24.659+00:00	56.592253	D,2155470057,76,64
+2026-10-11T12:15:24.663+00:00	56.596066	D,2155480057,15,15
+2026-10-11T12:15:24.664+00:00	56.596696	D,2155490057,15,32
+2026-10-11T12:15:24.664+00:00	56.597098	D,2155500057,-45,-39
+2026-10-11T12:15:24.699+00:00	56.632281	D,2155510057,-45,-26
+2026-10-11T12:15:24.704+00:00	56.636496	D,2155520057,-45,-26
+2026-10-11T12:15:24.704+00:00	56.637057	D,2155530057,-45,-56
+2026-10-11T12:15:24.705+00:00	56.637499	D,2155540057,76,75
+2026-10-11T12:15:24.711+00:00	56.643585	D,2155550057,15,20
+2026-10-11T12:15:24.721+00:00	56.653997	D,2155560057,15,34
+2026-10-11T12:15:24.731+00:00	56.664373	D,2155570057,15,15
+2026-10-11T12:15:24.742+00:00	56.674785	D,2155580057,15,17
+2026-10-11T12:15:24.752+00:00	56.685384	D,2155590057,15,34
+2026-10-11T12:15:24.763+00:00	56.695982	D,2155600057,-45,-43
+2026-10-11T12:15:24.773+00:00	56.706156	D,2155610057,15,-2
+2026-10-11T12:15:24.784+00:00	56.716625	D,2155620057,15,15
+2026-10-11T12:15:24.794+00:00	56.727158	D,2155630057,-45,-31
+2026-10-11T12:15:24.805+00:00	56.737506	D,2155640057,76,58
+2026-10-11T12:15:24.815+00:00	56.748254	D,2155650057,-45,-27
+2026-10-11T12:15:24.826+00:00	56.758430	D,2155660057,15,14
+2026-10-11T12:15:24.836+00:00	56.768749	D,2155670057,15,21
+2026-10-11T12:15:24.847+00:00	56.779398	D,2155680057,-45,-26
+2026-10-11T12:15:24.857+00:00	56.790058	D,2155690057,-45,-43
+2026-10-11T12:15:24.867+00:00	56.800247	D,2155700057,76,76
+2026-10-11T12:15:24.878+00:00	56.810660	D,2155710057,15,15
+2026-10-11T12:15:24.888+00:00	56.821073	D,2155720057,15,12
+2026-10-11T12:15:24.899+00:00	56.831471	D,2155730057,15,10
+2026-10-11T12:15:24.909+00:00	56.842046	D,2155740057,15,15
+2026-10-11T12:15:24.920+00:00	56.852489	D,2155750057,15,15
+2026-10-11T12:15:24.930+00:00	56.862805	D,2155760057,15,15
+2026-10-11T12:15:24.940+00:00	56.873255	D,2155770057,15,-2
+2026-10-11T12:15:24.951+00:00	56.883591	D,2155780057,15,15
+2026-10-11T12:15:24.962+00:00	56.894431	D,2155790057,-45,-43
+2026-10-11T12:15:24.972+00:00	56.904979	D,2155800057,-45,-44
+2026-10-11T12:15:24.982+00:00	56.915108	D,2155810058,15,30
+2026-10-11T12:15:24.994+00:00	56.926854	D,2155821057,-45,-26
+2026-10-11T12:15:25.005+00:00	56.937420	D,2155831057,-106,-105
+2026-10-11T12:15:25.015+00:00	56.947465	D,2155841058,15,-4
+2026-10-11T12:15:25.026+00:00	56.959185	D,2155852057,15,19
+2026-10-11T12:15:25.037+00:00	56.969587	D,2155862057,-45,-26
+2026-10-11T12:15:25.047+00:00	56.979898	D,2155872057,15,17
+2026-10-11T12:15:25.057+00:00	56.990346	D,2155882057,76,58
+2026-10-11T12:15:25.068+00:00	57.000937	D,2155892057,-45,-44
+2026-10-11T12:15:25.078+00:00	57.011252	D,2155902057,15,10
+2026-10-11T12:15:25.089+00:00	57.021619	D,2155912057,15,34
+2026-10-11T12:15:25.099+00:00	57.032214	D,2155922057,15,15
+2026-10-11T12:15:25.110+00:00	57.042615	D,2155932057,15,-2
+2026-10-11T12:15:25.120+00:00	57.052878	D,2155942057,15,33
+2026-10-11T12:15:25.130+00:00	57.063322	D,2155952057,15,0
+2026-10-11T12:15:25.141+00:00	57.073728	D,2155962057,15,10
+2026-10-11T12:15:25.151+00:00	57.084376	D,2155972057,15,15
+2026-10-11T12:15:25.162+00:00	57.094760	D,2155982057,15,15
+2026-10-11T12:15:25.172+00:00	57.105251	D,2155992057,15,15
+2026-10-11T12:15:25.183+00:00	57.115851	D,2156002057,-45,-45
+2026-10-11T12:15:25.194+00:00	57.126515	D,2156012057,-45,-43
+2026-10-11T12:15:25.204+00:00	57.136582	D,2156022057,15,15
+2026-10-11T12:15:25.214+00:00	57.147043	D,2156032057,15,-2
+2026-10-11T12:15:25.225+00:00	57.157671	D,2156042057,-45,-44
+2026-10-11T12:15:25.235+00:00	57.168176	D,2156052057,-45,-44
+2026-10-11T12:15:25.246+00:00	57.178563	D,2156062057,-45,-49
+2026-10-11T12:15:25.256+00:00	57.188787	D,2156072057,15,14
+2026-10-11T12:15:25.266+00:00	57.199216	D,2156082057,15,15
+2026-10-11T12:15:25.277+00:00	57.209631	D,2156092057,76,71
+2026-10-11T12:15:25.287+00:00	57.220014	D,2156102057,15,-2
+2026-10-11T12:15:25.298+00:00	57.230786	D,2156112057,-45,-39
+2026-10-11T12:15:25.308+00:00	57.241026	D,2156122057,76,71
+2026-10-11T12:15:25.319+00:00	57.251835	D,2156132057,76,76
+2026-10-11T12:15:25.329+00:00	57.261749	D,2156142057,15,16
+2026-10-11T12:15:25.339+00:00	57.272367	D,2156152057,76,71
+2026-10-11T12:15:25.363+00:00	57.296346	IMU,read_hz=1000 good=2153878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:25.375+00:00	57.308170	FRESH,status=2153879 ready=2153879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=136 yaw_raw_no_deadzone_mdeg=136
+2026-10-11T12:15:25.390+00:00	57.322712	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=45 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=745 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:25.407+00:00	57.339921	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=52354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:25.419+00:00	57.351533	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:25.419+00:00	57.351858	D,2156162058,15,-2
+2026-10-11T12:15:25.422+00:00	57.354598	D,2156173057,15,16
+2026-10-11T12:15:25.424+00:00	57.357303	D,2156183057,-45,-43
+2026-10-11T12:15:25.425+00:00	57.357692	D,2156193057,76,58
+2026-10-11T12:15:25.427+00:00	57.360316	D,2156203057,15,15
+2026-10-11T12:15:25.428+00:00	57.360719	D,2156213057,15,16
+2026-10-11T12:15:25.430+00:00	57.363348	D,2156223057,15,15
+2026-10-11T12:15:25.434+00:00	57.367148	D,2156233057,15,17
+2026-10-11T12:15:25.435+00:00	57.367824	D,2156243057,15,32
+2026-10-11T12:15:25.445+00:00	57.377816	D,2156253057,15,15
+2026-10-11T12:15:25.455+00:00	57.388376	D,2156263057,76,63
+2026-10-11T12:15:25.466+00:00	57.398799	D,2156273057,76,76
+2026-10-11T12:15:25.477+00:00	57.409409	D,2156283057,-45,-39
+2026-10-11T12:15:25.487+00:00	57.419772	D,2156293057,-45,-44
+2026-10-11T12:15:25.497+00:00	57.430078	D,2156303057,15,15
+2026-10-11T12:15:25.508+00:00	57.440554	D,2156313057,15,10
+2026-10-11T12:15:25.518+00:00	57.450893	D,2156323057,15,14
+2026-10-11T12:15:25.528+00:00	57.461323	D,2156333057,15,15
+2026-10-11T12:15:25.539+00:00	57.472337	D,2156343057,15,14
+2026-10-11T12:15:25.550+00:00	57.482717	D,2156353057,-166,-148
+2026-10-11T12:15:25.560+00:00	57.493011	D,2156363057,-45,-44
+2026-10-11T12:15:25.570+00:00	57.502968	D,2156373058,15,4
+2026-10-11T12:15:25.582+00:00	57.514556	D,2156384057,15,21
+2026-10-11T12:15:25.592+00:00	57.525114	D,2156394057,15,16
+2026-10-11T12:15:25.603+00:00	57.535797	D,2156404057,76,58
+2026-10-11T12:15:25.613+00:00	57.546145	D,2156414057,-45,-26
+2026-10-11T12:15:25.623+00:00	57.556330	D,2156424057,15,10
+2026-10-11T12:15:25.634+00:00	57.566773	D,2156434058,15,3
+2026-10-11T12:15:25.645+00:00	57.578222	D,2156445057,76,76
+2026-10-11T12:15:25.656+00:00	57.589102	D,2156455057,-45,-61
+2026-10-11T12:15:25.666+00:00	57.599174	D,2156465057,15,15
+2026-10-11T12:15:25.677+00:00	57.609759	D,2156475057,15,16
+2026-10-11T12:15:25.687+00:00	57.620140	D,2156485057,15,10
+2026-10-11T12:15:25.697+00:00	57.630371	D,2156495057,15,15
+2026-10-11T12:15:25.708+00:00	57.641029	D,2156505057,76,75
+2026-10-11T12:15:25.719+00:00	57.651602	D,2156515057,-45,-39
+2026-10-11T12:15:25.729+00:00	57.661827	D,2156525057,15,15
+2026-10-11T12:15:25.740+00:00	57.672546	D,2156535057,-45,-26
+2026-10-11T12:15:25.750+00:00	57.682824	D,2156545057,-45,-26
+2026-10-11T12:15:25.760+00:00	57.693258	D,2156555057,76,58
+2026-10-11T12:15:25.771+00:00	57.703624	D,2156565057,15,15
+2026-10-11T12:15:25.781+00:00	57.714123	D,2156575057,15,28
+2026-10-11T12:15:25.792+00:00	57.724781	D,2156585058,-45,-50
+2026-10-11T12:15:25.802+00:00	57.735162	D,2156595058,137,118
+2026-10-11T12:15:25.814+00:00	57.746637	D,2156606057,-45,-21
+2026-10-11T12:15:25.824+00:00	57.756963	D,2156616057,15,20
+2026-10-11T12:15:25.834+00:00	57.767348	D,2156626057,15,16
+2026-10-11T12:15:25.845+00:00	57.778356	D,2156636057,15,12
+2026-10-11T12:15:25.856+00:00	57.788465	D,2156646057,-45,-38
+2026-10-11T12:15:25.866+00:00	57.798903	D,2156656057,15,15
+2026-10-11T12:15:25.876+00:00	57.809116	D,2156666057,15,17
+2026-10-11T12:15:25.887+00:00	57.819667	D,2156676057,15,17
+2026-10-11T12:15:25.897+00:00	57.830142	D,2156686057,15,-1
+2026-10-11T12:15:25.908+00:00	57.840832	D,2156696057,-45,-44
+2026-10-11T12:15:25.918+00:00	57.851126	D,2156706057,-45,-39
+2026-10-11T12:15:25.929+00:00	57.861407	D,2156716057,15,33
+2026-10-11T12:15:25.939+00:00	57.872191	D,2156726057,-45,-44
+2026-10-11T12:15:25.950+00:00	57.882710	D,2156736057,-106,-100
+2026-10-11T12:15:25.960+00:00	57.892738	D,2156746057,15,15
+2026-10-11T12:15:25.971+00:00	57.903436	D,2156756057,-45,-39
+2026-10-11T12:15:25.981+00:00	57.913912	D,2156766057,-45,-45
+2026-10-11T12:15:25.991+00:00	57.924130	D,2156776057,15,-1
+2026-10-11T12:15:26.002+00:00	57.934802	D,2156786057,137,131
+2026-10-11T12:15:26.013+00:00	57.945397	D,2156796057,-106,-100
+2026-10-11T12:15:26.023+00:00	57.955468	D,2156806057,15,10
+2026-10-11T12:15:26.033+00:00	57.965940	D,2156816057,15,16
+2026-10-11T12:15:26.044+00:00	57.976687	D,2156826057,-45,-38
+2026-10-11T12:15:26.054+00:00	57.986696	D,2156836057,76,58
+2026-10-11T12:15:26.064+00:00	57.997155	D,2156846057,76,76
+2026-10-11T12:15:26.075+00:00	58.007615	D,2156856057,15,21
+2026-10-11T12:15:26.085+00:00	58.017873	D,2156866057,15,10
+2026-10-11T12:15:26.096+00:00	58.028600	D,2156876057,15,15
+2026-10-11T12:15:26.106+00:00	58.038993	D,2156886057,15,-1
+2026-10-11T12:15:26.117+00:00	58.049608	D,2156896057,-45,-32
+2026-10-11T12:15:26.127+00:00	58.059921	D,2156906057,15,10
+2026-10-11T12:15:26.137+00:00	58.070287	D,2156916057,15,15
+2026-10-11T12:15:26.148+00:00	58.080712	D,2156926057,15,-2
+2026-10-11T12:15:26.158+00:00	58.091237	D,2156936057,15,15
+2026-10-11T12:15:26.169+00:00	58.101659	D,2156946057,15,15
+2026-10-11T12:15:26.179+00:00	58.111968	D,2156956057,15,15
+2026-10-11T12:15:26.190+00:00	58.122575	D,2156966057,76,71
+2026-10-11T12:15:26.200+00:00	58.133017	D,2156976057,15,15
+2026-10-11T12:15:26.211+00:00	58.143740	D,2156986057,-45,-44
+2026-10-11T12:15:26.221+00:00	58.153974	D,2156996057,-45,-45
+2026-10-11T12:15:26.232+00:00	58.164514	D,2157006057,-106,-103
+2026-10-11T12:15:26.242+00:00	58.174844	D,2157016057,15,21
+2026-10-11T12:15:26.252+00:00	58.185189	D,2157026057,76,74
+2026-10-11T12:15:26.263+00:00	58.195574	D,2157036057,15,21
+2026-10-11T12:15:26.273+00:00	58.206319	D,2157046057,-45,-39
+2026-10-11T12:15:26.284+00:00	58.216700	D,2157056057,-45,-26
+2026-10-11T12:15:26.294+00:00	58.227219	D,2157066057,-45,-44
+2026-10-11T12:15:26.305+00:00	58.237441	D,2157076057,76,58
+2026-10-11T12:15:26.315+00:00	58.247843	D,2157086057,15,33
+2026-10-11T12:15:26.325+00:00	58.258266	D,2157096057,76,76
+2026-10-11T12:15:26.336+00:00	58.268901	D,2157106057,-45,-26
+2026-10-11T12:15:26.346+00:00	58.279066	D,2157116057,15,21
+2026-10-11T12:15:26.357+00:00	58.289589	D,2157126057,15,16
+2026-10-11T12:15:26.367+00:00	58.300043	D,2157136057,76,76
+2026-10-11T12:15:26.378+00:00	58.310709	D,2157146057,-45,-43
+2026-10-11T12:15:26.408+00:00	58.340844	IMU,read_hz=1000 good=2154878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:26.420+00:00	58.352619	FRESH,status=2154879 ready=2154879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=142 yaw_raw_no_deadzone_mdeg=142
+2026-10-11T12:15:26.434+00:00	58.367253	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=45 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=745 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:26.452+00:00	58.384433	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=53354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:26.463+00:00	58.395975	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:26.463+00:00	58.396256	D,2157156641,76,56
+2026-10-11T12:15:26.466+00:00	58.399013	D,2157167057,76,71
+2026-10-11T12:15:26.470+00:00	58.402579	D,2157177057,76,59
+2026-10-11T12:15:26.471+00:00	58.404394	D,2157187057,76,76
+2026-10-11T12:15:26.472+00:00	58.404860	D,2157197057,15,34
+2026-10-11T12:15:26.472+00:00	58.405291	D,2157207058,-45,-50
+2026-10-11T12:15:26.475+00:00	58.407694	D,2157218057,-45,-43
+2026-10-11T12:15:26.479+00:00	58.411573	D,2157228057,15,12
+2026-10-11T12:15:26.479+00:00	58.411935	D,2157238057,15,15
+2026-10-11T12:15:26.484+00:00	58.416995	D,2157248057,15,15
+2026-10-11T12:15:26.495+00:00	58.427695	D,2157258057,76,75
+2026-10-11T12:15:26.505+00:00	58.437966	D,2157268057,15,15
+2026-10-11T12:15:26.516+00:00	58.448588	D,2157278057,-45,-39
+2026-10-11T12:15:26.526+00:00	58.458891	D,2157288057,15,16
+2026-10-11T12:15:26.536+00:00	58.469353	D,2157298057,-45,-44
+2026-10-11T12:15:26.547+00:00	58.479995	D,2157308057,-45,-41
+2026-10-11T12:15:26.557+00:00	58.490298	D,2157318057,15,10
+2026-10-11T12:15:26.568+00:00	58.500684	D,2157328057,15,34
+2026-10-11T12:15:26.578+00:00	58.510958	D,2157338058,15,3
+2026-10-11T12:15:26.590+00:00	58.522553	D,2157349057,15,15
+2026-10-11T12:15:26.600+00:00	58.533002	D,2157359057,15,32
+2026-10-11T12:15:26.611+00:00	58.543426	D,2157369057,15,15
+2026-10-11T12:15:26.621+00:00	58.553831	D,2157379057,15,15
+2026-10-11T12:15:26.631+00:00	58.564180	D,2157389057,15,17
+2026-10-11T12:15:26.642+00:00	58.575009	D,2157399057,-45,-43
+2026-10-11T12:15:26.652+00:00	58.585258	D,2157409058,15,-3
+2026-10-11T12:15:26.664+00:00	58.596868	D,2157420057,-45,-39
+2026-10-11T12:15:26.674+00:00	58.607240	D,2157430057,-45,-48
+2026-10-11T12:15:26.685+00:00	58.617556	D,2157440057,76,75
+2026-10-11T12:15:26.695+00:00	58.628364	D,2157450057,-45,-44
+2026-10-11T12:15:26.706+00:00	58.638599	D,2157460057,-45,-26
+2026-10-11T12:15:26.716+00:00	58.648895	D,2157470057,76,57
+2026-10-11T12:15:26.726+00:00	58.659393	D,2157480057,15,32
+2026-10-11T12:15:26.737+00:00	58.669787	D,2157490057,15,17
+2026-10-11T12:15:26.747+00:00	58.680306	D,2157500057,76,60
+2026-10-11T12:15:26.758+00:00	58.690609	D,2157510057,15,16
+2026-10-11T12:15:26.768+00:00	58.701310	D,2157520057,-45,-44
+2026-10-11T12:15:26.779+00:00	58.711623	D,2157530057,76,58
+2026-10-11T12:15:26.789+00:00	58.721986	D,2157540057,76,71
+2026-10-11T12:15:26.799+00:00	58.732235	D,2157550057,15,0
+2026-10-11T12:15:26.810+00:00	58.742877	D,2157560057,15,17
+2026-10-11T12:15:26.821+00:00	58.753399	D,2157570057,76,58
+2026-10-11T12:15:26.831+00:00	58.763965	D,2157580057,-45,-44
+2026-10-11T12:15:26.841+00:00	58.774242	D,2157590057,76,76
+2026-10-11T12:15:26.852+00:00	58.784787	D,2157600057,15,15
+2026-10-11T12:15:26.862+00:00	58.795201	D,2157610057,15,14
+2026-10-11T12:15:26.873+00:00	58.805542	D,2157620057,15,15
+2026-10-11T12:15:26.883+00:00	58.815973	D,2157630057,76,75
+2026-10-11T12:15:26.894+00:00	58.826481	D,2157640057,15,15
+2026-10-11T12:15:26.904+00:00	58.836742	D,2157650057,76,75
+2026-10-11T12:15:26.914+00:00	58.847352	D,2157660057,15,15
+2026-10-11T12:15:26.925+00:00	58.858112	D,2157670057,-45,-39
+2026-10-11T12:15:26.935+00:00	58.868137	D,2157680057,15,15
+2026-10-11T12:15:26.946+00:00	58.878627	D,2157690057,15,15
+2026-10-11T12:15:26.956+00:00	58.889041	D,2157700057,15,14
+2026-10-11T12:15:26.966+00:00	58.899379	D,2157710057,76,75
+2026-10-11T12:15:26.977+00:00	58.910132	D,2157720057,76,75
+2026-10-11T12:15:26.987+00:00	58.920353	D,2157730057,76,71
+2026-10-11T12:15:26.998+00:00	58.930872	D,2157740057,15,34
+2026-10-11T12:15:27.008+00:00	58.941171	D,2157750057,15,15
+2026-10-11T12:15:27.019+00:00	58.951637	D,2157760057,15,15
+2026-10-11T12:15:27.030+00:00	58.962474	D,2157770057,-45,-43
+2026-10-11T12:15:27.040+00:00	58.972622	D,2157780057,15,15
+2026-10-11T12:15:27.050+00:00	58.983019	D,2157790057,15,17
+2026-10-11T12:15:27.061+00:00	58.993570	D,2157800057,76,71
+2026-10-11T12:15:27.071+00:00	59.003769	D,2157810057,15,-1
+2026-10-11T12:15:27.081+00:00	59.014359	D,2157820057,15,17
+2026-10-11T12:15:27.092+00:00	59.024976	D,2157830057,15,14
+2026-10-11T12:15:27.102+00:00	59.035379	D,2157840057,-45,-40
+2026-10-11T12:15:27.113+00:00	59.045658	D,2157850057,15,15
+2026-10-11T12:15:27.123+00:00	59.056047	D,2157860057,15,10
+2026-10-11T12:15:27.134+00:00	59.066642	D,2157870057,15,10
+2026-10-11T12:15:27.144+00:00	59.077218	D,2157880057,-45,-45
+2026-10-11T12:15:27.155+00:00	59.087514	D,2157890057,76,75
+2026-10-11T12:15:27.165+00:00	59.098088	D,2157900057,-45,-43
+2026-10-11T12:15:27.175+00:00	59.108312	D,2157910057,15,15
+2026-10-11T12:15:27.186+00:00	59.118860	D,2157920057,15,19
+2026-10-11T12:15:27.196+00:00	59.129302	D,2157930057,76,76
+2026-10-11T12:15:27.207+00:00	59.139827	D,2157940057,76,76
+2026-10-11T12:15:27.217+00:00	59.150285	D,2157950057,-45,-43
+2026-10-11T12:15:27.228+00:00	59.160595	D,2157960057,15,-2
+2026-10-11T12:15:27.238+00:00	59.171192	D,2157970057,-45,-26
+2026-10-11T12:15:27.249+00:00	59.181391	D,2157980057,15,10
+2026-10-11T12:15:27.259+00:00	59.192007	D,2157990057,15,10
+2026-10-11T12:15:27.270+00:00	59.202664	D,2158000057,-45,-39
+2026-10-11T12:15:27.280+00:00	59.212626	D,2158010057,15,14
+2026-10-11T12:15:27.290+00:00	59.223209	D,2158020057,15,-2
+2026-10-11T12:15:27.301+00:00	59.233942	D,2158030057,15,34
+2026-10-11T12:15:27.311+00:00	59.244180	D,2158040057,15,10
+2026-10-11T12:15:27.322+00:00	59.254582	D,2158050057,15,10
+2026-10-11T12:15:27.332+00:00	59.265101	D,2158060057,15,12
+2026-10-11T12:15:27.343+00:00	59.275696	D,2158070057,-45,-44
+2026-10-11T12:15:27.353+00:00	59.285908	D,2158080058,15,-3
+2026-10-11T12:15:27.364+00:00	59.297384	D,2158091057,15,15
+2026-10-11T12:15:27.375+00:00	59.307834	D,2158101057,15,10
+2026-10-11T12:15:27.385+00:00	59.318226	D,2158111057,76,76
+2026-10-11T12:15:27.396+00:00	59.328839	D,2158121057,15,15
+2026-10-11T12:15:27.407+00:00	59.339409	D,2158131057,-45,-44
+2026-10-11T12:15:27.417+00:00	59.349631	D,2158141057,15,15
+2026-10-11T12:15:27.427+00:00	59.360135	D,2158151057,15,15
+2026-10-11T12:15:27.452+00:00	59.385190	IMU,read_hz=1000 good=2155878 err=0 busy=0 timeout=0 age_us=843 i2c_last_us=160 i2c_max_us=161 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1479 gz_mdps=0 yaw_mdeg=-20 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2026-10-11T12:15:27.464+00:00	59.396929	FRESH,status=2155879 ready=2155879 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-20 yaw_lpf_no_deadzone_mdeg=149 yaw_raw_no_deadzone_mdeg=149
+2026-10-11T12:15:27.479+00:00	59.411475	NOISE,n=1000 raw_mean_mdps=-1472 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=7 same_code=735 sample_min_us=416 sample_max_us=1000
+2026-10-11T12:15:27.496+00:00	59.428674	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=54354 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=47 last_span_mdps=243 block_mean_span_mdps=15 bias_mdps=-1479
+2026-10-11T12:15:27.507+00:00	59.440333	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+2026-10-11T12:15:27.508+00:00	59.440722	D,2158161057,-45,-41
+2026-10-11T12:15:27.510+00:00	59.443359	D,2158171057,-45,-44
+2026-10-11T12:15:27.513+00:00	59.446113	D,2158181057,15,-2
+2026-10-11T12:15:27.514+00:00	59.446385	D,2158191057,15,15
+2026-10-11T12:15:27.516+00:00	59.449105	D,2158201057,15,10
+2026-10-11T12:15:27.519+00:00	59.451887	D,2158211057,15,15
+2026-10-11T12:15:27.519+00:00	59.452378	D,2158221057,-45,-26
+2026-10-11T12:15:27.522+00:00	59.454859	D,2158231057,-45,-26
+2026-10-11T12:15:27.523+00:00	59.456171	D,2158241057,15,15
+2026-10-11T12:15:27.531+00:00	59.464373	D,2158251057,15,-2
+2026-10-11T12:15:27.542+00:00	59.474852	D,2158261057,15,17
+2026-10-11T12:15:27.553+00:00	59.485618	D,2158271057,137,136
+2026-10-11T12:15:27.563+00:00	59.496116	D,2158281057,-45,-25
+2026-10-11T12:15:27.574+00:00	59.506502	D,2158291057,-45,-46
+2026-10-11T12:15:27.584+00:00	59.516763	D,2158301057,76,57
+2026-10-11T12:15:27.594+00:00	59.527270	D,2158311057,-45,-44
+2026-10-11T12:15:27.605+00:00	59.537532	D,2158321057,15,16
+2026-10-11T12:15:27.615+00:00	59.548141	D,2158331057,76,75
+2026-10-11T12:15:27.626+00:00	59.558550	D,2158341057,15,39
+2026-10-11T12:15:27.636+00:00	59.569106	D,2158351057,-45,-28
+2026-10-11T12:15:27.646+00:00	59.579328	D,2158361057,15,15
+2026-10-11T12:15:27.657+00:00	59.589766	D,2158371057,15,10
+2026-10-11T12:15:27.667+00:00	59.600276	D,2158381057,15,15
+2026-10-11T12:15:27.678+00:00	59.610844	D,2158391057,15,15
+2026-10-11T12:15:27.688+00:00	59.621155	D,2158401057,15,15
+2026-10-11T12:15:27.699+00:00	59.631547	D,2158411057,15,14
+2026-10-11T12:15:27.709+00:00	59.642079	D,2158421057,76,76
+2026-10-11T12:15:27.720+00:00	59.652716	D,2158431057,-45,-40
+2026-10-11T12:15:27.730+00:00	59.663199	D,2158441057,-45,-40
+2026-10-11T12:15:27.740+00:00	59.673351	D,2158451057,76,74
+2026-10-11T12:15:27.751+00:00	59.683929	D,2158461057,-45,-43
+2026-10-11T12:15:27.762+00:00	59.694418	D,2158471057,-45,-44
+2026-10-11T12:15:27.772+00:00	59.704973	D,2158481057,-45,-32
+2026-10-11T12:15:27.782+00:00	59.715337	D,2158491057,-45,-44
+2026-10-11T12:15:27.793+00:00	59.725604	D,2158501057,15,-1
+2026-10-11T12:15:27.803+00:00	59.736001	D,2158511057,15,15
+2026-10-11T12:15:27.813+00:00	59.746331	D,2158521057,15,34
+2026-10-11T12:15:27.824+00:00	59.757079	D,2158531057,76,71
+2026-10-11T12:15:27.834+00:00	59.767379	D,2158541057,76,58
+2026-10-11T12:15:27.845+00:00	59.778121	D,2158551057,-45,-43
+2026-10-11T12:15:27.855+00:00	59.788202	D,2158561057,76,76
+2026-10-11T12:15:27.866+00:00	59.798746	D,2158571057,15,14
+2026-10-11T12:15:27.877+00:00	59.809497	D,2158581057,-45,-43
+2026-10-11T12:15:27.887+00:00	59.819557	D,2158591057,15,15
+2026-10-11T12:15:27.897+00:00	59.830026	D,2158601057,15,16
+2026-10-11T12:15:27.908+00:00	59.840654	D,2158611057,-45,-26
+2026-10-11T12:15:27.918+00:00	59.851013	D,2158621057,-45,-43
+2026-10-11T12:15:27.929+00:00	59.861421	D,2158631057,15,21
+2026-10-11T12:15:27.939+00:00	59.872042	D,2158641057,-45,-44
+2026-10-11T12:15:27.949+00:00	59.882262	D,2158651057,15,14
+2026-10-11T12:15:27.960+00:00	59.892905	D,2158661057,-45,-26
+2026-10-11T12:15:27.970+00:00	59.903368	D,2158671057,-45,-27
+2026-10-11T12:15:27.981+00:00	59.913875	D,2158681057,-45,-43
+2026-10-11T12:15:27.991+00:00	59.924141	D,2158691057,15,-2
+2026-10-11T12:15:28.001+00:00	59.934348	D,2158701057,15,15
+2026-10-11T12:15:28.012+00:00	59.944966	D,2158711057,15,27
+2026-10-11T12:15:28.022+00:00	59.955314	D,2158721057,15,15
+2026-10-11T12:15:28.033+00:00	59.966035	D,2158731057,-45,-39
+2026-10-11T12:15:28.043+00:00	59.976379	D,2158741057,15,15
+2026-10-11T12:15:28.054+00:00	59.986613	D,2158751057,15,15
+2026-10-11T12:15:28.064+00:00	59.997088	D,2158761057,15,15
+2026-10-11T12:15:28.075+00:00	60.007589	D,2158771057,15,15
+2026-10-11T12:15:28.085+00:00	60.018071	D,2158781057,15,16
