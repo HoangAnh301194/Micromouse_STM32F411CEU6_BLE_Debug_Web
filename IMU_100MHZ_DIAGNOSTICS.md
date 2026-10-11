@@ -205,3 +205,37 @@ Output is written under `imu_logs/<timestamp>/`. The firmware's
 `NOISE` and `FRESH` records remain 1Hz aggregated statistics rather
 than the original 1000 individual samples per second. Binary/raw streaming
 would require a separate firmware transport change.
+
+## Fixes after the 60-second KEY recalibration experiment
+
+The **D** diagnostic burst observed after MCU time `2147483648us`
+(~35m47s uptime) was a firmware bug: signed deadline subtraction
+unexpectedly became positive at the `2^31` boundary, generating
+100Hz `D` records while gyro rates were only ~0.17 deg/s.
+`src/main.c` now uses an explicit active flag and unsigned elapsed
+microseconds since a **real motion trigger** (>10 deg/s) to keep
+dynamic traces valid across timer wrap.
+
+`tools/imu_capture_plot.py` now:
+- Preserves timestamps when reprocessing its own `raw_serial.log` using
+  `--input`; also accepts unprefixed serial text.
+- Excludes the pre-KEY yaw session and calibration zero rows if a
+  `DRIFT_START` record exists.
+- Drops `NOISE,n=0` warmup/collect placeholders instead of reporting
+  zero noise.
+- Removes the previous completed 4000-sample plateau from plots of
+  a new KEY recalibration.
+- Suppresses `D` plots when the entire recorded trace is below 1 deg/s
+  and prints an informational message about possible old firmware traces.
+
+Example offline reanalysis:
+```powershell
+python tools/imu_capture_plot.py --input "imu_logs/<session>/raw_serial.log"
+```
+
+For rigorous comparisons, capture **at least 130 seconds AFTER
+`CAL_DONE`** to include the 120-second `CAL_CHECK`; a 60-second
+record beginning before a manual KEY press does not contain it.
+The TIM11 period of 1000us is derived from the MCU clock and is not
+independent proof of physical 1000Hz; compare to an external timing
+reference (logic analyzer/scope) before final timing validation.
