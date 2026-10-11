@@ -399,6 +399,18 @@ int main(void)
     UART_Init(); /* USART1 PA9: USB-TTL 115200, no BLE required. */
 
     UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\r\n");
+#if defined(CLOCK_HSI_TRIM)
+    UART_Printf("CLOCK_TRIM,mode=override requested=%u active=%lu hsical=%lu rcc_cr=0x%08lX\r\n",
+                (unsigned)CLOCK_HSI_TRIM,
+                (unsigned long)Board_GetHsiTrim(),
+                (unsigned long)Board_GetHsiCal(),
+                (unsigned long)RCC->CR);
+#else
+    UART_Printf("CLOCK_TRIM,mode=default requested=16 active=%lu hsical=%lu rcc_cr=0x%08lX\r\n",
+                (unsigned long)Board_GetHsiTrim(),
+                (unsigned long)Board_GetHsiCal(),
+                (unsigned long)RCC->CR);
+#endif
     UART_Printf("CLOCK,sysclk=%lu hsi_pll100=%u apb1=%lu apb2=%lu tim5_us_clock=1000000\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned)(SystemCoreClock == 100000000UL),
