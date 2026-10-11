@@ -37,7 +37,7 @@ def fields(message: str) -> dict[str, str]:
     # CLOCK_PROFILE is comma-separated; CLOCK_TRIM/CAL_DONE/IMU combine
     # commas with spaces. Split BOTH, or boot and sensor checks silently fail.
     import re
-    for item in re.split(r"[,\\s]+", message):
+    for item in re.split(r"[,\s]+", message):
         key, sep, value = item.partition("=")
         if sep:
             result[key.strip()] = value.strip()
