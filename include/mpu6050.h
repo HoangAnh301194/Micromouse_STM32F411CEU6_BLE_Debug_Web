@@ -159,6 +159,13 @@ typedef struct {
   uint8_t init_expected;
   uint8_t init_read_value;
   I2C_Status init_i2c_status;
+  /* Startup I2C rate negotiation records; 0=400k 1=300k 2=200k 3=100k.
+   * 255 means not attempted (or WHO read skipped due to address NACK). */
+  uint8_t probe_address_status[4];
+  uint8_t probe_who_status[4];
+  uint8_t probe_who_value[4];
+  uint8_t selected_speed_mode;
+  uint8_t selected_speed_index;
 
   /* 1-second raw-sample diagnostic window (main-loop only). */
   int64_t raw_sum;
