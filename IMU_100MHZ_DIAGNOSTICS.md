@@ -526,3 +526,58 @@ python -m platformio run -e genericSTM32F411CE --target upload
 Never auto-sweep through multiple trim values and never persist HSI trim
 calibration before testing across temperature and supply voltage. STM32F411
 SYSCLK limit is 100MHz; stop if a candidate approaches/exceeds this limit.
+
+
+## Stage 4: HSITRIM=20, incremental safety-controlled check
+
+HSITRIM=19 was validated in the 20261011_215650 serial log:
+`CLOCK_TRIM,mode=override requested=19 active=19 hsical=128`,
+`CLOCK_DIAG,fault=0` and no CLK gaps/UART drops.
+
+| HSI trim | Session | PC-estimated TIM5 | PC-estimated TIM11 | Estimated SYSCLK |
+| --- | --- | ---: | ---: | ---: |
+| 16 | 20261011_202835 | 956028.315 Hz | 956.047 Hz | 95.603 MHz |
+| 17 | 20261011_212343 | 960871.921 Hz | 960.855 Hz | 96.087 MHz |
+| 18 | 20261011_213837 | 963885.784 Hz | 963.869 Hz | 96.389 MHz |
+| 19 | 20261011_215650 | 972060.904 Hz | 972.079 Hz | 97.206 MHz |
+
+In the trim19 raw log, calibration finished 4000/4000 samples, 8/8 blocks,
+no retries; at 120 nominal MCU seconds raw yaw drift was -103mdeg.
+No I2C errors/timeouts were reported. The measured 18 -> 19 frequency
+jump (+0.848%) is **not** a basis for assuming linear trim response.
+
+The optional `clock_hsi_trim20` PlatformIO environment is available for
+one more measurement. STM32F411 SYSCLK maximum remains **100 MHz**.
+Do not run an automatic trim sweep or enable motors during this test.
+
+```powershell
+git status -sb
+git fetch origin
+git merge --ff-only origin/feature/motor-debug-console
+# If the merge reports diverged, STOP and preserve local commits; do not reset.
+python -m platformio run -e clock_hsi_trim20
+python -m platformio run -e clock_hsi_trim20 --target upload
+python tools/clock_serial_test.py --port COM7 --baud 115200 --seconds 180
+```
+
+Press hardware RESET once after COM7 opens, keep robot stationary, and verify
+`CLOCK_TRIM,mode=override requested=20 active=20` in the new raw log.
+Compare against trim19 (not the original factory trim16):
+
+```powershell
+$run = Get-ChildItem .\clock_logs -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Select-String -Path "$($run.FullName)\raw_serial.log" -Pattern "CLOCK_TRIM"
+python tools/clock_trim_compare.py --baseline ".\clock_logs\20261011_215650\clock_summary.txt" --candidate "$($run.FullName)\clock_summary.txt"
+```
+
+After collecting data, reflash the **default** firmware environment to
+restore the original trim behavior:
+
+```powershell
+python -m platformio run -e genericSTM32F411CE --target upload
+```
+
+If trim20's inferred frequency is unexpectedly >99MHz or measured rate
+changes substantially over the test window, stop further increments and
+investigate environmental influences. Do not use a PC-host slope as the
+sole certification of hardware timing accuracy.
