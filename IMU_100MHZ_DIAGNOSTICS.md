@@ -410,3 +410,58 @@ period or gyro `dt` before this test.
 **Note:** `CLOCK_TRIM` is diagnostic text, so existing
 `clock_serial_test.py` still records it in `raw_serial.log`
 but it is not one of the numerical `CLK` regression samples.
+
+
+## Stage 2: HSITRIM=18 after repeatable +1 trim improvement
+
+2026-10-11 measured with PC monotonic/USART, all without missing CLK sequences
+or firmware UART drops:
+
+| Nominal HSI trim | Session | TIM5 estimated Hz | TIM11 estimated Hz | MCU clock freq error |
+| --- | --- | ---: | ---: | ---: |
+| 16 | 20261011_202835 | 956028.315 | 956.047 | -4.3972% |
+| 17 (as flashed by test operator; check boot log) | 20261011_211801 | 960808.939 | 960.747 | -3.9191% |
+| 17 (as flashed by test operator; check boot log) | 20261011_212343 | 960871.921 | 960.855 | -3.9128% |
+
+Trim17 was repeatable within 0.0066% frequency between runs; both improve
+TIM5 by ~0.5% relative to trim16. There is no evidence yet that the response
+is linear for larger steps, and the PC estimate is not a traceable
+oscilloscope/frequency-counter reference. The original logs did not commit
+`raw_serial.log`, so the HSITRIM=17 attribution is based on the
+operator's flashing procedure rather than checked `CLOCK_TRIM` boot text.
+
+### Procedure (one extra step, no automatic sweep)
+
+```powershell
+git switch feature/motor-debug-console
+git pull --ff-only origin feature/motor-debug-console
+python -m platformio run -e clock_hsi_trim18
+python -m platformio run -e clock_hsi_trim18 --target upload
+python tools/clock_serial_test.py --port COM7 --baud 115200 --seconds 180
+```
+
+After the COM port opens, press RESET once. Confirm the newest session's
+`raw_serial.log` contains
+`CLOCK_TRIM,mode=override requested=18 active=18`.
+No movement or KEY presses; motors remain disabled.
+
+Compare against trim17 run (baseline here specifically means trim17):
+
+```powershell
+python tools/clock_trim_compare.py --baseline "clock_logs\20261011_212343\clock_summary.txt" --candidate "clock_logs\NEW_SESSION\clock_summary.txt"
+```
+
+Expected if response continues at the previous +0.5% rate: ~966Hz TIM11 and
+~96.6MHz SYSCLK, but this is a **hypothesis, not measured trim18 output**.
+Always inspect the candidate's effective SYSCLK and stop any increase if it
+approaches or exceeds the STM32F411 100MHz maximum. UART baud also derives
+from HSI/PLL; inspect for framing glitches and missed samples.
+
+Revert after test:
+
+```powershell
+python -m platformio run -e genericSTM32F411CE --target upload
+```
+
+Upload `clock_samples.csv`, `clock_summary.txt` and, for boot
+verification, `raw_serial.log` or the single `CLOCK_TRIM` line.
