@@ -52,6 +52,7 @@ KINDS = {
     "CAL_CHECK": ["elapsed_ms", "raw_drift_mdeg", "lpf_no_deadzone_mdeg",
                   "raw_mdeg_per_min", "current_bias_mdps"],
     "DRIFT_START": ["bias_mdps", "dlpf"],
+    "CLK": ["seq", "us", "ticks", "tx_drop"],
     "CLOCK": ["sysclk", "hsi_pll100", "apb1", "apb2", "tim5_us_clock"],
     "CLOCK_DIAG": ["fault", "rcc_cr", "cfgr", "pllcfgr", "pwr_cr", "pwr_csr", "flash_acr"],
     "I2C_PROBE": ["400_a", "400_w", "400_id", "300_a", "300_w", "300_id",
