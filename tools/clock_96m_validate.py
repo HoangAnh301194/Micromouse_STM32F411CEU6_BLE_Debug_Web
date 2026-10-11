@@ -48,6 +48,14 @@ def check(report: dict, messages: list[str]) -> tuple[list[str], list[str], dict
     failures = []
     warnings = []
 
+    # The COM7 capture may start while the PREVIOUS firmware is running.
+    # The operator presses RESET only after the serial port opens. Ignore
+    # pre-reset lines; trust exclusively the LAST isolated-firmware boot.
+    boot_positions = [i for i, m in enumerate(messages)
+                      if m.startswith("[BOOT] Isolated MPU6050/I2C test (motors disabled)")]
+    if boot_positions:
+        messages = messages[boot_positions[-1]:]
+
     def fail_if(condition: bool, why: str):
         if condition:
             failures.append(why)
@@ -83,6 +91,8 @@ def check(report: dict, messages: list[str]) -> tuple[list[str], list[str], dict
 
     clk = select("CLK,")
     fail_if(not clk, "No raw CLK records to verify nominal SYSCLK.")
+    fail_if(len(clk) < report.get("selected_session_records", 0),
+            "Selected clock session is longer than the new post-RESET log.")
     for message in clk:
         data = fields(message)
         if any(data.get(k) != expected for k, expected in (
@@ -131,9 +141,9 @@ def check(report: dict, messages: list[str]) -> tuple[list[str], list[str], dict
     fail_if(len(timings) < MIN_FIT_RECORDS,
             "Too few TIMING records.")
     for metric in ("err", "timeout", "uart_drop", "uart_dma_err"):
-        if any(fields(item).get(metric) not in (None, "0") for item in imus):
-            failures.append(f"Nonzero IMU {metric} detected.")
-    if any(fields(item).get("gap_over_1500us") not in (None, "0")
+        if any(fields(item).get(metric) != "0" for item in imus):
+            failures.append(f"Nonzero/missing IMU {metric} detected.")
+    if any(fields(item).get("gap_over_1500us") != "0"
            for item in timings):
         failures.append("TIM11 reported gaps >1500 nominal microseconds.")
     if any(fields(item).get("late_50us") not in (None, "0")
@@ -195,6 +205,11 @@ def self_test():
               "uart_drop=0 uart_dma_err=0"] * 220
     lines += ["TIMING,period_min_us=1000 late_50us=0 gap_over_1500us=0"] * 220
     bad, _, _ = check(good, lines)
+    assert not bad, bad
+    # Simulate old (100MHz) CLK data preceding the hardware RESET.
+    pre_reset = ["CLK,seq=800,us=800000000,ticks=800000,tx_drop=0,"
+                 "trim=16,fault=0,sysclk_nominal=100000000"] + lines
+    bad, _, _ = check(good, pre_reset)
     assert not bad, bad
     wrong = dict(good, seq_missing_count=1)
     bad, _, _ = check(wrong, lines)
