@@ -153,6 +153,13 @@ typedef struct {
   uint32_t data_read_start_us;
   uint8_t dlpf_cfg;
 
+  /* Boot-only diagnostic: identify exact failed MPU register operation. */
+  uint8_t init_step;
+  uint8_t init_register;
+  uint8_t init_expected;
+  uint8_t init_read_value;
+  I2C_Status init_i2c_status;
+
   /* 1-second raw-sample diagnostic window (main-loop only). */
   int64_t raw_sum;
   uint64_t raw_sum_squares;
