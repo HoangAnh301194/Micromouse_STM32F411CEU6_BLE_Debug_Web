@@ -60,6 +60,9 @@
  * - 1000: High accuracy (~3s)
  */
 #define CALIBRATION_SAMPLES 200 /* Number of successful asynchronous samples */
+/* Change to 2 (98Hz) for controlled A/B filter comparison, default 3 (42Hz).
+ * MPU6050 hardware output rate remains 1kHz for both values. */
+#define MPU6050_DLPF_CFG 3U
 #define MPU_SAMPLE_PERIOD_US 1000UL /* Target 1 kHz register reads in main */
 
 /* ========================================================================== */
@@ -111,7 +114,10 @@ typedef struct {
   float gyro_z_filtered;                    /* Final filtered output (deg/s) */
 
   /* Yaw Integration */
-  float yaw;               /* Integrated yaw angle (degrees) */
+  float yaw;               /* Filtered gyro, deadzone applied */
+  float yaw_no_deadzone;   /* LPF gyro after bias, NO software deadzone */
+  float yaw_raw;           /* Raw gyro after bias, NO LPF/deadzone */
+  float gyro_z_raw_corrected;
   uint32_t last_update_us; /* Last update timestamp (microseconds) */
 
   /* DMA Variables */
@@ -135,6 +141,17 @@ typedef struct {
   uint16_t calibration_count;
   uint8_t calibrating;
   uint8_t calibrated;
+
+  /* Nonblocking two-step test: INT_STATUS DATA_RDY then GYRO_Z 16-bit. */
+  uint8_t sample_phase;  /* 0=idle 1=status_pending 2=data_pending 3=start_data */
+  uint8_t last_status_ready;
+  uint32_t status_reads;
+  uint32_t status_ready_reads;
+  uint32_t status_not_ready_reads;
+  uint32_t fresh_gyro_reads;
+  uint32_t stale_gyro_reads;
+  uint32_t data_read_start_us;
+  uint8_t dlpf_cfg;
 
   /* 1-second raw-sample diagnostic window (main-loop only). */
   int64_t raw_sum;
@@ -213,6 +230,10 @@ void MPU6050_GetNoiseWindow(MPU6050_Handle_t *handle,
  * @param handle Pointer to MPU6050 handle
  */
 void MPU6050_ResetYaw(MPU6050_Handle_t *handle);
+
+/* Wake main immediately between status and gyro read; otherwise main may
+ * enter WFI until the next 1ms TIM11 interrupt. */
+uint8_t MPU6050_NeedsImmediatePoll(MPU6050_Handle_t *handle);
 
 /**
  * @brief Set yaw angle to specific value
