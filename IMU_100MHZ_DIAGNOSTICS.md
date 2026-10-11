@@ -329,3 +329,84 @@ python tools/clock_serial_test.py --self-test
 For analysis, send **`clock_samples.csv` and
 `clock_summary.txt`** from the same session. If a reset,
 UART loss or malformed records are suspected, also send `raw_serial.log`.
+
+
+## HSI trim A/B experiment (stage 1: factory vs HSITRIM=17)
+
+Baseline: nominal TIM5=1 MHz, TIM11=1 kHz, but two independent PC/serial
+measurements of the original HSITRIM=16 configuration found approximately
+-4.34% and -4.40% frequency errors. These are **physical frequency
+estimates** relative to the PC's monotonic clock, not directly measured by
+the STM32 itself.
+
+Per RM0383, RCC_CR.HSITRIM is **bits 7:3** and RCC_CR.HSICAL is **bits 15:8**.
+Do not confuse them or write the HSICAL bits; the latter are calibrated by ST.
+Default trim is normally 16. The trim response is chip-dependent; never
+guess the offset needed for 100 MHz or abruptly change several steps.
+
+**Safety implementation:**
+- Standard PlatformIO environment `genericSTM32F411CE` is **unchanged**:
+  no HSITRIM override and no attempt to tune normal firmware automatically.
+- Opt-in `clock_hsi_trim17` uses `-DCLOCK_HSI_TRIM=17`.
+  The trim is applied while **HSI is selected and PLL is disabled**, before
+  PLL/100 MHz setup; no live clock switching or motor operation.
+- Firmware prints on boot:
+  `CLOCK_TRIM,mode=override requested=17 active=17 hsical=<chip_cal> ...`.
+  `CLOCK_TRIM,mode=default requested=16 active=16 ...` is the
+  expected baseline (always verify the actual field).
+- Power/reset alone resets the **hardware trim register**, but the *flashed
+  trim17 firmware reapplies it on every boot*. To restore the original
+  configuration, **reflash `genericSTM32F411CE`**.
+- STM32F411 SYSCLK must not exceed 100 MHz. Stop increasing trim if the PC
+  estimate reaches 100 MHz. A host-referenced measurement is approximate,
+  so leave margin and do not deploy a trimmed firmware as production.
+
+### One conservative comparison test
+
+1. Fetch and build the optional, motor-OFF trim17 variant with ST-Link:
+   
+```powershell
+git switch feature/motor-debug-console
+git pull --ff-only origin feature/motor-debug-console
+python -m platformio run -e clock_hsi_trim17
+python -m platformio run -e clock_hsi_trim17 --target upload
+```
+
+2. Close PlatformIO Serial Monitor; capture one 180-second run:
+
+```powershell
+python tools/clock_serial_test.py --port COM7 --baud 115200 --seconds 180
+```
+
+3. Once COM7 is open, press RESET exactly once (not KEY).
+   **Do not touch the robot** for the rest of the measurement. Check
+   `raw_serial.log` for the `CLOCK_TRIM,mode=override requested=17 active=17`
+   banner. Absence of this marker means the test did not boot trim17 correctly;
+   do **not** compare that run as a new HSI trim measurement.
+
+4. Compare original baseline with newly captured candidate:
+
+```powershell
+python tools/clock_trim_compare.py --baseline "clock_logs\20261011_202835\clock_summary.txt" --candidate "clock_logs\NEW_SESSION\clock_summary.txt"
+```
+
+Expected sign if HSI trim behaves normally: HSITRIM 17 makes oscillator faster,
+so `pc_seconds_per_mcu_second` moves **towards 1.0** and
+`effective_tim5_hz` **increases**. Check UART drops and host
+fit residual as well. Do not extrapolate to multiple trims before evaluating
+this first run.
+
+5. Revert to the original, non-trim build:
+
+```powershell
+python -m platformio run -e genericSTM32F411CE --target upload
+```
+
+Upload/push only the new `clock_logs` session (CSV, summary and
+optionally raw log). Then decide from the **measured** response whether a
+second trim step is justified. Do not modify PLLM/PLLN/PLLP, prescalers, PID
+period or gyro `dt` before this test.
+
+**Note:** `CLOCK_TRIM` is diagnostic text, so existing
+`clock_serial_test.py` still records it in `raw_serial.log`
+but it is not one of the numerical `CLK` regression samples.
