@@ -184,6 +184,9 @@ static void MPU6050_AccumulateCalibration(MPU6050_Handle_t *h,
         h->calibrating = 0U;
         h->calibrated = 1U;
         h->cal_state = 3U;
+#if defined(MPU_FRESHNESS_DIAG)
+        h->diag_control_ready = 1U;
+#endif
         h->cal_completed_ms = now_ms;
         h->gyro_z_lpf = 0.0f;
         h->gyro_z_filtered = 0.0f;
@@ -246,6 +249,7 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->data_read_start_us = 0U;
     h->dlpf_cfg = MPU6050_DLPF_CFG;
 #if defined(MPU_FRESHNESS_DIAG)
+    h->diag_control_ready = 0U;
     h->diag_fresh_sequence = 0U;
     h->diag_last_fresh_us = 0U;
     h->diag_previous_fresh_us = 0U;
@@ -369,6 +373,9 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->cal_state = 1U;
     h->calibrating = 1U;
     h->calibrated = 0U;
+#if defined(MPU_FRESHNESS_DIAG)
+    h->diag_control_ready = 0U;
+#endif
     MPU6050_ResetCalSamples(h);
     h->gyro_z_offset = 0.0f;
     h->gyro_z_filtered = 0.0f;
