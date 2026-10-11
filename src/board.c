@@ -3,6 +3,20 @@
 
 #define HSI_HZ 16000000UL
 #define HSE_HZ 25000000UL
+/* Autotune scans HSI trim on a LOWER clock profile to provide headroom.
+ * PLLN=160 => nominal 80 MHz. Production and previous trimXX builds remain
+ * PLLN=200 => nominal 100 MHz. Never run motor control in autotune firmware. */
+#if defined(CLOCK_AUTOTUNE)
+#ifndef CLOCK_HSI_TRIM
+#error "CLOCK_AUTOTUNE requires a compile-time CLOCK_HSI_TRIM"
+#endif
+#define BOARD_PLLN 160UL
+#define BOARD_EXPECTED_SYSCLK 80000000UL
+#else
+#define BOARD_PLLN 200UL
+#define BOARD_EXPECTED_SYSCLK 100000000UL
+#endif
+
 
 static uint32_t Board_GetSystemClockHz(void)
 {
@@ -138,7 +152,7 @@ static void Board_SetMaxClock100MHz(void)
     }
 #endif
 
-    RCC->PLLCFGR = (16UL << 0) | (200UL << 6) |
+    RCC->PLLCFGR = (16UL << 0) | (BOARD_PLLN << 6) |
                    (0UL << 16) | (5UL << 24); /* PLLSRC=HSI */
     RCC->CR |= RCC_CR_PLLON;
     timeout = 1000000UL;
@@ -155,7 +169,7 @@ static void Board_SetMaxClock100MHz(void)
            && --timeout) {}
     if (!timeout) { board_clock_fault = 7U; return; }
     SystemCoreClockUpdate();
-    if (SystemCoreClock != 100000000UL)
+    if (SystemCoreClock != BOARD_EXPECTED_SYSCLK)
         board_clock_fault = 8U;
 }
 
