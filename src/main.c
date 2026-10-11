@@ -396,6 +396,8 @@ int main(void)
         uint32_t start_us = micros();
         uint32_t now, elapsed, duration, good_diff, ticks_diff, age_us;
         uint32_t update_us;
+        MPU6050_NoiseStats_t noise;
+        Control_Timing_t timing;
         MPU6050_Update(&imu_test); /* I2C IRQ-driven, never busy-waits. */
         update_us = micros() - start_us;
         if (update_us > max_update_us) max_update_us = update_us;
@@ -433,6 +435,40 @@ int main(void)
           (unsigned)imu_test.last_i2c_error,
           (unsigned long)UART_GetDroppedMessages(),
           (unsigned long)UART_GetDmaErrors()
+        );
+
+        /* 1Hz summary computed from every successful 1kHz raw gyro read.
+         * 0.001 deg/s units are used to avoid printf float formatting.
+         * This is NOT a 1Hz downsample: statistics include all valid reads. */
+        MPU6050_GetNoiseWindow(&imu_test, &noise);
+        Control_GetTiming(&timing);
+        UART_Printf(
+          "NOISE,n=%lu raw_mean_mdps=%ld raw_std_mdps=%ld "
+          "raw_min_mdps=%ld raw_max_mdps=%ld corrected_mean_mdps=%ld "
+          "same_code=%lu sample_min_us=%lu sample_max_us=%lu\r\n",
+          (unsigned long)noise.n,
+          (long)(noise.mean_dps * 1000.0f),
+          (long)(noise.std_dps * 1000.0f),
+          (long)(noise.min_dps * 1000.0f),
+          (long)(noise.max_dps * 1000.0f),
+          (long)(noise.mean_corrected_dps * 1000.0f),
+          (unsigned long)noise.equal_consecutive_raw,
+          (unsigned long)noise.interval_min_us,
+          (unsigned long)noise.interval_max_us
+        );
+        UART_Printf(
+          "TIMING,period_min_us=%lu period_max_us=%lu "
+          "late_50us=%lu gap_over_1500us=%lu "
+          "observed_isr_max_us=%lu max_cycles=%lu core_hz=%lu\r\n",
+          (unsigned long)timing.period_min_us,
+          (unsigned long)timing.period_max_us,
+          (unsigned long)timing.late_over_50us,
+          (unsigned long)timing.gap_over_1500us,
+          (unsigned long)((timing.core_hz != 0U)
+            ? (((uint64_t)timing.exec_max_cycles * 1000000ULL) / timing.core_hz)
+            : 0ULL),
+          (unsigned long)timing.exec_max_cycles,
+          (unsigned long)timing.core_hz
         );
 
         last_report_us = now;
