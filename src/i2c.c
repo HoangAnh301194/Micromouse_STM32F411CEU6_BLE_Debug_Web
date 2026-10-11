@@ -57,6 +57,8 @@
 
 static volatile uint8_t i2c_dma_busy = 0;
 static uint32_t i2c_nominal_scl_hz = 0;
+/* 1=400 kHz, 2=300 kHz, 3=200 kHz, 0=100 kHz. */
+static uint8_t i2c_current_speed_mode = 1U;
 
 /* [FIX] Separate TX and RX callbacks */
 static I2C_DMA_Callback_t i2c_dma_tx_callback = 0;  /* For OLED (Stream 6) */
@@ -181,6 +183,8 @@ void I2C_Init(I2C_Instance instance, uint8_t fast_mode) {
     uint32_t pclk_hz, pclk_mhz, ccr, target_hz;
     uint32_t i2c_base = I2C_GetBase(instance);
     if (instance != I2C_1) return;
+    if (fast_mode > 3U) fast_mode = 1U;
+    i2c_current_speed_mode = fast_mode;
 
     RCC_AHB1ENR |= (1UL << 1);
     RCC_APB1ENR |= (1UL << 21);
@@ -201,8 +205,9 @@ void I2C_Init(I2C_Instance instance, uint8_t fast_mode) {
     (*(volatile uint32_t *)(i2c_base + I2C_CR1)) &= ~I2C_CR1_PE;
     (*(volatile uint32_t *)(i2c_base + I2C_CR2)) =
         ((*(volatile uint32_t *)(i2c_base + I2C_CR2)) & ~I2C_CR2_FREQ) | pclk_mhz;
-    if (fast_mode && pclk_hz >= 4000000UL) {
-        target_hz = 400000UL;
+    if (fast_mode != 0U && pclk_hz >= 4000000UL) {
+        target_hz = (fast_mode == 1U) ? 400000UL :
+                    (fast_mode == 2U) ? 300000UL : 200000UL;
         /* Fast mode, duty 2: tSCL = 3 * CCR / PCLK1 */
         ccr = (pclk_hz + (3UL * target_hz - 1UL)) / (3UL * target_hz);
         if (ccr < 1U) ccr = 1U;
@@ -631,15 +636,18 @@ fail:
 
 
 I2C_Status I2C_IsDeviceReady(I2C_Instance instance, uint8_t slave_addr) {
-    uint32_t i2c_base = I2C_GetBase(instance);
+    uint32_t base = I2C_GetBase(instance);
     I2C_Status status;
-    
-    I2C_WaitBusFree(i2c_base);
-    
-    if(I2C_Start(i2c_base) != I2C_OK) return I2C_TIMEOUT;
-    status = I2C_SendAddress(i2c_base, slave_addr << 1);
-    I2C_Stop(i2c_base);
-    
+    if (instance != I2C_1 || slave_addr >= 0x80U) return I2C_ERROR;
+    status = I2C_WaitBusFree(base);
+    if (status != I2C_OK) return status;
+    status = I2C_Start(base);
+    if (status != I2C_OK) {
+        I2C_Stop(base);
+        return status;
+    }
+    status = I2C_SendAddress(base, (uint8_t)(slave_addr << 1));
+    I2C_Stop(base);
     return status;
 }
 
@@ -665,7 +673,7 @@ static volatile I2C_Status i2c2_result = I2C_IDLE;
 static volatile uint8_t i2c2_addr, i2c2_reg, i2c2_count;
 static volatile uint8_t i2c2_bytes[2];
 static volatile uint32_t i2c2_start_us, i2c2_duration_us;
-static uint8_t i2c2_fast_mode = 1U;
+/* Reuse the actual selected bus-speed mode after error recovery. */
 static uint32_t i2c2_busy_since_us = 0U;
 
 static void I2C2_Finish(I2C_Status result)
@@ -692,7 +700,7 @@ I2C_Status I2C_ReadRegAsync_Start(uint8_t addr, uint8_t reg, uint8_t count)
         if ((uint32_t)(now - i2c2_busy_since_us) > 5000UL &&
             !i2c_dma_busy) {
             I2C_BusRecovery();
-            I2C_Init(I2C_1, i2c2_fast_mode);
+            I2C_Init(I2C_1, i2c_current_speed_mode);
             i2c2_busy_since_us = 0U;
         }
         return I2C_BUSY;
@@ -820,7 +828,7 @@ I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us)
             I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
             I2C1->CR1 |= I2C_CR1_STOP;
             I2C_BusRecovery();
-            I2C_Init(I2C_1, i2c2_fast_mode);
+            I2C_Init(I2C_1, i2c_current_speed_mode);
             i2c2_duration_us = micros() - i2c2_start_us;
             i2c2_result = I2C_TIMEOUT;
             i2c2_phase = I2C2_DONE;
