@@ -8,12 +8,46 @@
 #include "motor_trace.h"
 #include "motor.h"
 #include "stm32f4xx.h"
+#include "system_timer.h"
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile uint8_t control_diagnostic_only = 0;
 static volatile uint32_t control_tick_count = 0;
 static volatile IR_Data_t ir_latest;
+
+/* TIM11 timing: TIM5 runs while CPU is in WFI; CYCCNT measures CPU cycles.
+ * Values are observed maxima/minima, NOT a proven formal WCET bound. */
+static volatile uint32_t timing_last_entry_us = 0U;
+static volatile uint32_t timing_periods = 0U;
+static volatile uint32_t timing_min_us = 0xFFFFFFFFUL;
+static volatile uint32_t timing_max_us = 0U;
+static volatile uint32_t timing_late_50us = 0U;
+static volatile uint32_t timing_gap_1500us = 0U;
+static volatile uint32_t timing_max_cycles = 0U;
+
+static void Control_TimingFinish(uint32_t start_cycles)
+{
+    uint32_t cycles = DWT->CYCCNT - start_cycles;
+    if (cycles > timing_max_cycles) timing_max_cycles = cycles;
+}
+
+void Control_GetTiming(Control_Timing_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->periods = timing_periods;
+    out->period_min_us = timing_periods ? timing_min_us : 0U;
+    out->period_max_us = timing_max_us;
+    out->late_over_50us = timing_late_50us;
+    out->gap_over_1500us = timing_gap_1500us;
+    out->exec_max_cycles = timing_max_cycles;
+    out->core_hz = SystemCoreClock;
+    if (!primask) __enable_irq();
+}
+
 
 void Control_Init(MPU6050_Handle_t *mpu_handle)
 {
@@ -24,6 +58,19 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
     control_mpu = mpu_handle;
     control_running = 0;
     control_tick_count = 0;
+    timing_last_entry_us = 0U;
+    timing_periods = 0U;
+    timing_min_us = 0xFFFFFFFFUL;
+    timing_max_us = 0U;
+    timing_late_50us = 0U;
+    timing_gap_1500us = 0U;
+    timing_max_cycles = 0U;
+
+    /* DWT cycle counter for short ISR duration measurements. */
+    SystemCoreClockUpdate();
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0U;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
     timer_clock = Board_GetAPB2TimerClockHz();
 
@@ -93,20 +140,32 @@ uint32_t Control_GetTickCount(void)
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     IR_Data_t sample;
+    uint32_t start_cycles;
+    uint32_t entry_us;
+    uint32_t interval_us;
 
-    if ((TIM11->SR & TIM_SR_UIF) == 0U) {
-        return;
-    }
+    if ((TIM11->SR & TIM_SR_UIF) == 0U) return;
 
+    start_cycles = DWT->CYCCNT;
+    entry_us = micros();
     TIM11->SR &= ~TIM_SR_UIF;
 
-    if (!control_running) {
+    if (!control_running) return;
+
+    if (timing_last_entry_us != 0U) {
+        interval_us = (uint32_t)(entry_us - timing_last_entry_us);
+        timing_periods++;
+        if (interval_us < timing_min_us) timing_min_us = interval_us;
+        if (interval_us > timing_max_us) timing_max_us = interval_us;
+        if (interval_us > 1050U || interval_us < 950U) timing_late_50us++;
+        if (interval_us > 1500U) timing_gap_1500us++;
+    }
+    timing_last_entry_us = entry_us;
+    control_tick_count++;
+    if (control_diagnostic_only) {
+        Control_TimingFinish(start_cycles);
         return;
     }
-
-    /* Only count here; frequency calculation and UART are in main loop. */
-    control_tick_count++;
-    if (control_diagnostic_only) return;
 
     /*
      * Hard real-time path:
@@ -134,7 +193,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     Motor_Update1ms();
     MotorTrace_Record1ms();
     MotorTest_Tick1ms();
-    if (MotorTest_IsRunning()) return;
+    if (MotorTest_IsRunning()) { Control_TimingFinish(start_cycles); return; }
 
     if (control_mpu != 0) {
         Motion_Update(CONTROL_DT_S,
@@ -143,4 +202,5 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
                       MPU6050_GetYaw(control_mpu),
                       MPU6050_GetGyroZ(control_mpu));
     }
+    Control_TimingFinish(start_cycles);
 }
