@@ -1,0 +1,1045 @@
+0.562913500	CLK,seq=13,us=13153614,ticks=13000,tx_drop=0
+0.583011100	IMU,read_hz=1000 good=12999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+0.594777600	FRESH,status=13000 ready=13000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=3 yaw_raw_no_deadzone_mdeg=3
+0.609017900	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=48 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=753 sample_min_us=316 sample_max_us=1000
+0.626135200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=13001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=42 last_span_mdps=243 block_mean_span_mdps=7 bias_mdps=-1480
+0.636527600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+1.681707500	[BOOT] Isolated MPU6050/I2C test (motors disabled)
+1.690060400	CLOCK_TRIM,mode=override requested=18 active=18 hsical=127 rcc_cr=0x03007F93
+1.696212800	CLOCK,sysclk=100000000 hsi_pll100=1 apb1=50000000 apb2=100000000 tim5_us_clock=1000000
+1.708917200	CLOCK_DIAG,fault=0 rcc_cr=0x03007F93 cfgr=0x0000100A pllcfgr=0x05003210 pwr_cr=0x0000C000 pwr_csr=0x00004000 flash_acr=0x00000703
+1.852030500	I2C_PROBE,400_a=0 400_w=0 400_id=0x68 300_a=255 300_w=255 300_id=0xFF 200_a=255 200_w=255 200_id=0xFF 100_a=255 100_w=255 100_id=0xFF selected=0 selected_scl=396825
+1.855117100	I2C_LINES,scl_pb8=1 sda_pb9=1 idr=0x00000390
+1.863708200	[IMU_READY] whoami=0x68 scl_nominal=396825Hz gyro_range=2000dps dlpf=3 sensor_odr=1000Hz
+1.872529800	CAL_HELP,do not move robot during warmup+collection; KEY requests fresh calibration while idle; motors OFF
+1.880775300	DYN_HELP,D,<us>,<raw_corrected_mdps>,<lpf_mdps> at 100Hz for 1.5s after |gyro|>10dps
+2.878466700	CLK,seq=1,us=1153613,ticks=1000,tx_drop=0
+2.896032300	IMU,read_hz=998 good=999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2.909999500	FRESH,status=1000 ready=1000 not_ready=0 fresh=999 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+2.921729900	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+2.936134400	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=1001 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+2.947486000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+3.915990000	CLK,seq=2,us=2153613,ticks=2000,tx_drop=0
+3.933586500	IMU,read_hz=1000 good=1999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+3.947630700	FRESH,status=2000 ready=2000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+3.959310700	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+3.973770700	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=2001 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+3.985466900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+4.953777200	CLK,seq=3,us=3153613,ticks=3000,tx_drop=0
+4.971334200	IMU,read_hz=1000 good=2999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+4.985395400	FRESH,status=3000 ready=3000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+4.997017900	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+5.011550000	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=3001 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+5.023315600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+5.991796600	CLK,seq=4,us=4153613,ticks=4000,tx_drop=0
+6.009410300	IMU,read_hz=1000 good=3999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+6.023505900	FRESH,status=4000 ready=4000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+6.035182800	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+6.049585800	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=4001 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+6.061304300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+7.029557400	CLK,seq=5,us=5153613,ticks=5000,tx_drop=0
+7.047146700	IMU,read_hz=1000 good=4999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=3 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+7.061192300	FRESH,status=5000 ready=5000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+7.072876200	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+7.087286000	CAL,state=1 retries=0 fail_reason=0 warmup_elapsed_ms=5001 accepted=0/4000 valid_blocks=0/8 last_std_mdps=0 last_span_mdps=0 block_mean_span_mdps=0 bias_mdps=0
+7.099052200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+8.067195500	CLK,seq=6,us=6153613,ticks=6000,tx_drop=0
+8.087306400	IMU,read_hz=1000 good=5999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=53 cal=0 cal_n=1000 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+8.098922700	FRESH,status=6000 ready=6000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+8.110570600	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+8.125166000	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=6001 accepted=1000/4000 valid_blocks=2/8 last_std_mdps=45 last_span_mdps=304 block_mean_span_mdps=0 bias_mdps=0
+8.137808200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+9.105124400	CLK,seq=7,us=7153613,ticks=7000,tx_drop=0
+9.125209300	IMU,read_hz=1000 good=6999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=53 cal=0 cal_n=2000 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+9.136869500	FRESH,status=7000 ready=7000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+9.148454400	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+9.162929500	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=7001 accepted=2000/4000 valid_blocks=4/8 last_std_mdps=42 last_span_mdps=243 block_mean_span_mdps=10 bias_mdps=0
+9.175651700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+10.142780700	CLK,seq=8,us=8153613,ticks=8000,tx_drop=0
+10.162855800	IMU,read_hz=1000 good=7999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=52 cal=0 cal_n=3000 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+10.174496400	FRESH,status=8000 ready=8000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+10.186198700	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+10.200704200	CAL,state=2 retries=0 fail_reason=0 warmup_elapsed_ms=8001 accepted=3000/4000 valid_blocks=6/8 last_std_mdps=35 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=0
+10.213434900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+11.188440900	CAL_DONE,n=4000 blocks=8 retries=0 bias_mdps=-1480 previous_bias_mdps=0 delta_bias_mdps=-1480 max_block_std_mdps=51 block_mean_span_mdps=10
+11.191245600	DRIFT_START,bias_mdps=-1480,dlpf=3
+11.194232900	CLK,seq=9,us=9153614,ticks=9000,tx_drop=0
+11.214357500	IMU,read_hz=999 good=8999 err=0 busy=0 timeout=0 age_us=907 i2c_last_us=120 i2c_max_us=121 update_max_us=55 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+11.225955300	FRESH,status=9000 ready=9000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+11.240025700	NOISE,n=0 raw_mean_mdps=0 raw_std_mdps=0 raw_min_mdps=0 raw_max_mdps=0 corrected_mean_mdps=0 same_code=0 sample_min_us=0 sample_max_us=0
+11.254686000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=9001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+11.266627400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+12.217760700	CLK,seq=10,us=10153614,ticks=10000,tx_drop=0
+12.237901300	IMU,read_hz=1000 good=9999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+12.249752800	FRESH,status=10000 ready=10000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+12.264017800	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=773 sample_min_us=376 sample_max_us=1001
+12.281389600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=10001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+12.291316600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+13.255333700	CLK,seq=11,us=11153614,ticks=11000,tx_drop=0
+13.275298300	IMU,read_hz=1000 good=10999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+13.286780800	FRESH,status=11000 ready=11000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=4 yaw_raw_no_deadzone_mdeg=4
+13.301508900	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=764 sample_min_us=316 sample_max_us=1000
+13.318509400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=11001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+13.329096500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+14.293035600	CLK,seq=12,us=12153614,ticks=12000,tx_drop=0
+14.313188500	IMU,read_hz=1000 good=11999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+14.324786500	FRESH,status=12000 ready=12000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+14.339208400	NOISE,n=1000 raw_mean_mdps=-1484 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=776 sample_min_us=315 sample_max_us=1000
+14.356293300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=12001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+14.366817700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+15.330874900	CLK,seq=13,us=13153614,ticks=13000,tx_drop=0
+15.350993200	IMU,read_hz=1000 good=12999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+15.362450700	FRESH,status=13000 ready=13000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+15.376783600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=770 sample_min_us=315 sample_max_us=1000
+15.393983100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=13001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+15.404570100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+16.368485800	CLK,seq=14,us=14153614,ticks=14000,tx_drop=0
+16.388717700	IMU,read_hz=1000 good=13999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+16.400250500	FRESH,status=14000 ready=14000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=1 yaw_raw_no_deadzone_mdeg=1
+16.414715800	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=787 sample_min_us=316 sample_max_us=1000
+16.431871300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=14001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+16.442162500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+17.406165800	CLK,seq=15,us=15153614,ticks=15000,tx_drop=0
+17.426341700	IMU,read_hz=1000 good=14999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+17.437984400	FRESH,status=15000 ready=15000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+17.452509300	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=775 sample_min_us=315 sample_max_us=1000
+17.469359700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=15001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+17.479934200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+18.443446700	CLK,seq=16,us=16153614,ticks=16000,tx_drop=0
+18.463644200	IMU,read_hz=1000 good=15999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+18.475323500	FRESH,status=16000 ready=16000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+18.489880000	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=775 sample_min_us=315 sample_max_us=1000
+18.507044400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=16001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+18.517523400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+19.481565100	CLK,seq=17,us=17153614,ticks=17000,tx_drop=0
+19.501674000	IMU,read_hz=1000 good=16999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+19.513093100	FRESH,status=17000 ready=17000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-4 yaw_raw_no_deadzone_mdeg=-4
+19.527585000	NOISE,n=1000 raw_mean_mdps=-1484 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-4 same_code=750 sample_min_us=316 sample_max_us=1000
+19.544575600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=17001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+19.555571600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+20.519193600	CLK,seq=18,us=18153614,ticks=18000,tx_drop=0
+20.539181600	IMU,read_hz=1000 good=17999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+20.550788400	FRESH,status=18000 ready=18000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-1 yaw_raw_no_deadzone_mdeg=-1
+20.565201100	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=771 sample_min_us=315 sample_max_us=1000
+20.582398700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=18001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+20.592767200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=94 core_hz=100000000
+21.556418400	CLK,seq=19,us=19153614,ticks=19000,tx_drop=0
+21.576264200	IMU,read_hz=1000 good=18999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+21.588126400	FRESH,status=19000 ready=19000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+21.602792400	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=765 sample_min_us=315 sample_max_us=1000
+21.619463100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=19001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+21.630063600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+22.594049600	CLK,seq=20,us=20153614,ticks=20000,tx_drop=0
+22.614170800	IMU,read_hz=1000 good=19999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+22.625796700	FRESH,status=20000 ready=20000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+22.639880300	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=794 sample_min_us=316 sample_max_us=1000
+22.657331900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=20001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+22.667797400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+23.631524900	CLK,seq=21,us=21153614,ticks=21000,tx_drop=0
+23.651746700	IMU,read_hz=1000 good=20999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+23.663521200	FRESH,status=21000 ready=21000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=2 yaw_raw_no_deadzone_mdeg=2
+23.677974100	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=791 sample_min_us=315 sample_max_us=1000
+23.695104900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=21001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+23.705551900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+24.669089300	CLK,seq=22,us=22153614,ticks=22000,tx_drop=0
+24.689503200	IMU,read_hz=1000 good=21999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+24.701126500	FRESH,status=22000 ready=22000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=2 yaw_raw_no_deadzone_mdeg=2
+24.715575600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=36 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=789 sample_min_us=316 sample_max_us=1000
+24.732730400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=22001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+24.743141700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+25.706597400	CLK,seq=23,us=23153614,ticks=23000,tx_drop=0
+25.726721700	IMU,read_hz=1000 good=22999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+25.738348300	FRESH,status=23000 ready=23000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+25.752778000	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=775 sample_min_us=316 sample_max_us=1000
+25.769861400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=23001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+25.780360400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+26.744009000	CLK,seq=24,us=24153614,ticks=24000,tx_drop=0
+26.764180100	IMU,read_hz=1000 good=23999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+26.775841600	FRESH,status=24000 ready=24000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=1 yaw_raw_no_deadzone_mdeg=1
+26.790251500	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=783 sample_min_us=316 sample_max_us=1000
+26.807300100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=24001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+26.817592200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+27.781552400	CLK,seq=25,us=25153614,ticks=25000,tx_drop=0
+27.801528700	IMU,read_hz=1000 good=24999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+27.813297700	FRESH,status=25000 ready=25000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=3 yaw_raw_no_deadzone_mdeg=3
+27.827683300	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=784 sample_min_us=314 sample_max_us=1000
+27.844820700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=25001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+27.854807500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+28.818109400	CLK,seq=26,us=26153614,ticks=26000,tx_drop=0
+28.838302200	IMU,read_hz=1000 good=25999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+28.849865500	FRESH,status=26000 ready=26000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=1 yaw_raw_no_deadzone_mdeg=1
+28.864297900	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=786 sample_min_us=315 sample_max_us=1000
+28.881307100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=26001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+28.891759800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+29.854660100	CLK,seq=27,us=27153614,ticks=27000,tx_drop=0
+29.874974500	IMU,read_hz=1000 good=26999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+29.886501600	FRESH,status=27000 ready=27000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+29.900961000	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=786 sample_min_us=316 sample_max_us=1000
+29.918146800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=27001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+29.928601300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+30.892064800	CLK,seq=28,us=28153614,ticks=28000,tx_drop=0
+30.912048800	IMU,read_hz=1000 good=27999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+30.923619000	FRESH,status=28000 ready=28000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+30.938092600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=777 sample_min_us=315 sample_max_us=1000
+30.955165500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=28001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+30.965475700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+31.929256800	CLK,seq=29,us=29153614,ticks=29000,tx_drop=0
+31.949400600	IMU,read_hz=1000 good=28999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+31.961014500	FRESH,status=29000 ready=29000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-3 yaw_raw_no_deadzone_mdeg=-3
+31.975446600	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=776 sample_min_us=316 sample_max_us=1000
+31.992483600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=29001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+32.003099100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+32.966213500	CLK,seq=30,us=30153614,ticks=30000,tx_drop=0
+32.986342200	IMU,read_hz=1000 good=29999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+32.998005500	FRESH,status=30000 ready=30000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-4 yaw_raw_no_deadzone_mdeg=-4
+33.012412200	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=757 sample_min_us=315 sample_max_us=1000
+33.029452600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=30001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+33.040000800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+34.002972300	CLK,seq=31,us=31153614,ticks=31000,tx_drop=0
+34.023058700	IMU,read_hz=1000 good=30999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+34.034707400	FRESH,status=31000 ready=31000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-6 yaw_raw_no_deadzone_mdeg=-6
+34.049193600	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=795 sample_min_us=314 sample_max_us=1000
+34.066210100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=31001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+34.076936300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+35.041138100	CLK,seq=32,us=32153614,ticks=32000,tx_drop=0
+35.061293500	IMU,read_hz=1000 good=31999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+35.072684000	FRESH,status=32000 ready=32000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-9 yaw_raw_no_deadzone_mdeg=-9
+35.087392600	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=774 sample_min_us=314 sample_max_us=1000
+35.104414500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=32001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+35.115125700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=95 core_hz=100000000
+36.078589500	CLK,seq=33,us=33153614,ticks=33000,tx_drop=0
+36.098749700	IMU,read_hz=1000 good=32999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+36.110406500	FRESH,status=33000 ready=33000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-4 yaw_raw_no_deadzone_mdeg=-4
+36.125036700	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=762 sample_min_us=314 sample_max_us=1000
+36.142227300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=33001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+36.152562800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+37.116929500	CLK,seq=34,us=34153614,ticks=34000,tx_drop=0
+37.137100900	IMU,read_hz=1000 good=33999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+37.148687000	FRESH,status=34000 ready=34000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-3 yaw_raw_no_deadzone_mdeg=-3
+37.163104100	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=1 same_code=791 sample_min_us=315 sample_max_us=1000
+37.180022600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=34001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+37.190660700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+38.154876200	CLK,seq=35,us=35153614,ticks=35000,tx_drop=0
+38.175115000	IMU,read_hz=1000 good=34999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+38.187056400	FRESH,status=35000 ready=35000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-1 yaw_raw_no_deadzone_mdeg=-1
+38.201274600	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=798 sample_min_us=315 sample_max_us=1000
+38.218462600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=35001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+38.228744400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+39.193381800	CLK,seq=36,us=36153614,ticks=36000,tx_drop=0
+39.213797600	IMU,read_hz=1000 good=35999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+39.225402700	FRESH,status=36000 ready=36000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-1 yaw_raw_no_deadzone_mdeg=-1
+39.239825800	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=769 sample_min_us=315 sample_max_us=1000
+39.257003400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=36001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+39.267403200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+40.231619300	CLK,seq=37,us=37153614,ticks=37000,tx_drop=0
+40.251819600	IMU,read_hz=1000 good=36999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+40.263588100	FRESH,status=37000 ready=37000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=1 yaw_raw_no_deadzone_mdeg=1
+40.278025700	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=773 sample_min_us=315 sample_max_us=1000
+40.295132400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=37001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+40.305220900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+41.270034900	CLK,seq=38,us=38153614,ticks=38000,tx_drop=0
+41.290152200	IMU,read_hz=1000 good=37999 err=0 busy=0 timeout=0 age_us=906 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+41.301780600	FRESH,status=38000 ready=38000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-1 yaw_raw_no_deadzone_mdeg=-1
+41.316411000	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=785 sample_min_us=315 sample_max_us=1000
+41.333498200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=38001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+41.344211500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+42.313377000	CAL_CHECK,elapsed_ms=30000 raw_drift_mdeg=-5 lpf_no_deadzone_mdeg=-5 raw_mdeg_per_min=-10 current_bias_mdps=-1480
+42.318660700	CLK,seq=39,us=39153615,ticks=39000,tx_drop=0
+42.336526500	IMU,read_hz=999 good=38999 err=0 busy=0 timeout=0 age_us=907 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+42.350675400	FRESH,status=39000 ready=39000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-5 yaw_raw_no_deadzone_mdeg=-5
+42.365243000	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-4 same_code=778 sample_min_us=315 sample_max_us=1000
+42.379703100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=39001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+42.391963900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+43.345690400	CLK,seq=40,us=40153640,ticks=40000,tx_drop=0
+43.365618400	IMU,read_hz=999 good=39999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+43.377254600	FRESH,status=40000 ready=40000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-3 yaw_raw_no_deadzone_mdeg=-3
+43.391728300	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=807 sample_min_us=315 sample_max_us=1000
+43.408829800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=40001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+43.419192800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+44.383383300	CLK,seq=41,us=41153640,ticks=41000,tx_drop=0
+44.403341200	IMU,read_hz=1000 good=40999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+44.415183100	FRESH,status=41000 ready=41000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-10 yaw_raw_no_deadzone_mdeg=-10
+44.429599900	NOISE,n=1000 raw_mean_mdps=-1486 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-6 same_code=773 sample_min_us=293 sample_max_us=1000
+44.446769900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=41001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+44.457568100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+45.420679500	CLK,seq=42,us=42153640,ticks=42000,tx_drop=0
+45.440615300	IMU,read_hz=1000 good=41999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+45.452290800	FRESH,status=42000 ready=42000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-9 yaw_raw_no_deadzone_mdeg=-9
+45.466950400	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=782 sample_min_us=291 sample_max_us=1000
+45.484091500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=42001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+45.494698300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+46.457704600	CLK,seq=43,us=43153640,ticks=43000,tx_drop=0
+46.477842900	IMU,read_hz=1000 good=42999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+46.489251100	FRESH,status=43000 ready=43000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-11 yaw_raw_no_deadzone_mdeg=-11
+46.503803500	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=43 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=772 sample_min_us=293 sample_max_us=1000
+46.521060800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=43001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+46.531878900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+47.495038900	CLK,seq=44,us=44153640,ticks=44000,tx_drop=0
+47.515157000	IMU,read_hz=1000 good=43999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+47.526835300	FRESH,status=44000 ready=44000 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-12 yaw_raw_no_deadzone_mdeg=-12
+47.541208800	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=789 sample_min_us=292 sample_max_us=1000
+47.558158800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=44001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+47.568870200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+48.531937700	CLK,seq=45,us=45153640,ticks=45000,tx_drop=0
+48.552111100	IMU,read_hz=999 good=44998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+48.564008700	FRESH,status=44999 ready=44999 not_ready=0 fresh=999 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-14 yaw_raw_no_deadzone_mdeg=-14
+48.578212700	NOISE,n=999 raw_mean_mdps=-1482 raw_std_mdps=39 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=759 sample_min_us=240 sample_max_us=1900
+48.595243100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=45001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+48.606025100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+49.568967900	CLK,seq=46,us=46153640,ticks=46000,tx_drop=0
+49.589153300	IMU,read_hz=1000 good=45998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+49.601014000	FRESH,status=45999 ready=45999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-21 yaw_raw_no_deadzone_mdeg=-21
+49.615233000	NOISE,n=1000 raw_mean_mdps=-1487 raw_std_mdps=40 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=-6 same_code=780 sample_min_us=292 sample_max_us=1000
+49.632432800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=46001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+49.643027300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+50.606853400	CLK,seq=47,us=47153640,ticks=47000,tx_drop=0
+50.626716300	IMU,read_hz=1000 good=46998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+50.638377000	FRESH,status=46999 ready=46999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-23 yaw_raw_no_deadzone_mdeg=-23
+50.653005300	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=779 sample_min_us=291 sample_max_us=1000
+50.669982100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=47001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+50.680973700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+51.644397200	CLK,seq=48,us=48153640,ticks=48000,tx_drop=0
+51.664667000	IMU,read_hz=1000 good=47998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+51.676072200	FRESH,status=47999 ready=47999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-22 yaw_raw_no_deadzone_mdeg=-22
+51.690592200	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=784 sample_min_us=292 sample_max_us=1000
+51.707746400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=48001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+51.718341800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+52.681650300	CLK,seq=49,us=49153640,ticks=49000,tx_drop=0
+52.701541600	IMU,read_hz=1000 good=48998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+52.713399900	FRESH,status=48999 ready=48999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-16 yaw_raw_no_deadzone_mdeg=-16
+52.727560400	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=746 sample_min_us=293 sample_max_us=1000
+52.744998800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=49001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+52.755654700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+53.719251600	CLK,seq=50,us=50153640,ticks=50000,tx_drop=0
+53.739116700	IMU,read_hz=1000 good=49998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+53.751025900	FRESH,status=49999 ready=49999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-15 yaw_raw_no_deadzone_mdeg=-15
+53.765248600	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=763 sample_min_us=292 sample_max_us=1000
+53.782480500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=50001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+53.793159000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+54.756949300	CLK,seq=51,us=51153640,ticks=51000,tx_drop=0
+54.776899600	IMU,read_hz=1000 good=50998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+54.788691400	FRESH,status=50999 ready=50999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-15 yaw_raw_no_deadzone_mdeg=-15
+54.803080100	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=784 sample_min_us=292 sample_max_us=1000
+54.820166600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=51001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+54.831198300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+55.794594400	CLK,seq=52,us=52153640,ticks=52000,tx_drop=0
+55.814686500	IMU,read_hz=1000 good=51998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+55.826309900	FRESH,status=51999 ready=51999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-13 yaw_raw_no_deadzone_mdeg=-13
+55.840687600	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=767 sample_min_us=293 sample_max_us=1000
+55.857834200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=52001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+55.868332800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+56.831967900	CLK,seq=53,us=53153640,ticks=53000,tx_drop=0
+56.852012300	IMU,read_hz=1000 good=52998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+56.863803100	FRESH,status=52999 ready=52999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-8 yaw_raw_no_deadzone_mdeg=-8
+56.877919500	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1280 corrected_mean_mdps=4 same_code=773 sample_min_us=292 sample_max_us=1000
+56.895110400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=53001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+56.905608900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+57.869157700	CLK,seq=54,us=54153640,ticks=54000,tx_drop=0
+57.889663600	IMU,read_hz=1000 good=53998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+57.901048500	FRESH,status=53999 ready=53999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-5 yaw_raw_no_deadzone_mdeg=-5
+57.915723100	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=781 sample_min_us=292 sample_max_us=1000
+57.932766200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=54001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+57.943416200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+58.906749400	CLK,seq=55,us=55153640,ticks=55000,tx_drop=0
+58.926812300	IMU,read_hz=1000 good=54998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+58.938464900	FRESH,status=54999 ready=54999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-4 yaw_raw_no_deadzone_mdeg=-4
+58.952893600	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=758 sample_min_us=292 sample_max_us=1000
+58.970028700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=55001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+58.980636900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+59.943886700	CLK,seq=56,us=56153640,ticks=56000,tx_drop=0
+59.964089900	IMU,read_hz=1000 good=55998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+59.975621600	FRESH,status=55999 ready=55999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-3 yaw_raw_no_deadzone_mdeg=-3
+59.990048300	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=760 sample_min_us=293 sample_max_us=1000
+60.007214000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=56001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+60.017984200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+60.980924400	CLK,seq=57,us=57153640,ticks=57000,tx_drop=0
+61.001158100	IMU,read_hz=1000 good=56998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+61.012692300	FRESH,status=56999 ready=56999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=-3 yaw_raw_no_deadzone_mdeg=-3
+61.027172800	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=780 sample_min_us=293 sample_max_us=1000
+61.044256200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=57001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+61.054775000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+62.018144600	CLK,seq=58,us=58153640,ticks=58000,tx_drop=0
+62.038264200	IMU,read_hz=1000 good=57998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+62.049827800	FRESH,status=57999 ready=57999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+62.064303300	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=777 sample_min_us=292 sample_max_us=1000
+62.081454900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=58001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+62.091843300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+63.056041300	CLK,seq=59,us=59153640,ticks=59000,tx_drop=0
+63.076189000	IMU,read_hz=1000 good=58998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+63.087865400	FRESH,status=58999 ready=58999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+63.102306600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=57 raw_min_mdps=-1951 raw_max_mdps=-1219 corrected_mean_mdps=0 same_code=757 sample_min_us=293 sample_max_us=1000
+63.119434700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=59001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+63.129876300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+64.093351500	CLK,seq=60,us=60153640,ticks=60000,tx_drop=0
+64.113477000	IMU,read_hz=1000 good=59998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+64.125091300	FRESH,status=59999 ready=59999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=3 yaw_raw_no_deadzone_mdeg=3
+64.139564100	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=786 sample_min_us=293 sample_max_us=1000
+64.156629200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=60001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+64.167088800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+65.130723400	CLK,seq=61,us=61153640,ticks=61000,tx_drop=0
+65.150897400	IMU,read_hz=1000 good=60998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+65.162503700	FRESH,status=60999 ready=60999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=1 yaw_raw_no_deadzone_mdeg=1
+65.176974900	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-1 same_code=767 sample_min_us=292 sample_max_us=1000
+65.194075600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=61001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+65.204754400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+66.167962100	CLK,seq=62,us=62153640,ticks=62000,tx_drop=0
+66.188031900	IMU,read_hz=1000 good=61998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+66.199681300	FRESH,status=61999 ready=61999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=7 yaw_raw_no_deadzone_mdeg=7
+66.214074200	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=5 same_code=769 sample_min_us=292 sample_max_us=1000
+66.231223400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=62001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+66.241839700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+67.205543800	CLK,seq=63,us=63153640,ticks=63000,tx_drop=0
+67.225581100	IMU,read_hz=1000 good=62998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+67.237292000	FRESH,status=62999 ready=62999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=2 yaw_raw_no_deadzone_mdeg=2
+67.251651800	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-5 same_code=782 sample_min_us=292 sample_max_us=1000
+67.268847200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=63001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+67.279379900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+68.242680900	CLK,seq=64,us=64153640,ticks=64000,tx_drop=0
+68.262834600	IMU,read_hz=1000 good=63998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+68.274427100	FRESH,status=63999 ready=63999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=0 yaw_raw_no_deadzone_mdeg=0
+68.288834500	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=769 sample_min_us=292 sample_max_us=1000
+68.305987700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=64001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+68.316606100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+69.279608600	CLK,seq=65,us=65153640,ticks=65000,tx_drop=0
+69.299642700	IMU,read_hz=1000 good=64998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+69.311377600	FRESH,status=64999 ready=64999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=-2 yaw_raw_no_deadzone_mdeg=-2
+69.325803900	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=797 sample_min_us=292 sample_max_us=1000
+69.342873900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=65001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+69.353764000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+70.317446000	CLK,seq=66,us=66153640,ticks=66000,tx_drop=0
+70.337603300	IMU,read_hz=1000 good=65998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+70.349223600	FRESH,status=65999 ready=65999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=-8 yaw_raw_no_deadzone_mdeg=-8
+70.363627400	NOISE,n=1000 raw_mean_mdps=-1486 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-5 same_code=744 sample_min_us=291 sample_max_us=1000
+70.380868100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=66001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+70.391615600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+71.355424500	CLK,seq=67,us=67153640,ticks=67000,tx_drop=0
+71.375498900	IMU,read_hz=1000 good=66998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+71.387193100	FRESH,status=66999 ready=66999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=-3 yaw_raw_no_deadzone_mdeg=-3
+71.401595600	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=36 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=5 same_code=801 sample_min_us=289 sample_max_us=1000
+71.418748800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=67001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+71.429374600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+72.392973400	CLK,seq=68,us=68153640,ticks=68000,tx_drop=0
+72.413169000	IMU,read_hz=1000 good=67998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+72.424826100	FRESH,status=67999 ready=67999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=-1 yaw_raw_no_deadzone_mdeg=-1
+72.439315000	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=1 same_code=772 sample_min_us=292 sample_max_us=1000
+72.456351700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=68001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+72.467073600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+73.430676800	CLK,seq=69,us=69153640,ticks=69000,tx_drop=0
+73.450846000	IMU,read_hz=1000 good=68998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+73.462496900	FRESH,status=68999 ready=68999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=2 yaw_raw_no_deadzone_mdeg=2
+73.476836300	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=771 sample_min_us=292 sample_max_us=1000
+73.493916900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=69001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+73.504442700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+74.468169100	CLK,seq=70,us=70153640,ticks=70000,tx_drop=0
+74.488292300	IMU,read_hz=1000 good=69998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+74.499970900	FRESH,status=69999 ready=69999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=4 yaw_raw_no_deadzone_mdeg=4
+74.514355500	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=780 sample_min_us=292 sample_max_us=1000
+74.531417000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=70001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+74.541984200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+75.505804800	CLK,seq=71,us=71153640,ticks=71000,tx_drop=0
+75.525934800	IMU,read_hz=1000 good=70998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+75.537679900	FRESH,status=70999 ready=70999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=11 yaw_raw_no_deadzone_mdeg=10
+75.552335800	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=6 same_code=784 sample_min_us=297 sample_max_us=1000
+75.569153500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=71001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+75.579867700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+76.543909400	CLK,seq=72,us=72153640,ticks=72000,tx_drop=0
+76.564041600	IMU,read_hz=1000 good=71998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+76.575704600	FRESH,status=71999 ready=71999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=15 yaw_raw_no_deadzone_mdeg=15
+76.590136700	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=813 sample_min_us=292 sample_max_us=1000
+76.607455500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=72001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+76.617888000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+77.581877900	CLK,seq=73,us=73153640,ticks=73000,tx_drop=0
+77.602060100	IMU,read_hz=1000 good=72998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+77.613951600	FRESH,status=72999 ready=72999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=19 yaw_raw_no_deadzone_mdeg=19
+77.628134700	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=778 sample_min_us=291 sample_max_us=1000
+77.645203200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=73001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+77.656016800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+78.619893800	CLK,seq=74,us=74153640,ticks=74000,tx_drop=0
+78.640020900	IMU,read_hz=1000 good=73998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+78.651695700	FRESH,status=73999 ready=73999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=26 yaw_raw_no_deadzone_mdeg=26
+78.666168000	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=7 same_code=794 sample_min_us=291 sample_max_us=1000
+78.683179800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=74001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+78.693932400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+79.658271300	CLK,seq=75,us=75153640,ticks=75000,tx_drop=0
+79.678509500	IMU,read_hz=1000 good=74998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+79.690141200	FRESH,status=74999 ready=74999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=21 yaw_raw_no_deadzone_mdeg=21
+79.704570400	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-5 same_code=767 sample_min_us=291 sample_max_us=1000
+79.721645600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=75001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+79.732549000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+80.696323400	CLK,seq=76,us=76153640,ticks=76000,tx_drop=0
+80.716455000	IMU,read_hz=1000 good=75998 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+80.728102200	FRESH,status=75999 ready=75999 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=24 yaw_raw_no_deadzone_mdeg=24
+80.742546300	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=773 sample_min_us=291 sample_max_us=1000
+80.759619700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=76001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+80.770408900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+81.734069600	CLK,seq=77,us=77153640,ticks=77000,tx_drop=0
+81.754237500	IMU,read_hz=999 good=76997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+81.765954700	FRESH,status=76998 ready=76998 not_ready=0 fresh=999 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=24 yaw_raw_no_deadzone_mdeg=24
+81.780312700	NOISE,n=999 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=776 sample_min_us=240 sample_max_us=1900
+81.797364600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=77001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+81.807830800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+82.772031100	CLK,seq=78,us=78153640,ticks=78000,tx_drop=0
+82.792219700	IMU,read_hz=1000 good=77997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+82.803827700	FRESH,status=77998 ready=77998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=25 yaw_raw_no_deadzone_mdeg=25
+82.818215900	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=1 same_code=776 sample_min_us=293 sample_max_us=1000
+82.835370400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=78001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+82.846089300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+83.810139800	CLK,seq=79,us=79153640,ticks=79000,tx_drop=0
+83.830336500	IMU,read_hz=1000 good=78997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+83.842016100	FRESH,status=78998 ready=78998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=26 yaw_raw_no_deadzone_mdeg=26
+83.856428800	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=41 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=782 sample_min_us=292 sample_max_us=1000
+83.873475600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=79001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+83.884435000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+84.848011500	CLK,seq=80,us=80153640,ticks=80000,tx_drop=0
+84.868191200	IMU,read_hz=1000 good=79997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+84.879857300	FRESH,status=79998 ready=79998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=29 yaw_raw_no_deadzone_mdeg=29
+84.894352500	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=784 sample_min_us=292 sample_max_us=1000
+84.911344600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=80001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+84.922098600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+85.885935600	CLK,seq=81,us=81153640,ticks=81000,tx_drop=0
+85.906443100	IMU,read_hz=1000 good=80997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+85.917782800	FRESH,status=80998 ready=80998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=27 yaw_raw_no_deadzone_mdeg=27
+85.932188800	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-1 same_code=765 sample_min_us=291 sample_max_us=1000
+85.949268000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=81001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+85.960057300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+86.923800200	CLK,seq=82,us=82153640,ticks=82000,tx_drop=0
+86.943947900	IMU,read_hz=1000 good=81997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+86.956068700	FRESH,status=81998 ready=81998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=32 yaw_raw_no_deadzone_mdeg=32
+86.970115800	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=4 same_code=770 sample_min_us=291 sample_max_us=1000
+86.987144900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=82001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+86.997884000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+87.961251800	CLK,seq=83,us=83153640,ticks=83000,tx_drop=0
+87.981392500	IMU,read_hz=1000 good=82997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+87.993156800	FRESH,status=82998 ready=82998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=33 yaw_raw_no_deadzone_mdeg=33
+88.007542600	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=41 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=787 sample_min_us=291 sample_max_us=1000
+88.025010600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=83001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+88.035213200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+88.998689600	CLK,seq=84,us=84153640,ticks=84000,tx_drop=0
+89.018820600	IMU,read_hz=1000 good=83997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+89.030521700	FRESH,status=83998 ready=83998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=44 yaw_raw_no_deadzone_mdeg=44
+89.044935000	NOISE,n=1000 raw_mean_mdps=-1469 raw_std_mdps=43 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=10 same_code=753 sample_min_us=291 sample_max_us=1000
+89.061960600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=84001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+89.072814900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+90.036144100	CLK,seq=85,us=85153640,ticks=85000,tx_drop=0
+90.056294800	IMU,read_hz=1000 good=84997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+90.068021500	FRESH,status=84998 ready=84998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=43 yaw_raw_no_deadzone_mdeg=43
+90.082491600	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=787 sample_min_us=291 sample_max_us=1000
+90.099486900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=85001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+90.110208800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+91.073396900	CLK,seq=86,us=86153640,ticks=86000,tx_drop=0
+91.093526100	IMU,read_hz=1000 good=85997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+91.105216600	FRESH,status=85998 ready=85998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=42 yaw_raw_no_deadzone_mdeg=42
+91.119811500	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=796 sample_min_us=292 sample_max_us=1000
+91.136708200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=86001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+91.147465800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+92.110683700	CLK,seq=87,us=87153640,ticks=87000,tx_drop=0
+92.130869800	IMU,read_hz=1000 good=86997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+92.142571300	FRESH,status=86998 ready=86998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=36 yaw_raw_no_deadzone_mdeg=36
+92.156958700	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-5 same_code=774 sample_min_us=291 sample_max_us=1000
+92.174011900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=87001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+92.184862600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+93.148194300	CLK,seq=88,us=88153640,ticks=88000,tx_drop=0
+93.168305800	IMU,read_hz=1000 good=87997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+93.179954000	FRESH,status=87998 ready=87998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=38 yaw_raw_no_deadzone_mdeg=38
+93.194302900	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=1 same_code=777 sample_min_us=290 sample_max_us=1000
+93.211397200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=88001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+93.222223500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+94.185589000	CLK,seq=89,us=89153640,ticks=89000,tx_drop=0
+94.205712500	IMU,read_hz=1000 good=88997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+94.218040500	FRESH,status=88998 ready=88998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=40 yaw_raw_no_deadzone_mdeg=40
+94.231817700	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=729 sample_min_us=292 sample_max_us=1000
+94.248863500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=89001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+94.259853200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+95.223151900	CLK,seq=90,us=90153640,ticks=90000,tx_drop=0
+95.243304800	IMU,read_hz=1000 good=89997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+95.255080500	FRESH,status=89998 ready=89998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=43 yaw_raw_no_deadzone_mdeg=43
+95.269448700	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=792 sample_min_us=292 sample_max_us=1000
+95.286413300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=90001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+95.297247200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+96.261013900	CLK,seq=91,us=91153640,ticks=91000,tx_drop=0
+96.281155800	IMU,read_hz=1000 good=90997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+96.292866800	FRESH,status=90998 ready=90998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=43 yaw_raw_no_deadzone_mdeg=43
+96.307292100	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=784 sample_min_us=292 sample_max_us=1000
+96.324287800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=91001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+96.335005200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+97.299022300	CLK,seq=92,us=92153640,ticks=92000,tx_drop=0
+97.319200100	IMU,read_hz=1000 good=91997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+97.330905300	FRESH,status=91998 ready=91998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+97.345281700	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=792 sample_min_us=291 sample_max_us=1000
+97.362357400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=92001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+97.373182700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+98.337117400	CLK,seq=93,us=93153640,ticks=93000,tx_drop=0
+98.357251900	IMU,read_hz=1000 good=92997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+98.369114200	FRESH,status=92998 ready=92998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=49 yaw_raw_no_deadzone_mdeg=49
+98.383427900	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=790 sample_min_us=292 sample_max_us=1000
+98.400401900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=93001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+98.411163900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+99.374777500	CLK,seq=94,us=94153640,ticks=94000,tx_drop=0
+99.394934000	IMU,read_hz=1000 good=93997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+99.406613800	FRESH,status=93998 ready=93998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=47 yaw_raw_no_deadzone_mdeg=47
+99.421073800	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=41 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=735 sample_min_us=291 sample_max_us=1000
+99.438071800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=94001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+99.448912800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+100.412922100	CLK,seq=95,us=95153640,ticks=95000,tx_drop=0
+100.433066600	IMU,read_hz=1000 good=94997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+100.444854700	FRESH,status=94998 ready=94998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=49 yaw_raw_no_deadzone_mdeg=49
+100.459214900	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=43 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=694 sample_min_us=291 sample_max_us=1000
+100.476222400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=95001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+100.487025300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+101.450581000	CLK,seq=96,us=96153640,ticks=96000,tx_drop=0
+101.470686700	IMU,read_hz=1000 good=95997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+101.482401700	FRESH,status=95998 ready=95998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=48 yaw_raw_no_deadzone_mdeg=48
+101.496857000	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=760 sample_min_us=292 sample_max_us=1000
+101.513847700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=96001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+101.524588700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+102.488305500	CLK,seq=97,us=97153640,ticks=97000,tx_drop=0
+102.508416800	IMU,read_hz=1000 good=96997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+102.520111200	FRESH,status=96998 ready=96998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=49 yaw_raw_no_deadzone_mdeg=49
+102.534545700	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=780 sample_min_us=292 sample_max_us=1000
+102.551572600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=97001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+102.562269600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+103.525775100	CLK,seq=98,us=98153640,ticks=98000,tx_drop=0
+103.545907400	IMU,read_hz=1000 good=97997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+103.557556400	FRESH,status=97998 ready=97998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+103.572045600	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=780 sample_min_us=292 sample_max_us=1000
+103.589060400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=98001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+103.599843600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+104.563301800	CLK,seq=99,us=99153640,ticks=99000,tx_drop=0
+104.583436500	IMU,read_hz=1000 good=98997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+104.595097400	FRESH,status=98998 ready=98998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+104.609411600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=768 sample_min_us=291 sample_max_us=1000
+104.626589600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=99001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+104.637392400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+105.600618300	CLK,seq=100,us=100153640,ticks=100000,tx_drop=0
+105.621430600	IMU,read_hz=1000 good=99997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+105.632379700	FRESH,status=99998 ready=99998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=43 yaw_raw_no_deadzone_mdeg=43
+105.646915100	NOISE,n=1000 raw_mean_mdps=-1484 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=776 sample_min_us=292 sample_max_us=1000
+105.663947700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=100001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+105.675074900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+106.638212100	CLK,seq=101,us=101153640,ticks=101000,tx_drop=0
+106.658361500	IMU,read_hz=1000 good=100997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+106.670024700	FRESH,status=100998 ready=100998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=41 yaw_raw_no_deadzone_mdeg=41
+106.686953100	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=762 sample_min_us=291 sample_max_us=1000
+106.701478600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=101001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+106.712969900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+107.675940300	CLK,seq=102,us=102153640,ticks=102000,tx_drop=0
+107.696060500	IMU,read_hz=1000 good=101997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+107.707779800	FRESH,status=101998 ready=101998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=43 yaw_raw_no_deadzone_mdeg=43
+107.722218000	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=769 sample_min_us=288 sample_max_us=1000
+107.739282600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=102001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+107.750599200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+108.713580100	CLK,seq=103,us=103153640,ticks=103000,tx_drop=0
+108.733650600	IMU,read_hz=1000 good=102997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+108.745207200	FRESH,status=102998 ready=102998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=45 yaw_raw_no_deadzone_mdeg=45
+108.759751800	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=759 sample_min_us=289 sample_max_us=1000
+108.776841800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=103001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+108.788188200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+109.751250100	CLK,seq=104,us=104153640,ticks=104000,tx_drop=0
+109.771415500	IMU,read_hz=1000 good=103997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+109.783012300	FRESH,status=103998 ready=103998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+109.797440100	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=801 sample_min_us=289 sample_max_us=1000
+109.814556100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=104001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+109.825853300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+110.788773800	CLK,seq=105,us=105153640,ticks=105000,tx_drop=0
+110.809011600	IMU,read_hz=1000 good=104997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+110.820601800	FRESH,status=104998 ready=104998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+110.835046800	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=765 sample_min_us=289 sample_max_us=1000
+110.852237000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=105001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+110.863500700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+111.826133100	CLK,seq=106,us=106153640,ticks=106000,tx_drop=0
+111.846293800	IMU,read_hz=1000 good=105997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+111.858008100	FRESH,status=105998 ready=105998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=49 yaw_raw_no_deadzone_mdeg=49
+111.872449100	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=807 sample_min_us=289 sample_max_us=1000
+111.889434300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=106001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+111.900924500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+112.863374500	CLK,seq=107,us=107153640,ticks=107000,tx_drop=0
+112.883467500	IMU,read_hz=1000 good=106997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+112.895072700	FRESH,status=106998 ready=106998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=52 yaw_raw_no_deadzone_mdeg=52
+112.909617200	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=789 sample_min_us=289 sample_max_us=1000
+112.926638800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=107001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+112.937898700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+113.900372700	CLK,seq=108,us=108153640,ticks=108000,tx_drop=0
+113.920536900	IMU,read_hz=1000 good=107997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+113.932264000	FRESH,status=107998 ready=107998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=50 yaw_raw_no_deadzone_mdeg=50
+113.949100900	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=41 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=762 sample_min_us=288 sample_max_us=1000
+113.963746100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=108001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+113.975152800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+114.937448700	CLK,seq=109,us=109153640,ticks=109000,tx_drop=0
+114.957648100	IMU,read_hz=1000 good=108997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+114.969339700	FRESH,status=108998 ready=108998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=56 yaw_raw_no_deadzone_mdeg=56
+114.983732300	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=720 sample_min_us=288 sample_max_us=1000
+115.000797800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=109001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+115.012191500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+115.974498100	CLK,seq=110,us=110153640,ticks=110000,tx_drop=0
+115.994613300	IMU,read_hz=1000 good=109997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+116.006314200	FRESH,status=109998 ready=109998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=52 yaw_raw_no_deadzone_mdeg=52
+116.023149600	NOISE,n=1000 raw_mean_mdps=-1484 raw_std_mdps=37 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=778 sample_min_us=289 sample_max_us=1000
+116.037827400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=110001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+116.049199800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+117.011424700	CLK,seq=111,us=111153640,ticks=111000,tx_drop=0
+117.031581000	IMU,read_hz=1000 good=110997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+117.043283200	FRESH,status=110998 ready=110998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=46 yaw_raw_no_deadzone_mdeg=46
+117.060115200	NOISE,n=1000 raw_mean_mdps=-1487 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-6 same_code=764 sample_min_us=289 sample_max_us=1000
+117.074738300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=111001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+117.086257200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+118.048439100	CLK,seq=112,us=112153640,ticks=112000,tx_drop=0
+118.068572900	IMU,read_hz=1000 good=111997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+118.080241800	FRESH,status=111998 ready=111998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=45 yaw_raw_no_deadzone_mdeg=45
+118.094627900	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=750 sample_min_us=289 sample_max_us=1000
+118.111739200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=112001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+118.123137500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+119.085403200	CLK,seq=113,us=113153640,ticks=113000,tx_drop=0
+119.105633200	IMU,read_hz=1000 good=112997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+119.117312100	FRESH,status=112998 ready=112998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=47 yaw_raw_no_deadzone_mdeg=46
+119.131725500	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=793 sample_min_us=289 sample_max_us=1000
+119.148786800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=113001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+119.160239200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+120.122646500	CLK,seq=114,us=114153640,ticks=114000,tx_drop=0
+120.142815600	IMU,read_hz=1000 good=113997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+120.154549200	FRESH,status=113998 ready=113998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=43 yaw_raw_no_deadzone_mdeg=43
+120.171421400	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-3 same_code=777 sample_min_us=290 sample_max_us=1000
+120.186037600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=114001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+120.197444700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+121.159856900	CLK,seq=115,us=115153640,ticks=115000,tx_drop=0
+121.180048200	IMU,read_hz=1000 good=114997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+121.191693100	FRESH,status=114998 ready=114998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=41 yaw_raw_no_deadzone_mdeg=41
+121.208730800	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=767 sample_min_us=288 sample_max_us=1000
+121.223365800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=115001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+121.234907000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+122.196927200	CLK,seq=116,us=116153640,ticks=116000,tx_drop=0
+122.217125800	IMU,read_hz=1000 good=115997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+122.228874500	FRESH,status=115998 ready=115998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=50 yaw_raw_no_deadzone_mdeg=50
+122.243289300	NOISE,n=1000 raw_mean_mdps=-1471 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=9 same_code=800 sample_min_us=289 sample_max_us=1000
+122.260341400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=116001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+122.272409600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+123.234015200	CLK,seq=117,us=117153640,ticks=117000,tx_drop=0
+123.254075700	IMU,read_hz=1000 good=116997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+123.265851300	FRESH,status=116998 ready=116998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=48 yaw_raw_no_deadzone_mdeg=48
+123.282697800	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=786 sample_min_us=290 sample_max_us=1000
+123.297339400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=117001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+123.308857200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+124.270927800	CLK,seq=118,us=118153640,ticks=118000,tx_drop=0
+124.290903800	IMU,read_hz=1000 good=117997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-1 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+124.302600600	FRESH,status=117998 ready=117998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-1 yaw_lpf_no_deadzone_mdeg=53 yaw_raw_no_deadzone_mdeg=53
+124.316931000	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=34 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=793 sample_min_us=289 sample_max_us=1000
+124.334054000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=118001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+124.345325800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+125.307497200	CLK,seq=119,us=119153640,ticks=119000,tx_drop=0
+125.327577600	IMU,read_hz=1000 good=118997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-2 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+125.339291800	FRESH,status=118998 ready=118998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-2 yaw_lpf_no_deadzone_mdeg=55 yaw_raw_no_deadzone_mdeg=55
+125.353616200	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=74 raw_min_mdps=-1890 raw_max_mdps=-1097 corrected_mean_mdps=1 same_code=733 sample_min_us=289 sample_max_us=1000
+125.370728000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=119001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+125.382112300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+126.344040300	CLK,seq=120,us=120153640,ticks=120000,tx_drop=0
+126.364167500	IMU,read_hz=1000 good=119997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=-2 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+126.375858800	FRESH,status=119998 ready=119998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=-2 yaw_lpf_no_deadzone_mdeg=54 yaw_raw_no_deadzone_mdeg=54
+126.390282500	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=783 sample_min_us=288 sample_max_us=1000
+126.407350200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=120001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+126.418677600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+127.380920000	CLK,seq=121,us=121153640,ticks=121000,tx_drop=0
+127.401052100	IMU,read_hz=1000 good=120997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+127.412751300	FRESH,status=120998 ready=120998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=57 yaw_raw_no_deadzone_mdeg=57
+127.427160300	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=104 raw_min_mdps=-2256 raw_max_mdps=-365 corrected_mean_mdps=2 same_code=686 sample_min_us=289 sample_max_us=1000
+127.444185400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=121001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+127.455410900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+128.418159900	CLK,seq=122,us=122153640,ticks=122000,tx_drop=0
+128.438374800	IMU,read_hz=1000 good=121997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+128.450083300	FRESH,status=121998 ready=121998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=58
+128.464480700	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=777 sample_min_us=290 sample_max_us=1000
+128.481505800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=122001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+128.492748200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+129.455792900	CLK,seq=123,us=123153640,ticks=123000,tx_drop=0
+129.475768300	IMU,read_hz=1000 good=122997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+129.487476200	FRESH,status=122998 ready=122998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=58
+129.501931800	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=770 sample_min_us=289 sample_max_us=1000
+129.519170200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=123001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+129.530121900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+130.493055600	CLK,seq=124,us=124153640,ticks=124000,tx_drop=0
+130.513213000	IMU,read_hz=1000 good=123997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+130.524942300	FRESH,status=123998 ready=123998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=56 yaw_raw_no_deadzone_mdeg=56
+130.539245700	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=772 sample_min_us=290 sample_max_us=1000
+130.556397800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=124001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+130.567730400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+131.530337500	CLK,seq=125,us=125153640,ticks=125000,tx_drop=0
+131.550456900	IMU,read_hz=1000 good=124997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+131.562141000	FRESH,status=124998 ready=124998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=57 yaw_raw_no_deadzone_mdeg=57
+131.576569100	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=773 sample_min_us=289 sample_max_us=1000
+131.593586200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=125001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+131.604725200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+132.567339900	CLK,seq=126,us=126153640,ticks=126000,tx_drop=0
+132.587663200	IMU,read_hz=1000 good=125997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+132.599246600	FRESH,status=125998 ready=125998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=57 yaw_raw_no_deadzone_mdeg=57
+132.613783700	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=790 sample_min_us=290 sample_max_us=1000
+132.630817500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=126001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+132.641923600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+133.604282900	CLK,seq=127,us=127153640,ticks=127000,tx_drop=0
+133.624388800	IMU,read_hz=1000 good=126997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+133.636112600	FRESH,status=126998 ready=126998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=59
+133.650501100	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=723 sample_min_us=290 sample_max_us=1000
+133.667497000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=127001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+133.678748200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+134.641290300	CLK,seq=128,us=128153640,ticks=128000,tx_drop=0
+134.661443200	IMU,read_hz=1000 good=127997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+134.673090200	FRESH,status=127998 ready=127998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=52 yaw_raw_no_deadzone_mdeg=52
+134.687441200	NOISE,n=1000 raw_mean_mdps=-1487 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-6 same_code=759 sample_min_us=290 sample_max_us=1000
+134.704569300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=128001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+134.715847600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+135.683914800	CAL_CHECK,elapsed_ms=120000 raw_drift_mdeg=58 lpf_no_deadzone_mdeg=59 raw_mdeg_per_min=29 current_bias_mdps=-1480
+135.689459900	CLK,seq=129,us=129153640,ticks=129000,tx_drop=0
+135.709604400	IMU,read_hz=1000 good=128997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+135.721252100	FRESH,status=128998 ready=128998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=58
+135.735705800	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=803 sample_min_us=289 sample_max_us=1000
+135.750299900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=129001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+135.762742800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+136.715590900	CLK,seq=130,us=130153640,ticks=130000,tx_drop=0
+136.735688200	IMU,read_hz=1000 good=129997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+136.747371900	FRESH,status=129998 ready=129998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=57 yaw_raw_no_deadzone_mdeg=56
+136.761777000	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-1 same_code=793 sample_min_us=290 sample_max_us=1000
+136.778796300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=130001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+136.790132600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+137.752937900	CLK,seq=131,us=131153640,ticks=131000,tx_drop=0
+137.773160300	IMU,read_hz=1000 good=130997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+137.784802400	FRESH,status=130998 ready=130998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=51 yaw_raw_no_deadzone_mdeg=51
+137.799164000	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-5 same_code=777 sample_min_us=289 sample_max_us=1000
+137.819720500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=131001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+137.827659900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+138.789768100	CLK,seq=132,us=132153640,ticks=132000,tx_drop=0
+138.809759000	IMU,read_hz=1000 good=131997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+138.821410700	FRESH,status=131998 ready=131998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=50 yaw_raw_no_deadzone_mdeg=50
+138.835906800	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=795 sample_min_us=290 sample_max_us=1000
+138.853048700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=132001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+138.864141500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+139.826797000	CLK,seq=133,us=133153640,ticks=133000,tx_drop=0
+139.846909400	IMU,read_hz=1000 good=132997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+139.858603100	FRESH,status=132998 ready=132998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=50 yaw_raw_no_deadzone_mdeg=50
+139.872943900	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=753 sample_min_us=290 sample_max_us=1000
+139.890107600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=133001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+139.901499600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+140.864056600	CLK,seq=134,us=134153640,ticks=134000,tx_drop=0
+140.884192000	IMU,read_hz=1000 good=133997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+140.896033600	FRESH,status=133998 ready=133998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=52 yaw_raw_no_deadzone_mdeg=51
+140.910377700	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=1 same_code=779 sample_min_us=291 sample_max_us=1000
+140.927437600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=134001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+140.938610300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+141.901586900	CLK,seq=135,us=135153640,ticks=135000,tx_drop=0
+141.921962200	IMU,read_hz=1000 good=134997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+141.933448500	FRESH,status=134998 ready=134998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=51 yaw_raw_no_deadzone_mdeg=51
+141.947911600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=771 sample_min_us=290 sample_max_us=1000
+141.964898400	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=135001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+141.976076400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+142.938621300	CLK,seq=136,us=136153640,ticks=136000,tx_drop=0
+142.958790000	IMU,read_hz=1000 good=135997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+142.970472400	FRESH,status=135998 ready=135998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=48 yaw_raw_no_deadzone_mdeg=48
+142.984885500	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=41 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=751 sample_min_us=290 sample_max_us=1000
+143.001900300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=136001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+143.013301500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+143.975659300	CLK,seq=137,us=137153640,ticks=137000,tx_drop=0
+143.995724300	IMU,read_hz=1000 good=136997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+144.007690300	FRESH,status=136998 ready=136998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=50 yaw_raw_no_deadzone_mdeg=50
+144.021932600	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=725 sample_min_us=290 sample_max_us=1000
+144.038951500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=137001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+144.050142500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+145.012634100	CLK,seq=138,us=138153640,ticks=138000,tx_drop=0
+145.032670600	IMU,read_hz=1000 good=137997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+145.044376600	FRESH,status=137998 ready=137998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=50 yaw_raw_no_deadzone_mdeg=49
+145.058731700	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=45 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=735 sample_min_us=289 sample_max_us=1000
+145.075831800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=138001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+145.087034400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+146.049263800	CLK,seq=139,us=139153640,ticks=139000,tx_drop=0
+146.069381200	IMU,read_hz=1000 good=138997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+146.081096900	FRESH,status=138998 ready=138998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=52 yaw_raw_no_deadzone_mdeg=52
+146.095363100	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=43 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=751 sample_min_us=291 sample_max_us=1000
+146.112520800	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=139001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+146.123720700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+147.085877700	CLK,seq=140,us=140153640,ticks=140000,tx_drop=0
+147.106048700	IMU,read_hz=1000 good=139997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+147.117747500	FRESH,status=139998 ready=139998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=49 yaw_raw_no_deadzone_mdeg=49
+147.132324500	NOISE,n=1000 raw_mean_mdps=-1483 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-3 same_code=771 sample_min_us=290 sample_max_us=1000
+147.149192200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=140001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+147.160487600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+148.122552500	CLK,seq=141,us=141153640,ticks=141000,tx_drop=0
+148.142638700	IMU,read_hz=1000 good=140997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+148.154354200	FRESH,status=140998 ready=140998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=56 yaw_raw_no_deadzone_mdeg=55
+148.168779700	NOISE,n=1000 raw_mean_mdps=-1473 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=776 sample_min_us=290 sample_max_us=1000
+148.185821700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=141001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+148.196910800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+149.159766400	CLK,seq=142,us=142153640,ticks=142000,tx_drop=0
+149.179895700	IMU,read_hz=1000 good=141997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+149.191497100	FRESH,status=141998 ready=141998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=59
+149.206068100	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=36 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=784 sample_min_us=291 sample_max_us=1000
+149.223094500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=142001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+149.234144100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+150.197076800	CLK,seq=143,us=143153640,ticks=143000,tx_drop=0
+150.217157000	IMU,read_hz=1000 good=142997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+150.228829000	FRESH,status=142998 ready=142998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=54 yaw_raw_no_deadzone_mdeg=54
+150.243263500	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=-4 same_code=770 sample_min_us=290 sample_max_us=1000
+150.260379700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=143001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+150.271660700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+151.234004500	CLK,seq=144,us=144153640,ticks=144000,tx_drop=0
+151.254179400	IMU,read_hz=1000 good=143997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+151.265859500	FRESH,status=143998 ready=143998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=53 yaw_raw_no_deadzone_mdeg=53
+151.280287000	NOISE,n=1000 raw_mean_mdps=-1481 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-1 same_code=787 sample_min_us=289 sample_max_us=1000
+151.297351000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=144001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+151.308675300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+152.271574900	CLK,seq=145,us=145153640,ticks=145000,tx_drop=0
+152.291706700	IMU,read_hz=1000 good=144997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+152.303445400	FRESH,status=144998 ready=144998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=53 yaw_raw_no_deadzone_mdeg=53
+152.317709400	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=0 same_code=773 sample_min_us=289 sample_max_us=1000
+152.334849500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=145001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+152.346098900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+153.309641000	CLK,seq=146,us=146153640,ticks=146000,tx_drop=0
+153.329817000	IMU,read_hz=1000 good=145997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+153.341375500	FRESH,status=145998 ready=145998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=56 yaw_raw_no_deadzone_mdeg=56
+153.355851000	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=769 sample_min_us=290 sample_max_us=1000
+153.372996600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=146001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+153.384115500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+154.347680500	CLK,seq=147,us=147153640,ticks=147000,tx_drop=0
+154.367768100	IMU,read_hz=1000 good=146997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+154.379501300	FRESH,status=146998 ready=146998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=60 yaw_raw_no_deadzone_mdeg=60
+154.393950200	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=782 sample_min_us=290 sample_max_us=1000
+154.410965600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=147001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+154.422242500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+155.385218900	CLK,seq=148,us=148153640,ticks=148000,tx_drop=0
+155.405296800	IMU,read_hz=1000 good=147997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+155.417023300	FRESH,status=147998 ready=147998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=60 yaw_raw_no_deadzone_mdeg=60
+155.431433600	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=785 sample_min_us=290 sample_max_us=1000
+155.448516900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=148001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+155.459684600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+156.422833800	CLK,seq=149,us=149153640,ticks=149000,tx_drop=0
+156.442986700	IMU,read_hz=1000 good=148997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+156.454719000	FRESH,status=148998 ready=148998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=63 yaw_raw_no_deadzone_mdeg=63
+156.469089700	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=771 sample_min_us=289 sample_max_us=1002
+156.486174100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=149001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+156.497520200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+157.460756500	CLK,seq=150,us=150153640,ticks=150000,tx_drop=0
+157.480893500	IMU,read_hz=1000 good=149997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+157.492650900	FRESH,status=149998 ready=149998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=59 yaw_raw_no_deadzone_mdeg=58
+157.507256900	NOISE,n=1000 raw_mean_mdps=-1485 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-4 same_code=793 sample_min_us=290 sample_max_us=1000
+157.524067900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=150001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+157.535375700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+158.499108500	CLK,seq=151,us=151153640,ticks=151000,tx_drop=0
+158.519084800	IMU,read_hz=1000 good=150997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+158.530931400	FRESH,status=150998 ready=150998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=63 yaw_raw_no_deadzone_mdeg=63
+158.545242000	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=4 same_code=802 sample_min_us=290 sample_max_us=1000
+158.562384900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=151001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+158.573519200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+159.537067300	CLK,seq=152,us=152153640,ticks=152000,tx_drop=0
+159.557231500	IMU,read_hz=1000 good=151997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+159.568963700	FRESH,status=151998 ready=151998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=69 yaw_raw_no_deadzone_mdeg=69
+159.583390200	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=785 sample_min_us=290 sample_max_us=1000
+159.600408900	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=152001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+159.611582300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+160.574853900	CLK,seq=153,us=153153640,ticks=153000,tx_drop=0
+160.594996000	IMU,read_hz=1000 good=152997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+160.606689400	FRESH,status=152998 ready=152998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=72 yaw_raw_no_deadzone_mdeg=72
+160.621152100	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=37 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=767 sample_min_us=290 sample_max_us=1000
+160.638133300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=153001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+160.649351600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+161.613003500	CLK,seq=154,us=154153640,ticks=154000,tx_drop=0
+161.633089600	IMU,read_hz=1000 good=153997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+161.644795200	FRESH,status=153998 ready=153998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=70 yaw_raw_no_deadzone_mdeg=70
+161.659293500	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-2 same_code=781 sample_min_us=290 sample_max_us=1000
+161.676304500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=154001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+161.687623300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+162.651157200	CLK,seq=155,us=155153640,ticks=155000,tx_drop=0
+162.671331600	IMU,read_hz=1000 good=154997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+162.683075200	FRESH,status=154998 ready=154998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=75 yaw_raw_no_deadzone_mdeg=75
+162.697470000	NOISE,n=1000 raw_mean_mdps=-1475 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=5 same_code=759 sample_min_us=290 sample_max_us=1000
+162.714510300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=155001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+162.725667800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+163.689100300	CLK,seq=156,us=156153640,ticks=156000,tx_drop=0
+163.709236200	IMU,read_hz=1000 good=155997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+163.720967400	FRESH,status=155998 ready=155998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=79 yaw_raw_no_deadzone_mdeg=79
+163.735390600	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=44 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=3 same_code=749 sample_min_us=291 sample_max_us=1000
+163.752406700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=156001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+163.763632800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+164.726508600	CLK,seq=157,us=157153640,ticks=157000,tx_drop=0
+164.746676300	IMU,read_hz=1000 good=156997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+164.758371700	FRESH,status=156998 ready=156998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=85 yaw_raw_no_deadzone_mdeg=85
+164.772719900	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=6 same_code=751 sample_min_us=290 sample_max_us=1000
+164.789852500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=157001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+164.801040100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+165.764117700	CLK,seq=158,us=158153640,ticks=158000,tx_drop=0
+165.784233800	IMU,read_hz=1000 good=157997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+165.795950900	FRESH,status=157998 ready=157998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=86 yaw_raw_no_deadzone_mdeg=86
+165.810369900	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=1 same_code=776 sample_min_us=290 sample_max_us=1000
+165.827371600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=158001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+165.838624600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+166.801606600	CLK,seq=159,us=159153640,ticks=159000,tx_drop=0
+166.821776500	IMU,read_hz=1000 good=158997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+166.833518200	FRESH,status=158998 ready=158998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=87 yaw_raw_no_deadzone_mdeg=87
+166.847958400	NOISE,n=1000 raw_mean_mdps=-1479 raw_std_mdps=42 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=769 sample_min_us=290 sample_max_us=1000
+166.864942100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=159001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+166.876169800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+167.839918000	CLK,seq=160,us=160153640,ticks=160000,tx_drop=0
+167.860055400	IMU,read_hz=1000 good=159997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+167.871819200	FRESH,status=159998 ready=159998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=87 yaw_raw_no_deadzone_mdeg=87
+167.886388000	NOISE,n=1000 raw_mean_mdps=-1480 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=0 same_code=752 sample_min_us=289 sample_max_us=1000
+167.903264600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=160001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+167.914456600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+168.877693600	CLK,seq=161,us=161153640,ticks=161000,tx_drop=0
+168.897837900	IMU,read_hz=1000 good=160997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+168.909567900	FRESH,status=160998 ready=160998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=92 yaw_raw_no_deadzone_mdeg=92
+168.923962200	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=4 same_code=769 sample_min_us=289 sample_max_us=1000
+168.940989600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=161001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+168.952320900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+169.915306300	CLK,seq=162,us=162153640,ticks=162000,tx_drop=0
+169.935408300	IMU,read_hz=1000 good=161997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+169.947160500	FRESH,status=161998 ready=161998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=101 yaw_raw_no_deadzone_mdeg=101
+169.961603500	NOISE,n=1000 raw_mean_mdps=-1471 raw_std_mdps=40 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=9 same_code=798 sample_min_us=289 sample_max_us=1000
+169.978619700	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=162001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+169.990003500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+170.952763900	CLK,seq=163,us=163153640,ticks=163000,tx_drop=0
+170.972910000	IMU,read_hz=1000 good=162997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+170.984675100	FRESH,status=162998 ready=162998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=104 yaw_raw_no_deadzone_mdeg=104
+170.999141500	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=795 sample_min_us=289 sample_max_us=1000
+171.016225100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=163001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+171.027532200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+171.990343600	CLK,seq=164,us=164153640,ticks=164000,tx_drop=0
+172.010521800	IMU,read_hz=1000 good=163997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+172.022182000	FRESH,status=163998 ready=163998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=106 yaw_raw_no_deadzone_mdeg=106
+172.036615400	NOISE,n=1000 raw_mean_mdps=-1478 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=1 same_code=763 sample_min_us=289 sample_max_us=1000
+172.053630300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=164001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+172.065098300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+173.027355500	CLK,seq=165,us=165153640,ticks=165000,tx_drop=0
+173.047591000	IMU,read_hz=1000 good=164997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+173.059313200	FRESH,status=164998 ready=164998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=109 yaw_raw_no_deadzone_mdeg=109
+173.073701700	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1341 corrected_mean_mdps=2 same_code=760 sample_min_us=290 sample_max_us=1000
+173.090722000	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=165001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+173.102148800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+174.064874800	CLK,seq=166,us=166153640,ticks=166000,tx_drop=0
+174.085019500	IMU,read_hz=1000 good=165997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+174.096819000	FRESH,status=165998 ready=165998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=113 yaw_raw_no_deadzone_mdeg=113
+174.111247400	NOISE,n=1000 raw_mean_mdps=-1476 raw_std_mdps=38 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=3 same_code=789 sample_min_us=288 sample_max_us=1000
+174.128207100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=166001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+174.139917000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+175.102302900	CLK,seq=167,us=167153640,ticks=167000,tx_drop=0
+175.122400200	IMU,read_hz=1000 good=166997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+175.134191400	FRESH,status=166998 ready=166998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=107 yaw_raw_no_deadzone_mdeg=107
+175.150947500	NOISE,n=1000 raw_mean_mdps=-1486 raw_std_mdps=41 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=-5 same_code=750 sample_min_us=289 sample_max_us=1000
+175.165581500	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=167001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+175.176977000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+176.139189000	CLK,seq=168,us=168153640,ticks=168000,tx_drop=0
+176.159367700	IMU,read_hz=1000 good=167997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=14 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+176.171027700	FRESH,status=167998 ready=167998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=113 yaw_raw_no_deadzone_mdeg=113
+176.185533400	NOISE,n=1000 raw_mean_mdps=-1474 raw_std_mdps=44 raw_min_mdps=-1646 raw_max_mdps=-1280 corrected_mean_mdps=6 same_code=712 sample_min_us=294 sample_max_us=1000
+176.202603300	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=168001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+176.214080800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+177.176682400	CLK,seq=169,us=169153640,ticks=169000,tx_drop=0
+177.196834600	IMU,read_hz=1000 good=168997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+177.208597600	FRESH,status=168998 ready=168998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=116 yaw_raw_no_deadzone_mdeg=116
+177.223016400	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=39 raw_min_mdps=-1585 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=745 sample_min_us=289 sample_max_us=1000
+177.240055100	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=169001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+177.251471200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+178.214302900	CLK,seq=170,us=170153640,ticks=170000,tx_drop=0
+178.234482600	IMU,read_hz=1000 good=169997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+178.246327200	FRESH,status=169998 ready=169998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=114 yaw_raw_no_deadzone_mdeg=114
+178.263053200	NOISE,n=1000 raw_mean_mdps=-1482 raw_std_mdps=45 raw_min_mdps=-1646 raw_max_mdps=-1341 corrected_mean_mdps=-2 same_code=728 sample_min_us=290 sample_max_us=1000
+178.277724600	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=170001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+178.289212000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
+179.251844900	CLK,seq=171,us=171153640,ticks=171000,tx_drop=0
+179.271961400	IMU,read_hz=1000 good=170997 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=121 update_max_us=15 cal=1 cal_n=4000 bias_mdps=-1480 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+179.283830000	FRESH,status=170998 ready=170998 not_ready=0 fresh=1000 stale=0 yaw_deadzone_mdeg=0 yaw_lpf_no_deadzone_mdeg=116 yaw_raw_no_deadzone_mdeg=116
+179.298065000	NOISE,n=1000 raw_mean_mdps=-1477 raw_std_mdps=37 raw_min_mdps=-1646 raw_max_mdps=-1402 corrected_mean_mdps=2 same_code=751 sample_min_us=288 sample_max_us=1000
+179.315182200	CAL,state=3 retries=0 fail_reason=0 warmup_elapsed_ms=171001 accepted=4000/4000 valid_blocks=8/8 last_std_mdps=37 last_span_mdps=182 block_mean_span_mdps=10 bias_mdps=-1480
+179.326514500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=0 max_cycles=96 core_hz=100000000
