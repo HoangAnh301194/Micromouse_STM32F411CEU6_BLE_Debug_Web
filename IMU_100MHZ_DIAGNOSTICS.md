@@ -86,3 +86,35 @@ in `include/mpu6050.h`. Rebuild/upload after changing the macro. Calibrate with 
 - `DRIFT_START`: automatic zero of three yaw integrators just after initial calibration.
 
 The log may still contain replacement characters if USB-UART transport/receive settings are problematic; `uart_drop=0` and `uart_dma_err=0` only cover the firmware's own transmit-buffer/DMA counters.
+
+## Boot failure diagnostics (clock/IMU recovery)
+
+A previous revision waited for `PWR_CSR.VOSRDY` **before** starting PLL; on
+STM32F411 the requested voltage scale is activated **after PLL is enabled**.
+This caused the boot code to return early and run at 16MHz. Clock startup
+now waits for `PLLRDY`, **then** `VOSRDY`, and finally switches SYSCLK to PLL.
+
+On reset inspect:
+- `CLOCK,sysclk=100000000 hsi_pll100=1 apb1=50000000 apb2=100000000`
+- `CLOCK_DIAG,fault=0` and RCC/PWR/FLASH register snapshots.
+- `[IMU_READY]` if all MPU writes and readbacks succeed.
+
+If still failing, do **not** assume there is a hardware wiring problem. Read
+`BOOT_FAIL` for the exact `clock_fault`, `imu_status`, `init_step`,
+`reg`, `expect`, `got` and `i2c_status`.
+`I2C_DIAG` also prints I2C1 SR1/SR2/CR1/CR2.
+The LED blinks and `BOOT_FAIL_ALIVE` repeats about once per second in
+failure mode. Motors remain disabled.
+
+Clock fault stages: 0=success; 1=HSI ready failed; 2=Flash latency did
+not latch; 3=HSI SYSCLK switch failed; 4=PLL failed to turn off;
+5=PLL did not lock; 6=voltage scale not ready after PLL lock;
+7=SYSCLK switch to PLL failed; 8=CMSIS clock calculation mismatch.
+
+MPU startup stages: 1=address probe, 2=WHO_AM_I, 3=reset,
+4=wake, 5=GYRO_CONFIG write, 6=CONFIG/DLPF write, 7=SMPLRT_DIV write,
+8=GYRO_CONFIG readback, 9=DLPF readback, 10=INT_PIN_CFG write,
+11=INT_ENABLE write. Values are hexadecimal except step/status.
+
+No ARM toolchain or board was available for build/bench testing in the
+assistant's environment. Confirm the startup log first before longer IMU tests.
