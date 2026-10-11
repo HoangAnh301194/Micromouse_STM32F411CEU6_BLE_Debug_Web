@@ -116,3 +116,43 @@ rerunning.
 - Do **not** automatically write the selected trim into default board
   initialization or alter PID / IMU time-step parameters based only on the
   survey results.
+
+
+## Debug note: first automatic survey stopped at trim20 (2026-10-11)
+
+First auto-run `clock_logs/auto_hsi_20261011_224439/trim20/`
+completed a 60-second measurement but stopped because `tx_drop_delta=2`.
+Firmware rollback to `genericSTM32F411CE` succeeded.
+
+What was measured (80MHz nominal PLL, HSITRIM=20):
+- Effective TIM5 = **977518.086 Hz** and TIM11 = **977.531 Hz**,
+  physical SYSCLK estimate ≈ **78.201 MHz**, MCU error **-2.248%**.
+- 58 sequential CLK records: `seq_missing_count=0`;
+  the two lost messages were **not CLK frames**.
+- TX drop rose **0→1 at seq 10**, then **1→2 at seq 40**.
+- On this profile, `CAL_DONE` occurs near seq 9/10 and the
+  30-second `CAL_CHECK` near seq 40; these coincide with the
+  dense 1Hz diagnostics. UART DMA itself reported no error.
+- Actual root mechanism is firmware **TX queue saturation**, not a proven
+  physical UART framing error; the exact lost message types are not logged.
+
+Fix: with `CLOCK_AUTOTUNE` enabled, suppress the five other periodic
+`IMU/FRESH/NOISE/CAL/TIMING` messages. Keep `CLK` once
+per second plus occasional startup/calibration records; leave the ordinary
+non-autotune firmware logging intact. Still reject any TX drops or missing
+CLK records, rather than silently accepting compromised runs.
+
+After updating the branch, first repeat `--self-test`, then rerun:
+
+```powershell
+git status -sb
+git fetch origin
+git merge --ff-only origin/feature/motor-debug-console
+python tools/hsi_autotune.py --self-test
+python tools/hsi_autotune.py --port COM7 --start 20 --end 26 --seconds 60
+```
+
+If local Git history has diverged, STOP and reconcile it without overwriting
+local commits. On any validation failure, inspect `raw_serial.log` and
+`clock_summary.txt` for the **first failing trim**. Even a valid 80MHz
+result does not authorize deployment at 100MHz without independent checks.
