@@ -414,6 +414,30 @@ int main(void)
                 (unsigned long)FLASH->ACR);
 
     init_status = MPU6050_Init(&imu_test);
+    UART_Printf(
+        "I2C_PROBE,400_a=%u 400_w=%u 400_id=0x%02X "
+        "300_a=%u 300_w=%u 300_id=0x%02X "
+        "200_a=%u 200_w=%u 200_id=0x%02X "
+        "100_a=%u 100_w=%u 100_id=0x%02X "
+        "selected=%u selected_scl=%lu\\r\\n",
+        (unsigned)imu_test.probe_address_status[0],
+        (unsigned)imu_test.probe_who_status[0],
+        (unsigned)imu_test.probe_who_value[0],
+        (unsigned)imu_test.probe_address_status[1],
+        (unsigned)imu_test.probe_who_status[1],
+        (unsigned)imu_test.probe_who_value[1],
+        (unsigned)imu_test.probe_address_status[2],
+        (unsigned)imu_test.probe_who_status[2],
+        (unsigned)imu_test.probe_who_value[2],
+        (unsigned)imu_test.probe_address_status[3],
+        (unsigned)imu_test.probe_who_status[3],
+        (unsigned)imu_test.probe_who_value[3],
+        (unsigned)imu_test.selected_speed_index,
+        (unsigned long)I2C_GetConfiguredSclHz());
+    UART_Printf("I2C_LINES,scl_pb8=%u sda_pb9=%u idr=0x%08lX\\r\\n",
+        (unsigned)((GPIOB->IDR >> 8) & 1U),
+        (unsigned)((GPIOB->IDR >> 9) & 1U),
+        (unsigned long)GPIOB->IDR);
     if (init_status != MPU6050_OK || Board_GetClockFault() != 0U) {
         UART_Printf("BOOT_FAIL,clock_fault=%lu imu_status=%d init_step=%u reg=0x%02X expect=0x%02X got=0x%02X i2c_status=%u scl_nominal=%lu\r\n",
                     (unsigned long)Board_GetClockFault(),
