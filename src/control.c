@@ -197,7 +197,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     timing_last_entry_us = entry_us;
     control_tick_count++;
 #if defined(MPU_FRESHNESS_DIAG)
-    if (control_mpu && control_mpu->calibrated &&
+    if (control_mpu && control_mpu->diag_control_ready &&
         control_mpu->diag_fresh_sequence != 0U) {
         uint32_t sequence = control_mpu->diag_fresh_sequence;
         uint32_t age_us = entry_us - control_mpu->diag_last_fresh_us;
