@@ -85,6 +85,8 @@ void MPU6050_GetNoiseWindow(MPU6050_Handle_t *h, MPU6050_NoiseStats_t *out)
 MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
 {
     uint8_t who = 0U, cfg = 0U;
+    uint8_t i, found = 0U;
+    static const uint8_t speed_modes[4] = {1U, 2U, 3U, 0U};
     if (!h || MPU6050_GYRO_RANGE > 3U) return MPU6050_ERROR;
     h->i2c = MPU6050_I2C_INSTANCE;
     h->address = MPU6050_ADDR;
@@ -129,7 +131,13 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->init_expected = 0U;
     h->init_read_value = 0U;
     h->init_i2c_status = I2C_OK;
-    I2C_Init(h->i2c, 1U);
+    h->selected_speed_mode = 0xFFU;
+    h->selected_speed_index = 0xFFU;
+    for (i = 0U; i < 4U; i++) {
+        h->probe_address_status[i] = 0xFFU;
+        h->probe_who_status[i] = 0xFFU;
+        h->probe_who_value[i] = 0xFFU;
+    }
 
     /* Keep the exact failing step/register/status for USART diagnostics.
      * 1=address, 2=WHO_AM_I, 3=reset, 4=wake, 5=gyro range,
@@ -144,18 +152,35 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
         if (h->init_i2c_status != I2C_OK) return MPU6050_ERROR;         \
     } while (0)
 
-    h->init_step = 1U;
-    h->init_i2c_status = I2C_IsDeviceReady(h->i2c, h->address);
-    if (h->init_i2c_status != I2C_OK) return MPU6050_NOT_FOUND;
+    /* Probe descending bus rates without lowering STM32 CPU clock:
+     * 400k, 300k, 200k, 100k. Accept only an ACK AND correct WHO_AM_I.
+     * Failed trials are logged; selected mode is retained on bus recovery. */
+    for (i = 0U; i < 4U; i++) {
+        I2C_Init(h->i2c, speed_modes[i]);
+        delay_ms_blocking(2U);
+        h->init_step = 1U;
+        h->init_register = 0U;
+        h->init_i2c_status = I2C_IsDeviceReady(h->i2c, h->address);
+        h->probe_address_status[i] = (uint8_t)h->init_i2c_status;
+        if (h->init_i2c_status != I2C_OK) continue;
 
-    h->init_step = 2U;
-    h->init_register = MPU6050_WHO_AM_I;
-    h->init_expected = 0x68U;
-    h->init_i2c_status = I2C_ReadRegister(h->i2c, h->address,
-                                          MPU6050_WHO_AM_I, &who);
-    h->init_read_value = who;
-    if (h->init_i2c_status != I2C_OK || who != 0x68U)
-        return MPU6050_NOT_FOUND;
+        h->init_step = 2U;
+        h->init_register = MPU6050_WHO_AM_I;
+        h->init_expected = 0x68U;
+        who = 0U;
+        h->init_i2c_status = I2C_ReadRegister(h->i2c, h->address,
+                                              MPU6050_WHO_AM_I, &who);
+        h->probe_who_status[i] = (uint8_t)h->init_i2c_status;
+        h->probe_who_value[i] = who;
+        h->init_read_value = who;
+        if (h->init_i2c_status == I2C_OK && who == 0x68U) {
+            h->selected_speed_mode = speed_modes[i];
+            h->selected_speed_index = i;
+            found = 1U;
+            break;
+        }
+    }
+    if (!found) return MPU6050_NOT_FOUND;
 
     MPU_BOOT_WRITE(3U, MPU6050_PWR_MGMT_1, 0x80U);
     delay_ms_blocking(100U);
