@@ -35,23 +35,27 @@ Each reading now requires **two I2C transactions**. It is normal for the measure
 
 ### (2) Drift without deadzone
 
-Keep the device absolutely still during the **200 DATA_RDY-confirmed calibration samples** and for at least 120 s after `DRIFT_START`. `FRESH` prints:
+Keep the device absolutely still during the new **5-second gyro warmup + 4000 DATA_RDY-confirmed calibration samples** and for at least 120 s after `DRIFT_START`. `FRESH` prints:
 - `yaw_deadzone_mdeg`: current LPF + 0.3°/s software deadzone.
 - `yaw_lpf_no_deadzone_mdeg`: LPF + calibrated bias but **no deadzone**.
 - `yaw_raw_no_deadzone_mdeg`: bias-corrected gyro integrated without software LPF/deadzone.
 
 Degrees = millidegrees / 1000. Compare slope (degrees per minute), not only the last line. Measurements are relative yaw estimates, not absolute heading.
 
-### (3) Known reference turns using KEY
+### (3) Independent angular reference: manual visual turns are NOT accurate enough
 
-Hold the robot fixed in the same orientation at the start and keep motors disconnected/disabled.
+**Do not treat a hand-aligned ±90° or ±180° turn as ground truth**:
+a ±5° visual reference uncertainty exceeds the desired IMU error.
+The KEY button is **no longer** used to score angle accuracy.
+Instead it requests stationary re-calibration (allow time to release the
+button before the 5-second warmup is over).
 
-- Press KEY once: `ANGLE_START,target_mdeg=90000`; gyro yaw integrators reset to zero.
-- Manually rotate the robot +90° against a **physical** protractor/reference mark.
-- Press KEY again: `ANGLE_DONE` prints gyro-integrated angles and errors.
-- Next runs cycle through **−90°, +180°, −180°**, then repeat.
-
-Pressing the KEY can mechanically disturb the measurement. Ideally mount the mouse on a marked turntable and use a second operator. Repeat each angle at least 5–10 times; compare signed error, mean absolute error and repeatability. Sign convention should first be confirmed with a small, known-positive rotation. The experiment does not drive any motors.
+For precision rotation experiments, use a calibrated motorized turntable
+with an independently measured encoder angle, or a top-down calibrated
+camera with a tracked fiducial/AprilTag and quantified angular uncertainty.
+Motion controller performance and gyro angle accuracy are different tests.
+Without an independent reference, only report drift, repeatability and
+unreferenced closed-loop rotation observations, not absolute angle error.
 
 ### (4) DLPF 42 Hz vs 98 Hz, with dynamic response
 
@@ -150,3 +154,32 @@ assumed from `SMPLRT_DIV=0`.
 
 To capture boot output on COM7: open `python -m platformio device monitor
 -p COM7 -b 115200`, **then press RESET** on the MCU board.
+
+## New calibration comparison — 5-second warmup + 4-second collection
+
+This section supersedes the original 200-sample startup calibration.
+At boot, `MPU6050_Calibrate` starts a **nonblocking** zero-rate sequence:
+
+1. State `CAL,state=1`: 5000 ms warm-up / settle, with I2C gyro polling still active. The gyro does not output a valid yaw during calibration.
+2. State `CAL,state=2`: 4000 DATA_RDY-confirmed gyro samples (8 blocks × 500). Each block must have standard deviation ≤0.40°/s and span ≤2.0°/s; across accepted block means, max-min must remain ≤0.12°/s. Those limits reject **obvious** movement, not perfectly constant slow rotation or linear acceleration.
+3. If a block fails, discard all accumulated calibration samples, return to warmup, and retry. Three rejections maximum: `CAL,state=4` (failed), no valid gyro yaw. `fail_reason=1` for noisy/spiky block, `2` for inconsistent block means.
+4. On success, `CAL,state=3`, set the mean zero-rate bias and zero the three yaw integrals. `CAL_DONE` prints accepted samples, block count, retries, previous/new bias, max block standard deviation, and block mean spread.
+5. While the robot remains **physically stationary**, `CAL_CHECK` prints measured raw integrated yaw drift and rate after 30 and 120 seconds. Raw yaw is deliberately free of software deadzone, so nonzero drift is visible. `NOISE` continues to report per-second raw gyro noise and mean corrected rate.
+
+Press **KEY once only while robot is at rest** to request calibration again.
+A previous completed bias is recorded for comparison. There is no runtime
+bias adaptation, because slow physical rotation cannot be distinguished
+reliably from a gyro offset with gyro Z measurements alone.
+
+**Suggested reproducible comparison:** reset MCU; keep the board still
+through the 9-second initialization and subsequent 120-second observation;
+record `CAL_DONE`, both `CAL_CHECK` records, and `NOISE`. Repeat once from
+a cold power-up and once after the device has been operating for ~3–5 minutes:
+press KEY **only while stationary**, let it finish and repeat the 120-second
+observation. Temperature stabilization may take longer than 5 seconds; this
+experiment distinguishes short-window averaging from slow temperature bias
+drift. Do not infer a precision grade from a visual turn.
+
+`CAL_CHECK,raw_mdeg_per_min` is calculated as integrated raw-deadzone-free
+yaw divided by actual elapsed time. A better value than the prior ~0.6°/min
+is **not guaranteed** until measured under comparable conditions.
