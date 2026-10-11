@@ -15,6 +15,70 @@
 
 static const float gyro_scales[4] = {131.0f, 65.5f, 32.8f, 16.4f};
 
+static void MPU6050_ClearNoiseWindow(MPU6050_Handle_t *h)
+{
+    h->raw_sum = 0;
+    h->raw_sum_squares = 0U;
+    h->raw_stat_n = 0U;
+    h->raw_stat_min = 32767;
+    h->raw_stat_max = -32768;
+    h->raw_has_previous = 0U;
+    h->raw_equal_count = 0U;
+    h->last_raw_timestamp_us = 0U;
+    h->raw_interval_min_us = 0xFFFFFFFFUL;
+    h->raw_interval_max_us = 0U;
+}
+
+static void MPU6050_TrackRaw(MPU6050_Handle_t *h, int16_t raw, uint32_t time_us)
+{
+    uint32_t spacing;
+    if (h->raw_stat_n == 0U) {
+        h->raw_stat_min = raw;
+        h->raw_stat_max = raw;
+    } else {
+        if (raw < h->raw_stat_min) h->raw_stat_min = raw;
+        if (raw > h->raw_stat_max) h->raw_stat_max = raw;
+    }
+    if (h->raw_has_previous) {
+        if (raw == h->last_raw) h->raw_equal_count++;
+        spacing = time_us - h->last_raw_timestamp_us;
+        if (spacing < h->raw_interval_min_us) h->raw_interval_min_us = spacing;
+        if (spacing > h->raw_interval_max_us) h->raw_interval_max_us = spacing;
+    }
+    h->last_raw = raw;
+    h->last_raw_timestamp_us = time_us;
+    h->raw_has_previous = 1U;
+    h->raw_sum += raw;
+    h->raw_sum_squares += (uint64_t)((int32_t)raw * (int32_t)raw);
+    h->raw_stat_n++;
+}
+
+void MPU6050_GetNoiseWindow(MPU6050_Handle_t *h, MPU6050_NoiseStats_t *out)
+{
+    double mean_counts, var_counts;
+    if (!h || !out) return;
+    out->n = h->raw_stat_n;
+    out->equal_consecutive_raw = h->raw_equal_count;
+    out->interval_min_us = (h->raw_stat_n > 1U) ? h->raw_interval_min_us : 0U;
+    out->interval_max_us = h->raw_interval_max_us;
+    if (h->raw_stat_n > 0U) {
+        mean_counts = (double)h->raw_sum / (double)h->raw_stat_n;
+        var_counts = ((double)h->raw_sum_squares / (double)h->raw_stat_n) -
+                     mean_counts * mean_counts;
+        if (var_counts < 0.0) var_counts = 0.0;
+        out->mean_dps = (float)(mean_counts / h->gyro_scale);
+        out->std_dps = (float)(sqrt(var_counts) / h->gyro_scale);
+        out->min_dps = (float)h->raw_stat_min / h->gyro_scale;
+        out->max_dps = (float)h->raw_stat_max / h->gyro_scale;
+        out->mean_corrected_dps = out->mean_dps - h->gyro_z_offset;
+    } else {
+        out->mean_dps = out->std_dps = out->min_dps =
+        out->max_dps = out->mean_corrected_dps = 0.0f;
+    }
+    MPU6050_ClearNoiseWindow(h);
+}
+
+
 MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
 {
     uint8_t who = 0U, cfg = 0U;
@@ -43,6 +107,7 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->calibrated = 0U;
     h->dma_running = 0U;
     h->last_dma_req_us = 0U;
+    MPU6050_ClearNoiseWindow(h);
 
     I2C_Init(h->i2c, 1U);
     if (I2C_IsDeviceReady(h->i2c, h->address) != I2C_OK) return MPU6050_NOT_FOUND;
@@ -87,6 +152,7 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->gyro_z_lpf = 0.0f;
     h->yaw = 0.0f;
     h->last_update_us = 0U;
+    MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
 }
 
@@ -109,6 +175,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         h->last_transfer_us = duration;
         if (duration > h->max_transfer_us) h->max_transfer_us = duration;
         raw = (int16_t)(((uint16_t)bytes[0] << 8) | (uint16_t)bytes[1]);
+        /* Collect raw data BEFORE LPF/deadzone. Calibration records are
+         * excluded from this post-calibration noise window. */
+        if (!h->calibrating) MPU6050_TrackRaw(h, raw, now);
         if (h->calibrating) {
             h->calibration_sum += (int32_t)raw;
             h->calibration_count++;
@@ -120,6 +189,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
                 h->gyro_z_lpf = 0.0f;
                 h->gyro_z_filtered = 0.0f;
                 h->last_update_us = now;
+                MPU6050_ClearNoiseWindow(h);
             }
         } else if (h->calibrated) {
             gz = ((float)raw / h->gyro_scale) - h->gyro_z_offset;
