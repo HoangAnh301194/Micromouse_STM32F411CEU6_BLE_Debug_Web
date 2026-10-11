@@ -381,6 +381,7 @@ static uint8_t Key_TestPress(void)
 int main(void)
 {
     uint32_t last_report_us, last_ticks, last_good;
+    uint32_t clk_seq = 0U; /* 1 Hz host-vs-MCU clock diagnostic; motor OFF. */
     uint32_t last_err, last_busy, last_timeout, last_fresh = 0U;
     uint32_t last_status_not_ready = 0U;
     uint32_t max_update_us = 0U;
@@ -588,6 +589,17 @@ int main(void)
         ticks_diff = Control_GetTickCount() - last_ticks;
         age_us = imu_test.last_good_us ?
                  (uint32_t)(now - imu_test.last_good_us) : 0xFFFFFFFFUL;
+
+        /* Independent host-side clock test. Timestamp is sampled BEFORE
+         * enqueueing reports, so serial transfer delay is mostly a constant
+         * offset. No UART writes from ISR, no RX commands, motor stays OFF.
+         * TIM5 micros() wraps naturally at 2^32; host unwraps it. */
+        ++clk_seq;
+        UART_Printf("CLK,seq=%lu,us=%lu,ticks=%lu,tx_drop=%lu\r\n",
+                    (unsigned long)clk_seq,
+                    (unsigned long)now,
+                    (unsigned long)Control_GetTickCount(),
+                    (unsigned long)UART_GetDroppedMessages());
 
         UART_Printf(
           "IMU,read_hz=%lu good=%lu err=%lu busy=%lu timeout=%lu "
