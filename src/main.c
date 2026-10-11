@@ -411,6 +411,13 @@ int main(void)
                 (unsigned long)Board_GetHsiCal(),
                 (unsigned long)RCC->CR);
 #endif
+#if defined(CLOCK_VALIDATE_96M)
+    /* Header for PC-side validator: register readbacks, NOT physical MHz. */
+    UART_Printf("CLOCK_PROFILE,mode=validate96,trim=%lu,plln=%lu,nominal_hz=%lu,motor_off=1\r\n",
+                (unsigned long)Board_GetHsiTrim(),
+                (unsigned long)((RCC->PLLCFGR & RCC_PLLCFGR_PLLN) >> 6),
+                (unsigned long)SystemCoreClock);
+#endif
     UART_Printf("CLOCK,sysclk=%lu hsi_pll100=%u apb1=%lu apb2=%lu tim5_us_clock=1000000\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned)(SystemCoreClock == 100000000UL),
