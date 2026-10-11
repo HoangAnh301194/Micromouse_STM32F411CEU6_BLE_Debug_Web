@@ -607,11 +607,14 @@ int main(void)
          * offset. No UART writes from ISR, no RX commands, motor stays OFF.
          * TIM5 micros() wraps naturally at 2^32; host unwraps it. */
         ++clk_seq;
-        UART_Printf("CLK,seq=%lu,us=%lu,ticks=%lu,tx_drop=%lu\r\n",
+        UART_Printf("CLK,seq=%lu,us=%lu,ticks=%lu,tx_drop=%lu,trim=%lu,fault=%lu,sysclk_nominal=%lu\r\n",
                     (unsigned long)clk_seq,
                     (unsigned long)now,
                     (unsigned long)Control_GetTickCount(),
-                    (unsigned long)UART_GetDroppedMessages());
+                    (unsigned long)UART_GetDroppedMessages(),
+                    (unsigned long)Board_GetHsiTrim(),
+                    (unsigned long)Board_GetClockFault(),
+                    (unsigned long)SystemCoreClock);
 
         UART_Printf(
           "IMU,read_hz=%lu good=%lu err=%lu busy=%lu timeout=%lu "
