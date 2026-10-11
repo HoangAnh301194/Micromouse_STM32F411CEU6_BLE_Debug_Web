@@ -175,6 +175,23 @@ typedef struct {
   uint32_t data_read_start_us;
   uint8_t dlpf_cfg;
 
+#if defined(MPU_FRESHNESS_DIAG)
+  /* Diagnostic-only; no I2C/ISR work added to normal firmware.
+   * Independent IRQ consumer reads the sequence and completion timestamp.
+   * These values describe MCU-side completion, NOT the MPU's sample timestamp. */
+  volatile uint32_t diag_fresh_sequence;
+  volatile uint32_t diag_last_fresh_us;
+  uint32_t diag_previous_fresh_us;
+  uint32_t diag_fresh_gap_min_us;
+  uint32_t diag_fresh_gap_max_us;
+  uint32_t diag_fresh_gap_gt1500;
+  uint32_t diag_fresh_gap_gt2000;
+  uint32_t diag_previous_status_us;
+  uint32_t diag_status_gap_max_us;
+  uint32_t diag_notready_run;
+  uint32_t diag_notready_run_max;
+#endif
+
   /* Boot-only diagnostic: identify exact failed MPU register operation. */
   uint8_t init_step;
   uint8_t init_register;
