@@ -1,0 +1,32 @@
+{
+  "status": "PASS_DIAGNOSTIC",
+  "metrics": {
+    "clock_error_pct": -0.09036,
+    "sysclk_mhz_estimate": 95.91326,
+    "postcal_status_ready": 225865,
+    "postcal_status_not_ready": 1131,
+    "postcal_status_not_ready_pct": 0.4982,
+    "postcal_fresh_gyro_reads": 225865,
+    "postcal_status_zero_gyro_reads": 1131,
+    "fresh_gap_min_us_observed": 240,
+    "fresh_gap_max_us_observed": 2563,
+    "fresh_gap_gt1500_count": 1358,
+    "fresh_gap_gt2000_count": 1,
+    "status_poll_gap_max_us_observed": 2000,
+    "consecutive_notready_max": 1,
+    "postcal_TIM11_ticks": 227000,
+    "postcal_reused_gyro_ticks": 1136,
+    "gyro_reused_tick_pct": 0.5004,
+    "gyro_completion_age_max_us_observed": 1772,
+    "gyro_completion_age_gt1500_ticks": 1135,
+    "host_fit_records": 235,
+    "uart_tx_drop": 0,
+    "clk_seq_missing": 0
+  },
+  "warnings": [
+    "1 accepted-sample gaps exceeded 2ms",
+    "TIM11 sometimes reuses the latest accepted gyro sample",
+    "Some TIM11 ticks observed a gyro read completed over 1.5ms earlier"
+  ],
+  "failures": []
+}
