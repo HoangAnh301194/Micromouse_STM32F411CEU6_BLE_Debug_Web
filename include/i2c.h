@@ -46,7 +46,7 @@ typedef void (*I2C_DMA_Callback_t)(void);
 /**
  * @brief Initialize I2C peripheral
  * @param instance I2C instance (I2C_1, I2C_2, I2C_3)
- * @param fast_mode 0 = Standard mode (100kHz), 1 = Fast mode (400kHz)
+ * @param fast_mode 0=100kHz, 1=400kHz, 2=300kHz, 3=200kHz
  */
 void I2C_Init(I2C_Instance instance, uint8_t fast_mode);
 
