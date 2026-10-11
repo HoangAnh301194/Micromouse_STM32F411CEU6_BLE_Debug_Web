@@ -399,16 +399,45 @@ int main(void)
     UART_Init(); /* USART1 PA9: USB-TTL 115200, no BLE required. */
 
     UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\r\n");
-    UART_Printf("CLOCK,sysclk=%lu hsi_pll100=%u apb1=%lu apb2=%lu tim5_us_clock=1000000\r\n",
+    UART_Printf("CLOCK,sysclk=%lu hsi_pll100=%u apb1=%lu apb2=%lu tim5_us_clock=1000000\\r\\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned)(SystemCoreClock == 100000000UL),
                 (unsigned long)Board_GetAPB1ClockHz(),
                 (unsigned long)Board_GetAPB2ClockHz());
+    UART_Printf("CLOCK_DIAG,fault=%lu rcc_cr=0x%08lX cfgr=0x%08lX pllcfgr=0x%08lX pwr_cr=0x%08lX pwr_csr=0x%08lX flash_acr=0x%08lX\\r\\n",
+                (unsigned long)Board_GetClockFault(),
+                (unsigned long)RCC->CR,
+                (unsigned long)RCC->CFGR,
+                (unsigned long)RCC->PLLCFGR,
+                (unsigned long)PWR->CR,
+                (unsigned long)PWR->CSR,
+                (unsigned long)FLASH->ACR);
+
     init_status = MPU6050_Init(&imu_test);
-    if (init_status != MPU6050_OK) {
-        UART_Printf("[IMU_INIT_FAIL] status=%d scl_nominal=%lu Hz\r\n",
-                    (int)init_status, (unsigned long)I2C_GetConfiguredSclHz());
-        while (1) { __WFI(); } /* Remain idle; motors never started. */
+    if (init_status != MPU6050_OK || Board_GetClockFault() != 0U) {
+        UART_Printf("BOOT_FAIL,clock_fault=%lu imu_status=%d init_step=%u reg=0x%02X expect=0x%02X got=0x%02X i2c_status=%u scl_nominal=%lu\\r\\n",
+                    (unsigned long)Board_GetClockFault(),
+                    (int)init_status,
+                    (unsigned)imu_test.init_step,
+                    (unsigned)imu_test.init_register,
+                    (unsigned)imu_test.init_expected,
+                    (unsigned)imu_test.init_read_value,
+                    (unsigned)imu_test.init_i2c_status,
+                    (unsigned long)I2C_GetConfiguredSclHz());
+        UART_Printf("I2C_DIAG,sr1=0x%08lX sr2=0x%08lX cr1=0x%08lX cr2=0x%08lX\\r\\n",
+                    (unsigned long)I2C1->SR1, (unsigned long)I2C1->SR2,
+                    (unsigned long)I2C1->CR1, (unsigned long)I2C1->CR2);
+        /* Failure heartbeat: never silently sleep forever. Motors disabled. */
+        while (1) {
+            Board_StatusLed(1U);
+            delay_ms_blocking(400U);
+            Board_StatusLed(0U);
+            delay_ms_blocking(600U);
+            UART_Printf("BOOT_FAIL_ALIVE,clock_fault=%lu imu_step=%u i2c_status=%u\\r\\n",
+                        (unsigned long)Board_GetClockFault(),
+                        (unsigned)imu_test.init_step,
+                        (unsigned)imu_test.init_i2c_status);
+        }
     }
 
     MPU6050_Calibrate(&imu_test);
