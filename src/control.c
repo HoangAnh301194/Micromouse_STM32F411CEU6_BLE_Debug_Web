@@ -25,12 +25,38 @@ static volatile uint32_t timing_max_us = 0U;
 static volatile uint32_t timing_late_50us = 0U;
 static volatile uint32_t timing_gap_1500us = 0U;
 static volatile uint32_t timing_max_cycles = 0U;
+#if defined(MPU_FRESHNESS_DIAG)
+/* Statistics only. Main produces a sample timestamp; ISR observes it.
+ * Do not acquire I2C or run a motor callback here. */
+static volatile uint32_t sync_ticks = 0U;
+static volatile uint32_t sync_reused_ticks = 0U;
+static volatile uint32_t sync_age_over1000 = 0U;
+static volatile uint32_t sync_age_over1500 = 0U;
+static volatile uint32_t sync_age_max_us = 0U;
+static uint32_t sync_last_sequence = 0U;
+#endif
 
 static void Control_TimingFinish(uint32_t start_cycles)
 {
     uint32_t cycles = DWT->CYCCNT - start_cycles;
     if (cycles > timing_max_cycles) timing_max_cycles = cycles;
 }
+
+#if defined(MPU_FRESHNESS_DIAG)
+void Control_GetImuSync(Control_ImuSync_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->control_ticks = sync_ticks;
+    out->reused_sample_ticks = sync_reused_ticks;
+    out->age_over1000_ticks = sync_age_over1000;
+    out->age_over1500_ticks = sync_age_over1500;
+    out->age_max_us = sync_age_max_us;
+    if (primask == 0U) __enable_irq();
+}
+#endif
 
 void Control_GetTiming(Control_Timing_t *out)
 {
@@ -65,6 +91,14 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
     timing_late_50us = 0U;
     timing_gap_1500us = 0U;
     timing_max_cycles = 0U;
+#if defined(MPU_FRESHNESS_DIAG)
+    sync_ticks = 0U;
+    sync_reused_ticks = 0U;
+    sync_age_over1000 = 0U;
+    sync_age_over1500 = 0U;
+    sync_age_max_us = 0U;
+    sync_last_sequence = 0U;
+#endif
 
     /* DWT cycle counter for short ISR duration measurements. */
     SystemCoreClockUpdate();
@@ -162,6 +196,19 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     }
     timing_last_entry_us = entry_us;
     control_tick_count++;
+#if defined(MPU_FRESHNESS_DIAG)
+    if (control_mpu && control_mpu->calibrated &&
+        control_mpu->diag_fresh_sequence != 0U) {
+        uint32_t sequence = control_mpu->diag_fresh_sequence;
+        uint32_t age_us = entry_us - control_mpu->diag_last_fresh_us;
+        ++sync_ticks;
+        if (sequence == sync_last_sequence) ++sync_reused_ticks;
+        sync_last_sequence = sequence;
+        if (age_us > 1000U) ++sync_age_over1000;
+        if (age_us > 1500U) ++sync_age_over1500;
+        if (age_us > sync_age_max_us) sync_age_max_us = age_us;
+    }
+#endif
     if (control_diagnostic_only) {
         Control_TimingFinish(start_cycles);
         return;
