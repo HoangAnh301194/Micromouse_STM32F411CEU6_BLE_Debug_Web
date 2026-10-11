@@ -361,11 +361,37 @@ int main(void)
  */
 static MPU6050_Handle_t imu_test;
 
+/* KEY debouncer for manual reference-angle measurements. */
+static uint8_t Key_TestPress(void)
+{
+    static uint8_t last_raw = 0U, stable = 0U;
+    static uint32_t changed_ms = 0U;
+    uint8_t raw = Board_ButtonPressed();
+    uint32_t now_ms = millis();
+    if (raw != last_raw) { last_raw = raw; changed_ms = now_ms; }
+    if ((uint32_t)(now_ms - changed_ms) >= 35UL && stable != raw) {
+        stable = raw;
+        if (stable) return 1U; /* one event on the pressed edge */
+    }
+    return 0U;
+}
+
+static const int32_t angle_targets_mdeg[4] = {
+    90000L, -90000L, 180000L, -180000L
+};
+
+
 int main(void)
 {
     uint32_t last_report_us, last_ticks, last_good;
-    uint32_t last_err, last_busy, last_timeout;
+    uint32_t last_err, last_busy, last_timeout, last_fresh = 0U;
+    uint32_t last_status_not_ready = 0U;
     uint32_t max_update_us = 0U;
+    uint32_t last_dynamic_log_us = 0U, dynamic_until_us = 0U;
+    uint32_t last_dynamic_good = 0U;
+    uint8_t zeroed_after_cal = 0U;
+    uint8_t angle_armed = 0U;
+    uint8_t angle_index = 0U;
     MPU6050_Status init_status;
 
     Board_Init();
@@ -373,6 +399,11 @@ int main(void)
     UART_Init(); /* USART1 PA9: USB-TTL 115200, no BLE required. */
 
     UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\r\n");
+    UART_Printf("CLOCK,sysclk=%lu hsi_pll100=%u apb1=%lu apb2=%lu tim5_us_clock=1000000\r\n",
+                (unsigned long)SystemCoreClock,
+                (unsigned)(SystemCoreClock == 100000000UL),
+                (unsigned long)Board_GetAPB1ClockHz(),
+                (unsigned long)Board_GetAPB2ClockHz());
     init_status = MPU6050_Init(&imu_test);
     if (init_status != MPU6050_OK) {
         UART_Printf("[IMU_INIT_FAIL] status=%d scl_nominal=%lu Hz\r\n",
@@ -385,8 +416,11 @@ int main(void)
     Control_SetDiagnosticOnly(1U);
     Control_Start();
 
-    UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%lu Hz sensor_odr=1000Hz read_target=1000Hz\r\n",
-                (unsigned long)I2C_GetConfiguredSclHz());
+    UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%luHz gyro_range=2000dps dlpf=%u sensor_odr=1000Hz\r\n",
+                (unsigned long)I2C_GetConfiguredSclHz(),
+                (unsigned)imu_test.dlpf_cfg);
+    UART_Printf("ANGLE_HELP,KEY start/stop; targets +90,-90,+180,-180 deg repeated; motors OFF\r\n");
+    UART_Printf("DYN_HELP,D,<us>,<raw_corrected_mdps>,<lpf_mdps> at 100Hz for 1.5s after |gyro|>10dps\r\n");
     last_report_us = micros();
     last_ticks = Control_GetTickCount();
     last_good = imu_test.good_reads;
@@ -400,11 +434,66 @@ int main(void)
         Control_Timing_t timing;
         MPU6050_Update(&imu_test); /* I2C IRQ-driven, never busy-waits. */
         update_us = micros() - start_us;
+
+        if (imu_test.calibrated && !zeroed_after_cal) {
+            MPU6050_ResetYaw(&imu_test);
+            zeroed_after_cal = 1U;
+            UART_Printf("DRIFT_START,bias_mdps=%ld,dlpf=%u\r\n",
+                        (long)(imu_test.gyro_z_offset * 1000.0f),
+                        (unsigned)imu_test.dlpf_cfg);
+        }
+
+        /* KEY starts and stops a manual reference turn. The user must align
+         * the robot with physical +90/-90/+180/-180 degree reference marks.
+         * Pressing KEY may itself perturb the measurement. */
+        if (zeroed_after_cal && Key_TestPress()) {
+            int32_t target = angle_targets_mdeg[angle_index & 3U];
+            if (!angle_armed) {
+                MPU6050_ResetYaw(&imu_test);
+                angle_armed = 1U;
+                UART_Printf("ANGLE_START,target_mdeg=%ld,index=%u\r\n",
+                            (long)target, (unsigned)(angle_index & 3U));
+            } else {
+                int32_t y_f = (int32_t)(imu_test.yaw * 1000.0f);
+                int32_t y_n = (int32_t)(imu_test.yaw_no_deadzone * 1000.0f);
+                int32_t y_r = (int32_t)(imu_test.yaw_raw * 1000.0f);
+                UART_Printf("ANGLE_DONE,target_mdeg=%ld,filtered_mdeg=%ld,"
+                            "no_deadzone_mdeg=%ld,raw_mdeg=%ld,"
+                            "filtered_error_mdeg=%ld,raw_error_mdeg=%ld\r\n",
+                            (long)target, (long)y_f, (long)y_n, (long)y_r,
+                            (long)(y_f-target), (long)(y_r-target));
+                angle_armed = 0U;
+                angle_index++;
+            }
+        }
+
+        /* Dynamic response trace. Log 100Hz DURING rotation, never per I2C
+         * event, avoiding USART saturation. Captures raw-vs-software-LPF. */
+        now = micros();
+        if (imu_test.calibrated && imu_test.good_reads != last_dynamic_good) {
+            last_dynamic_good = imu_test.good_reads;
+            if (imu_test.gyro_z_raw_corrected > 10.0f ||
+                imu_test.gyro_z_raw_corrected < -10.0f)
+                dynamic_until_us = now + 1500000UL;
+            if ((int32_t)(dynamic_until_us - now) > 0 &&
+                (uint32_t)(now - last_dynamic_log_us) >= 10000UL) {
+                last_dynamic_log_us = now;
+                UART_Printf("D,%lu,%ld,%ld\r\n",
+                    (unsigned long)now,
+                    (long)(imu_test.gyro_z_raw_corrected * 1000.0f),
+                    (long)(imu_test.gyro_z_lpf * 1000.0f));
+            }
+        }
         if (update_us > max_update_us) max_update_us = update_us;
 
         now = micros();
         elapsed = now - last_report_us;
-        if (elapsed < 1000000UL) { __WFI(); continue; }
+        if (elapsed < 1000000UL) {
+            /* Do not sleep during the few microseconds needed for a STOP
+             * to finish between INT_STATUS and gyro reads. */
+            if (!MPU6050_NeedsImmediatePoll(&imu_test)) __WFI();
+            continue;
+        }
 
         duration = elapsed;
         good_diff = imu_test.good_reads - last_good;
@@ -443,6 +532,18 @@ int main(void)
         MPU6050_GetNoiseWindow(&imu_test, &noise);
         Control_GetTiming(&timing);
         UART_Printf(
+          "FRESH,status=%lu ready=%lu not_ready=%lu fresh=%lu stale=%lu "
+          "yaw_deadzone_mdeg=%ld yaw_lpf_no_deadzone_mdeg=%ld "
+          "yaw_raw_no_deadzone_mdeg=%ld\r\n",
+          (unsigned long)imu_test.status_reads,
+          (unsigned long)imu_test.status_ready_reads,
+          (unsigned long)(imu_test.status_not_ready_reads - last_status_not_ready),
+          (unsigned long)(imu_test.fresh_gyro_reads - last_fresh),
+          (unsigned long)(imu_test.stale_gyro_reads),
+          (long)(imu_test.yaw * 1000.0f),
+          (long)(imu_test.yaw_no_deadzone * 1000.0f),
+          (long)(imu_test.yaw_raw * 1000.0f));
+        UART_Printf(
           "NOISE,n=%lu raw_mean_mdps=%ld raw_std_mdps=%ld "
           "raw_min_mdps=%ld raw_max_mdps=%ld corrected_mean_mdps=%ld "
           "same_code=%lu sample_min_us=%lu sample_max_us=%lu\r\n",
@@ -473,6 +574,8 @@ int main(void)
 
         last_report_us = now;
         last_good = imu_test.good_reads;
+        last_fresh = imu_test.fresh_gyro_reads;
+        last_status_not_ready = imu_test.status_not_ready_reads;
         last_err = imu_test.error_reads;
         last_busy = imu_test.busy_retries;
         last_timeout = imu_test.timeout_reads;
