@@ -3,15 +3,26 @@
 
 #define HSI_HZ 16000000UL
 #define HSE_HZ 25000000UL
-/* Autotune scans HSI trim on a LOWER clock profile to provide headroom.
- * PLLN=160 => nominal 80 MHz. Production and previous trimXX builds remain
- * PLLN=200 => nominal 100 MHz. Never run motor control in autotune firmware. */
+/* PLL profiles are selected ONLY at compile time:
+ *   diagnostic autotune: 80 MHz nominal, motor off, safely surveys HSI.
+ *   diagnostic validate96: 96 MHz nominal with fixed HSITRIM=25, motor off.
+ *   original firmware and trimXX tests: 100 MHz nominal (unchanged).
+ * Runtime HSITRIM/PLL switching is deliberately unsupported. */
+#if defined(CLOCK_AUTOTUNE) && defined(CLOCK_VALIDATE_96M)
+#error "CLOCK_AUTOTUNE and CLOCK_VALIDATE_96M are mutually exclusive"
+#endif
 #if defined(CLOCK_AUTOTUNE)
 #ifndef CLOCK_HSI_TRIM
-#error "CLOCK_AUTOTUNE requires a compile-time CLOCK_HSI_TRIM"
+#error "CLOCK_AUTOTUNE requires CLOCK_HSI_TRIM"
 #endif
 #define BOARD_PLLN 160UL
 #define BOARD_EXPECTED_SYSCLK 80000000UL
+#elif defined(CLOCK_VALIDATE_96M)
+#if !defined(CLOCK_HSI_TRIM) || (CLOCK_HSI_TRIM != 25)
+#error "CLOCK_VALIDATE_96M requires CLOCK_HSI_TRIM=25"
+#endif
+#define BOARD_PLLN 192UL
+#define BOARD_EXPECTED_SYSCLK 96000000UL
 #else
 #define BOARD_PLLN 200UL
 #define BOARD_EXPECTED_SYSCLK 100000000UL
