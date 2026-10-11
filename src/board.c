@@ -74,8 +74,8 @@ uint32_t Board_GetClockFault(void) { return board_clock_fault; }
 
 static void Board_SetMaxClock100MHz(void)
 {
-    board_clock_fault = 0U;
     uint32_t timeout;
+    board_clock_fault = 0U;
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     (void)RCC->APB1ENR;
     PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS;
