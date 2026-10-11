@@ -361,7 +361,7 @@ int main(void)
  */
 static MPU6050_Handle_t imu_test;
 
-/* KEY debouncer for manual reference-angle measurements. */
+/* KEY debouncer for requesting a fresh stationary bias calibration. */
 static uint8_t Key_TestPress(void)
 {
     static uint8_t last_raw = 0U, stable = 0U;
@@ -376,9 +376,6 @@ static uint8_t Key_TestPress(void)
     return 0U;
 }
 
-static const int32_t angle_targets_mdeg[4] = {
-    90000L, -90000L, 180000L, -180000L
-};
 
 
 int main(void)
@@ -390,8 +387,9 @@ int main(void)
     uint32_t last_dynamic_log_us = 0U, dynamic_until_us = 0U;
     uint32_t last_dynamic_good = 0U;
     uint8_t zeroed_after_cal = 0U;
-    uint8_t angle_armed = 0U;
-    uint8_t angle_index = 0U;
+    uint32_t calibration_done_us = 0U;
+    uint8_t cal_eval30_printed = 0U;
+    uint8_t cal_eval120_printed = 0U;
     MPU6050_Status init_status;
 
     Board_Init();
@@ -472,7 +470,7 @@ int main(void)
     UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%luHz gyro_range=2000dps dlpf=%u sensor_odr=1000Hz\r\n",
                 (unsigned long)I2C_GetConfiguredSclHz(),
                 (unsigned)imu_test.dlpf_cfg);
-    UART_Printf("ANGLE_HELP,KEY start/stop; targets +90,-90,+180,-180 deg repeated; motors OFF\r\n");
+    UART_Printf("CAL_HELP,do not move robot during warmup+collection; KEY requests fresh calibration while idle; motors OFF\r\n");
     UART_Printf("DYN_HELP,D,<us>,<raw_corrected_mdps>,<lpf_mdps> at 100Hz for 1.5s after |gyro|>10dps\r\n");
     last_report_us = micros();
     last_ticks = Control_GetTickCount();
@@ -488,35 +486,63 @@ int main(void)
         MPU6050_Update(&imu_test); /* I2C IRQ-driven, never busy-waits. */
         update_us = micros() - start_us;
 
+        if (Key_TestPress() && !imu_test.calibrating) {
+            UART_Printf("CAL_RESTART,old_bias_mdps=%ld\\r\\n",
+                        (long)(imu_test.gyro_z_offset * 1000.0f));
+            MPU6050_Calibrate(&imu_test);
+            zeroed_after_cal = 0U;
+            cal_eval30_printed = 0U;
+            cal_eval120_printed = 0U;
+            calibration_done_us = 0U;
+        }
+
         if (imu_test.calibrated && !zeroed_after_cal) {
             MPU6050_ResetYaw(&imu_test);
             zeroed_after_cal = 1U;
-            UART_Printf("DRIFT_START,bias_mdps=%ld,dlpf=%u\r\n",
+            calibration_done_us = micros();
+            UART_Printf(
+                "CAL_DONE,n=%u blocks=%u retries=%u "
+                "bias_mdps=%ld previous_bias_mdps=%ld delta_bias_mdps=%ld "
+                "max_block_std_mdps=%ld block_mean_span_mdps=%ld\\r\\n",
+                (unsigned)imu_test.calibration_count,
+                (unsigned)imu_test.cal_valid_blocks,
+                (unsigned)imu_test.cal_retries,
+                (long)(imu_test.gyro_z_offset * 1000.0f),
+                (long)(imu_test.cal_previous_bias_dps * 1000.0f),
+                (long)((imu_test.gyro_z_offset -
+                        imu_test.cal_previous_bias_dps) * 1000.0f),
+                (long)(imu_test.cal_max_std_dps * 1000.0f),
+                (long)(imu_test.cal_last_mean_span_dps * 1000.0f));
+            UART_Printf("DRIFT_START,bias_mdps=%ld,dlpf=%u\\r\\n",
                         (long)(imu_test.gyro_z_offset * 1000.0f),
                         (unsigned)imu_test.dlpf_cfg);
         }
 
-        /* KEY starts and stops a manual reference turn. The user must align
-         * the robot with physical +90/-90/+180/-180 degree reference marks.
-         * Pressing KEY may itself perturb the measurement. */
-        if (zeroed_after_cal && Key_TestPress()) {
-            int32_t target = angle_targets_mdeg[angle_index & 3U];
-            if (!angle_armed) {
-                MPU6050_ResetYaw(&imu_test);
-                angle_armed = 1U;
-                UART_Printf("ANGLE_START,target_mdeg=%ld,index=%u\r\n",
-                            (long)target, (unsigned)(angle_index & 3U));
-            } else {
-                int32_t y_f = (int32_t)(imu_test.yaw * 1000.0f);
-                int32_t y_n = (int32_t)(imu_test.yaw_no_deadzone * 1000.0f);
-                int32_t y_r = (int32_t)(imu_test.yaw_raw * 1000.0f);
-                UART_Printf("ANGLE_DONE,target_mdeg=%ld,filtered_mdeg=%ld,"
-                            "no_deadzone_mdeg=%ld,raw_mdeg=%ld,"
-                            "filtered_error_mdeg=%ld,raw_error_mdeg=%ld\r\n",
-                            (long)target, (long)y_f, (long)y_n, (long)y_r,
-                            (long)(y_f-target), (long)(y_r-target));
-                angle_armed = 0U;
-                angle_index++;
+        /* Diagnostic yaw drifts assume an independent stationary robot.
+         * Report actual elapsed time; never update bias automatically. */
+        if (zeroed_after_cal && calibration_done_us != 0U) {
+            uint32_t elapsed_ms = (uint32_t)
+                ((micros() - calibration_done_us) / 1000UL);
+            uint8_t report30 = (!cal_eval30_printed && elapsed_ms >= 30000UL);
+            uint8_t report120 = (!cal_eval120_printed && elapsed_ms >= 120000UL);
+            if (report30 || report120) {
+                int32_t raw_mdeg =
+                    (int32_t)(imu_test.yaw_raw * 1000.0f);
+                int32_t lpf_mdeg =
+                    (int32_t)(imu_test.yaw_no_deadzone * 1000.0f);
+                int32_t raw_mdeg_per_min = (elapsed_ms != 0U) ?
+                    (int32_t)(((int64_t)raw_mdeg * 60000LL) /
+                              (int64_t)elapsed_ms) : 0;
+                UART_Printf("CAL_CHECK,elapsed_ms=%lu raw_drift_mdeg=%ld "
+                            "lpf_no_deadzone_mdeg=%ld "
+                            "raw_mdeg_per_min=%ld current_bias_mdps=%ld\\r\\n",
+                            (unsigned long)elapsed_ms,
+                            (long)raw_mdeg,
+                            (long)lpf_mdeg,
+                            (long)raw_mdeg_per_min,
+                            (long)(imu_test.gyro_z_offset * 1000.0f));
+                if (report30) cal_eval30_printed = 1U;
+                if (report120) cal_eval120_printed = 1U;
             }
         }
 
@@ -610,6 +636,24 @@ int main(void)
           (unsigned long)noise.interval_min_us,
           (unsigned long)noise.interval_max_us
         );
+        UART_Printf(
+          "CAL,state=%u retries=%u fail_reason=%u warmup_elapsed_ms=%lu "
+          "accepted=%u/%u valid_blocks=%u/%u "
+          "last_std_mdps=%ld last_span_mdps=%ld "
+          "block_mean_span_mdps=%ld bias_mdps=%ld\\r\\n",
+          (unsigned)imu_test.cal_state,
+          (unsigned)imu_test.cal_retries,
+          (unsigned)imu_test.cal_failure_reason,
+          (unsigned long)(imu_test.cal_started_ms ?
+              (uint32_t)(millis() - imu_test.cal_started_ms) : 0U),
+          (unsigned)imu_test.calibration_count,
+          (unsigned)CALIBRATION_SAMPLES,
+          (unsigned)imu_test.cal_valid_blocks,
+          (unsigned)(CALIBRATION_SAMPLES / MPU_CAL_BLOCK_SAMPLES),
+          (long)(imu_test.cal_last_std_dps * 1000.0f),
+          (long)(imu_test.cal_last_span_dps * 1000.0f),
+          (long)(imu_test.cal_last_mean_span_dps * 1000.0f),
+          (long)(imu_test.gyro_z_offset * 1000.0f));
         UART_Printf(
           "TIMING,period_min_us=%lu period_max_us=%lu "
           "late_50us=%lu gap_over_1500us=%lu "
