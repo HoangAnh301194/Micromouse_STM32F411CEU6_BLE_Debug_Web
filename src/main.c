@@ -487,7 +487,7 @@ int main(void)
         update_us = micros() - start_us;
 
         if (Key_TestPress() && !imu_test.calibrating) {
-            UART_Printf("CAL_RESTART,old_bias_mdps=%ld\\r\\n",
+            UART_Printf("CAL_RESTART,old_bias_mdps=%ld\r\n",
                         (long)(imu_test.gyro_z_offset * 1000.0f));
             MPU6050_Calibrate(&imu_test);
             zeroed_after_cal = 0U;
@@ -503,7 +503,7 @@ int main(void)
             UART_Printf(
                 "CAL_DONE,n=%u blocks=%u retries=%u "
                 "bias_mdps=%ld previous_bias_mdps=%ld delta_bias_mdps=%ld "
-                "max_block_std_mdps=%ld block_mean_span_mdps=%ld\\r\\n",
+                "max_block_std_mdps=%ld block_mean_span_mdps=%ld\r\n",
                 (unsigned)imu_test.calibration_count,
                 (unsigned)imu_test.cal_valid_blocks,
                 (unsigned)imu_test.cal_retries,
@@ -513,7 +513,7 @@ int main(void)
                         imu_test.cal_previous_bias_dps) * 1000.0f),
                 (long)(imu_test.cal_max_std_dps * 1000.0f),
                 (long)(imu_test.cal_last_mean_span_dps * 1000.0f));
-            UART_Printf("DRIFT_START,bias_mdps=%ld,dlpf=%u\\r\\n",
+            UART_Printf("DRIFT_START,bias_mdps=%ld,dlpf=%u\r\n",
                         (long)(imu_test.gyro_z_offset * 1000.0f),
                         (unsigned)imu_test.dlpf_cfg);
         }
@@ -535,7 +535,7 @@ int main(void)
                               (int64_t)elapsed_ms) : 0;
                 UART_Printf("CAL_CHECK,elapsed_ms=%lu raw_drift_mdeg=%ld "
                             "lpf_no_deadzone_mdeg=%ld "
-                            "raw_mdeg_per_min=%ld current_bias_mdps=%ld\\r\\n",
+                            "raw_mdeg_per_min=%ld current_bias_mdps=%ld\r\n",
                             (unsigned long)elapsed_ms,
                             (long)raw_mdeg,
                             (long)lpf_mdeg,
@@ -640,7 +640,7 @@ int main(void)
           "CAL,state=%u retries=%u fail_reason=%u warmup_elapsed_ms=%lu "
           "accepted=%u/%u valid_blocks=%u/%u "
           "last_std_mdps=%ld last_span_mdps=%ld "
-          "block_mean_span_mdps=%ld bias_mdps=%ld\\r\\n",
+          "block_mean_span_mdps=%ld bias_mdps=%ld\r\n",
           (unsigned)imu_test.cal_state,
           (unsigned)imu_test.cal_retries,
           (unsigned)imu_test.cal_failure_reason,
