@@ -62,8 +62,64 @@ uint32_t Board_GetAPB2ClockHz(void) { return Board_GetAPBClockHz(1); }
 uint32_t Board_GetAPB1TimerClockHz(void) { return Board_GetAPBTimerClockHz(0); }
 uint32_t Board_GetAPB2TimerClockHz(void) { return Board_GetAPBTimerClockHz(1); }
 
+/* STM32F411 maximum HCLK is 100MHz, PCLK1<=50MHz, PCLK2<=100MHz.
+ * HSI 16MHz -> PLLM=16, PLLN=200, PLLP=2 -> 100MHz.
+ * PLLQ=5 gives 40MHz: USB FS 48MHz is NOT available in this profile.
+ * Intended for regulated 3.3V Micromouse board, VDD >= 2.7V.
+ * Uses bounded readiness waits and retains HSI 16MHz on PLL failure.
+ */
+static void Board_SetMaxClock100MHz(void)
+{
+    uint32_t timeout;
+    RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+    (void)RCC->APB1ENR;
+    PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS;
+    /* 3 flash wait states at 2.7V-3.6V for 100MHz, enable caches. */
+    FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) |
+                 FLASH_ACR_LATENCY_3WS |
+                 FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_PRFTEN;
+    timeout = 1000000UL;
+    while (((FLASH->ACR & FLASH_ACR_LATENCY) != FLASH_ACR_LATENCY_3WS)
+           && --timeout) {}
+    if (!timeout) return;
+
+    /* Safest prescaler order: APB1 /2 before raising SYSCLK. */
+    RCC->CFGR = (RCC->CFGR &
+                ~(RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2)) |
+                RCC_CFGR_PPRE1_DIV2;
+
+    /* Core starts from HSI after reset. Never reconfigure an active PLL. */
+    RCC->CR |= RCC_CR_HSION;
+    timeout = 1000000UL;
+    while (!(RCC->CR & RCC_CR_HSIRDY) && --timeout) {}
+    if (!timeout) return;
+    if ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
+        RCC->CFGR &= ~RCC_CFGR_SW;
+        timeout = 1000000UL;
+        while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
+               && --timeout) {}
+        if (!timeout) return;
+    }
+    RCC->CR &= ~RCC_CR_PLLON;
+    timeout = 1000000UL;
+    while ((RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
+    if (!timeout) return;
+    RCC->PLLCFGR = (16UL << 0) | (200UL << 6) |
+                   (0UL << 16) | (5UL << 24); /* PLLSRC=HSI */
+    RCC->CR |= RCC_CR_PLLON;
+    timeout = 1000000UL;
+    while (!(RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
+    if (!timeout) return;
+    RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;
+    timeout = 1000000UL;
+    while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL)
+           && --timeout) {}
+    SystemCoreClockUpdate();
+}
+
 void Board_Init(void)
 {
+    Board_SetMaxClock100MHz();
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN |
                     RCC_AHB1ENR_GPIOBEN |
                     RCC_AHB1ENR_GPIOCEN;
