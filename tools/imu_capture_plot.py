@@ -83,7 +83,7 @@ def parse_line(text: str) -> tuple[str, dict[str, str]] | None:
         data = dict(zip(KINDS["D"], [p.strip() for p in parts[:3]]))
     else:
         data = {}
-        for token in remainder.split():
+        for token in remainder.replace(",", " ").split():
             if "=" not in token or "\ufffd" in token:
                 continue
             key, value = token.split("=", 1)
@@ -228,6 +228,12 @@ class Recorder:
             return
         self.next_draw_time = time.monotonic() + 1.5
         rows = self.records.get("FRESH", [])
+        if self.records.get("DRIFT_START"):
+            rows = [r for r in rows
+                    if r.get("session_id") == str(self.session_id)]
+        elif self.records.get("CAL_RESTART"):
+            # A new calibration is in progress and there is no valid yaw.
+            return
         if not rows:
             return
         plt, fig, ax = self.live_view
@@ -288,8 +294,31 @@ class Recorder:
         ]
         for filename, kind, pairs, title, ylabel in candidates:
             try:
+                rows = self.records.get(kind, [])
+                if kind == "FRESH" and self.records.get("DRIFT_START"):
+                    # Do not connect old yaw to the zero value during
+                    # calibration. Display only completed calibration sessions.
+                    rows = [r for r in rows if r.get("session_id", "0") != "0"]
+                if kind == "NOISE":
+                    # While CAL runs, firmware intentionally reports n=0.
+                    # That is missing noise data, not zero-variance data.
+                    rows = [r for r in rows if (numeric(r.get("n")) or 0) > 0]
+                if kind == "CAL" and self.records.get("CAL_RESTART"):
+                    first_restart = numeric(self.records["CAL_RESTART"][0].get("elapsed_s"))
+                    if first_restart is not None:
+                        rows = [r for r in rows
+                                if (numeric(r.get("elapsed_s")) or 0) >= first_restart]
+                if kind == "D":
+                    rates = [abs(numeric(r.get("raw_corrected_mdps")) or 0)
+                             for r in rows]
+                    if not rates or max(rates) < 1000.0:
+                        # In 2026-10 branch firmware, the old signed
+                        # deadline erroneously logged D after micros()>2^31.
+                        print("[INFO] Suppress dynamic-motion chart: D values "
+                              "never exceed 1 deg/s; possible old timer bug.")
+                        continue
                 path = self.directory / filename
-                if plot_series(self.records.get(kind, []), pairs, path, title, ylabel):
+                if plot_series(rows, pairs, path, title, ylabel):
                     plots.append(filename)
             except ImportError as exc:
                 print(f"[WARN] Could not plot; install matplotlib: {exc}", file=sys.stderr)
@@ -310,7 +339,11 @@ class Recorder:
             ("NOISE", "corrected_mean_mdps", 0.001, "Mean residual bias (deg/s)"),
             ("TIMING", "period_max_us", 1.0, "Maximum observed TIM11 period (us)"),
         ]:
-            vals = [numeric(r.get(field)) for r in data.get(kind, [])]
+            source_rows = data.get(kind, [])
+            if kind == "NOISE":
+                source_rows = [r for r in source_rows
+                               if (numeric(r.get("n")) or 0) > 0]
+            vals = [numeric(r.get(field)) for r in source_rows]
             vals = [v for v in vals if v is not None]
             if vals:
                 value = max(vals) if label.startswith("Maximum") else statistics.mean(vals)
