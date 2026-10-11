@@ -72,6 +72,17 @@ uint32_t Board_GetAPB2TimerClockHz(void) { return Board_GetAPBTimerClockHz(1); }
 static volatile uint32_t board_clock_fault = 0U;
 uint32_t Board_GetClockFault(void) { return board_clock_fault; }
 
+/* RM0383 RCC_CR: HSITRIM[4:0] = bits 7:3, HSICAL = bits 15:8.
+ * Read back for logs; these values do not measure actual frequency. */
+uint32_t Board_GetHsiTrim(void) { return (RCC->CR >> 3) & 0x1FUL; }
+uint32_t Board_GetHsiCal(void) { return (RCC->CR >> 8) & 0xFFUL; }
+
+#if defined(CLOCK_HSI_TRIM)
+#if (CLOCK_HSI_TRIM < 0) || (CLOCK_HSI_TRIM > 31)
+#error "CLOCK_HSI_TRIM must be in the STM32F411 HSITRIM range 0..31"
+#endif
+#endif
+
 static void Board_SetMaxClock100MHz(void)
 {
     uint32_t timeout;
@@ -111,6 +122,22 @@ static void Board_SetMaxClock100MHz(void)
     timeout = 1000000UL;
     while ((RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
     if (!timeout) { board_clock_fault = 4U; return; }
+
+    /* Optional debug-only, build-time HSI trim experiment.
+     * We are executing on HSI with PLL OFF at this point. The default
+     * production build does not touch HSITRIM. A full hardware RESET
+     * restores the factory boot trim (normally 16), and flashing the
+     * default PlatformIO environment restores original firmware logic.
+     * Never auto-sweep while running PLL/SYSCLK/USART or motor control. */
+#if defined(CLOCK_HSI_TRIM)
+    RCC->CR = (RCC->CR & ~(0x1FUL << 3)) |
+              (((uint32_t)CLOCK_HSI_TRIM & 0x1FUL) << 3);
+    /* Allow HSI to settle before PLL startup; CPU is still on HSI. */
+    for (volatile uint32_t settle = 0U; settle < 50000U; ++settle) {
+        __NOP();
+    }
+#endif
+
     RCC->PLLCFGR = (16UL << 0) | (200UL << 6) |
                    (0UL << 16) | (5UL << 24); /* PLLSRC=HSI */
     RCC->CR |= RCC_CR_PLLON;
