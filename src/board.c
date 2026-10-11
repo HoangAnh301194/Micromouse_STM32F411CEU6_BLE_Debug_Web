@@ -68,18 +68,19 @@ uint32_t Board_GetAPB2TimerClockHz(void) { return Board_GetAPBTimerClockHz(1); }
  * Intended for regulated 3.3V Micromouse board, VDD >= 2.7V.
  * Uses bounded readiness waits and retains HSI 16MHz on PLL failure.
  */
+/* 0: clock switch completed. Nonzero: last failed initialization stage. */
+static volatile uint32_t board_clock_fault = 0U;
+uint32_t Board_GetClockFault(void) { return board_clock_fault; }
+
 static void Board_SetMaxClock100MHz(void)
 {
+    board_clock_fault = 0U;
     uint32_t timeout;
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     (void)RCC->APB1ENR;
     PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS;
-#ifdef PWR_CSR_VOSRDY
-    /* Wait for voltage scaling to settle before increasing core clock. */
-    timeout = 1000000UL;
-    while (!(PWR->CSR & PWR_CSR_VOSRDY) && --timeout) {}
-    if (!timeout) return;
-#endif
+    /* Do NOT wait for VOSRDY with PLL off: STM32F411 applies newly
+     * selected voltage scale only after enabling PLL (RM0383). */
     /* 3 flash wait states at 2.7V-3.6V for 100MHz, enable caches. */
     FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) |
                  FLASH_ACR_LATENCY_3WS |
@@ -87,7 +88,7 @@ static void Board_SetMaxClock100MHz(void)
     timeout = 1000000UL;
     while (((FLASH->ACR & FLASH_ACR_LATENCY) != FLASH_ACR_LATENCY_3WS)
            && --timeout) {}
-    if (!timeout) return;
+    if (!timeout) { board_clock_fault = 2U; return; }
 
     /* Safest prescaler order: APB1 /2 before raising SYSCLK. */
     RCC->CFGR = (RCC->CFGR &
@@ -98,29 +99,37 @@ static void Board_SetMaxClock100MHz(void)
     RCC->CR |= RCC_CR_HSION;
     timeout = 1000000UL;
     while (!(RCC->CR & RCC_CR_HSIRDY) && --timeout) {}
-    if (!timeout) return;
+    if (!timeout) { board_clock_fault = 1U; return; }
     if ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
         RCC->CFGR &= ~RCC_CFGR_SW;
         timeout = 1000000UL;
         while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
                && --timeout) {}
-        if (!timeout) return;
+        if (!timeout) { board_clock_fault = 3U; return; }
     }
     RCC->CR &= ~RCC_CR_PLLON;
     timeout = 1000000UL;
     while ((RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
-    if (!timeout) return;
+    if (!timeout) { board_clock_fault = 4U; return; }
     RCC->PLLCFGR = (16UL << 0) | (200UL << 6) |
                    (0UL << 16) | (5UL << 24); /* PLLSRC=HSI */
     RCC->CR |= RCC_CR_PLLON;
     timeout = 1000000UL;
     while (!(RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
-    if (!timeout) return;
+    if (!timeout) { board_clock_fault = 5U; return; }
+#ifdef PWR_CSR_VOSRDY
+    timeout = 1000000UL;
+    while (!(PWR->CSR & PWR_CSR_VOSRDY) && --timeout) {}
+    if (!timeout) { board_clock_fault = 6U; return; }
+#endif
     RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;
     timeout = 1000000UL;
     while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL)
            && --timeout) {}
+    if (!timeout) { board_clock_fault = 7U; return; }
     SystemCoreClockUpdate();
+    if (SystemCoreClock != 100000000UL)
+        board_clock_fault = 8U;
 }
 
 void Board_Init(void)
