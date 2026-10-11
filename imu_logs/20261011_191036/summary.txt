@@ -1,0 +1,14 @@
+MPU6050 telemetry summary
+Input lines: 655; unrecognized/non-CSV lines: 0
+NOTE: IMU/FRESH/NOISE/TIMING are 1Hz summaries, NOT individual 1kHz samples.
+CAL: 131 records
+FRESH: 131 records
+IMU: 131 records
+NOISE: 131 records
+TIMING: 131 records
+Mean gyro read rate (Hz): 999.000000
+Mean gyro raw std (deg/s): 0.044099
+Mean residual bias (deg/s): 0.007321
+Maximum observed TIM11 period (us): 1000.000000
+Raw yaw endpoint slope (deg/min): 0.407059
+WARNING: Endpoint slope assumes hardware stayed stationary within this session.

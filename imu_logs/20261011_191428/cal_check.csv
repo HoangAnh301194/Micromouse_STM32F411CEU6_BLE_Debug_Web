@@ -1,0 +1,2 @@
+﻿host_time_iso,elapsed_s,line_number,session_id,elapsed_ms,raw_drift_mdeg,lpf_no_deadzone_mdeg,raw_mdeg_per_min,current_bias_mdps
+2026-10-11T12:15:11.403+00:00,43.336330,209,1,30000,80,80,160,-1479
