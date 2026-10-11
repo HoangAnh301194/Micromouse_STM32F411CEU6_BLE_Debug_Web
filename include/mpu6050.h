@@ -25,7 +25,7 @@
  * 1000/s |   2   | 32.8    | 1000/s   | Fast turns
  * 2000/s |   3   | 16.4    | 2000/s   | Very fast, lower precision
  */
-#define MPU6050_GYRO_RANGE 1 /* Default: 500/s */
+#define MPU6050_GYRO_RANGE 3 /* +/-2000 deg/s, sensitivity 16.4 LSB/(deg/s) */
 
 /**
  * @brief Gyro Low-Pass Filter Alpha
