@@ -179,6 +179,7 @@ typedef struct {
   /* Diagnostic-only; no I2C/ISR work added to normal firmware.
    * Independent IRQ consumer reads the sequence and completion timestamp.
    * These values describe MCU-side completion, NOT the MPU's sample timestamp. */
+  volatile uint8_t diag_control_ready; /* Set after completed stationary cal. */
   volatile uint32_t diag_fresh_sequence;
   volatile uint32_t diag_last_fresh_us;
   uint32_t diag_previous_fresh_us;
