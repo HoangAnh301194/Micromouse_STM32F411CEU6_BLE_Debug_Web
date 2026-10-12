@@ -42,6 +42,7 @@ def decode(s: str):
 def analyze(lines, min_samples=150):
     boot_indices = [i for i, x in enumerate(lines) if "[MINT_BOOT]" in x]
     errors, warnings = [], []
+    review_required = False
     if len(boot_indices) != 1:
         errors.append("Expected exactly one verified MINT_BOOT (reset duplicates invalidate run)")
     if not boot_indices:
@@ -98,7 +99,12 @@ def analyze(lines, min_samples=150):
             errors.append("No verified postcal 1kHz control ticks")
         reused_pct=round(reused*100/max(1,ticks),5)
         if reused_pct > 0.15:
-            warnings.append("Reuse > 0.15%; investigate vs reference 0.0441%")
+            review_required = True
+            warnings.append(
+                "Freshness regression gate (>0.15% reuse): compare against "
+                "RC1 overall 0.0441%, RC1 stage-0 0.10508%; "
+                "verify different telemetry and ISR loads before attribution"
+            )
         if expired:
             warnings.append("Some 1kHz ticks had invalid/expired (>3ms) snapshots")
         if accepted <= 0:
@@ -110,7 +116,9 @@ def analyze(lines, min_samples=150):
                  "max_ISR_cycles_observed":count(fresh[-1],"timing_max_cycles")}
     else:
         metrics={}
-    return {"status":"PASS_INTEGRATION_MOTOR_OFF" if not errors else "FAIL",
+    return {"status":("FAIL" if errors else
+                      "REVIEW_FRESHNESS_REGRESSION" if review_required else
+                      "PASS_INTEGRATION_MOTOR_OFF"),
             "failures":sorted(set(errors)),"warnings":warnings,
             "metrics":metrics,"baseline_diagnostic_rc1":BASELINE,
             "note":"Standalone motor-OFF acceptance, not proof of production motion reliability or formal WCET."}
@@ -156,6 +164,16 @@ def self_test():
     assert analyze(data)["status"]=="PASS_INTEGRATION_MOTOR_OFF"
     assert analyze(data[:-100])["status"]=="FAIL"
     assert analyze([data[0],data[1].replace("motor_off=1","motor_off=0")]+data[2:])["status"]=="FAIL"
+    bad_reuse=list(data)
+    # Force a measurable >0.15% snapshot-reuse regression, while
+    # keeping the underlying transport and calibration evidence valid.
+    for j, line_text in enumerate(bad_reuse):
+        if line_text.startswith("MINT,"):
+            bad_reuse[j] = line_text.replace(
+                "reused=" + str((j-4)//10),
+                "reused=" + str((j-4)*2)
+            )
+    assert analyze(bad_reuse)["status"]=="REVIEW_FRESHNESS_REGRESSION"
     assert analyze(data+["MINT_CAL_FAIL,retries=3"])["status"]=="FAIL"
     assert analyze(data+[data[0]])["status"]=="FAIL"
     print("SELF-TEST PASSED: policy attestation, calibration, timeout, completeness and safe rejects.")
