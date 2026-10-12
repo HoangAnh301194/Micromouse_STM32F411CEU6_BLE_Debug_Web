@@ -7,7 +7,7 @@ import re
 import sys
 
 def fields(line):
-    return dict(re.findall(r"([a-zA-Z_][a-zA-Z0-9_]*)=([^,\\s]+)", line))
+    return dict(re.findall(r"([a-zA-Z_][a-zA-Z0-9_]*)=([^,\s]+)", line))
 
 def analyze(lines):
     boots = [i for i, line in enumerate(lines) if "[BOOT] Isolated MPU6050/I2C test" in line]
@@ -64,10 +64,10 @@ def main():
     raw=args.folder/"raw_serial.log"
     if not raw.is_file():
         parser.error("Missing raw_serial.log")
-    lines=[x.strip().split("\\t",1)[-1] for x in raw.read_text(encoding="utf-8",errors="replace").splitlines()]
+    lines=[x.strip().split("\t",1)[-1] for x in raw.read_text(encoding="utf-8",errors="replace").splitlines()]
     result=analyze(lines)
     target=args.folder/"load_stage_report.json"
-    target.write_text(json.dumps(result,indent=2)+"\\n",encoding="utf-8")
+    target.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(result,indent=2))
     return 0 if result["status"]=="PASS_LOAD_DIAGNOSTIC" else 1
 
