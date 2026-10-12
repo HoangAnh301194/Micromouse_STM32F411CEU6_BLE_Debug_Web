@@ -1,4 +1,7 @@
 #include "control.h"
+#if defined(CONTROL_LOAD_DIAG)
+#include "pid.h"
+#endif
 
 #include "board.h"
 #include "encoder.h"
@@ -10,6 +13,41 @@
 #include "stm32f4xx.h"
 #include "system_timer.h"
 
+#if defined(CONTROL_LOAD_DIAG)
+static volatile uint8_t load_stage = 0U;
+static volatile uint32_t load_ticks = 0U;
+static volatile uint32_t load_max_cycles = 0U;
+static volatile uint32_t load_over_800us = 0U;
+static volatile uint32_t load_over_1000us = 0U;
+static volatile int32_t load_pid_milli = 0;
+static PID_Handle_t load_pid_left, load_pid_right;
+void Control_SetLoadStage(uint8_t stage)
+{
+    uint32_t primask = __get_PRIMASK();
+    if (stage > 2U) return;
+    __disable_irq();
+    load_stage = stage;
+    load_ticks = load_max_cycles = load_over_800us = load_over_1000us = 0U;
+    load_pid_milli = 0;
+    PID_Reset(&load_pid_left);
+    PID_Reset(&load_pid_right);
+    if (!primask) __enable_irq();
+}
+void Control_GetLoadStats(Control_LoadStats_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->stage = load_stage;
+    out->ticks = load_ticks;
+    out->max_cycles = load_max_cycles;
+    out->over_800us = load_over_800us;
+    out->over_1000us = load_over_1000us;
+    out->pid_output_milli = (uint32_t)load_pid_milli;
+    if (!primask) __enable_irq();
+}
+#endif
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile uint8_t control_diagnostic_only = 0;
@@ -101,6 +139,11 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
     uint32_t prescaler;
     uint32_t ticks_per_period;
 
+#if defined(CONTROL_LOAD_DIAG)
+    PID_Init(&load_pid_left, 0.1f, 0.01f, 0.0f, 1000.0f, 100.0f);
+    PID_Init(&load_pid_right, 0.1f, 0.01f, 0.0f, 1000.0f, 100.0f);
+    Control_SetLoadStage(0U);
+#endif
     control_mpu = mpu_handle;
     control_running = 0;
     control_tick_count = 0;
@@ -233,6 +276,27 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     }
 #endif
     if (control_diagnostic_only) {
+#if defined(CONTROL_LOAD_DIAG)
+        /* Benchmark computational load ONLY. Motor_Init is never called.
+         * PID setpoint zero; outputs discarded, never written to TIM2/PWM.
+         * Encoder GPIO/timers are initialized by dedicated main profile. */
+        if (load_stage >= 1U) Encoder_Update(CONTROL_DT_S);
+        if (load_stage >= 2U) {
+            float l = PID_Compute(&load_pid_left, 0.0f,
+                                  Encoder_GetLeftSpeedPPS(), CONTROL_DT_S);
+            float r = PID_Compute(&load_pid_right, 0.0f,
+                                  Encoder_GetRightSpeedPPS(), CONTROL_DT_S);
+            load_pid_milli = (int32_t)((l + r) * 1000.0f);
+        }
+        {
+            uint32_t cyc = DWT->CYCCNT - start_cycles;
+            uint32_t ucycles = SystemCoreClock / 1000000UL;
+            ++load_ticks;
+            if (cyc > load_max_cycles) load_max_cycles = cyc;
+            if (cyc > ucycles * 800UL) ++load_over_800us;
+            if (cyc > ucycles * 1000UL) ++load_over_1000us;
+        }
+#endif
         Control_TimingFinish(start_cycles);
         return;
     }
