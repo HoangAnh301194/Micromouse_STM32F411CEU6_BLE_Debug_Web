@@ -1,0 +1,48 @@
+{
+  "status": "IMPROVED_REQUIRES_REPLICATION",
+  "old_acceptance_threshold_0_15pct_met": true,
+  "baseline_rc1_gyro_reuse_pct": 0.0441,
+  "baseline_rc1_stage0_gyro_reuse_pct": 0.10508,
+  "paired_trace_comparison": {
+    "gyro_snapshot_reuse_pct": {
+      "legacy": 0.19956,
+      "tick": 0.1,
+      "delta_pp": -0.09956
+    },
+    "gyro_irq_reuse_pct": {
+      "legacy": 0.19956,
+      "tick": 0.1,
+      "delta_pp": -0.09956
+    },
+    "request_gap_gt1500_pct": {
+      "legacy": 0.1001,
+      "tick": 0.0,
+      "delta_pp": -0.1001
+    },
+    "request_gap_gt1050_pct": {
+      "legacy": 0.19976,
+      "tick": 0.1,
+      "delta_pp": -0.09976
+    },
+    "request_interval_max_us": {
+      "legacy": 2000,
+      "tick": 1141
+    },
+    "irq_to_publish_avg_us": {
+      "legacy": 15,
+      "tick": 15
+    },
+    "paired_ticks": {
+      "legacy": 225000,
+      "tick": 225000
+    }
+  },
+  "caveats": [
+    "Motor OFF; no physical-motion/EMI/fault-injection qualification.",
+    "Two separate firmware runs may have different initial MPU/TIM11 phase.",
+    "Paired IRQ-vs-publish uses the same TIM11 ticks WITHIN each run.",
+    "A second matched pair is needed to confirm a causal improvement.",
+    "Do not change DLPF, PWM, I2C speed or Policy B during this A/B."
+  ],
+  "failures": []
+}
