@@ -1,0 +1,50 @@
+{
+  "status": "PASS_DIAGNOSTIC",
+  "metrics": {
+    "boot_verified": true,
+    "policy_inferred": false,
+    "sampling_policy": "B",
+    "age_p95_bin_us": 1000,
+    "age_p99_bin_us": 1000,
+    "ab": {
+      "initial_nr": 1736,
+      "gyro_started": 226947,
+      "gyro_skipped": 1736,
+      "retry_started": 1735,
+      "retry_ready": 1735,
+      "retry_nr": 0,
+      "retry_expired": 1,
+      "retry_busy": 0,
+      "status_checks_per_1k_ticks": 1007.41,
+      "gyro_read_starts_per_1k_ticks": 999.762,
+      "estimated_i2c_transactions_per_1k_ticks": 2007.172
+    },
+    "clock_error_pct": -0.27073,
+    "sysclk_mhz_estimate": 95.7401,
+    "postcal_status_ready": 226947,
+    "postcal_status_not_ready": 1736,
+    "postcal_status_not_ready_pct": 0.7591,
+    "postcal_fresh_gyro_reads": 226948,
+    "postcal_status_zero_gyro_reads": 0,
+    "fresh_gap_min_us_observed": 241,
+    "fresh_gap_max_us_observed": 2693,
+    "fresh_gap_gt1500_count": 324,
+    "fresh_gap_gt2000_count": 2,
+    "status_poll_gap_max_us_observed": 1999,
+    "consecutive_notready_max": 1,
+    "postcal_TIM11_ticks": 227001,
+    "postcal_reused_gyro_ticks": 100,
+    "gyro_reused_tick_pct": 0.0441,
+    "gyro_completion_age_max_us_observed": 1770,
+    "gyro_completion_age_gt1500_ticks": 99,
+    "host_fit_records": 233,
+    "uart_tx_drop": 0,
+    "clk_seq_missing": 0
+  },
+  "warnings": [
+    "2 accepted-sample gaps exceeded 2ms",
+    "TIM11 sometimes reuses the latest accepted gyro sample",
+    "Some TIM11 ticks observed a gyro read completed over 1.5ms earlier"
+  ],
+  "failures": []
+}
