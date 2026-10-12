@@ -276,6 +276,14 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     }
 #endif
     if (control_diagnostic_only) {
+#if defined(MOTOR_PWM_DIAG)
+        /* Opt-in KEY-only, time-limited motor diagnostic. No sensor
+         * scanning, motion logic, BLE or UART inside 1kHz TIM11 ISR.
+         * MotorTest_Tick1ms enforces independent pulse timeout. */
+        Encoder_Update(CONTROL_DT_S);
+        Motor_Update1ms();
+        MotorTest_Tick1ms();
+#endif
 #if defined(CONTROL_LOAD_DIAG)
         /* Benchmark computational load ONLY. Motor_Init is never called.
          * PID setpoint zero; outputs discarded, never written to TIM2/PWM.
