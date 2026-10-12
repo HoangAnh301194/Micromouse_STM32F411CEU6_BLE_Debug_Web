@@ -48,6 +48,7 @@
   ],
   "failures": [
     "Missing I2C_PROBE log",
-    "A/B profile is not confirmed motor-off"
+    "A/B profile is not confirmed motor-off",
+    "Policy B retry/skip configuration mismatch"
   ]
 }

@@ -74,6 +74,13 @@
     }
   ],
   "note": "30 consecutive SYNC_CTRL frames are approximately 30s only if emitted at 1Hz.",
+  "uart_record_integrity": {
+    "suspect_records": 1,
+    "examples": [
+      "SYNC_POLICY,policy=B,skip_on_nr=1,r\ufffdI2C_PROBE,400_a=0 400_w=0 400_id=0x68 300_a=255 300_w=255 300_id=0xFF 200_a=255 200_w=255 200_id=0xFF 100_a=255 100_w=255 100_id=0xFF selected=0"
+    ],
+    "note": "Zero UART TX drops do not prove the entire received USB-TTL byte stream was intact."
+  },
   "freshness_analyzer_exit": 2,
   "load_analyzer_exit": 1
 }
