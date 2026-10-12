@@ -29,12 +29,24 @@ def parse_fields(line: str) -> dict[str, str]:
                 if "=" in x)
 
 
+BOOT_MARKER = "[BOOT] Isolated MPU6050/I2C test (motors disabled)"
+
+
 def extract(raw_text: str) -> list[str]:
+    """Recover RESET mid-UART-frame; preserve late-start captures as partial.
+
+    If reset occurs halfway through a TX line, the host can receive e.g.
+    SYNC_CTRL,ticks=0,re[BOOT] Isolated ...; keep the suffix after [BOOT].
+    Without any boot marker we retain raw lines instead of returning [].
+    Safety policy: a late-start run is always PARTIAL_DIAGNOSTIC.
+    """
     lines = [x.split("\t", 1)[-1].strip() for x in raw_text.splitlines()
              if x.strip()]
-    boot_ids = [i for i, x in enumerate(lines)
-                if x.startswith("[BOOT] Isolated MPU6050/I2C test (motors disabled)")]
-    return lines[boot_ids[-1]:] if boot_ids else []
+    boot_ids = [i for i, x in enumerate(lines) if BOOT_MARKER in x]
+    if not boot_ids:
+        return lines
+    index = boot_ids[-1]
+    return [lines[index][lines[index].index(BOOT_MARKER):]] + lines[index + 1:]
 
 
 def validate(report: dict, lines: list[str]):
@@ -43,32 +55,59 @@ def validate(report: dict, lines: list[str]):
     def selected(tag):
         return [parse_fields(x) for x in lines if x.startswith(tag + ",")]
 
-    def require(tag):
+    if not lines:
+        return ["No UART diagnostic lines found"], [], {}
+    has_boot = any(x == BOOT_MARKER for x in lines)
+    if not has_boot:
+        cautions.append("Partial capture: no [BOOT] marker; startup, motor-off "
+                        "state and calibration history cannot be fully verified.")
+
+    def require(tag, startup=False):
         values = selected(tag)
         if not values:
-            failures.append("Missing " + tag + " log")
+            if startup and not has_boot:
+                cautions.append("Missing startup frame: " + tag)
+            else:
+                failures.append("Missing " + tag + " log")
         return values
 
-    if not lines:
-        return ["No post-RESET motor-off BOOT marker found"], [], {}
-    trim = require("CLOCK_TRIM")
-    clock_profile = require("CLOCK_PROFILE")
-    clock_fault = require("CLOCK_DIAG")
-    sync_profile = require("MPU_SYNC_DIAG")
-    probes = require("I2C_PROBE")
+    trim = require("CLOCK_TRIM", startup=True)
+    clock_profile = require("CLOCK_PROFILE", startup=True)
+    clock_fault = require("CLOCK_DIAG", startup=True)
+    sync_profile = require("MPU_SYNC_DIAG", startup=True)
+    probes = require("I2C_PROBE", startup=True)
     sensor = require("SYNC_SENSOR")
     ctrl = require("SYNC_CTRL")
     imu = require("IMU")
     timing = require("TIMING")
     clk = require("CLK")
-    cal = require("CAL_DONE")
+    cal = require("CAL_DONE", startup=True)
     policy_rows = selected("SYNC_POLICY")
     ab_frames = selected("SYNC_AB")
     mode = policy_rows[-1].get("policy", "legacy") if policy_rows else "legacy"
+    if not policy_rows and not has_boot and ab_frames and sensor:
+        # Infer behavior, NOT proven build identity. Untrusted as production
+        # attestation; caller marks results PARTIAL and comparison opt-in.
+        last_ab = ab_frames[-1]
+        last_sensor = sensor[-1]
+        if (int(last_ab.get("gyro_skipped", "-1")) > 0 and
+            int(last_ab.get("retry_started", "-1")) > 0 and
+            last_sensor.get("stale") == "0"):
+            mode = "B"
+            cautions.append("Policy B inferred from skip/retry counters; "
+                            "SYNC_POLICY startup frame was not recorded.")
+        elif (last_ab.get("gyro_skipped") == "0" and
+              last_ab.get("retry_started") == "0"):
+            mode = "A"
+            cautions.append("Policy A inferred from counters; "
+                            "SYNC_POLICY startup frame was not recorded.")
+    if not policy_rows and has_boot:
+        failures.append("Missing SYNC_POLICY after observed boot")
+
     if mode not in ("A", "B", "legacy"):
         failures.append("Unknown SYNC_POLICY")
     if mode in ("A", "B"):
-        if policy_rows[-1].get("motor_off") != "1":
+        if policy_rows and policy_rows[-1].get("motor_off") != "1":
             failures.append("A/B profile is not confirmed motor-off")
         if len(ab_frames) < 150:
             failures.append("Missing A/B diagnostic counters")
@@ -88,8 +127,23 @@ def validate(report: dict, lines: list[str]):
         failures.append("Wrong MPU synchronization diagnostic firmware")
     if probes and probes[-1].get("selected") != "0":
         cautions.append("I2C did not select 400kHz fast mode")
-    if not cal or cal[-1].get("n") != "4000" or cal[-1].get("retries") != "0":
-        failures.append("4k-sample gyro calibration not confirmed")
+    if cal:
+        if cal[-1].get("n") != "4000" or cal[-1].get("retries") != "0":
+            failures.append("4k-sample gyro calibration failed validation")
+    elif not has_boot:
+        # Post-calibration telemetry is suggestive, not equivalent to
+        # having observed CAL_DONE with accepted block/retry counts.
+        if not all(x.get("cal") == "1" and x.get("cal_n") == "4000"
+                   for x in imu):
+            failures.append("Missing CAL_DONE and IMU calibration status invalid")
+        else:
+            cautions.append("CAL_DONE missed; IMU reports calibrated but "
+                            "stationarity/retry history was not observed.")
+    # Strictly validate clock identity even for a late-start capture.
+    # This establishes nominal 96MHz/trim25 MCU readback, not an independent
+    # guarantee of which motor-control source was flashed.
+    if not clk:
+        failures.append("Cannot validate MCU clock with no CLK data")
     if report["fit_records"] < MIN_FRAMES:
         failures.append("Need at least 150 CLK regression records (run 240s)")
     if report["seq_missing_count"] or report["tx_drop_delta"]:
@@ -204,6 +258,8 @@ def validate(report: dict, lines: list[str]):
                 if ab_metrics["retry_busy"]:
                     cautions.append("Some B retries encountered a busy I2C bus")
     metrics = {
+        "boot_verified": has_boot,
+        "policy_inferred": not bool(policy_rows),
         "sampling_policy": mode,
         "age_p95_bin_us": last_num(ctrl_after, "p95_bin") if mode in ("A", "B") else None,
         "age_p99_bin_us": last_num(ctrl_after, "p99_bin") if mode in ("A", "B") else None,
@@ -305,7 +361,9 @@ def self_test():
     bad_lines = [x.replace("trim=25", "trim=26") if x.startswith("CLK,")
                  else x for x in lines]
     assert any("signature mismatch" in x for x in validate(fake, bad_lines)[0])
-    assert not extract("1.0\tOLD\n2.0\t[BOOT] Isolated MPU6050/I2C test (motors disabled)\n")[0].startswith("OLD")
+    assert extract("1.0\tOLD\n2.0\tSYNC_CTRL,ticks=0,re" + BOOT_MARKER +
+                   "\n")[0] == BOOT_MARKER
+    assert extract("1.0\tCLK,seq=25,us=1000\n") == ["CLK,seq=25,us=1000"]
     print("SELF-TEST PASSED: 96MHz profile, post-calibration deltas, repeat rate, and safe rejects.")
     print("No firmware build or hardware access was performed.")
 
@@ -328,7 +386,12 @@ def main():
     except (OSError, ValueError, ZeroDivisionError) as exc:
         print("FAIL: unable to parse logs:", exc, file=sys.stderr)
         sys.exit(2)
-    result = {"status": "PASS_DIAGNOSTIC" if not failures else "FAIL",
+    # Never turn missing [BOOT]/CAL_DONE into a full PASS. Metrics remain
+    # available for an explicitly provisional comparison.
+    partial = not any(x == BOOT_MARKER for x in messages)
+    status = ("FAIL" if failures else
+              "PARTIAL_DIAGNOSTIC" if partial else "PASS_DIAGNOSTIC")
+    result = {"status": status,
               "metrics": metrics, "warnings": cautions, "failures": failures}
     (path / "imu_freshness_report.json").write_text(
         json.dumps(result, indent=2) + "\n", encoding="utf-8")
