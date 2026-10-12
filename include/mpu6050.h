@@ -242,6 +242,8 @@ typedef struct {
   uint32_t phase_last_sample_irq_us;
   uint32_t phase_last_sample_main_us;
   uint32_t phase_last_sample_publish_us;
+  /* Paired trace linkage: original IRQ sequence of latest published sample. */
+  volatile uint32_t phase_published_irq_sequence;
 #endif
 
   /* Boot-only diagnostic: identify exact failed MPU register operation. */
@@ -281,6 +283,9 @@ typedef struct {
   uint32_t completed_us;
   uint32_t sequence;
   uint8_t valid;
+#if defined(MPU_PHASE_AB)
+  uint32_t source_irq_sequence;
+#endif
 } MPU6050_Snapshot_t;
 
 uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *handle,
