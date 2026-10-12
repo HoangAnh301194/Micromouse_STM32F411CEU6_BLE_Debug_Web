@@ -217,6 +217,33 @@ typedef struct {
   volatile uint32_t published_sequence;
   volatile uint8_t published_valid;
 
+#if defined(MPU_PHASE_AB)
+  /* Main-only timestamp aggregates: one record per accepted gyro sample.
+   * These are experiment counters, not live motion-control state. */
+  uint32_t phase_prev_request_us;
+  uint32_t phase_last_request_us;
+  uint32_t phase_request_count;
+  uint32_t phase_request_intervals;
+  uint32_t phase_request_min_us;
+  uint32_t phase_request_max_us;
+  uint32_t phase_request_gt1050;
+  uint32_t phase_request_gt1500;
+  uint64_t phase_request_interval_sum_us;
+  uint32_t phase_processed_count;
+  uint32_t phase_irq_to_main_max_us;
+  uint32_t phase_irq_to_publish_max_us;
+  uint32_t phase_main_to_publish_max_us;
+  uint32_t phase_request_to_irq_max_us;
+  uint64_t phase_irq_to_main_sum_us;
+  uint64_t phase_irq_to_publish_sum_us;
+  uint64_t phase_main_to_publish_sum_us;
+  uint64_t phase_request_to_irq_sum_us;
+  uint32_t phase_last_sample_request_us;
+  uint32_t phase_last_sample_irq_us;
+  uint32_t phase_last_sample_main_us;
+  uint32_t phase_last_sample_publish_us;
+#endif
+
   /* Boot-only diagnostic: identify exact failed MPU register operation. */
   uint8_t init_step;
   uint8_t init_register;
@@ -258,6 +285,23 @@ typedef struct {
 
 uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *handle,
                             MPU6050_Snapshot_t *out);
+
+#if defined(MPU_PHASE_AB)
+typedef struct {
+    uint32_t request_count, request_intervals;
+    uint32_t request_min_us, request_max_us, request_gt1050, request_gt1500;
+    uint32_t request_interval_avg_us;
+    uint32_t processed_count;
+    uint32_t irq_to_main_avg_us, irq_to_main_max_us;
+    uint32_t irq_to_publish_avg_us, irq_to_publish_max_us;
+    uint32_t main_to_publish_avg_us, main_to_publish_max_us;
+    uint32_t request_to_irq_avg_us, request_to_irq_max_us;
+    uint32_t last_request_us, last_irq_us, last_main_us, last_publish_us;
+} MPU6050_PhaseStats_t;
+/* Read only from main; reported at 1 Hz, never inside TIM11. */
+void MPU6050_GetPhaseStats(const MPU6050_Handle_t *handle,
+                           MPU6050_PhaseStats_t *out);
+#endif
 
 /* ========================================================================== */
 /* PUBLIC FUNCTION PROTOTYPES                                                 */
