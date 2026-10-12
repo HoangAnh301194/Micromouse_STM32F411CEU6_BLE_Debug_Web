@@ -550,6 +550,10 @@ int main(void)
             MPU6050_ResetYaw(&imu_test);
             zeroed_after_cal = 1U;
             calibration_done_us = micros();
+#if defined(CONTROL_LOAD_DIAG)
+            Control_SetLoadStage(0U);
+            load_stage_applied = 0U;
+#endif
             UART_Printf(
                 "CAL_DONE,n=%u blocks=%u retries=%u "
                 "bias_mdps=%ld previous_bias_mdps=%ld delta_bias_mdps=%ld "
