@@ -353,6 +353,11 @@ int main(void)
 
 #endif /* old motor diagnostic harness */
 
+#if defined(MPU_INTEGRATION_BENCH)
+/* Motor-off, production Policy B integration test; no diagnostic counters. */
+int MpuIntegrationBench_Main(void);
+int main(void) { return MpuIntegrationBench_Main(); }
+#else
 #include "mpu6050.h"
 
 #if defined(CONTROL_LOAD_DIAG) && !defined(MPU_FRESHNESS_AB_B)
@@ -885,3 +890,5 @@ int main(void)
         max_update_us = 0U;
     }
 }
+
+#endif /* MPU_INTEGRATION_BENCH */
