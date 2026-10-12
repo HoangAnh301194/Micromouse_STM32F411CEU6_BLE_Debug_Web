@@ -35,7 +35,7 @@ void delay_ms_blocking(uint32_t ms)
     while (ms--) delay_us_blocking(1000UL);
 }
 
-#if defined(MPU_FRESHNESS_AB_B)
+#if defined(MPU_SAMPLING_POLICY_B)
 /* TIM5 remains the 32-bit free-running 1MHz timestamp source.
  * This channel-1 compare interrupt is a ONE-SHOT WFI wake for main. It never
  * reads I2C or modifies the 1kHz TIM11 scheduler. Priority 14 is below
@@ -65,4 +65,4 @@ void TIM5_IRQHandler(void)
         TIM5->SR &= ~TIM_SR_CC1IF;
     }
 }
-#endif /* MPU_FRESHNESS_AB_B */
+#endif /* MPU_SAMPLING_POLICY_B */
