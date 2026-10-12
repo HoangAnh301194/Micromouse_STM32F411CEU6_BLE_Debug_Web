@@ -77,3 +77,39 @@ python tools/diagnostic_pipeline.py --port COM7 --seconds 240
 ```
 
 Disconnect motor power. Press hardware RESET once after opening COM7. Compare the two profiles' per-stage `gyro_reused_pct`, `gyro_age_gt1500_ticks`, and UART `tx_drop_delta`. The A/B is suggestive only with matching stationary conditions and verified boot markers. If the effect persists, investigate 1Hz formatting cost / UART DMA queue rather than attributing it to the PID. No change is justified to MPU ODR or motor controls from this test alone.
+
+## 2026-10-12 second capture: pipeline_20261012_101822
+
+The staged, staggered-UART control-load firmware compiled successfully on the user's STM32 PlatformIO environment. The uploaded log measured:
+- 0 UART queue dropped messages, 0 CLK sequence gaps and no I2C errors.
+- Estimated clock mismatch -0.030876%.
+- Overall gyro reuse 136 / 228001 = 0.0596% (previous unstaggered staged run: 448 / 228001 = 0.1965%).
+- Stage 0: 68 / 59000 = 0.11525%; observed ISR maximum ~1.97us.
+- Stage 1: 55 / 59001 = 0.09322%; ISR ~8.27us.
+- Stage 2: 10 / 108000 = 0.00926%; ISR ~22.87us.
+- Zero observed budget overflows at 800us and 1000us in all stages.
+
+**This capture has not passed full diagnostic attestation.** It includes an on-wire **malformed startup UART record** combining two formerly separate lines:
+```text
+SYNC_POLICY,policy=B,skip_on_nr=1,r�I2C_PROBE,400_a=0 ...
+```
+The raw line is incomplete, so neither a clean `SYNC_POLICY.motor_off=1` nor a standalone `I2C_PROBE` can be read. The MCU `uart_tx_drop=0` counter measures firmware queue admission only, not every possible serial-line byte corruption. Treat these as *missing evidence*, not proof that the sensor or motor configuration failed. Do not relax the existing analyzer to infer missing fields.
+
+A firmware update now replays `SYNC_POLICY` at +10s and +40s post-calibration and `I2C_PROBE` at +13s and +43s, outside the initial startup UART burst. The analyzer validates all original criteria and accepts fully observed, separately transmitted replay records, including the actual selected I2C speed and WHO_AM_I value. The pipeline now reports suspect/malformed UART lines explicitly.
+
+Inspect the already recorded capture without flashing (it will still FAIL startup attestation, as expected):
+```powershell
+git fetch origin
+git merge --ff-only origin/feature/motor-debug-console
+python tools/imu_freshness_analyze.py --self-test
+python tools/diagnostic_pipeline.py --folder ".\\clock_logs\\pipeline_20261012_101822"
+```
+
+To verify the corrected UART diagnostic firmware with a NEW hardware capture, disconnect motor power, close other serial monitors, build/upload **only after build SUCCESS**, and press RESET after the port opens:
+```powershell
+python -m platformio run -e control_load_staggered_96m_trim25
+python -m platformio run -e control_load_staggered_96m_trim25 -t upload
+python tools/diagnostic_pipeline.py --port COM6 --seconds 240
+```
+
+Do not infer that PID was responsible for the prior freshness losses: the MCU ISR stayed well below the period, and reused-gyro rates changed substantially with elapsed experiment phase. A repeated clean boot, valid replay, zero UART corruption and a stable stage breakdown must precede actuator/PWM authorization. The serial framing root cause is still unresolved.
