@@ -4,12 +4,12 @@
     "boot_present": true,
     "motor_off_profile": true,
     "motor_off_sampling": true,
-    "calibration_4000_no_retries": false,
+    "calibration_4000_no_retries": true,
     "clock_samples_at_least_150": true,
     "telemetry_complete": true,
     "no_boot_fail": true,
-    "zero_imu_errors": false,
-    "zero_timing_errors": false
+    "zero_imu_errors": true,
+    "zero_timing_errors": true
   },
   "counts": {
     "CLOCK_PROFILE": 1,
@@ -25,24 +25,24 @@
   "windows_approximately_30_frames": [
     {
       "window_index": 1,
-      "ticks": 22001,
-      "reused": 1,
-      "reused_pct": 0.00455,
-      "age_gt1500": 0
+      "ticks": 30000,
+      "reused": 3,
+      "reused_pct": 0.01,
+      "age_gt1500": 2
     },
     {
       "window_index": 2,
       "ticks": 30000,
-      "reused": 2,
-      "reused_pct": 0.00667,
-      "age_gt1500": 2
+      "reused": 0,
+      "reused_pct": 0.0,
+      "age_gt1500": 0
     },
     {
       "window_index": 3,
       "ticks": 30001,
-      "reused": 5,
-      "reused_pct": 0.01667,
-      "age_gt1500": 4
+      "reused": 6,
+      "reused_pct": 0.02,
+      "age_gt1500": 5
     },
     {
       "window_index": 4,
@@ -54,23 +54,23 @@
     {
       "window_index": 5,
       "ticks": 30000,
-      "reused": 3,
-      "reused_pct": 0.01,
-      "age_gt1500": 2
+      "reused": 2,
+      "reused_pct": 0.00667,
+      "age_gt1500": 1
     },
     {
       "window_index": 6,
       "ticks": 30000,
-      "reused": 4,
-      "reused_pct": 0.01333,
-      "age_gt1500": 3
+      "reused": 6,
+      "reused_pct": 0.02,
+      "age_gt1500": 4
     },
     {
       "window_index": 7,
       "ticks": 30000,
-      "reused": 2,
-      "reused_pct": 0.00667,
-      "age_gt1500": 1
+      "reused": 4,
+      "reused_pct": 0.01333,
+      "age_gt1500": 2
     }
   ],
   "note": "30 consecutive SYNC_CTRL frames are approximately 30s only if emitted at 1Hz.",
