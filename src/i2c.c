@@ -675,12 +675,52 @@ static volatile uint8_t i2c2_bytes[2];
 static volatile uint32_t i2c2_start_us, i2c2_duration_us;
 /* Reuse the actual selected bus-speed mode after error recovery. */
 static uint32_t i2c2_busy_since_us = 0U;
+#if defined(MPU_PHASE_AB)
+/* IRQ producer, high-priority TIM11 consumer: no blocking, single try.
+ * Seqlock avoids torn time+sequence if TIM11 preempts I2C1_EV. */
+static volatile uint32_t phase_lock = 0U;
+static volatile uint32_t phase_gyro_seq = 0U;
+static volatile uint32_t phase_gyro_done_us = 0U;
+
+uint8_t I2C_GetGyroCompletionTrace(I2C_GyroCompletionTrace_t *out)
+{
+    uint32_t before, after;
+    if (!out) return 0U;
+    before = phase_lock;
+    if (before & 1U) return 0U;
+    __DMB();
+    out->sequence = phase_gyro_seq;
+    out->completion_us = phase_gyro_done_us;
+    __DMB();
+    after = phase_lock;
+    return (before == after && !(after & 1U)) ? 1U : 0U;
+}
+
+/* Sampled in main immediately after a successful transaction. The async
+ * driver does not begin another transfer until main consumes Poll(). */
+uint32_t I2C_AsyncGetLastStartUs(void) { return i2c2_start_us; }
+uint32_t I2C_AsyncGetLastCompletionUs(void) {
+    return i2c2_start_us + i2c2_duration_us;
+}
+#endif
+
 
 static void I2C2_Finish(I2C_Status result)
 {
     I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN | I2C_CR2_ITERREN);
     if (result != I2C_OK) I2C1->CR1 |= I2C_CR1_STOP;
     i2c2_duration_us = micros() - i2c2_start_us;
+#if defined(MPU_PHASE_AB)
+    if (result == I2C_OK && i2c2_addr == 0x68U &&
+        i2c2_reg == 0x47U && i2c2_count == 2U) {
+        ++phase_lock; /* odd: in progress */
+        __DMB();
+        phase_gyro_done_us = i2c2_start_us + i2c2_duration_us;
+        ++phase_gyro_seq;
+        __DMB();
+        ++phase_lock; /* even: committed */
+    }
+#endif
     i2c2_result = result;
     i2c2_phase = I2C2_DONE;
 }
