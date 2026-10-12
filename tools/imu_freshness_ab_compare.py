@@ -73,6 +73,22 @@ def compare(a: dict, b: dict) -> dict:
         "fresh_gyro_per_1000_ticks_a": round(rate(a, "postcal_fresh_gyro_reads"), 5),
         "fresh_gyro_per_1000_ticks_b": round(rate(b, "postcal_fresh_gyro_reads"), 5),
     }
+    rows.insert(0, {
+        "key": "initial_nr_per_1000_ticks",
+        "label": "Initial DATA_RDY=0 per 1000 TIM11 ticks",
+        "a": derived["initial_nr_per_1000_ticks_a"],
+        "b": derived["initial_nr_per_1000_ticks_b"],
+        "delta": round(derived["initial_nr_per_1000_ticks_b"]
+                       - derived["initial_nr_per_1000_ticks_a"], 6)
+    })
+    rows.append({
+        "key": "i2c_transactions_per_1k_ticks",
+        "label": "Estimated I2C transfers per 1000 TIM11 ticks",
+        "a": extra["estimated_i2c_transactions_per_1k_ticks"]["a"],
+        "b": extra["estimated_i2c_transactions_per_1k_ticks"]["b"],
+        "delta": round(extra["estimated_i2c_transactions_per_1k_ticks"]["b"]
+                       - extra["estimated_i2c_transactions_per_1k_ticks"]["a"], 6)
+    })
     improve_reuse = b["gyro_reused_tick_pct"] < a["gyro_reused_tick_pct"]
     improve_old_age = (derived["old_sample_age_gt1500_per_1000_ticks_b"]
                        < derived["old_sample_age_gt1500_per_1000_ticks_a"])
