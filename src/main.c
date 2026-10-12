@@ -355,6 +355,10 @@ int main(void)
 
 #include "mpu6050.h"
 
+#if defined(CONTROL_LOAD_DIAG) && !defined(MPU_FRESHNESS_AB_B)
+#error "CONTROL_LOAD_DIAG requires MPU_FRESHNESS_AB_B: do not mislabel sampling policy"
+#endif
+
 /* Isolated MPU6050 + I2C1 throughput/latency/error test.
  * No Motor_Init(), Encoder_Init(), MotorTest or motion execution.
  * TIM11 runs at 1kHz in counter-only diagnostic mode.
