@@ -201,7 +201,7 @@ def main():
                             rx=ser.readline()
                             if not rx: continue
                             line=rx.decode("utf-8",errors="replace").strip()
-                            fh.write(f"{time.perf_counter()-t0:.9f}\\t{line}\\n")
+                            fh.write(f"{time.perf_counter()-t0:.9f}\t{line}\n")
                             if line.startswith(("MINT_BOOT_FAIL","MINT_CAL_FAIL")):
                                 print("MCU FAULT:",line)
             except serial.SerialException as exc:
@@ -214,7 +214,7 @@ def main():
         if not raw.exists(): raise SystemExit("Missing raw_serial.log")
         report=analyze(raw.read_text(encoding="utf-8",errors="replace").splitlines())
         (folder/"mpu_integration_report.json").write_text(
-            json.dumps(report,indent=2)+"\\n",encoding="utf-8")
+            json.dumps(report,indent=2)+"\n",encoding="utf-8")
         print(json.dumps(report,indent=2))
         print("Output:",folder)
         if report["status"]!="PASS_INTEGRATION_MOTOR_OFF": raise SystemExit(1)
