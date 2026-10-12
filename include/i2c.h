@@ -182,6 +182,19 @@ I2C_Status I2C_ReadRegAsync_Start(uint8_t address_7bit, uint8_t reg,
                                    uint8_t count);
 I2C_Status I2C_Read2Async_Start(uint8_t address_7bit, uint8_t reg);
 I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us);
+#if defined(MPU_PHASE_AB)
+/* Experiment-only trace of successful 2-byte gyro register completions.
+ * The I2C event IRQ publishes the completion timestamp; TIM11 performs
+ * a single non-spinning seqlock read. 0 means a producer was interrupted. */
+typedef struct {
+    uint32_t sequence;
+    uint32_t completion_us;
+} I2C_GyroCompletionTrace_t;
+uint8_t I2C_GetGyroCompletionTrace(I2C_GyroCompletionTrace_t *out);
+uint32_t I2C_AsyncGetLastStartUs(void);
+uint32_t I2C_AsyncGetLastCompletionUs(void);
+#endif
+
 uint32_t I2C_GetConfiguredSclHz(void);
 
 #endif /* I2C_H */
