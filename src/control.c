@@ -70,6 +70,37 @@ void Control_GetIntegrationStats(Control_IntegrationStats_t *out)
     if (!primask) __enable_irq();
 }
 #endif
+#if defined(MPU_PHASE_AB) && defined(MPU_INTEGRATION_BENCH)
+static volatile uint32_t phase_ticks = 0U;
+static volatile uint32_t phase_irq_reused = 0U;
+static volatile uint32_t phase_published_reused = 0U;
+static volatile uint32_t phase_irq_ahead_ticks = 0U;
+static volatile uint32_t phase_contention = 0U;
+static volatile uint32_t phase_irq_age_max = 0U;
+static volatile uint32_t phase_main_age_max = 0U;
+static volatile uint32_t phase_last_irq_seq = 0U;
+static volatile uint32_t phase_last_published_seq = 0U;
+static uint32_t phase_sequence_offset = 0U;
+static uint8_t phase_armed = 0U;
+
+void Control_GetPhasePair(Control_PhasePair_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->paired_ticks = phase_ticks;
+    out->irq_complete_reused = phase_irq_reused;
+    out->snapshot_published_reused = phase_published_reused;
+    out->irq_ahead_of_snapshot_ticks = phase_irq_ahead_ticks;
+    out->trace_contention_ticks = phase_contention;
+    out->irq_completion_age_max_us = phase_irq_age_max;
+    out->main_observed_age_max_us = phase_main_age_max;
+    out->last_irq_sequence = phase_last_irq_seq;
+    out->last_published_sequence = phase_last_published_seq;
+    if (!primask) __enable_irq();
+}
+#endif
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile uint8_t control_diagnostic_only = 0;
@@ -170,6 +201,14 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 #if defined(MPU_INTEGRATION_BENCH)
     integ_ticks = integ_reused = integ_age_over1500 = 0U;
     integ_age_max = integ_missing = integ_last_sequence = 0U;
+#endif
+#if defined(MPU_PHASE_AB) && defined(MPU_INTEGRATION_BENCH)
+    phase_ticks = phase_irq_reused = phase_published_reused = 0U;
+    phase_irq_ahead_ticks = phase_contention = 0U;
+    phase_irq_age_max = phase_main_age_max = 0U;
+    phase_last_irq_seq = phase_last_published_seq = 0U;
+    phase_sequence_offset = 0U;
+    phase_armed = 0U;
 #endif
     control_running = 0;
     control_tick_count = 0;
@@ -312,6 +351,38 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             if (age_us > integ_age_max) integ_age_max = age_us;
             if (age_us > 3000U) ++integ_missing;
             integ_last_sequence = sample.sequence;
+#if defined(MPU_PHASE_AB)
+            {
+                I2C_GyroCompletionTrace_t irq;
+                if (!I2C_GetGyroCompletionTrace(&irq)) {
+                    ++phase_contention; /* Never spin inside priority-0 ISR. */
+                } else if (irq.sequence != 0U) {
+                    uint32_t irq_age_us = entry_us - irq.completion_us;
+                    uint32_t main_age_us = entry_us - sample.completed_us;
+                    if (!phase_armed) {
+                        /* Offset contains all gyro reads during calibration. */
+                        phase_sequence_offset = irq.sequence - sample.sequence;
+                        phase_last_irq_seq = irq.sequence;
+                        phase_last_published_seq = sample.sequence;
+                        phase_armed = 1U;
+                    } else {
+                        ++phase_ticks;
+                        if (irq.sequence == phase_last_irq_seq) ++phase_irq_reused;
+                        if (sample.sequence == phase_last_published_seq)
+                            ++phase_published_reused;
+                        if ((uint32_t)(irq.sequence - sample.sequence) >
+                            phase_sequence_offset)
+                            ++phase_irq_ahead_ticks;
+                        phase_last_irq_seq = irq.sequence;
+                        phase_last_published_seq = sample.sequence;
+                    }
+                    if (irq_age_us > phase_irq_age_max)
+                        phase_irq_age_max = irq_age_us;
+                    if (main_age_us > phase_main_age_max)
+                        phase_main_age_max = main_age_us;
+                }
+            }
+#endif
         } else {
             ++integ_missing;
         }
