@@ -22,6 +22,17 @@ typedef struct {
 void Control_SetLoadStage(uint8_t stage);
 void Control_GetLoadStats(Control_LoadStats_t *out);
 #endif
+#if defined(MPU_INTEGRATION_BENCH)
+typedef struct {
+    uint32_t ticks;
+    uint32_t reused;
+    uint32_t age_over1500;
+    uint32_t age_max_us;
+    uint32_t missing_or_expired;
+} Control_IntegrationStats_t;
+void Control_GetIntegrationStats(Control_IntegrationStats_t *out);
+#endif
+
 void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
