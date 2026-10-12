@@ -16,7 +16,19 @@ def analyze(lines):
     lines = lines[boots[-1]:]
     profile = [fields(x) for x in lines if x.startswith("LOAD_PROFILE,")]
     cal = [fields(x) for x in lines if x.startswith("CAL_DONE,")]
-    loads = [fields(x) for x in lines if x.startswith("LOAD,")]
+    # Stage 0 counters reset at CAL_DONE; omit pre-calibration snapshots.
+    cal_pos = max((i for i, x in enumerate(lines) if x.startswith("CAL_DONE,")), default=-1)
+    postcal = lines[cal_pos + 1:] if cal_pos >= 0 else []
+    loads = [fields(x) for x in postcal if x.startswith("LOAD,")]
+    ctrl_by_stage = {"0": [], "1": [], "2": []}
+    stage = "0"
+    for line in postcal:
+        if line.startswith("LOAD_SWITCH,"):
+            stage = fields(line).get("stage", stage)
+        elif line.startswith("SYNC_CTRL,") and stage in ctrl_by_stage:
+            ctrl_by_stage[stage].append(fields(line))
+    warnings = []
+
     policies = [fields(x) for x in lines if x.startswith("SYNC_POLICY,")]
     failures = []
     if not profile or profile[-1].get("motor_off") != "1" or profile[-1].get("pwm_initialized") != "0":
@@ -43,6 +55,26 @@ def analyze(lines):
             continue
         if any(b < a for a,b in zip(ticks, ticks[1:])):
             failures.append(f"Stage {stage}: ticks decreased")
+        # SYNC_CTRL is cumulative; use first-to-last deltas within each stage.
+        ctrl_items = ctrl_by_stage[str(stage)]
+        sync_stats = {}
+        if len(ctrl_items) >= 2:
+            try:
+                counts = {key: int(ctrl_items[-1][key]) - int(ctrl_items[0][key])
+                          for key in ("ticks", "repeat", "age_gt1500")}
+                if counts["ticks"] > 0 and counts["repeat"] >= 0 and counts["age_gt1500"] >= 0:
+                    sync_stats = {
+                        "sync_ticks_compared": counts["ticks"],
+                        "gyro_reused_ticks": counts["repeat"],
+                        "gyro_reused_pct": round(100 * counts["repeat"] / counts["ticks"], 5),
+                        "gyro_age_gt1500_ticks": counts["age_gt1500"],
+                    }
+                else:
+                    failures.append(f"Stage {stage}: invalid SYNC_CTRL deltas")
+            except (KeyError, ValueError):
+                failures.append(f"Stage {stage}: malformed SYNC_CTRL counters")
+        else:
+            warnings.append(f"Stage {stage}: insufficient SYNC_CTRL for per-stage freshness")
         records[str(stage)] = {
             "frames":len(items),
             "ticks":ticks[-1],
@@ -50,11 +82,13 @@ def analyze(lines):
             "max_us_nominal_96mhz":round(max(maxima)/96.0,3),
             "over800":over800[-1],
             "over1000":over1000[-1],
+            **sync_stats,
         }
         if over1000[-1] or over800[-1]:
             failures.append(f"Stage {stage}: ISR budget violations")
     return {"status":"PASS_LOAD_DIAGNOSTIC" if not failures else "FAIL_OR_INCOMPLETE",
             "motor_off_only": True, "stages": records, "failures":failures,
+            "warnings": warnings,
             "note":"Cycles/96MHz is nominal; physical timing uncertainty applies. Observed maxima are not formal WCET."}
 
 def main():
