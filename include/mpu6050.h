@@ -210,6 +210,14 @@ typedef struct {
   uint32_t retry_due_us;
 #endif
 
+#if defined(MPU_TIM11_TICK_SCHED)
+  /* Opt-in TIM11 sample opportunity; no I2C in interrupt. One
+   * request maximum per tick, no backlog of missed opportunities. */
+  volatile uint32_t control_sample_tick_seq;
+  volatile uint32_t control_sample_tick_us;
+  uint32_t control_last_started_tick_seq;
+#endif
+
 /* Publish completed, calibrated samples atomically for 1kHz ISR readers. */
   volatile float published_yaw_deg;
   volatile float published_gyro_z_dps;
@@ -310,6 +318,10 @@ void MPU6050_GetPhaseStats(const MPU6050_Handle_t *handle,
 
 /* ========================================================================== */
 /* PUBLIC FUNCTION PROTOTYPES                                                 */
+/* ISR callback is intentionally limited to updating a sequence/timestamp. */
+#if defined(MPU_TIM11_TICK_SCHED)
+void MPU6050_NotifyControlTick(MPU6050_Handle_t *handle, uint32_t entry_us);
+#endif
 /* ========================================================================== */
 
 /**
