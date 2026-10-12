@@ -1,0 +1,278 @@
+{
+  "module": "MPU6050-I2C1-GyroZ-TIM11",
+  "version": "rc2-20261013",
+  "status": "motor-off-integration-qualified",
+  "release_branch": "release/mpu6050-i2c-rc2-tim11-20261013",
+  "source_branch": "feature/mpu-tim11-tick-scheduler-ab",
+  "validated_source_commit": "5219e04d3fe7b8fdb5a092100154e6d9f0317e09",
+  "validated_source_tree_sha": "c6005dad28d7e17fb7a8b791dd59757ae6591b00",
+  "base_release_branch": "release/mpu6050-i2c-rc1-20261012",
+  "recorded_date": "2026-10-13",
+  "source_unchanged_on_release_branch": true,
+  "git_branch_protection_enforced": false,
+  "build": {
+    "tested_environment": "mpu_phase_tick_96m_trim25",
+    "board": "genericSTM32F411CE",
+    "framework": "cmsis",
+    "macros": {
+      "CLOCK_VALIDATE_96M": 1,
+      "CLOCK_HSI_TRIM": 25,
+      "MPU_SAMPLING_POLICY_B": 1,
+      "MPU_TIM11_TICK_SCHED": 1,
+      "MPU_INTEGRATION_BENCH": 1,
+      "MPU_PHASE_AB": 1
+    },
+    "control_frequency_hz": 1000,
+    "i2c_nominal_hz": 400000,
+    "mpu_address_7bit": "0x68",
+    "gyro_fullscale_dps": 2000,
+    "dlpf_cfg": 3,
+    "smplrt_div": 0,
+    "i2c_transfer_mode": "interrupt-driven 1/2 byte register reads, no MPU DMA"
+  },
+  "acceptance": {
+    "scope": "two 240-second motor-OFF stationary A/B pairs with reverse order, instrumented build",
+    "ci": {
+      "run_id": 38290813533,
+      "conclusion": "success",
+      "commit_sha": "5219e04d3fe7b8fdb5a092100154e6d9f0317e09",
+      "workflow": ".github/workflows/mpu-i2c-integration.yml"
+    },
+    "pairs": [
+      {
+        "order": "A-legacy_then_B-tim11",
+        "legacy_session": "session_20261013_005503",
+        "tick_session": "session_20261013_010213",
+        "paired_ticks_each": 225000,
+        "legacy_reused": 446,
+        "tick_reused": 223,
+        "legacy_reuse_pct": 0.19822,
+        "tick_reuse_pct": 0.09911,
+        "legacy_gap_gt1500": 223,
+        "tick_gap_gt1500": 1
+      },
+      {
+        "order": "B-tim11_then_A-legacy",
+        "legacy_session": "session_20261013_011839",
+        "tick_session": "session_20261013_011420",
+        "paired_ticks_each": 225000,
+        "legacy_reused": 449,
+        "tick_reused": 225,
+        "legacy_reuse_pct": 0.19956,
+        "tick_reuse_pct": 0.1,
+        "legacy_gap_gt1500": 225,
+        "tick_gap_gt1500": 0
+      }
+    ],
+    "gyro_snapshot_reuse_reduced_approximately_pct": 50,
+    "no_i2c_error_timeout_or_tim11_violation_reported": true,
+    "production_qualified": false,
+    "motor_on_qualified": false,
+    "notes": "The existing default env is not RC2. A clean uninstrumented, motor-enabled RC2 image has not been regression-tested."
+  },
+  "source_blobs": [
+    {
+      "path": ".github/workflows/mpu-i2c-integration.yml",
+      "blob_sha": "7a54e68b2a83a7d30d05c1ed51b7a3273b751cbe"
+    },
+    {
+      "path": "include/board.h",
+      "blob_sha": "2da28601dd0462d8c98eb6eeaaf6316de6a54154"
+    },
+    {
+      "path": "include/bt_debug.h",
+      "blob_sha": "db3aefdfad7d518d2f9ff5644e4e15278026bc00"
+    },
+    {
+      "path": "include/control.h",
+      "blob_sha": "f4cd282ffc3a50a5a182032799e97aa23777199b"
+    },
+    {
+      "path": "include/encoder.h",
+      "blob_sha": "9235b665c29edd4990872c0fd0c5f296b75c65a0"
+    },
+    {
+      "path": "include/i2c.h",
+      "blob_sha": "e2351fb08a608372ccab5833442692abd999bdac"
+    },
+    {
+      "path": "include/ir_sensor.h",
+      "blob_sha": "59b2cd45b4ce843f9ccb8b6058ef62e1d4a4dc6a"
+    },
+    {
+      "path": "include/motion.h",
+      "blob_sha": "2fbf4dc80930afe6a60441b966c308d99b9f852d"
+    },
+    {
+      "path": "include/motor.h",
+      "blob_sha": "f99572d74381dcd68b9b8ca4df975996cd518de2"
+    },
+    {
+      "path": "include/motor_test.h",
+      "blob_sha": "1cf62c21e2e611770bc18d719693b71dde165b95"
+    },
+    {
+      "path": "include/motor_trace.h",
+      "blob_sha": "38d1278d8420b8f57a6720e1df9520e32c0f2071"
+    },
+    {
+      "path": "include/mpu6050.h",
+      "blob_sha": "5ff45b667126b3ca49db72c265eb103be39b4f37"
+    },
+    {
+      "path": "include/mpu_policy.h",
+      "blob_sha": "b7430e15b7c82af8fc71abf3a90d25426034ab99"
+    },
+    {
+      "path": "include/pid.h",
+      "blob_sha": "9b57a40159cdfde577c3c1e8b4a9d091e8a6130d"
+    },
+    {
+      "path": "include/pinout.h",
+      "blob_sha": "299bdd7ebb2fc0d37febf20be7498e7cdbda26cc"
+    },
+    {
+      "path": "include/system_timer.h",
+      "blob_sha": "4079c7d48c45ee49515a1d3d085caa10146ade7c"
+    },
+    {
+      "path": "include/uart.h",
+      "blob_sha": "fb44a86cb3874235b673ddcb5a85f77e748de19c"
+    },
+    {
+      "path": "platformio.ini",
+      "blob_sha": "eab4f97c16d6c232bff2aba73521d4ee2a63ff67"
+    },
+    {
+      "path": "src/board.c",
+      "blob_sha": "8568461cfc43b8812fec10db2c1a2bf2b081f2c5"
+    },
+    {
+      "path": "src/bt_debug.c",
+      "blob_sha": "c9ff838e67902f8868ca7875be6a312ecaf12e52"
+    },
+    {
+      "path": "src/control.c",
+      "blob_sha": "82a5ea1481f5aa6ba7a00e9b7afebabd169b3faa"
+    },
+    {
+      "path": "src/encoder.c",
+      "blob_sha": "adc356a52f4a4804fe3a99a206c1441479316869"
+    },
+    {
+      "path": "src/i2c.c",
+      "blob_sha": "25735b2dcf2b7389a20f0c4e0ada4ee6e2a84a2b"
+    },
+    {
+      "path": "src/ir_sensor.c",
+      "blob_sha": "68989e6767d8e2a19837c296e6453030eeb2b6fe"
+    },
+    {
+      "path": "src/main.c",
+      "blob_sha": "0926b2db1f70d1756c8213ab55ca5517c92733df"
+    },
+    {
+      "path": "src/motion.c",
+      "blob_sha": "d45285c154d7f830b36557ccd92a72b09b694bfc"
+    },
+    {
+      "path": "src/motor.c",
+      "blob_sha": "209a1c5688d5ef65c9c0769f8bbb56b48de97b59"
+    },
+    {
+      "path": "src/motor_test.c",
+      "blob_sha": "e7b3d5b5172a6cbd1050d58757ad88b9610a0738"
+    },
+    {
+      "path": "src/motor_trace.c",
+      "blob_sha": "5812def28dc3eb7e60d9f5aa99711347d9efa456"
+    },
+    {
+      "path": "src/mpu6050.c",
+      "blob_sha": "6c1a4530251975cfa2de84a92f33a738e25be942"
+    },
+    {
+      "path": "src/mpu_integration_bench.c",
+      "blob_sha": "592d179748348c484b1eaaaf50921fdc01145df4"
+    },
+    {
+      "path": "src/pid.c",
+      "blob_sha": "152bffed1b00e03ad0ae819346e9a8346e3080aa"
+    },
+    {
+      "path": "src/system_timer.c",
+      "blob_sha": "29be7bc48279c113f695f246f6937743edcc6575"
+    },
+    {
+      "path": "src/uart.c",
+      "blob_sha": "9343315d663f36d4d82ebf52453675ab16213649"
+    },
+    {
+      "path": "tools/imu_freshness_analyze.py",
+      "blob_sha": "e143c1491a86878bcedbe29cdeda9d6be4554588"
+    },
+    {
+      "path": "tools/mpu_integration_regression.py",
+      "blob_sha": "2f1b948cce9df3580777651367dd3b071873da73"
+    },
+    {
+      "path": "tools/mpu_phase_ab_analyze.py",
+      "blob_sha": "1f69757c44db6b02ce481b3cc00d5e6ff24373ce"
+    },
+    {
+      "path": "tools/mpu_tick_scheduler_ab_compare.py",
+      "blob_sha": "44ad71e120529aa496c49646700cfbebda905b0c"
+    }
+  ],
+  "evidence_blobs": [
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_005503/raw_serial.log",
+      "blob_sha": "62035039ae3ee17602a4d1e2598190281e548480"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_005503/phase_ab_report.json",
+      "blob_sha": "e415aa1aee71ed32bffda6031204cbc9cb48ff8e"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_010213/raw_serial.log",
+      "blob_sha": "4a4e4fd5d01adbdf61a7662461fa9b520c14074a"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_010213/phase_ab_report.json",
+      "blob_sha": "3962359e1bffb56963ece178461f52d291e91368"
+    },
+    {
+      "path": "mpu_phase_ab_logs/tim11_scheduler_comparison.json",
+      "blob_sha": "2f95c9ca086d4eea3d25a388da4b3888433fb9e9"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_011420/raw_serial.log",
+      "blob_sha": "088f09e67347e5024a83df209c022e717102e801"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_011420/phase_ab_report.json",
+      "blob_sha": "8c553d5d05dfa3d671afe39254d180180028baf9"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_011839/raw_serial.log",
+      "blob_sha": "dd21f669940cf8afb103390157b65926daa3946c"
+    },
+    {
+      "path": "mpu_phase_ab_logs/session_20261013_011839/phase_ab_report.json",
+      "blob_sha": "86c65c5c1f4b942a639dfa8abc77ff81271f8e33"
+    },
+    {
+      "path": "mpu_phase_ab_logs/tim11_scheduler_comparison_rep2.json",
+      "blob_sha": "cf4fbef1c6345100d388ae0b3a3f0b914d5b4a23"
+    }
+  ],
+  "files_checked": {
+    "source_count": 38,
+    "evidence_count": 10
+  },
+  "warnings": [
+    "GitHub branch names are not immutable without rules; inspect SHA/blob manifest.",
+    "Documentation-only release commits change branch HEAD but do not alter the pinned source.",
+    "No motor-on, EMI, dynamics or fault-injection claim."
+  ]
+}
