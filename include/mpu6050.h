@@ -6,6 +6,7 @@
 #define MPU6050_H
 
 #include "i2c.h"
+#include "mpu_policy.h"
 #include <stdint.h>
 
 
@@ -201,11 +202,20 @@ typedef struct {
   uint32_t diag_ab_retry_notready;
   uint32_t diag_ab_retry_expired;
   uint32_t diag_ab_retry_busy;
-#if defined(MPU_FRESHNESS_AB_B)
-  uint8_t diag_ab_retry_count;
-  uint32_t diag_ab_retry_due_us;
+#endif /* MPU_FRESHNESS_DIAG */
+
+/* Sampling-policy state belongs to the driver, not telemetry instrumentation. */
+#if defined(MPU_SAMPLING_POLICY_B)
+  uint8_t retry_count;
+  uint32_t retry_due_us;
 #endif
-#endif
+
+/* Publish completed, calibrated samples atomically for 1kHz ISR readers. */
+  volatile float published_yaw_deg;
+  volatile float published_gyro_z_dps;
+  volatile uint32_t published_completed_us;
+  volatile uint32_t published_sequence;
+  volatile uint8_t published_valid;
 
   /* Boot-only diagnostic: identify exact failed MPU register operation. */
   uint8_t init_step;
@@ -235,6 +245,20 @@ typedef struct {
   uint32_t raw_interval_max_us;
 } MPU6050_Handle_t;
 
+/* Single coherent snapshot of a completed post-calibration sample.
+ * Timestamp is MCU read-completion time, not MPU internal acquisition time.
+ * A false 'valid' means motion code MUST NOT use yaw/rate. */
+typedef struct {
+  float yaw_deg;
+  float gyro_z_dps;
+  uint32_t completed_us;
+  uint32_t sequence;
+  uint8_t valid;
+} MPU6050_Snapshot_t;
+
+uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *handle,
+                            MPU6050_Snapshot_t *out);
+
 /* ========================================================================== */
 /* PUBLIC FUNCTION PROTOTYPES                                                 */
 /* ========================================================================== */
@@ -249,7 +273,7 @@ typedef struct {
  * - Resets MPU6050
  * - Sets gyro range according to MPU6050_GYRO_RANGE
  * - Configures digital low-pass filter
- * - Initializes DMA for continuous reading
+ * - Uses I2C event/error interrupts for asynchronous Gyro Z reads (NOT DMA)
  */
 MPU6050_Status MPU6050_Init(MPU6050_Handle_t *handle);
 
