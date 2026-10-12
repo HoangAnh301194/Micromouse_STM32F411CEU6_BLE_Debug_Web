@@ -394,6 +394,16 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->diag_control_ready = 0U;
 #endif
     MPU6050_ResetCalSamples(h);
+#if defined(MPU_SAMPLING_POLICY_B)
+    /* A delayed status retry from the previous run must not survive
+     * explicit recalibration. Do not cancel an in-flight IRQ transfer. */
+    if (h->sample_phase == 4U) {
+        SystemTimer_CancelWake();
+        h->sample_phase = 0U;
+    }
+    h->retry_count = 0U;
+    h->retry_due_us = 0U;
+#endif
     h->gyro_z_offset = 0.0f;
     h->gyro_z_filtered = 0.0f;
     h->gyro_z_lpf = 0.0f;
@@ -579,9 +589,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
          * not due, return to WFI; if the slot expires, abandon retry. */
         now = micros();
         if ((uint32_t)(now - h->last_request_us) >= MPU_POLICY_B_RETRY_END_MAX_US) {
-            #if defined(MPU_FRESHNESS_DIAG)
+ #if defined(MPU_FRESHNESS_DIAG)
             ++h->diag_ab_retry_expired;
-            #endif
+ #endif
             h->sample_phase = 0U;
             SystemTimer_CancelWake();
             return MPU6050_OK;
@@ -591,16 +601,16 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         SystemTimer_CancelWake();
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
         if (start == I2C_OK) {
-            #if defined(MPU_FRESHNESS_DIAG)
+ #if defined(MPU_FRESHNESS_DIAG)
             ++h->diag_ab_retry_started;
-            #endif
+ #endif
             h->sample_phase = 1U;
         } else {
             /* If busy, do NOT spin to steal CPU time from TIM11. */
             if (start == I2C_BUSY) {
-                #if defined(MPU_FRESHNESS_DIAG)
+     #if defined(MPU_FRESHNESS_DIAG)
                 ++h->diag_ab_retry_busy;
-                #endif
+     #endif
             } else {
                 ++h->error_reads;
                 h->last_i2c_error = start;
