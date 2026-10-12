@@ -119,6 +119,10 @@ int MotorPwmDiag_Main(void)
                         (unsigned long)snapshot.elapsed_ms,
                         (unsigned long)UART_GetDroppedMessages());
             MotorTest_AcknowledgeEnd();
+            /* The generic test acknowledges and restores its original slew.
+             * Restore bench profile so stages remain directly comparable. */
+            Motor_SetDeadband(0U, 0U);
+            Motor_SetSlewRates(10U, 20U);
             active = 0U;
             armed = 0U; /* Explicit 1.5s re-arm for EACH pulse. */
             pending_arm = 0U;
