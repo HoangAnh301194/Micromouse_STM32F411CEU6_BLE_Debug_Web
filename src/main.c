@@ -399,6 +399,9 @@ int main(void)
 #if defined(CONTROL_LOAD_DIAG)
     Control_LoadStats_t load_stats;
     uint8_t load_stage_applied = 0U;
+#if defined(CONTROL_LOAD_LOG_STAGGER)
+    uint32_t last_load_sent_report_us = 0U;
+#endif
 #endif
 
     Board_Init();
@@ -642,6 +645,23 @@ int main(void)
 
         now = micros();
         elapsed = now - last_report_us;
+#if defined(CONTROL_LOAD_DIAG) && defined(CONTROL_LOAD_LOG_STAGGER)
+        /* A/B check for one-second UART burst contamination.
+         * Offset LOAD by 200ms; still exactly one snapshot per second.
+         * I2C work remains only in main and PWM remains disabled. */
+        if (zeroed_after_cal && elapsed >= 200000UL && elapsed < 500000UL &&
+            last_load_sent_report_us != last_report_us) {
+            Control_GetLoadStats(&load_stats);
+            UART_Printf("LOAD,stage=%lu,ticks=%lu,max_cycles=%lu,over800=%lu,over1000=%lu,pid_milli=%ld,motor_off=1\r\n",
+                        (unsigned long)load_stats.stage,
+                        (unsigned long)load_stats.ticks,
+                        (unsigned long)load_stats.max_cycles,
+                        (unsigned long)load_stats.over_800us,
+                        (unsigned long)load_stats.over_1000us,
+                        (long)(int32_t)load_stats.pid_output_milli);
+            last_load_sent_report_us = last_report_us;
+        }
+#endif
         if (elapsed < 1000000UL) {
             /* Do not sleep during the few microseconds needed for a STOP
              * to finish between INT_STATUS and gyro reads. */
@@ -706,6 +726,7 @@ int main(void)
         MPU6050_GetNoiseWindow(&imu_test, &noise);
         Control_GetTiming(&timing);
 #if defined(CONTROL_LOAD_DIAG)
+#if !defined(CONTROL_LOAD_LOG_STAGGER)
         Control_GetLoadStats(&load_stats);
         UART_Printf("LOAD,stage=%lu,ticks=%lu,max_cycles=%lu,over800=%lu,over1000=%lu,pid_milli=%ld,motor_off=1\r\n",
                     (unsigned long)load_stats.stage,
@@ -714,6 +735,7 @@ int main(void)
                     (unsigned long)load_stats.over_800us,
                     (unsigned long)load_stats.over_1000us,
                     (long)(int32_t)load_stats.pid_output_milli);
+#endif
 #endif
 #if defined(MPU_FRESHNESS_DIAG)
         Control_GetImuSync(&imu_sync);
