@@ -1,0 +1,83 @@
+{
+  "module": "MPU6050-I2C1-GyroZ",
+  "version": "rc1-20261012",
+  "status": "motor-off-diagnostic-validated",
+  "source_commit": "7e71d611bfedcc173f7d2798ba51fd6db49b59d9",
+  "source_branch": "release/mpu6050-i2c-rc1-20261012",
+  "capture": "pipeline_20261012_222640",
+  "build_env": "control_load_staggered_96m_trim25",
+  "recorded_utc_date": "2026-10-12",
+  "files": [
+    {
+      "path": "src/mpu6050.c",
+      "blob_sha": "26c855604db46f19a0d9cdca290600cc8e9c1c37"
+    },
+    {
+      "path": "include/mpu6050.h",
+      "blob_sha": "702f6d4efbd8317faa79a5cc7e0fac221f4296b3"
+    },
+    {
+      "path": "src/i2c.c",
+      "blob_sha": "9fb8be2db22cf49856de2cda3dd415604c99afec"
+    },
+    {
+      "path": "include/i2c.h",
+      "blob_sha": "acee85a9720b9d0ed3654dacbb7f25c3857ee57d"
+    },
+    {
+      "path": "src/system_timer.c",
+      "blob_sha": "90547e0027b1fa3f93a64a16e918517123f5d4f8"
+    },
+    {
+      "path": "include/system_timer.h",
+      "blob_sha": "8787b1515f65b9cd65a1230c33b4fe7be5e84bb0"
+    },
+    {
+      "path": "src/control.c",
+      "blob_sha": "9f9f134211108ebd479208a0e922dab91d261b0d"
+    },
+    {
+      "path": "include/control.h",
+      "blob_sha": "ef5b241eebe81c724c2e54c15fa656e574c92fed"
+    },
+    {
+      "path": "src/board.c",
+      "blob_sha": "8568461cfc43b8812fec10db2c1a2bf2b081f2c5"
+    },
+    {
+      "path": "include/board.h",
+      "blob_sha": "2da28601dd0462d8c98eb6eeaaf6316de6a54154"
+    },
+    {
+      "path": "src/main.c",
+      "blob_sha": "9af39ca2b51c8a07d17a4a6508a63d6f502fd797"
+    },
+    {
+      "path": "platformio.ini",
+      "blob_sha": "b13d673c02be66d478faa0001ecf50b99f3793c2"
+    },
+    {
+      "path": "tools/imu_freshness_analyze.py",
+      "blob_sha": "e143c1491a86878bcedbe29cdeda9d6be4554588"
+    },
+    {
+      "path": "tools/control_load_analyze.py",
+      "blob_sha": "9cefc50d07d862f5a6a7c3c616bd16048e46bae1"
+    },
+    {
+      "path": "tools/diagnostic_pipeline.py",
+      "blob_sha": "af55a1ecb8fe757188b844e7b04c620d788723e2"
+    },
+    {
+      "path": "tools/clock_serial_test.py",
+      "blob_sha": "331b2f2ac774704b421f4c262e50683e5ce6f807"
+    }
+  ],
+  "evidence": [
+    "docs/mpu_i2c_rc1/evidence/imu_freshness_report.json",
+    "docs/mpu_i2c_rc1/evidence/load_stage_report.json",
+    "docs/mpu_i2c_rc1/evidence/pipeline_report.json",
+    "docs/mpu_i2c_rc1/evidence/clock_summary.txt"
+  ],
+  "production_integrated": false
+}
