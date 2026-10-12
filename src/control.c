@@ -324,6 +324,10 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     }
     timing_last_entry_us = entry_us;
     control_tick_count++;
+#if defined(MPU_TIM11_TICK_SCHED)
+    /* Schedule a sample opportunity; I2C still runs solely in main. */
+    MPU6050_NotifyControlTick(control_mpu, entry_us);
+#endif
 #if defined(MPU_FRESHNESS_DIAG)
     if (control_mpu && control_mpu->diag_control_ready &&
         control_mpu->diag_fresh_sequence != 0U) {
