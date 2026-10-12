@@ -1,8 +1,59 @@
 {
-  "status": "FAIL",
-  "metrics": {},
-  "warnings": [],
-  "failures": [
-    "No post-RESET motor-off BOOT marker found"
-  ]
+  "status": "PARTIAL_DIAGNOSTIC",
+  "metrics": {
+    "boot_verified": false,
+    "policy_inferred": true,
+    "sampling_policy": "B",
+    "age_p95_bin_us": 1000,
+    "age_p99_bin_us": 1000,
+    "ab": {
+      "initial_nr": 2560,
+      "gyro_started": 237993,
+      "gyro_skipped": 2560,
+      "retry_started": 2559,
+      "retry_ready": 2559,
+      "retry_nr": 0,
+      "retry_expired": 1,
+      "retry_busy": 0,
+      "status_checks_per_1k_ticks": 1010.723,
+      "gyro_read_starts_per_1k_ticks": 999.966,
+      "estimated_i2c_transactions_per_1k_ticks": 2010.689
+    },
+    "clock_error_pct": -0.0793,
+    "sysclk_mhz_estimate": 95.92387,
+    "postcal_status_ready": 237993,
+    "postcal_status_not_ready": 2560,
+    "postcal_status_not_ready_pct": 1.0642,
+    "postcal_fresh_gyro_reads": 237993,
+    "postcal_status_zero_gyro_reads": 0,
+    "fresh_gap_min_us_observed": 228,
+    "fresh_gap_max_us_observed": 2650,
+    "fresh_gap_gt1500_count": 245,
+    "fresh_gap_gt2000_count": 2,
+    "status_poll_gap_max_us_observed": 2650,
+    "consecutive_notready_max": 1,
+    "postcal_TIM11_ticks": 238001,
+    "postcal_reused_gyro_ticks": 10,
+    "gyro_reused_tick_pct": 0.0042,
+    "gyro_completion_age_max_us_observed": 1772,
+    "gyro_completion_age_gt1500_ticks": 9,
+    "host_fit_records": 237,
+    "uart_tx_drop": 0,
+    "clk_seq_missing": 0
+  },
+  "warnings": [
+    "Partial capture: no [BOOT] marker; startup, motor-off state and calibration history cannot be fully verified.",
+    "Missing startup frame: CLOCK_TRIM",
+    "Missing startup frame: CLOCK_PROFILE",
+    "Missing startup frame: CLOCK_DIAG",
+    "Missing startup frame: MPU_SYNC_DIAG",
+    "Missing startup frame: I2C_PROBE",
+    "Missing startup frame: CAL_DONE",
+    "Policy B inferred from skip/retry counters; SYNC_POLICY startup frame was not recorded.",
+    "CAL_DONE missed; IMU reports calibrated but stationarity/retry history was not observed.",
+    "2 accepted-sample gaps exceeded 2ms",
+    "TIM11 sometimes reuses the latest accepted gyro sample",
+    "Some TIM11 ticks observed a gyro read completed over 1.5ms earlier"
+  ],
+  "failures": []
 }
