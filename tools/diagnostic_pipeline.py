@@ -41,7 +41,7 @@ def read_telemetry(path):
 
 def kv(line):
     fields = {}
-    for part in re.split(r"[,\\s]+", line)[1:]:
+    for part in re.split(r"[,\s]+", line)[1:]:
         if "=" in part:
             k, v = part.split("=", 1)
             fields[k.strip()] = v.strip()
