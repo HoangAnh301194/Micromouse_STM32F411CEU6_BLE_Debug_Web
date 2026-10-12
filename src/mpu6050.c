@@ -302,6 +302,7 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->phase_last_sample_irq_us = 0U;
     h->phase_last_sample_main_us = 0U;
     h->phase_last_sample_publish_us = 0U;
+    h->phase_published_irq_sequence = 0U;
 #endif
     MPU6050_ClearNoiseWindow(h);
 
@@ -468,6 +469,7 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->phase_last_sample_irq_us = 0U;
     h->phase_last_sample_main_us = 0U;
     h->phase_last_sample_publish_us = 0U;
+    h->phase_published_irq_sequence = 0U;
 #endif
     MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
@@ -485,6 +487,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     float dt;
 #if defined(MPU_PHASE_AB)
     uint32_t irq_complete_us = 0U;
+    uint32_t irq_sequence = 0U;
 #endif
     int16_t raw;
     I2C_Status status, start;
@@ -495,8 +498,12 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
         now = micros();
 #if defined(MPU_PHASE_AB)
-        if (status == I2C_OK && h->sample_phase == 2U)
+        if (status == I2C_OK && h->sample_phase == 2U) {
+            I2C_GyroCompletionTrace_t irq_trace;
             irq_complete_us = I2C_AsyncGetLastCompletionUs();
+            if (I2C_GetGyroCompletionTrace(&irq_trace))
+                irq_sequence = irq_trace.sequence;
+        }
 #endif
         if (status != I2C_OK) {
             h->error_reads++;
@@ -638,6 +645,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
 #if defined(MPU_PHASE_AB)
                 /* Same point for both A/B channels: just before commit. */
                 publish_us = micros();
+                h->phase_published_irq_sequence = irq_sequence;
 #endif
                 ++h->published_sequence;
                 h->published_valid = 1U;
@@ -831,6 +839,9 @@ uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *h,
     out->completed_us = h->published_completed_us;
     out->sequence = h->published_sequence;
     out->valid = h->published_valid;
+#if defined(MPU_PHASE_AB)
+    out->source_irq_sequence = h->phase_published_irq_sequence;
+#endif
     if (!primask) __enable_irq();
     return out->valid;
 }
