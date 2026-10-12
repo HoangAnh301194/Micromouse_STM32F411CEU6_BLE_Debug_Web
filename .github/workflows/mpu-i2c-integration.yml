@@ -5,6 +5,7 @@ on:
     branches:
       - feature/mpu-i2c-integration-rc1
       - feature/mpu-freshness-phase-ab
+      - feature/mpu-tim11-tick-scheduler-ab
   pull_request:
     paths:
       - 'src/mpu6050.c'
@@ -17,6 +18,7 @@ on:
       - 'src/i2c.c'
       - 'include/i2c.h'
       - 'tools/mpu_phase_ab_analyze.py'
+      - 'tools/mpu_tick_scheduler_ab_compare.py'
       - 'platformio.ini'
       - 'tools/mpu_integration_regression.py'
 
@@ -45,3 +47,7 @@ jobs:
         run: python tools/mpu_phase_ab_analyze.py --self-test
       - name: Build matched IRQ-vs-publication phase trace
         run: python -m platformio run -e mpu_phase_ab_96m_trim25
+      - name: Controlled legacy-vs-TIM11 host A/B self-test
+        run: python tools/mpu_tick_scheduler_ab_compare.py --self-test
+      - name: Build tick-synchronized MPU scheduler trial
+        run: python -m platformio run -e mpu_phase_tick_96m_trim25
