@@ -12,6 +12,7 @@ import csv
 import datetime as dt
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -40,7 +41,7 @@ def read_telemetry(path):
 
 def kv(line):
     fields = {}
-    for part in line.split(",")[1:]:
+    for part in re.split(r"[,\\s]+", line)[1:]:
         if "=" in part:
             k, v = part.split("=", 1)
             fields[k.strip()] = v.strip()
@@ -82,6 +83,10 @@ def phases(lines, boot):
     # Cumulative counters are differenced; comparison across RESET is invalid.
     windows = []
     ctrl = grouped["SYNC_CTRL"]
+    # Exclude pre-calibration windows; cumulative counters stay monotonic.
+    cal_pos = max((i for i, item in enumerate(lines) if item.startswith("CAL_DONE,")), default=-1)
+    if cal_pos >= 0:
+        ctrl = [kv(item) for item in lines[cal_pos + 1:] if item.startswith("SYNC_CTRL,")]
     if len(ctrl) > 30:
         baseline = ctrl[0]
         for end_idx in range(30, len(ctrl), 30):
