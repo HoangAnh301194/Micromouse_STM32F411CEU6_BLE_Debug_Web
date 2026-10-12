@@ -675,7 +675,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
                         h->phase_irq_to_publish_max_us = irq_to_publish;
                     if (request_to_irq > h->phase_request_to_irq_max_us)
                         h->phase_request_to_irq_max_us = request_to_irq;
-                    h->phase_last_sample_request_us = h->last_request_us;
+                    h->phase_last_sample_request_us = h->phase_last_request_us;
                     h->phase_last_sample_irq_us = irq_complete_us;
                     h->phase_last_sample_main_us = now;
                     h->phase_last_sample_publish_us = publish_us;
