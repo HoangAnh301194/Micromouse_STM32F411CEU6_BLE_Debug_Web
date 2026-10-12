@@ -279,6 +279,30 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->published_completed_us = 0U;
     h->published_sequence = 0U;
     h->published_valid = 0U;
+#if defined(MPU_PHASE_AB)
+    h->phase_prev_request_us = 0U;
+    h->phase_last_request_us = 0U;
+    h->phase_request_count = 0U;
+    h->phase_request_intervals = 0U;
+    h->phase_request_min_us = 0xFFFFFFFFUL;
+    h->phase_request_max_us = 0U;
+    h->phase_request_gt1050 = 0U;
+    h->phase_request_gt1500 = 0U;
+    h->phase_request_interval_sum_us = 0ULL;
+    h->phase_processed_count = 0U;
+    h->phase_irq_to_main_max_us = 0U;
+    h->phase_irq_to_publish_max_us = 0U;
+    h->phase_main_to_publish_max_us = 0U;
+    h->phase_request_to_irq_max_us = 0U;
+    h->phase_irq_to_main_sum_us = 0ULL;
+    h->phase_irq_to_publish_sum_us = 0ULL;
+    h->phase_main_to_publish_sum_us = 0ULL;
+    h->phase_request_to_irq_sum_us = 0ULL;
+    h->phase_last_sample_request_us = 0U;
+    h->phase_last_sample_irq_us = 0U;
+    h->phase_last_sample_main_us = 0U;
+    h->phase_last_sample_publish_us = 0U;
+#endif
     MPU6050_ClearNoiseWindow(h);
 
     h->init_step = 0U;
@@ -420,6 +444,31 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->yaw_no_deadzone = 0.0f;
     h->yaw_raw = 0.0f;
     h->last_update_us = 0U;
+#if defined(MPU_PHASE_AB)
+    /* New calibration resets experiment window; do not change I2C policy. */
+    h->phase_prev_request_us = 0U;
+    h->phase_last_request_us = 0U;
+    h->phase_request_count = 0U;
+    h->phase_request_intervals = 0U;
+    h->phase_request_min_us = 0xFFFFFFFFUL;
+    h->phase_request_max_us = 0U;
+    h->phase_request_gt1050 = 0U;
+    h->phase_request_gt1500 = 0U;
+    h->phase_request_interval_sum_us = 0ULL;
+    h->phase_processed_count = 0U;
+    h->phase_irq_to_main_max_us = 0U;
+    h->phase_irq_to_publish_max_us = 0U;
+    h->phase_main_to_publish_max_us = 0U;
+    h->phase_request_to_irq_max_us = 0U;
+    h->phase_irq_to_main_sum_us = 0ULL;
+    h->phase_irq_to_publish_sum_us = 0ULL;
+    h->phase_main_to_publish_sum_us = 0ULL;
+    h->phase_request_to_irq_sum_us = 0ULL;
+    h->phase_last_sample_request_us = 0U;
+    h->phase_last_sample_irq_us = 0U;
+    h->phase_last_sample_main_us = 0U;
+    h->phase_last_sample_publish_us = 0U;
+#endif
     MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
 }
@@ -434,6 +483,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     uint32_t duration_us = 0U;
     uint32_t now = micros();
     float dt;
+#if defined(MPU_PHASE_AB)
+    uint32_t irq_complete_us = 0U;
+#endif
     int16_t raw;
     I2C_Status status, start;
     if (!h) return MPU6050_ERROR;
@@ -442,6 +494,10 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         status = I2C_Read2Async_Poll(bytes, &duration_us);
         if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
         now = micros();
+#if defined(MPU_PHASE_AB)
+        if (status == I2C_OK && h->sample_phase == 2U)
+            irq_complete_us = I2C_AsyncGetLastCompletionUs();
+#endif
         if (status != I2C_OK) {
             h->error_reads++;
             if (status == I2C_TIMEOUT) h->timeout_reads++;
@@ -572,13 +628,46 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
             /* Coherent main-to-TIM11 publication: completed sample only. */
             {
                 uint32_t primask = __get_PRIMASK();
+#if defined(MPU_PHASE_AB)
+                uint32_t publish_us;
+#endif
                 __disable_irq();
                 h->published_yaw_deg = h->yaw;
                 h->published_gyro_z_dps = h->gyro_z_filtered;
                 h->published_completed_us = now;
+#if defined(MPU_PHASE_AB)
+                /* Same point for both A/B channels: just before commit. */
+                publish_us = micros();
+#endif
                 ++h->published_sequence;
                 h->published_valid = 1U;
                 if (!primask) __enable_irq();
+#if defined(MPU_PHASE_AB)
+                /* Main-only statistics; no printing/I2C in TIM11. */
+                {
+                    uint32_t irq_to_main = now - irq_complete_us;
+                    uint32_t main_to_publish = publish_us - now;
+                    uint32_t irq_to_publish = publish_us - irq_complete_us;
+                    uint32_t request_to_irq = irq_complete_us - h->phase_last_request_us;
+                    h->phase_processed_count++;
+                    h->phase_irq_to_main_sum_us += irq_to_main;
+                    h->phase_main_to_publish_sum_us += main_to_publish;
+                    h->phase_irq_to_publish_sum_us += irq_to_publish;
+                    h->phase_request_to_irq_sum_us += request_to_irq;
+                    if (irq_to_main > h->phase_irq_to_main_max_us)
+                        h->phase_irq_to_main_max_us = irq_to_main;
+                    if (main_to_publish > h->phase_main_to_publish_max_us)
+                        h->phase_main_to_publish_max_us = main_to_publish;
+                    if (irq_to_publish > h->phase_irq_to_publish_max_us)
+                        h->phase_irq_to_publish_max_us = irq_to_publish;
+                    if (request_to_irq > h->phase_request_to_irq_max_us)
+                        h->phase_request_to_irq_max_us = request_to_irq;
+                    h->phase_last_sample_request_us = h->last_request_us;
+                    h->phase_last_sample_irq_us = irq_complete_us;
+                    h->phase_last_sample_main_us = now;
+                    h->phase_last_sample_publish_us = publish_us;
+                }
+#endif
             }
         }
     }
@@ -642,6 +731,26 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         (uint32_t)(now - h->last_request_us) >= MPU_SAMPLE_PERIOD_US) {
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
         if (start == I2C_OK) {
+#if defined(MPU_PHASE_AB)
+            if (h->calibrated) {
+                /* Actual START setup timestamp inside I2C driver. */
+                uint32_t stamp = I2C_AsyncGetLastStartUs();
+                if (h->phase_prev_request_us) {
+                    uint32_t gap_us = stamp - h->phase_prev_request_us;
+                    h->phase_request_intervals++;
+                    h->phase_request_interval_sum_us += gap_us;
+                    if (gap_us < h->phase_request_min_us)
+                        h->phase_request_min_us = gap_us;
+                    if (gap_us > h->phase_request_max_us)
+                        h->phase_request_max_us = gap_us;
+                    if (gap_us > 1050U) h->phase_request_gt1050++;
+                    if (gap_us > 1500U) h->phase_request_gt1500++;
+                }
+                h->phase_prev_request_us = stamp;
+                h->phase_last_request_us = stamp;
+                h->phase_request_count++;
+            }
+#endif
             h->last_request_us = now;
 #if defined(MPU_SAMPLING_POLICY_B)
             h->retry_count = 0U;
@@ -669,6 +778,42 @@ uint8_t MPU6050_NeedsImmediatePoll(MPU6050_Handle_t *h)
 #endif
     return (h->sample_phase == 3U) ? 1U : 0U;
 }
+
+#if defined(MPU_PHASE_AB)
+void MPU6050_GetPhaseStats(const MPU6050_Handle_t *h,
+                           MPU6050_PhaseStats_t *out)
+{
+    if (!h || !out) return;
+    /* Main context only: 64-bit accumulation is intentionally not atomic
+     * against any other main task, but TIM11 never writes these counters. */
+    out->request_count = h->phase_request_count;
+    out->request_intervals = h->phase_request_intervals;
+    out->request_min_us = h->phase_request_intervals ?
+                          h->phase_request_min_us : 0U;
+    out->request_max_us = h->phase_request_max_us;
+    out->request_gt1050 = h->phase_request_gt1050;
+    out->request_gt1500 = h->phase_request_gt1500;
+    out->request_interval_avg_us = h->phase_request_intervals ?
+        (uint32_t)(h->phase_request_interval_sum_us / h->phase_request_intervals) : 0U;
+    out->processed_count = h->phase_processed_count;
+    out->irq_to_main_avg_us = h->phase_processed_count ?
+        (uint32_t)(h->phase_irq_to_main_sum_us / h->phase_processed_count) : 0U;
+    out->irq_to_main_max_us = h->phase_irq_to_main_max_us;
+    out->irq_to_publish_avg_us = h->phase_processed_count ?
+        (uint32_t)(h->phase_irq_to_publish_sum_us / h->phase_processed_count) : 0U;
+    out->irq_to_publish_max_us = h->phase_irq_to_publish_max_us;
+    out->main_to_publish_avg_us = h->phase_processed_count ?
+        (uint32_t)(h->phase_main_to_publish_sum_us / h->phase_processed_count) : 0U;
+    out->main_to_publish_max_us = h->phase_main_to_publish_max_us;
+    out->request_to_irq_avg_us = h->phase_processed_count ?
+        (uint32_t)(h->phase_request_to_irq_sum_us / h->phase_processed_count) : 0U;
+    out->request_to_irq_max_us = h->phase_request_to_irq_max_us;
+    out->last_request_us = h->phase_last_sample_request_us;
+    out->last_irq_us = h->phase_last_sample_irq_us;
+    out->last_main_us = h->phase_last_sample_main_us;
+    out->last_publish_us = h->phase_last_sample_publish_us;
+}
+#endif
 
 uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *h,
                             MPU6050_Snapshot_t *out)
