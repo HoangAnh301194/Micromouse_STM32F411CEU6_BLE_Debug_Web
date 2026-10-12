@@ -43,6 +43,10 @@ typedef struct {
     uint32_t age_over1000_ticks;
     uint32_t age_over1500_ticks;
     uint32_t age_max_us;
+    /* Approximate percentile upper bounds based on 250us histogram bins.
+     * Last bin represents >=1750us, so returns 1750us as a lower bound. */
+    uint32_t age_p95_bin_us;
+    uint32_t age_p99_bin_us;
 } Control_ImuSync_t;
 void Control_GetImuSync(Control_ImuSync_t *out);
 #endif
