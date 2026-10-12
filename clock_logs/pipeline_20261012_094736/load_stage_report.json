@@ -1,0 +1,34 @@
+{
+  "status": "FAIL_OR_INCOMPLETE",
+  "motor_off_only": true,
+  "stages": {
+    "0": {
+      "frames": 68,
+      "ticks": 59002,
+      "max_cycles": 195,
+      "max_us_nominal_96mhz": 2.031,
+      "over800": 0,
+      "over1000": 0
+    },
+    "1": {
+      "frames": 60,
+      "ticks": 59001,
+      "max_cycles": 791,
+      "max_us_nominal_96mhz": 8.24,
+      "over800": 0,
+      "over1000": 0
+    },
+    "2": {
+      "frames": 109,
+      "ticks": 108001,
+      "max_cycles": 2190,
+      "max_us_nominal_96mhz": 22.812,
+      "over800": 0,
+      "over1000": 0
+    }
+  },
+  "failures": [
+    "Stage 0: ticks decreased"
+  ],
+  "note": "Cycles/96MHz is nominal; physical timing uncertainty applies. Observed maxima are not formal WCET."
+}
