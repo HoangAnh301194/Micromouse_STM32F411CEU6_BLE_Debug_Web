@@ -269,11 +269,16 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->diag_ab_retry_notready = 0U;
     h->diag_ab_retry_expired = 0U;
     h->diag_ab_retry_busy = 0U;
-#if defined(MPU_FRESHNESS_AB_B)
-    h->diag_ab_retry_count = 0U;
-    h->diag_ab_retry_due_us = 0U;
 #endif
+#if defined(MPU_SAMPLING_POLICY_B)
+    h->retry_count = 0U;
+    h->retry_due_us = 0U;
 #endif
+    h->published_yaw_deg = 0.0f;
+    h->published_gyro_z_dps = 0.0f;
+    h->published_completed_us = 0U;
+    h->published_sequence = 0U;
+    h->published_valid = 0U;
     MPU6050_ClearNoiseWindow(h);
 
     h->init_step = 0U;
@@ -397,6 +402,14 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->yaw_no_deadzone = 0.0f;
     h->yaw_raw = 0.0f;
     h->last_update_us = 0U;
+    /* Clear published validity before a new calibration; never expose
+     * a previously calibrated value during warmup/retry. */
+    {
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        h->published_valid = 0U;
+        if (!primask) __enable_irq();
+    }
     MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
 }
@@ -449,37 +462,38 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
                     h->diag_notready_run_max = h->diag_notready_run;
             }
 #endif
-#if defined(MPU_FRESHNESS_DIAG)
+#if defined(MPU_SAMPLING_POLICY_B)
             if (!h->last_status_ready) {
-#if defined(MPU_FRESHNESS_AB_B)
-                if (h->diag_ab_retry_count == 0U)
+#if defined(MPU_FRESHNESS_DIAG)
+                if (h->retry_count == 0U)
                     ++h->diag_ab_initial_notready;
-                /* B: no gyro register transfer when DATA_RDY was 0.
-                 * Keep the first request timestamp anchored to its original
-                 * 1ms slot; at most one short nonblocking status recheck. */
                 ++h->diag_ab_gyro_skipped;
-                if (h->diag_ab_retry_count == 0U &&
-                    (uint32_t)(now - h->last_request_us) <= 600U) {
-                    h->diag_ab_retry_count = 1U;
-                    h->diag_ab_retry_due_us = now + 220U;
-                    h->sample_phase = 4U; /* retry_wait */
-                    SystemTimer_ArmWakeAfterUs(220U);
+#endif
+                /* Production Policy B: never consume stale gyro data.
+                 * Allow one delayed, nonblocking status retry per slot. */
+                if (h->retry_count == 0U &&
+                    (uint32_t)(now - h->last_request_us) <= MPU_POLICY_B_RETRY_START_MAX_US) {
+                    h->retry_count = 1U;
+                    h->retry_due_us = now + MPU_POLICY_B_RETRY_DELAY_US;
+                    h->sample_phase = 4U;
+                    SystemTimer_ArmWakeAfterUs(MPU_POLICY_B_RETRY_DELAY_US);
                 } else {
                     h->sample_phase = 0U;
-                    if (h->diag_ab_retry_count != 0U)
+#if defined(MPU_FRESHNESS_DIAG)
+                    if (h->retry_count != 0U)
                         ++h->diag_ab_retry_notready;
-                    else ++h->diag_ab_retry_expired;
+                    else
+                        ++h->diag_ab_retry_expired;
+#endif
                 }
                 return MPU6050_OK;
-#else
-                /* A: retain the original status=0 gyro read. */
-                ++h->diag_ab_initial_notready;
+            }
+#if defined(MPU_FRESHNESS_DIAG)
+            if (h->retry_count != 0U) ++h->diag_ab_retry_ready;
 #endif
-            }
-#if defined(MPU_FRESHNESS_AB_B)
-            else if (h->diag_ab_retry_count != 0U) {
-                ++h->diag_ab_retry_ready;
-            }
+#else
+#if defined(MPU_FRESHNESS_DIAG)
+            if (!h->last_status_ready) ++h->diag_ab_initial_notready;
 #endif
 #endif
             /* Async status transfer finished; gyro transaction starts on
@@ -545,31 +559,48 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
                 }
             }
             h->last_update_us = now;
+            /* Coherent main-to-TIM11 publication: completed sample only. */
+            {
+                uint32_t primask = __get_PRIMASK();
+                __disable_irq();
+                h->published_yaw_deg = h->yaw;
+                h->published_gyro_z_dps = h->gyro_z_filtered;
+                h->published_completed_us = now;
+                ++h->published_sequence;
+                h->published_valid = 1U;
+                if (!primask) __enable_irq();
+            }
         }
     }
 
-#if defined(MPU_FRESHNESS_AB_B)
+#if defined(MPU_SAMPLING_POLICY_B)
     if (h->sample_phase == 4U) {
         /* TIM5 CC1 may wake main after 220us. Never spin/busy-wait: if
          * not due, return to WFI; if the slot expires, abandon retry. */
         now = micros();
-        if ((uint32_t)(now - h->last_request_us) >= 850U) {
+        if ((uint32_t)(now - h->last_request_us) >= MPU_POLICY_B_RETRY_END_MAX_US) {
+            #if defined(MPU_FRESHNESS_DIAG)
             ++h->diag_ab_retry_expired;
+            #endif
             h->sample_phase = 0U;
             SystemTimer_CancelWake();
             return MPU6050_OK;
         }
-        if ((int32_t)(now - h->diag_ab_retry_due_us) < 0)
+        if ((int32_t)(now - h->retry_due_us) < 0)
             return MPU6050_OK;
         SystemTimer_CancelWake();
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
         if (start == I2C_OK) {
+            #if defined(MPU_FRESHNESS_DIAG)
             ++h->diag_ab_retry_started;
+            #endif
             h->sample_phase = 1U;
         } else {
             /* If busy, do NOT spin to steal CPU time from TIM11. */
             if (start == I2C_BUSY) {
+                #if defined(MPU_FRESHNESS_DIAG)
                 ++h->diag_ab_retry_busy;
+                #endif
             } else {
                 ++h->error_reads;
                 h->last_i2c_error = start;
@@ -602,8 +633,8 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
         if (start == I2C_OK) {
             h->last_request_us = now;
-#if defined(MPU_FRESHNESS_AB_B)
-            h->diag_ab_retry_count = 0U;
+#if defined(MPU_SAMPLING_POLICY_B)
+            h->retry_count = 0U;
 #endif
             h->sample_phase = 1U;
         } else if (start == I2C_BUSY) {
@@ -619,14 +650,34 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
 uint8_t MPU6050_NeedsImmediatePoll(MPU6050_Handle_t *h)
 {
     if (!h) return 0U;
-#if defined(MPU_FRESHNESS_AB_B)
+#if defined(MPU_SAMPLING_POLICY_B)
     /* If compare IRQ fired before main checked, prevent sleeping with a
      * retry already due. TIM11 provides fallback wake if the race is lost. */
     if (h->sample_phase == 4U &&
-        (int32_t)(micros() - h->diag_ab_retry_due_us) >= 0)
+        (int32_t)(micros() - h->retry_due_us) >= 0)
         return 1U;
 #endif
     return (h->sample_phase == 3U) ? 1U : 0U;
+}
+
+uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *h,
+                            MPU6050_Snapshot_t *out)
+{
+    uint32_t primask;
+    if (!out) return 0U;
+    out->valid = 0U;
+    if (!h) return 0U;
+    /* Safe in main and in TIM11: producer runs only in main; producer
+     * disables interrupts briefly during publication. */
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->yaw_deg = h->published_yaw_deg;
+    out->gyro_z_dps = h->published_gyro_z_dps;
+    out->completed_us = h->published_completed_us;
+    out->sequence = h->published_sequence;
+    out->valid = h->published_valid;
+    if (!primask) __enable_irq();
+    return out->valid;
 }
 
 float MPU6050_GetYaw(MPU6050_Handle_t *h) { return h ? h->yaw : 0.0f; }
@@ -638,8 +689,22 @@ void MPU6050_ResetYaw(MPU6050_Handle_t *h)
     h->yaw_no_deadzone = 0.0f;
     h->yaw_raw = 0.0f;
     h->last_update_us = 0U;
+    { uint32_t primask = __get_PRIMASK();
+      __disable_irq();
+      h->published_yaw_deg = 0.0f;
+      if (!primask) __enable_irq();
+    }
 }
-void MPU6050_SetYaw(MPU6050_Handle_t *h, float angle) { if (h) h->yaw = angle; }
+void MPU6050_SetYaw(MPU6050_Handle_t *h, float angle)
+{
+    uint32_t primask;
+    if (!h) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    h->yaw = angle;
+    h->published_yaw_deg = angle;
+    if (!primask) __enable_irq();
+}
 
 MPU6050_Status MPU6050_IsReady(MPU6050_Handle_t *h)
 {
