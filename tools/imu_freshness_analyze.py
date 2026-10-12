@@ -264,6 +264,42 @@ def self_test():
     assert not failures, failures
     assert metrics["postcal_status_not_ready_pct"] > 0
     assert metrics["gyro_reused_tick_pct"] > 0
+
+    # Regression check for both newly tagged A/B diagnostic variants.
+    # Build the A/B synthetic captures with cumulative counters and the
+    # approximate sample-age histogram fields.
+    def with_policy(policy):
+        data = [x.replace("age_gt1500=1",
+                          "age_gt1500=1,p95_bin=750,p99_bin=1500")
+                if x.startswith("SYNC_CTRL,") else x for x in lines]
+        data.insert(5, "SYNC_POLICY,policy=" + policy +
+                    ",skip_on_nr=" + ("1" if policy == "B" else "0") +
+                    ",retry_us=220,retry_max=1,motor_off=1")
+        for i in range(155):
+            n = i + 1
+            data.append(
+                "SYNC_AB,initial_nr=" + str(4*n) +
+                ",gyro_started=" + str((1000 if policy == "B" else 1004)*n) +
+                ",gyro_skipped=" + str(4*n if policy == "B" else 0) +
+                ",retry_started=" + str(4*n if policy == "B" else 0) +
+                ",retry_ready=" + str(4*n if policy == "B" else 0) +
+                ",retry_nr=0,retry_expired=0,retry_busy=0")
+        if policy == "B":
+            data = [x.split(",stale=")[0] + ",stale=0," +
+                    x.split(",stale=", 1)[1].split(",", 1)[1]
+                    if x.startswith("SYNC_SENSOR,") else x
+                    for x in data]
+        return data
+
+    fa, _, ma = validate(fake, with_policy("A"))
+    fb, _, mb = validate(fake, with_policy("B"))
+    assert not fa, fa
+    assert not fb, fb
+    assert ma["sampling_policy"] == "A"
+    assert mb["sampling_policy"] == "B"
+    assert mb["ab"]["gyro_skipped"] > 0
+    assert mb["ab"]["retry_started"] > 0
+
     bad = dict(fake, seq_missing_count=1)
     assert any("Missing CLK" in x for x in validate(bad, lines)[0])
     bad_lines = [x.replace("trim=25", "trim=26") if x.startswith("CLK,")
