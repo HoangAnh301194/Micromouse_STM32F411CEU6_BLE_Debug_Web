@@ -60,6 +60,33 @@ def analyze(lines, min_phases=30, min_valid_mint=150):
     if len(phase_seqs)<2:
         return {"status":"INCOMPLETE","failures":sorted(set(issues)),
                 "warnings":warnings,"integration_gate":old.get("status")}
+    # Check every five-second triplet, not just first/last: a truncated
+    # UART row must not masquerade as a valid paired experiment.
+    expected = {
+        "REQ":("seq","n","intervals","avg","min","max","gt1050","gt1500",
+               "t_request","t_complete","t_main","t_publish"),
+        "LAT":("seq","n","r2irq_avg","r2irq_max","irq2main_avg",
+               "irq2main_max","main2pub_avg","main2pub_max",
+               "irq2pub_avg","irq2pub_max"),
+        "PAIR":("seq","n","irq_reuse","pub_reuse","irq_ahead",
+                "contention","irq_age_max","main_age_max","irq_seq","pub_seq")
+    }
+    for seq in phase_seqs:
+        for label,group in (("REQ",req_by),("LAT",lat_by),("PAIR",pair_by)):
+            for field in expected[label]:
+                numeric(group[seq],field)
+        ts=[numeric(req_by[seq],k) for k in
+            ("t_request","t_complete","t_main","t_publish")]
+        if ts != sorted(ts):
+            issues.append("Timestamp ordering failed at phase seq "+str(seq))
+    for group,keys,label in ((req_by,("n","intervals","gt1050","gt1500"),"request"),
+                             (lat_by,("n",),"latency"),
+                             (pair_by,("n","irq_reuse","pub_reuse",
+                                       "irq_ahead","contention"),"pair")):
+        for name in keys:
+            values=[numeric(group[t],name) for t in phase_seqs]
+            if any(y<x for x,y in zip(values,values[1:])):
+                issues.append("Counter decreased within "+label+": "+name)
     first,last=phase_seqs[0],phase_seqs[-1]
     r0,r1=req_by[first],req_by[last]
     l0,l1=lat_by[first],lat_by[last]
@@ -195,6 +222,11 @@ def self_test():
     bad=[x.replace("motor_off=1,policy=B","motor_off=0,policy=B") for x in lines]
     assert analyze(bad)["status"]=="FAIL_TRACE"
     bad=[x.replace("t_publish=200254","t_publish=200100") for x in lines]
+    assert analyze(bad)["status"]=="FAIL_TRACE"
+    bad=[x for x in lines]
+    bad=[x.replace("irq2main_max=30,main2pub_avg",
+                   "irq2main_max=x,main2pub_avg") if
+         x.startswith("PHASE_LAT,seq=105,") else x for x in bad]
     assert analyze(bad)["status"]=="FAIL_TRACE"
     bad=lines+[lines[0]]
     assert analyze(bad)["status"]=="FAIL_TRACE"
