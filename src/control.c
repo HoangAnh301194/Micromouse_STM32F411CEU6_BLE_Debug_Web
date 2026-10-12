@@ -80,7 +80,6 @@ static volatile uint32_t phase_irq_age_max = 0U;
 static volatile uint32_t phase_main_age_max = 0U;
 static volatile uint32_t phase_last_irq_seq = 0U;
 static volatile uint32_t phase_last_published_seq = 0U;
-static uint32_t phase_sequence_offset = 0U;
 static uint8_t phase_armed = 0U;
 
 void Control_GetPhasePair(Control_PhasePair_t *out)
@@ -207,7 +206,6 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
     phase_irq_ahead_ticks = phase_contention = 0U;
     phase_irq_age_max = phase_main_age_max = 0U;
     phase_last_irq_seq = phase_last_published_seq = 0U;
-    phase_sequence_offset = 0U;
     phase_armed = 0U;
 #endif
     control_running = 0;
@@ -361,7 +359,6 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
                     uint32_t main_age_us = entry_us - sample.completed_us;
                     if (!phase_armed) {
                         /* Offset contains all gyro reads during calibration. */
-                        phase_sequence_offset = irq.sequence - sample.sequence;
                         phase_last_irq_seq = irq.sequence;
                         phase_last_published_seq = sample.sequence;
                         phase_armed = 1U;
@@ -370,8 +367,8 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
                         if (irq.sequence == phase_last_irq_seq) ++phase_irq_reused;
                         if (sample.sequence == phase_last_published_seq)
                             ++phase_published_reused;
-                        if ((uint32_t)(irq.sequence - sample.sequence) >
-                            phase_sequence_offset)
+                        if (sample.source_irq_sequence != 0U &&
+                            irq.sequence > sample.source_irq_sequence)
                             ++phase_irq_ahead_ticks;
                         phase_last_irq_seq = irq.sequence;
                         phase_last_published_seq = sample.sequence;
