@@ -1,0 +1,25 @@
+{
+  "status": "PASS_INTEGRATION_MOTOR_OFF",
+  "failures": [],
+  "warnings": [
+    "Reuse > 0.15%; investigate vs reference 0.0441%"
+  ],
+  "metrics": {
+    "frames": 225,
+    "control_ticks": 224000,
+    "reused": 449,
+    "reused_pct": 0.20045,
+    "gyro_age_gt1500_ticks": 444,
+    "invalid_or_expired_ticks": 0,
+    "fresh_gyro_reads": 223771,
+    "status_notready": 1385,
+    "max_ISR_cycles_observed": 186
+  },
+  "baseline_diagnostic_rc1": {
+    "gyro_reused_pct": 0.0441,
+    "tim11_stage2_max_us_nominal": 22.844,
+    "fresh_gaps_over_2ms": 2,
+    "gyro_age_gt1500": 99
+  },
+  "note": "Standalone motor-OFF acceptance, not proof of production motion reliability or formal WCET."
+}
