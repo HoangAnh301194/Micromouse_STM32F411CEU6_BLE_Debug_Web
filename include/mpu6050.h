@@ -191,6 +191,20 @@ typedef struct {
   uint32_t diag_status_gap_max_us;
   uint32_t diag_notready_run;
   uint32_t diag_notready_run_max;
+  /* Comparable counters for the A/B experiment; only B changes sampling.
+   * "initial" means the first status poll in a nominal 1ms acquisition. */
+  uint32_t diag_ab_initial_notready;
+  uint32_t diag_ab_gyro_started;
+  uint32_t diag_ab_gyro_skipped;
+  uint32_t diag_ab_retry_started;
+  uint32_t diag_ab_retry_ready;
+  uint32_t diag_ab_retry_notready;
+  uint32_t diag_ab_retry_expired;
+  uint32_t diag_ab_retry_busy;
+#if defined(MPU_FRESHNESS_AB_B)
+  uint8_t diag_ab_retry_count;
+  uint32_t diag_ab_retry_due_us;
+#endif
 #endif
 
   /* Boot-only diagnostic: identify exact failed MPU register operation. */
