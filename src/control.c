@@ -48,6 +48,28 @@ void Control_GetLoadStats(Control_LoadStats_t *out)
     if (!primask) __enable_irq();
 }
 #endif
+#if defined(MPU_INTEGRATION_BENCH)
+static volatile uint32_t integ_ticks = 0U;
+static volatile uint32_t integ_reused = 0U;
+static volatile uint32_t integ_age_over1500 = 0U;
+static volatile uint32_t integ_age_max = 0U;
+static volatile uint32_t integ_missing = 0U;
+static volatile uint32_t integ_last_sequence = 0U;
+
+void Control_GetIntegrationStats(Control_IntegrationStats_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->ticks = integ_ticks;
+    out->reused = integ_reused;
+    out->age_over1500 = integ_age_over1500;
+    out->age_max_us = integ_age_max;
+    out->missing_or_expired = integ_missing;
+    if (!primask) __enable_irq();
+}
+#endif
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile uint8_t control_diagnostic_only = 0;
@@ -145,6 +167,10 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
     Control_SetLoadStage(0U);
 #endif
     control_mpu = mpu_handle;
+#if defined(MPU_INTEGRATION_BENCH)
+    integ_ticks = integ_reused = integ_age_over1500 = 0U;
+    integ_age_max = integ_missing = integ_last_sequence = 0U;
+#endif
     control_running = 0;
     control_tick_count = 0;
     timing_last_entry_us = 0U;
@@ -275,6 +301,22 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         ++sync_age_hist[(age_us >= 1750U) ? 7U : (age_us / 250U)];
     }
 #endif
+#if defined(MPU_INTEGRATION_BENCH)
+    {
+        MPU6050_Snapshot_t sample;
+        if (MPU6050_GetSnapshot(control_mpu, &sample)) {
+            uint32_t age_us = entry_us - sample.completed_us;
+            ++integ_ticks;
+            if (sample.sequence == integ_last_sequence) ++integ_reused;
+            if (age_us > 1500U) ++integ_age_over1500;
+            if (age_us > integ_age_max) integ_age_max = age_us;
+            if (age_us > 3000U) ++integ_missing;
+            integ_last_sequence = sample.sequence;
+        } else {
+            ++integ_missing;
+        }
+    }
+#endif
     if (control_diagnostic_only) {
 #if defined(CONTROL_LOAD_DIAG)
         /* Benchmark computational load ONLY. Motor_Init is never called.
@@ -304,7 +346,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     /*
      * Hard real-time path:
      * 1. Update encoder snapshot.
-     * 2. Advance MPU6050 DMA/update state.
+     * 2. Consume a coherent, completed MPU snapshot (no I2C in TIM11).
      * 3. Consume a completed IR scan and immediately schedule the next scan.
      * 4. Execute the motion controller using one coherent sensor snapshot.
      */
@@ -330,11 +372,19 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     if (MotorTest_IsRunning()) { Control_TimingFinish(start_cycles); return; }
 
     if (control_mpu != 0) {
-        Motion_Update(CONTROL_DT_S,
-                      Encoder_GetLeftCount(),
-                      Encoder_GetRightCount(),
-                      MPU6050_GetYaw(control_mpu),
-                      MPU6050_GetGyroZ(control_mpu));
+        MPU6050_Snapshot_t imu_snapshot;
+        if (MPU6050_GetSnapshot(control_mpu, &imu_snapshot) &&
+            (uint32_t)(entry_us - imu_snapshot.completed_us) <= 3000U) {
+            Motion_Update(CONTROL_DT_S,
+                          Encoder_GetLeftCount(),
+                          Encoder_GetRightCount(),
+                          imu_snapshot.yaw_deg,
+                          imu_snapshot.gyro_z_dps);
+        } else {
+            /* No valid/calibrated or sufficiently recent IMU data:
+             * prevent motion from consuming an uninitialized/stale yaw. */
+            Motion_Stop();
+        }
     }
     Control_TimingFinish(start_cycles);
 }
