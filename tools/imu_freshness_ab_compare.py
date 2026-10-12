@@ -15,11 +15,19 @@ import pathlib
 import sys
 
 
-def load(path: pathlib.Path, mode: str) -> dict:
+def load(path: pathlib.Path, mode: str, allow_partial=False) -> dict:
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("status") != "PASS_DIAGNOSTIC" or data.get("failures"):
-        raise ValueError(f"{mode}: diagnostic failed; compare only valid runs.")
+    status = data.get("status")
+    if data.get("failures") or status not in (
+        ("PASS_DIAGNOSTIC", "PARTIAL_DIAGNOSTIC")
+        if allow_partial else ("PASS_DIAGNOSTIC",)
+    ):
+        raise ValueError(f"{mode}: status={status!r}; require full PASS or "
+                         "explicit --allow-partial for valid late-start captures.")
     m = data.get("metrics", {})
+    if status == "PARTIAL_DIAGNOSTIC":
+        if m.get("boot_verified") is not False or not m.get("policy_inferred"):
+            raise ValueError(f"{mode}: partial report lacks explicit boot/policy caveats")
     if m.get("sampling_policy") != mode:
         raise ValueError(f"Expected mode {mode} in {path}, got {m.get('sampling_policy')!r}")
     if m.get("postcal_TIM11_ticks", 0) < 150000:
@@ -148,6 +156,9 @@ def main():
     parser.add_argument("--a", type=pathlib.Path, help="A report JSON")
     parser.add_argument("--b", type=pathlib.Path, help="B report JSON")
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--allow-partial", action="store_true",
+                        help="Provisional comparison of missing-boot captures; "
+                             "NEVER a firmware approval")
     args = parser.parse_args()
     if args.self_test:
         self_test()
@@ -155,13 +166,18 @@ def main():
     if args.a is None or args.b is None:
         parser.error("Supply --a and --b or --self-test")
     try:
-        a = load(args.a, "A")
-        b = load(args.b, "B")
+        a = load(args.a, "A", allow_partial=args.allow_partial)
+        b = load(args.b, "B", allow_partial=args.allow_partial)
         result = compare(a, b)
     except (ValueError, KeyError, OSError, TypeError) as exc:
         print("FAIL:", exc, file=sys.stderr)
         sys.exit(2)
     print("MPU6050 DATA_RDY A/B comparison (motor OFF)")
+    if args.allow_partial and (
+        not a.get("boot_verified", True) or not b.get("boot_verified", True)
+    ):
+        print("PROVISIONAL / INCOMPLETE STARTUP EVIDENCE: "
+              "do not deploy from these logs.")
     print(result["conclusion"])
     print(f"{'Metric':46s} {'A':>12s} {'B':>12s} {'B-A':>12s}")
     for row in result["metrics"]:
