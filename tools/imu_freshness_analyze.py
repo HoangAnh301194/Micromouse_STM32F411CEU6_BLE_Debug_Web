@@ -62,6 +62,16 @@ def validate(report: dict, lines: list[str]):
     timing = require("TIMING")
     clk = require("CLK")
     cal = require("CAL_DONE")
+    policy_rows = selected("SYNC_POLICY")
+    ab_frames = selected("SYNC_AB")
+    mode = policy_rows[-1].get("policy", "legacy") if policy_rows else "legacy"
+    if mode not in ("A", "B", "legacy"):
+        failures.append("Unknown SYNC_POLICY")
+    if mode in ("A", "B"):
+        if policy_rows[-1].get("motor_off") != "1":
+            failures.append("A/B profile is not confirmed motor-off")
+        if len(ab_frames) < 150:
+            failures.append("Missing A/B diagnostic counters")
     if any(x.startswith("BOOT_FAIL") for x in lines):
         failures.append("MCU reported boot failure")
     if trim and (trim[-1].get("active") != "25" or trim[-1].get("requested") != "25"):
@@ -107,13 +117,15 @@ def validate(report: dict, lines: list[str]):
 
     # Work only AFTER calibration, to avoid treating initialization as
     # normal operation. Counters are cumulative from MCU boot.
-    sensor_after, ctrl_after = sensor, ctrl
+    sensor_after, ctrl_after, ab_after = sensor, ctrl, ab_frames
     if cal and lines:
         end_cal = max(i for i, x in enumerate(lines) if x.startswith("CAL_DONE,"))
         sids = [i for i, x in enumerate(lines) if x.startswith("SYNC_SENSOR,")]
         cids = [i for i, x in enumerate(lines) if x.startswith("SYNC_CTRL,")]
+        aids = [i for i, x in enumerate(lines) if x.startswith("SYNC_AB,")]
         sensor_after = [sensor[j] for j, i in enumerate(sids) if i > end_cal]
         ctrl_after = [ctrl[j] for j, i in enumerate(cids) if i > end_cal]
+        ab_after = [ab_frames[j] for j, i in enumerate(aids) if i > end_cal]
     if len(sensor_after) < 2 or len(ctrl_after) < 2:
         failures.append("Not enough post-calibration SYNC data")
         return failures, cautions, {}
@@ -146,8 +158,12 @@ def validate(report: dict, lines: list[str]):
     total_ticks = count_delta(ctrl_after, "ticks")
     repeated_ticks = count_delta(ctrl_after, "repeat")
     aged_ticks = count_delta(ctrl_after, "age_gt1500")
-    if abs(ready - fresh) > 3 or abs(notready - stale) > 3:
-        cautions.append("DATA_RDY status count differs from gyro-read completion counts")
+    if abs(ready - fresh) > 3:
+        cautions.append("DATA_RDY ready count differs from gyro-read completion count")
+    if mode != "B" and abs(notready - stale) > 3:
+        cautions.append("DATA_RDY not-ready count differs from stale gyro-read count")
+    if mode == "B" and stale != 0:
+        failures.append("Policy B unexpectedly read gyro with DATA_RDY=0")
     if total_ticks <= 0 or ready + notready <= 0:
         failures.append("Insufficient accepted post-calibration sensor/control counters")
     if fresh_gap_over2000:
@@ -156,7 +172,42 @@ def validate(report: dict, lines: list[str]):
         cautions.append("TIM11 sometimes reuses the latest accepted gyro sample")
     if aged_ticks:
         cautions.append("Some TIM11 ticks observed a gyro read completed over 1.5ms earlier")
+    ab_metrics = {}
+    if mode in ("A", "B"):
+        if len(ab_after) < 2:
+            failures.append("Not enough post-calibration SYNC_AB frames")
+        else:
+            names = ("initial_nr", "gyro_started", "gyro_skipped",
+                     "retry_started", "retry_ready", "retry_nr",
+                     "retry_expired", "retry_busy")
+            ab_metrics = {name: count_delta(ab_after, name) for name in names}
+            ab_metrics["status_checks_per_1k_ticks"] = round(
+                1000.0 * (ready + notready) / max(1, total_ticks), 3)
+            ab_metrics["gyro_read_starts_per_1k_ticks"] = round(
+                1000.0 * ab_metrics["gyro_started"] / max(1, total_ticks), 3)
+            ab_metrics["estimated_i2c_transactions_per_1k_ticks"] = round(
+                1000.0 * (ready + notready + ab_metrics["gyro_started"])
+                / max(1, total_ticks), 3)
+            if mode == "A" and (
+                ab_metrics["gyro_skipped"] != 0 or
+                ab_metrics["retry_started"] != 0):
+                failures.append("A control firmware unexpectedly skipped/retried gyro")
+            if mode == "B":
+                if abs(ab_metrics["gyro_skipped"] - notready) > 3:
+                    cautions.append("B skipped-gyro count differs from DATA_RDY=0 statuses")
+                if ab_metrics["retry_started"] > ab_metrics["initial_nr"] + 3:
+                    failures.append("B retry count exceeded single-retry bound")
+                if ab_metrics["retry_nr"] + ab_metrics["retry_ready"] > (
+                    ab_metrics["retry_started"] + 3
+                ):
+                    failures.append("B retry outcome count exceeded starts")
+                if ab_metrics["retry_busy"]:
+                    cautions.append("Some B retries encountered a busy I2C bus")
     metrics = {
+        "sampling_policy": mode,
+        "age_p95_bin_us": last_num(ctrl_after, "p95_bin") if mode in ("A", "B") else None,
+        "age_p99_bin_us": last_num(ctrl_after, "p99_bin") if mode in ("A", "B") else None,
+        "ab": ab_metrics,
         "clock_error_pct": round(report["mcu_clock_rate_error_pct"], 5),
         "sysclk_mhz_estimate": round(report["effective_tim5_hz"] * NOMINAL_SYSCLK_MHZ / 1e6, 5),
         "postcal_status_ready": ready,
