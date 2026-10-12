@@ -101,8 +101,8 @@ def validate(report: dict, lines: list[str]):
             mode = "A"
             cautions.append("Policy A inferred from counters; "
                             "SYNC_POLICY startup frame was not recorded.")
-    if not policy_rows and has_boot:
-        failures.append("Missing SYNC_POLICY after observed boot")
+    if not policy_rows and has_boot and ab_frames:
+        failures.append("Missing SYNC_POLICY for new A/B firmware after observed boot")
 
     if mode not in ("A", "B", "legacy"):
         failures.append("Unknown SYNC_POLICY")
