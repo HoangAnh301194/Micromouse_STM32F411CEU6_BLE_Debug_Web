@@ -75,5 +75,5 @@
   ],
   "note": "30 consecutive SYNC_CTRL frames are approximately 30s only if emitted at 1Hz.",
   "freshness_analyzer_exit": 2,
-  "load_analyzer_exit": 1
+  "load_analyzer_exit": 0
 }

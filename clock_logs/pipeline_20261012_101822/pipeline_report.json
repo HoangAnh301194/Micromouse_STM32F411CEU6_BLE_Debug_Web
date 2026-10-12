@@ -1,0 +1,79 @@
+{
+  "policy": "B",
+  "checks": {
+    "boot_present": true,
+    "motor_off_profile": true,
+    "motor_off_sampling": false,
+    "calibration_4000_no_retries": true,
+    "clock_samples_at_least_150": true,
+    "telemetry_complete": true,
+    "no_boot_fail": true,
+    "zero_imu_errors": true,
+    "zero_timing_errors": true
+  },
+  "counts": {
+    "CLOCK_PROFILE": 1,
+    "SYNC_POLICY": 1,
+    "CAL_DONE": 1,
+    "CLK": 237,
+    "IMU": 237,
+    "TIMING": 237,
+    "SYNC_SENSOR": 238,
+    "SYNC_CTRL": 237,
+    "SYNC_AB": 237
+  },
+  "windows_approximately_30_frames": [
+    {
+      "window_index": 1,
+      "ticks": 30000,
+      "reused": 10,
+      "reused_pct": 0.03333,
+      "age_gt1500": 7
+    },
+    {
+      "window_index": 2,
+      "ticks": 30000,
+      "reused": 60,
+      "reused_pct": 0.2,
+      "age_gt1500": 59
+    },
+    {
+      "window_index": 3,
+      "ticks": 30000,
+      "reused": 53,
+      "reused_pct": 0.17667,
+      "age_gt1500": 52
+    },
+    {
+      "window_index": 4,
+      "ticks": 30001,
+      "reused": 3,
+      "reused_pct": 0.01,
+      "age_gt1500": 1
+    },
+    {
+      "window_index": 5,
+      "ticks": 30000,
+      "reused": 0,
+      "reused_pct": 0.0,
+      "age_gt1500": 0
+    },
+    {
+      "window_index": 6,
+      "ticks": 30000,
+      "reused": 1,
+      "reused_pct": 0.00333,
+      "age_gt1500": 1
+    },
+    {
+      "window_index": 7,
+      "ticks": 30000,
+      "reused": 2,
+      "reused_pct": 0.00667,
+      "age_gt1500": 1
+    }
+  ],
+  "note": "30 consecutive SYNC_CTRL frames are approximately 30s only if emitted at 1Hz.",
+  "freshness_analyzer_exit": 2,
+  "load_analyzer_exit": 1
+}

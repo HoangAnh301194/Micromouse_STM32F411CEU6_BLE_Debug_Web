@@ -1,0 +1,53 @@
+{
+  "status": "FAIL",
+  "metrics": {
+    "boot_verified": true,
+    "policy_inferred": false,
+    "sampling_policy": "B",
+    "age_p95_bin_us": 1000,
+    "age_p99_bin_us": 1000,
+    "ab": {
+      "initial_nr": 5489,
+      "gyro_started": 227923,
+      "gyro_skipped": 5491,
+      "retry_started": 5482,
+      "retry_ready": 5480,
+      "retry_nr": 2,
+      "retry_expired": 7,
+      "retry_busy": 0,
+      "status_checks_per_1k_ticks": 1023.741,
+      "gyro_read_starts_per_1k_ticks": 999.658,
+      "estimated_i2c_transactions_per_1k_ticks": 2023.399
+    },
+    "clock_error_pct": -0.03088,
+    "sysclk_mhz_estimate": 95.97036,
+    "postcal_status_ready": 227923,
+    "postcal_status_not_ready": 5491,
+    "postcal_status_not_ready_pct": 2.3525,
+    "postcal_fresh_gyro_reads": 227923,
+    "postcal_status_zero_gyro_reads": 0,
+    "fresh_gap_min_us_observed": 227,
+    "fresh_gap_max_us_observed": 2694,
+    "fresh_gap_gt1500_count": 300,
+    "fresh_gap_gt2000_count": 1,
+    "status_poll_gap_max_us_observed": 2001,
+    "consecutive_notready_max": 2,
+    "postcal_TIM11_ticks": 228001,
+    "postcal_reused_gyro_ticks": 136,
+    "gyro_reused_tick_pct": 0.0596,
+    "gyro_completion_age_max_us_observed": 1770,
+    "gyro_completion_age_gt1500_ticks": 123,
+    "host_fit_records": 234,
+    "uart_tx_drop": 0,
+    "clk_seq_missing": 0
+  },
+  "warnings": [
+    "1 accepted-sample gaps exceeded 2ms",
+    "TIM11 sometimes reuses the latest accepted gyro sample",
+    "Some TIM11 ticks observed a gyro read completed over 1.5ms earlier"
+  ],
+  "failures": [
+    "Missing I2C_PROBE log",
+    "A/B profile is not confirmed motor-off"
+  ]
+}
