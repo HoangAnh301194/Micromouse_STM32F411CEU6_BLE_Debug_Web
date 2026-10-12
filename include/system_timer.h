@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include "stm32f4xx.h"
+#include "mpu_policy.h"
 /* define constant if missing in old library */
 
 /* TIM5 Registers */
@@ -85,7 +86,7 @@ void delay_us_blocking(uint32_t us);
  */
 void delay_ms_blocking(uint32_t ms);
 
-#if defined(MPU_FRESHNESS_AB_B)
+#if defined(MPU_SAMPLING_POLICY_B)
 /* Experimental one-shot wake only. TIM5 CH1 compare creates an interrupt
  * after at least delay_us so main can retry INT_STATUS without busy-spinning.
  * No I2C/formatting work occurs in TIM5_IRQHandler. */
