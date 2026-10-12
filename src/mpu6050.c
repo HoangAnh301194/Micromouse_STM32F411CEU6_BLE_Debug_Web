@@ -261,6 +261,18 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->diag_status_gap_max_us = 0U;
     h->diag_notready_run = 0U;
     h->diag_notready_run_max = 0U;
+    h->diag_ab_initial_notready = 0U;
+    h->diag_ab_gyro_started = 0U;
+    h->diag_ab_gyro_skipped = 0U;
+    h->diag_ab_retry_started = 0U;
+    h->diag_ab_retry_ready = 0U;
+    h->diag_ab_retry_notready = 0U;
+    h->diag_ab_retry_expired = 0U;
+    h->diag_ab_retry_busy = 0U;
+#if defined(MPU_FRESHNESS_AB_B)
+    h->diag_ab_retry_count = 0U;
+    h->diag_ab_retry_due_us = 0U;
+#endif
 #endif
     MPU6050_ClearNoiseWindow(h);
 
@@ -437,9 +449,41 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
                     h->diag_notready_run_max = h->diag_notready_run;
             }
 #endif
-            /* Async transfer has completed, but STOP may need a few us.
-             * Next main iteration starts the 2-byte gyro transaction.
-             */
+#if defined(MPU_FRESHNESS_DIAG)
+            if (!h->last_status_ready) {
+#if defined(MPU_FRESHNESS_AB_B)
+                if (h->diag_ab_retry_count == 0U)
+                    ++h->diag_ab_initial_notready;
+                /* B: no gyro register transfer when DATA_RDY was 0.
+                 * Keep the first request timestamp anchored to its original
+                 * 1ms slot; at most one short nonblocking status recheck. */
+                ++h->diag_ab_gyro_skipped;
+                if (h->diag_ab_retry_count == 0U &&
+                    (uint32_t)(now - h->last_request_us) <= 600U) {
+                    h->diag_ab_retry_count = 1U;
+                    h->diag_ab_retry_due_us = now + 220U;
+                    h->sample_phase = 4U; /* retry_wait */
+                    SystemTimer_ArmWakeAfterUs(220U);
+                } else {
+                    h->sample_phase = 0U;
+                    if (h->diag_ab_retry_count != 0U)
+                        ++h->diag_ab_retry_notready;
+                    else ++h->diag_ab_retry_expired;
+                }
+                return MPU6050_OK;
+#else
+                /* A: retain the original status=0 gyro read. */
+                ++h->diag_ab_initial_notready;
+#endif
+            }
+#if defined(MPU_FRESHNESS_AB_B)
+            else if (h->diag_ab_retry_count != 0U) {
+                ++h->diag_ab_retry_ready;
+            }
+#endif
+#endif
+            /* Async status transfer finished; gyro transaction starts on
+             * a later main-loop pass after the peripheral STOP clears. */
             h->sample_phase = 3U;
             return MPU6050_OK;
         }
@@ -504,11 +548,45 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         }
     }
 
+#if defined(MPU_FRESHNESS_AB_B)
+    if (h->sample_phase == 4U) {
+        /* TIM5 CC1 may wake main after 220us. Never spin/busy-wait: if
+         * not due, return to WFI; if the slot expires, abandon retry. */
+        now = micros();
+        if ((uint32_t)(now - h->last_request_us) >= 850U) {
+            ++h->diag_ab_retry_expired;
+            h->sample_phase = 0U;
+            SystemTimer_CancelWake();
+            return MPU6050_OK;
+        }
+        if ((int32_t)(now - h->diag_ab_retry_due_us) < 0)
+            return MPU6050_OK;
+        SystemTimer_CancelWake();
+        start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
+        if (start == I2C_OK) {
+            ++h->diag_ab_retry_started;
+            h->sample_phase = 1U;
+        } else {
+            /* If busy, do NOT spin to steal CPU time from TIM11. */
+            if (start == I2C_BUSY) {
+                ++h->diag_ab_retry_busy;
+            } else {
+                ++h->error_reads;
+                h->last_i2c_error = start;
+            }
+            h->sample_phase = 0U;
+        }
+        return MPU6050_OK;
+    }
+#endif
     if (h->sample_phase == 3U) {
         /* STOP was sent in the prior transaction; retry without waiting. */
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_GYRO_ZOUT_H, 2U);
         if (start == I2C_OK) {
             h->data_read_start_us = micros();
+#if defined(MPU_FRESHNESS_DIAG)
+            ++h->diag_ab_gyro_started;
+#endif
             h->sample_phase = 2U;
         } else if (start != I2C_BUSY) {
             h->error_reads++;
@@ -524,6 +602,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
         if (start == I2C_OK) {
             h->last_request_us = now;
+#if defined(MPU_FRESHNESS_AB_B)
+            h->diag_ab_retry_count = 0U;
+#endif
             h->sample_phase = 1U;
         } else if (start == I2C_BUSY) {
             h->busy_retries++;
@@ -537,7 +618,15 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
 
 uint8_t MPU6050_NeedsImmediatePoll(MPU6050_Handle_t *h)
 {
-    return (h && h->sample_phase == 3U) ? 1U : 0U;
+    if (!h) return 0U;
+#if defined(MPU_FRESHNESS_AB_B)
+    /* If compare IRQ fired before main checked, prevent sleeping with a
+     * retry already due. TIM11 provides fallback wake if the race is lost. */
+    if (h->sample_phase == 4U &&
+        (int32_t)(micros() - h->diag_ab_retry_due_us) >= 0)
+        return 1U;
+#endif
+    return (h->sample_phase == 3U) ? 1U : 0U;
 }
 
 float MPU6050_GetYaw(MPU6050_Handle_t *h) { return h ? h->yaw : 0.0f; }
