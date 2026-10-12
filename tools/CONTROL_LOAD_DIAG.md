@@ -43,3 +43,37 @@ Confirm `Motor_Init` is not called in the active main path, `CONTROL_LOAD_DIAG` 
 ### Stop conditions
 
 Stop and inspect if `LOAD_PROFILE` is missing, I2C errors/timeouts or UART drops occur, TIM11 gaps occur, ISR workload exceeds 800us, or the MCU fails gyro calibration. Check `LOAD_SWITCH` and all three stages before interpreting any aggregate.
+
+## 2026-10-12 first staged capture: pipeline_20261012_094736
+
+Review of the uploaded raw UART + reports:
+
+| Stage | Observed ISR max at nominal 96MHz | Per-stage gyro reuse from within-stage SYNC_CTRL deltas |
+| --- | ---: | ---: |
+| 0, IMU | 2.03 us | 103 / 59,001 = 0.17457% |
+| 1, IMU + encoder | 8.24 us | 121 / 59,000 = 0.20508% |
+| 2, IMU + encoder + PID | 22.81 us | 219 / 108,000 = 0.20278% |
+
+All three stages had 0 nominal 800us or 1000us ISR budget exceedances, and no TIM11 >1.5ms gap. I2C errors and timeouts were zero.
+
+However, **the full pipeline run is NOT PASS**: 2 UART dropped messages occurred, one shortly after CAL_DONE and one around the Stage 2 boundary. Overall gyro reuse was 448 / 228001 = 0.1965%, compared with 0.014% in the previous lighter-telemetry motor-off run. There was no obvious large Stage 1->2 jump in reuse, so this observation does not establish PID overload.
+
+The old `control_load_analyze.py` incorrectly reported "Stage 0: ticks decreased" because it included pre-calibration LOAD frames and the firmware resets LOAD counters at CAL_DONE. The patched analyzer now skips pre-calibration frames and reports gyro reuse by stage, but **the UART-drop failure remains genuine**. Reprocess the existing capture (no flash required):
+
+```powershell
+git fetch origin
+git merge --ff-only origin/feature/motor-debug-console
+python tools/diagnostic_pipeline.py --folder ".\\clock_logs\\pipeline_20261012_094736"
+```
+
+### A/B test of UART burst interference
+
+The candidate issue is the 1Hz batch of UART formatting/queueing in the main loop, *not proven* from the current run. A separate opt-in build moves **only the LOAD telemetry** about 200ms after the other 1Hz diagnostics, keeping IMU B, CPU clock, encoder/PID stages and baudrate unchanged. It does **not** add motor PWM.
+
+```powershell
+python -m platformio run -e control_load_staggered_96m_trim25
+python -m platformio run -e control_load_staggered_96m_trim25 -t upload
+python tools/diagnostic_pipeline.py --port COM7 --seconds 240
+```
+
+Disconnect motor power. Press hardware RESET once after opening COM7. Compare the two profiles' per-stage `gyro_reused_pct`, `gyro_age_gt1500_ticks`, and UART `tx_drop_delta`. The A/B is suggestive only with matching stationary conditions and verified boot markers. If the effect persists, investigate 1Hz formatting cost / UART DMA queue rather than attributing it to the PID. No change is justified to MPU ODR or motor controls from this test alone.
