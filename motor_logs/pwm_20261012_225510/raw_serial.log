@@ -1,0 +1,637 @@
+0.241250100	CLK,seq=1703,us=1703156669,ticks=1703003,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+0.260733700	IMU,read_hz=1000 good=1702041 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=146 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1519 gz_mdps=0 yaw_mdeg=-5539 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+0.274533500	SYNC_SENSOR,ready=1702041,notready=13800,fresh=1702041,stale=0,fgap_min=240,fgap_max=2729,fgap_gt1500=2780,fgap_gt2000=19,poll_gap_max=2728,nr_run_max=1
+0.285376900	SYNC_CTRL,ticks=1694004,repeat=1179,age_max=1770,age_gt1000=1179,age_gt1500=1154,p95_bin=1000,p99_bin=1000
+0.296734000	SYNC_AB,initial_nr=13800,gyro_started=1702041,gyro_skipped=13800,retry_started=13791,retry_ready=13791,retry_nr=0,retry_expired=9,retry_busy=0
+0.308598500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=37 max_cycles=3558 core_hz=96000000
+0.442076800	LOAD,stage=2,ticks=1574203,max_cycles=3511,over800=0,over1000=0,pid_milli=80,motor_off=1
+1.242543300	CLK,seq=1704,us=1704156669,ticks=1704003,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+1.262090400	IMU,read_hz=1000 good=1703041 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=146 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1519 gz_mdps=0 yaw_mdeg=-5582 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+1.275871300	SYNC_SENSOR,ready=1703041,notready=13811,fresh=1703041,stale=0,fgap_min=240,fgap_max=2729,fgap_gt1500=2781,fgap_gt2000=19,poll_gap_max=2728,nr_run_max=1
+1.286680200	SYNC_CTRL,ticks=1695004,repeat=1179,age_max=1770,age_gt1000=1179,age_gt1500=1154,p95_bin=1000,p99_bin=1000
+1.298088300	SYNC_AB,initial_nr=13811,gyro_started=1703041,gyro_skipped=13811,retry_started=13802,retry_ready=13802,retry_nr=0,retry_expired=9,retry_busy=0
+1.310110700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=37 max_cycles=3558 core_hz=96000000
+1.443560000	LOAD,stage=2,ticks=1575203,max_cycles=3511,over800=0,over1000=0,pid_milli=80,motor_off=1
+1.745914100	[BOOT] Isolated MPU6050/I2C test (motors disabled)
+1.753660900	CLOCK_TRIM,mode=override requested=25 active=25 hsical=134 rcc_cr=0x030086CB
+1.759428400	CLOCK_PROFILE,mode=validate96,trim=25,plln=192,nominal_hz=96000000,motor_off=1
+1.767968100	CLOCK,sysclk=96000000 hsi_pll100=0 apb1=48000000 apb2=96000000 tim5_us_clock=1000000
+1.778822100	CLOCK_DIAG,fault=0 rcc_cr=0x030086CB cfgr=0x0000100A pllcfgr=0x05003010 pwr_cr=0x0000C000 pwr_csr=0x00004000 flash_acr=0x00000703
+1.784798700	MPU_SYNC_DIAG,mode=status_poll,trim=25,sysclk_nominal=96000000,motors_off=1
+1.790228400	SYNC_POLICY,policy=B,skip_on_nr=1,retry_us=220,retry_max=1,motor_off=1
+1.910221000	I2C_PROBE,400_a=0 400_w=0 400_id=0x68 300_a=255 300_w=255 300_id=0xFF 200_a=255 200_w=255 200_id=0xFF 100_a=255 100_w=255 100_id=0xFF selected=0 selected_scl=400000
+1.913246700	I2C_LINES,scl_pb8=1 sda_pb9=1 idr=0x00000360
+1.921414200	LOAD_PROFILE,mode=staged,stages=3,stage_seconds=60,motor_off=1,pwm_initialized=0
+1.927359900	[IMU_READY] whoami=0x68 scl_nominal=400000Hz gyro_range=2000dps dlpf=3 sensor_odr=1000Hz
+1.938151500	CAL_HELP,do not move robot during warmup+collection; KEY requests fresh calibration while idle; motors OFF
+1.944932400	DYN_HELP,D,<us>,<raw_corrected_mdps>,<lpf_mdps> at 100Hz for 1.5s after |gyro|>10dps
+2.903777200	CLK,seq=1,us=1153787,ticks=1000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+2.923025400	IMU,read_hz=998 good=999 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=120 update_max_us=4 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+2.934432900	SYNC_SENSOR,ready=1000,notready=6,fresh=999,stale=0,fgap_min=677,fgap_max=1844,fgap_gt1500=1,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+2.942377800	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+2.953420800	SYNC_AB,initial_nr=6,gyro_started=1000,gyro_skipped=6,retry_started=6,retry_ready=6,retry_nr=0,retry_expired=0,retry_busy=0
+2.963259800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=171 core_hz=96000000
+3.904932800	CLK,seq=2,us=2153787,ticks=2000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+3.924297100	IMU,read_hz=1000 good=1999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=4 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+3.935729100	SYNC_SENSOR,ready=2000,notready=16,fresh=1999,stale=0,fgap_min=358,fgap_max=1844,fgap_gt1500=2,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+3.943791900	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+3.954954000	SYNC_AB,initial_nr=16,gyro_started=2000,gyro_skipped=16,retry_started=16,retry_ready=16,retry_nr=0,retry_expired=0,retry_busy=0
+3.965673800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+4.906603900	CLK,seq=3,us=3153787,ticks=3000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+4.925864700	IMU,read_hz=1000 good=2999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=4 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+4.937296500	SYNC_SENSOR,ready=3000,notready=21,fresh=2999,stale=0,fgap_min=355,fgap_max=1844,fgap_gt1500=3,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+4.945378100	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+4.956514300	SYNC_AB,initial_nr=21,gyro_started=3000,gyro_skipped=21,retry_started=21,retry_ready=21,retry_nr=0,retry_expired=0,retry_busy=0
+4.967274100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+5.908134000	CLK,seq=4,us=4153787,ticks=4000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+5.927384600	IMU,read_hz=1000 good=3999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=4 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+5.938777500	SYNC_SENSOR,ready=4000,notready=33,fresh=3999,stale=0,fgap_min=355,fgap_max=1844,fgap_gt1500=4,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+5.946849800	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+5.958034400	SYNC_AB,initial_nr=33,gyro_started=4000,gyro_skipped=33,retry_started=33,retry_ready=33,retry_nr=0,retry_expired=0,retry_busy=0
+5.968969800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+6.909663000	CLK,seq=5,us=5153787,ticks=5000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+6.928928800	IMU,read_hz=1000 good=4999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=4 cal=0 cal_n=0 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+6.940308700	SYNC_SENSOR,ready=5000,notready=39,fresh=4999,stale=0,fgap_min=355,fgap_max=1844,fgap_gt1500=5,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+6.948421400	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+6.959597300	SYNC_AB,initial_nr=39,gyro_started=5000,gyro_skipped=39,retry_started=39,retry_ready=39,retry_nr=0,retry_expired=0,retry_busy=0
+6.970278500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+7.911383400	CLK,seq=6,us=6153787,ticks=6000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+7.930726800	IMU,read_hz=1000 good=5999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=55 cal=0 cal_n=1000 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+7.942099400	SYNC_SENSOR,ready=6000,notready=47,fresh=5999,stale=0,fgap_min=355,fgap_max=1844,fgap_gt1500=6,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+7.950224400	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+7.961378500	SYNC_AB,initial_nr=47,gyro_started=6000,gyro_skipped=47,retry_started=47,retry_ready=47,retry_nr=0,retry_expired=0,retry_busy=0
+7.972455200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+8.913210500	CLK,seq=7,us=7153787,ticks=7000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+8.932477300	IMU,read_hz=1000 good=6999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=56 cal=0 cal_n=2000 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+8.943854500	SYNC_SENSOR,ready=7000,notready=58,fresh=6999,stale=0,fgap_min=353,fgap_max=1844,fgap_gt1500=7,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+8.952082100	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+8.963250400	SYNC_AB,initial_nr=58,gyro_started=7000,gyro_skipped=58,retry_started=58,retry_ready=58,retry_nr=0,retry_expired=0,retry_busy=0
+8.974215000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+9.914890100	CLK,seq=8,us=8153787,ticks=8000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+9.934469800	IMU,read_hz=1000 good=7999 err=0 busy=0 timeout=0 age_us=932 i2c_last_us=120 i2c_max_us=120 update_max_us=56 cal=0 cal_n=3000 bias_mdps=0 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+9.945570700	SYNC_SENSOR,ready=8000,notready=67,fresh=7999,stale=0,fgap_min=353,fgap_max=1844,fgap_gt1500=8,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+9.953708900	SYNC_CTRL,ticks=0,repeat=0,age_max=0,age_gt1000=0,age_gt1500=0,p95_bin=0,p99_bin=0
+9.964844100	SYNC_AB,initial_nr=67,gyro_started=8000,gyro_skipped=67,retry_started=67,retry_ready=67,retry_nr=0,retry_expired=0,retry_busy=0
+9.975935400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=1 max_cycles=172 core_hz=96000000
+10.921257700	CAL_DONE,n=4000 blocks=8 retries=0 bias_mdps=-1522 previous_bias_mdps=0 delta_bias_mdps=-1522 max_block_std_mdps=46 block_mean_span_mdps=12
+10.924126900	DRIFT_START,bias_mdps=-1522,dlpf=3
+10.932231900	CLK,seq=9,us=9153790,ticks=9000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+10.949365900	IMU,read_hz=999 good=8999 err=0 busy=0 timeout=0 age_us=935 i2c_last_us=120 i2c_max_us=120 update_max_us=59 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+10.962921600	SYNC_SENSOR,ready=9000,notready=76,fresh=8999,stale=0,fgap_min=353,fgap_max=1844,fgap_gt1500=9,fgap_gt2000=0,poll_gap_max=1845,nr_run_max=1
+10.971247700	SYNC_CTRL,ticks=1,repeat=0,age_max=771,age_gt1000=0,age_gt1500=0,p95_bin=1000,p99_bin=1000
+10.982364400	SYNC_AB,initial_nr=76,gyro_started=9000,gyro_skipped=76,retry_started=76,retry_ready=76,retry_nr=0,retry_expired=0,retry_busy=0
+10.992898300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=222 core_hz=96000000
+11.117142000	LOAD,stage=0,ticks=201,max_cycles=175,over800=0,over1000=0,pid_milli=0,motor_off=1
+11.918060300	CLK,seq=10,us=10153790,ticks=10000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+11.937445400	IMU,read_hz=999 good=9998 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=120 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+11.948778500	SYNC_SENSOR,ready=9999,notready=81,fresh=9998,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=12,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+11.957049100	SYNC_CTRL,ticks=1001,repeat=2,age_max=1770,age_gt1000=2,age_gt1500=2,p95_bin=1000,p99_bin=1000
+11.970497900	SYNC_AB,initial_nr=81,gyro_started=9999,gyro_skipped=81,retry_started=81,retry_ready=81,retry_nr=0,retry_expired=0,retry_busy=0
+11.980369900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+12.118554600	LOAD,stage=0,ticks=1201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+12.919205600	CLK,seq=11,us=11153790,ticks=11000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+12.938593800	IMU,read_hz=999 good=10997 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=120 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+12.952247000	SYNC_SENSOR,ready=10998,notready=87,fresh=10997,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=15,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+12.960536500	SYNC_CTRL,ticks=2001,repeat=4,age_max=1770,age_gt1000=4,age_gt1500=4,p95_bin=1000,p99_bin=1000
+12.971756000	SYNC_AB,initial_nr=87,gyro_started=10998,gyro_skipped=87,retry_started=87,retry_ready=87,retry_nr=0,retry_expired=0,retry_busy=0
+12.982021900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+13.119668800	LOAD,stage=0,ticks=2201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+13.920882900	CLK,seq=12,us=12153790,ticks=12000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+13.940357700	IMU,read_hz=999 good=11996 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=120 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+13.953989400	SYNC_SENSOR,ready=11997,notready=96,fresh=11996,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=18,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+13.962323100	SYNC_CTRL,ticks=3001,repeat=6,age_max=1770,age_gt1000=6,age_gt1500=6,p95_bin=1000,p99_bin=1000
+13.973479200	SYNC_AB,initial_nr=96,gyro_started=11997,gyro_skipped=96,retry_started=96,retry_ready=96,retry_nr=0,retry_expired=0,retry_busy=0
+13.983913400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+14.121591600	LOAD,stage=0,ticks=3201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+14.922449800	CLK,seq=13,us=13153790,ticks=13000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+14.941798100	IMU,read_hz=999 good=12995 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+14.955510600	SYNC_SENSOR,ready=12996,notready=106,fresh=12995,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=21,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+14.963828300	SYNC_CTRL,ticks=4001,repeat=8,age_max=1770,age_gt1000=8,age_gt1500=8,p95_bin=1000,p99_bin=1000
+14.975086100	SYNC_AB,initial_nr=106,gyro_started=12996,gyro_skipped=106,retry_started=106,retry_ready=106,retry_nr=0,retry_expired=0,retry_busy=0
+14.985818200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+15.122982200	LOAD,stage=0,ticks=4201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+15.924060700	CLK,seq=14,us=14153790,ticks=14000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+15.943410000	IMU,read_hz=999 good=13994 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+15.957083400	SYNC_SENSOR,ready=13995,notready=111,fresh=13994,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=24,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+15.965557600	SYNC_CTRL,ticks=5001,repeat=10,age_max=1770,age_gt1000=10,age_gt1500=10,p95_bin=1000,p99_bin=1000
+15.976752700	SYNC_AB,initial_nr=111,gyro_started=13995,gyro_skipped=111,retry_started=111,retry_ready=111,retry_nr=0,retry_expired=0,retry_busy=0
+15.987553900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+16.124689300	LOAD,stage=0,ticks=5201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+16.925868800	CLK,seq=15,us=15153790,ticks=15000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+16.945309600	IMU,read_hz=999 good=14993 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+16.958991700	SYNC_SENSOR,ready=14994,notready=122,fresh=14993,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=27,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+16.967472100	SYNC_CTRL,ticks=6001,repeat=12,age_max=1770,age_gt1000=12,age_gt1500=12,p95_bin=1000,p99_bin=1000
+16.978617700	SYNC_AB,initial_nr=122,gyro_started=14994,gyro_skipped=122,retry_started=122,retry_ready=122,retry_nr=0,retry_expired=0,retry_busy=0
+16.989497700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+17.126511600	LOAD,stage=0,ticks=6201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+17.927366400	CLK,seq=16,us=16153790,ticks=16000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+17.946816200	IMU,read_hz=999 good=15992 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+17.960559600	SYNC_SENSOR,ready=15993,notready=129,fresh=15992,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=30,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+17.969451500	SYNC_CTRL,ticks=7001,repeat=14,age_max=1770,age_gt1000=14,age_gt1500=14,p95_bin=1000,p99_bin=1000
+17.980113500	SYNC_AB,initial_nr=129,gyro_started=15993,gyro_skipped=129,retry_started=129,retry_ready=129,retry_nr=0,retry_expired=0,retry_busy=0
+17.991017500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+18.128039100	LOAD,stage=0,ticks=7201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+18.928954400	CLK,seq=17,us=17153790,ticks=17000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+18.948343600	IMU,read_hz=999 good=16991 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+18.962025900	SYNC_SENSOR,ready=16992,notready=142,fresh=16991,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=33,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+18.970707900	SYNC_CTRL,ticks=8001,repeat=16,age_max=1770,age_gt1000=16,age_gt1500=16,p95_bin=1000,p99_bin=1000
+18.981599600	SYNC_AB,initial_nr=142,gyro_started=16992,gyro_skipped=142,retry_started=142,retry_ready=142,retry_nr=0,retry_expired=0,retry_busy=0
+18.992535300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+19.129477600	LOAD,stage=0,ticks=8201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+19.930764500	CLK,seq=18,us=18153790,ticks=18000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+19.950322000	IMU,read_hz=999 good=17990 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+19.963798500	SYNC_SENSOR,ready=17991,notready=152,fresh=17990,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=36,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+19.972208800	SYNC_CTRL,ticks=9001,repeat=18,age_max=1770,age_gt1000=18,age_gt1500=18,p95_bin=1000,p99_bin=1000
+19.983745900	SYNC_AB,initial_nr=152,gyro_started=17991,gyro_skipped=152,retry_started=152,retry_ready=152,retry_nr=0,retry_expired=0,retry_busy=0
+19.994391000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+20.131398700	LOAD,stage=0,ticks=9201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+20.932255900	SYNC_POLICY,policy=B,skip_on_nr=1,retry_us=220,retry_max=1,motor_off=1,replay=1
+20.940459900	CLK,seq=19,us=19153790,ticks=19000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+20.959861800	IMU,read_hz=999 good=18989 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+20.971431900	SYNC_SENSOR,ready=18990,notready=157,fresh=18989,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=39,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+20.979722100	SYNC_CTRL,ticks=10001,repeat=20,age_max=1770,age_gt1000=20,age_gt1500=20,p95_bin=1000,p99_bin=1000
+20.990918800	SYNC_AB,initial_nr=157,gyro_started=18990,gyro_skipped=157,retry_started=157,retry_ready=157,retry_nr=0,retry_expired=0,retry_busy=0
+21.002987800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+21.133441800	LOAD,stage=0,ticks=10201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+21.934325700	CLK,seq=20,us=20153790,ticks=20000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+21.953616000	IMU,read_hz=999 good=19988 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+21.967323600	SYNC_SENSOR,ready=19989,notready=167,fresh=19988,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=42,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+21.975684200	SYNC_CTRL,ticks=11001,repeat=22,age_max=1770,age_gt1000=22,age_gt1500=22,p95_bin=1000,p99_bin=1000
+21.986844400	SYNC_AB,initial_nr=167,gyro_started=19989,gyro_skipped=167,retry_started=167,retry_ready=167,retry_nr=0,retry_expired=0,retry_busy=0
+21.997940300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+22.134959600	LOAD,stage=0,ticks=11201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+22.935730300	CLK,seq=21,us=21153790,ticks=21000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+22.955145300	IMU,read_hz=999 good=20987 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+22.968818300	SYNC_SENSOR,ready=20988,notready=179,fresh=20987,stale=0,fgap_min=241,fgap_max=1985,fgap_gt1500=45,fgap_gt2000=0,poll_gap_max=1984,nr_run_max=1
+22.977184000	SYNC_CTRL,ticks=12001,repeat=24,age_max=1770,age_gt1000=24,age_gt1500=24,p95_bin=1000,p99_bin=1000
+22.988407700	SYNC_AB,initial_nr=179,gyro_started=20988,gyro_skipped=179,retry_started=179,retry_ready=179,retry_nr=0,retry_expired=0,retry_busy=0
+22.999703300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+23.136360800	LOAD,stage=0,ticks=12201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+23.936799800	I2C_PROBE,selected=0,selected_scl=400000,400_id=0x68,replay=1,motor_off=1
+23.944926700	CLK,seq=22,us=22153790,ticks=22000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+23.962143100	IMU,read_hz=999 good=21986 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+23.975780200	SYNC_SENSOR,ready=21987,notready=184,fresh=21986,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=48,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+23.984321600	SYNC_CTRL,ticks=13001,repeat=26,age_max=1770,age_gt1000=26,age_gt1500=26,p95_bin=1000,p99_bin=1000
+23.995428100	SYNC_AB,initial_nr=184,gyro_started=21987,gyro_skipped=184,retry_started=184,retry_ready=184,retry_nr=0,retry_expired=0,retry_busy=0
+24.007419300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+24.137863000	LOAD,stage=0,ticks=13201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+24.939206500	CLK,seq=23,us=23153790,ticks=23000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+24.958496600	IMU,read_hz=999 good=22985 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+24.972157600	SYNC_SENSOR,ready=22986,notready=191,fresh=22985,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=51,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+24.980591200	SYNC_CTRL,ticks=14001,repeat=28,age_max=1770,age_gt1000=28,age_gt1500=28,p95_bin=1000,p99_bin=1000
+24.991866600	SYNC_AB,initial_nr=191,gyro_started=22986,gyro_skipped=191,retry_started=191,retry_ready=191,retry_nr=0,retry_expired=0,retry_busy=0
+25.002875300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+25.139938000	LOAD,stage=0,ticks=14201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+25.941034100	CLK,seq=24,us=24153790,ticks=24000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+25.960461400	IMU,read_hz=999 good=23984 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+25.974128300	SYNC_SENSOR,ready=23985,notready=199,fresh=23984,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=54,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+25.982687100	SYNC_CTRL,ticks=15001,repeat=30,age_max=1770,age_gt1000=30,age_gt1500=30,p95_bin=1000,p99_bin=1000
+25.993865200	SYNC_AB,initial_nr=199,gyro_started=23985,gyro_skipped=199,retry_started=199,retry_ready=199,retry_nr=0,retry_expired=0,retry_busy=0
+26.004939700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+26.141978100	LOAD,stage=0,ticks=15201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+26.942688600	CLK,seq=25,us=25153790,ticks=25000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+26.962090900	IMU,read_hz=999 good=24983 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+26.975739300	SYNC_SENSOR,ready=24984,notready=210,fresh=24983,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=57,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+26.984207500	SYNC_CTRL,ticks=16001,repeat=32,age_max=1770,age_gt1000=32,age_gt1500=32,p95_bin=1000,p99_bin=1000
+26.995404300	SYNC_AB,initial_nr=210,gyro_started=24984,gyro_skipped=210,retry_started=210,retry_ready=210,retry_nr=0,retry_expired=0,retry_busy=0
+27.006600700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+27.143464100	LOAD,stage=0,ticks=16201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+27.944723900	CLK,seq=26,us=26153790,ticks=26000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+27.964164900	IMU,read_hz=999 good=25982 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+27.977801300	SYNC_SENSOR,ready=25983,notready=219,fresh=25982,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=60,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+27.986235700	SYNC_CTRL,ticks=17001,repeat=34,age_max=1770,age_gt1000=34,age_gt1500=34,p95_bin=1000,p99_bin=1000
+27.997432100	SYNC_AB,initial_nr=219,gyro_started=25983,gyro_skipped=219,retry_started=219,retry_ready=219,retry_nr=0,retry_expired=0,retry_busy=0
+28.008555700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+28.145538500	LOAD,stage=0,ticks=17201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+28.947170700	CLK,seq=27,us=27153790,ticks=27000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+28.966702500	IMU,read_hz=999 good=26981 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+28.980264900	SYNC_SENSOR,ready=26982,notready=227,fresh=26981,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=63,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+28.988714000	SYNC_CTRL,ticks=18001,repeat=36,age_max=1770,age_gt1000=36,age_gt1500=36,p95_bin=1000,p99_bin=1000
+28.999959600	SYNC_AB,initial_nr=227,gyro_started=26982,gyro_skipped=227,retry_started=227,retry_ready=227,retry_nr=0,retry_expired=0,retry_busy=0
+29.010961500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+29.148144300	LOAD,stage=0,ticks=18201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+29.949894300	CLK,seq=28,us=28153790,ticks=28000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+29.969518700	IMU,read_hz=999 good=27980 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+29.983091100	SYNC_SENSOR,ready=27981,notready=236,fresh=27980,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=66,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+29.991435300	SYNC_CTRL,ticks=19001,repeat=38,age_max=1770,age_gt1000=38,age_gt1500=38,p95_bin=1000,p99_bin=1000
+30.002678400	SYNC_AB,initial_nr=236,gyro_started=27981,gyro_skipped=236,retry_started=236,retry_ready=236,retry_nr=0,retry_expired=0,retry_busy=0
+30.013754300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+30.150765800	LOAD,stage=0,ticks=19201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+30.952287200	CLK,seq=29,us=29153790,ticks=29000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+30.971601500	IMU,read_hz=999 good=28979 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+30.985404900	SYNC_SENSOR,ready=28980,notready=244,fresh=28979,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=69,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+30.993699700	SYNC_CTRL,ticks=20001,repeat=40,age_max=1770,age_gt1000=40,age_gt1500=40,p95_bin=1000,p99_bin=1000
+31.004970200	SYNC_AB,initial_nr=244,gyro_started=28980,gyro_skipped=244,retry_started=244,retry_ready=244,retry_nr=0,retry_expired=0,retry_busy=0
+31.016122500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+31.153259200	LOAD,stage=0,ticks=20201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+31.954477000	CLK,seq=30,us=30153790,ticks=30000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+31.973851800	IMU,read_hz=999 good=29978 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+31.987539700	SYNC_SENSOR,ready=29979,notready=251,fresh=29978,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=72,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+31.995988100	SYNC_CTRL,ticks=21001,repeat=42,age_max=1770,age_gt1000=42,age_gt1500=42,p95_bin=1000,p99_bin=1000
+32.007204400	SYNC_AB,initial_nr=251,gyro_started=29979,gyro_skipped=251,retry_started=251,retry_ready=251,retry_nr=0,retry_expired=0,retry_busy=0
+32.018268200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+32.155253600	LOAD,stage=0,ticks=21201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+32.956129800	CLK,seq=31,us=31153790,ticks=31000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+32.975559300	IMU,read_hz=999 good=30977 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+32.989237100	SYNC_SENSOR,ready=30978,notready=258,fresh=30977,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=75,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+32.997620600	SYNC_CTRL,ticks=22001,repeat=44,age_max=1770,age_gt1000=44,age_gt1500=44,p95_bin=1000,p99_bin=1000
+33.008806300	SYNC_AB,initial_nr=258,gyro_started=30978,gyro_skipped=258,retry_started=258,retry_ready=258,retry_nr=0,retry_expired=0,retry_busy=0
+33.019880300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+33.156862600	LOAD,stage=0,ticks=22201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+33.957437100	CLK,seq=32,us=32153790,ticks=32000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+33.976804800	IMU,read_hz=999 good=31976 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+33.990488400	SYNC_SENSOR,ready=31977,notready=264,fresh=31976,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=78,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+33.998902800	SYNC_CTRL,ticks=23001,repeat=46,age_max=1770,age_gt1000=46,age_gt1500=46,p95_bin=1000,p99_bin=1000
+34.010157200	SYNC_AB,initial_nr=264,gyro_started=31977,gyro_skipped=264,retry_started=264,retry_ready=264,retry_nr=0,retry_expired=0,retry_busy=0
+34.021165200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+34.157897900	LOAD,stage=0,ticks=23201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+34.958469500	CLK,seq=33,us=33153790,ticks=33000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+34.977894900	IMU,read_hz=999 good=32975 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+34.991589900	SYNC_SENSOR,ready=32976,notready=277,fresh=32975,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=81,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+35.000040600	SYNC_CTRL,ticks=24001,repeat=48,age_max=1770,age_gt1000=48,age_gt1500=48,p95_bin=1000,p99_bin=1000
+35.011208900	SYNC_AB,initial_nr=277,gyro_started=32976,gyro_skipped=277,retry_started=277,retry_ready=277,retry_nr=0,retry_expired=0,retry_busy=0
+35.022281800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+35.159061300	LOAD,stage=0,ticks=24201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+35.959506700	CLK,seq=34,us=34153790,ticks=34000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+35.978900900	IMU,read_hz=999 good=33974 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+35.992554900	SYNC_SENSOR,ready=33975,notready=283,fresh=33974,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=84,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+36.001019700	SYNC_CTRL,ticks=25001,repeat=50,age_max=1770,age_gt1000=50,age_gt1500=50,p95_bin=1000,p99_bin=1000
+36.012200100	SYNC_AB,initial_nr=283,gyro_started=33975,gyro_skipped=283,retry_started=283,retry_ready=283,retry_nr=0,retry_expired=0,retry_busy=0
+36.023195000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+36.160207300	LOAD,stage=0,ticks=25201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+36.960835800	CLK,seq=35,us=35153790,ticks=35000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+36.980209400	IMU,read_hz=999 good=34973 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+36.993857400	SYNC_SENSOR,ready=34974,notready=288,fresh=34973,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=87,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+37.002296200	SYNC_CTRL,ticks=26001,repeat=52,age_max=1770,age_gt1000=52,age_gt1500=52,p95_bin=1000,p99_bin=1000
+37.013451800	SYNC_AB,initial_nr=288,gyro_started=34974,gyro_skipped=288,retry_started=288,retry_ready=288,retry_nr=0,retry_expired=0,retry_busy=0
+37.024602100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+37.161316000	LOAD,stage=0,ticks=26201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+37.962154300	CLK,seq=36,us=36153790,ticks=36000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+37.981534000	IMU,read_hz=999 good=35972 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+37.995197600	SYNC_SENSOR,ready=35973,notready=299,fresh=35972,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=90,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+38.003656500	SYNC_CTRL,ticks=27001,repeat=54,age_max=1770,age_gt1000=54,age_gt1500=54,p95_bin=1000,p99_bin=1000
+38.014839200	SYNC_AB,initial_nr=299,gyro_started=35973,gyro_skipped=299,retry_started=299,retry_ready=299,retry_nr=0,retry_expired=0,retry_busy=0
+38.025879700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+38.162810000	LOAD,stage=0,ticks=27201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+38.963468100	CLK,seq=37,us=37153790,ticks=37000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+38.982861700	IMU,read_hz=999 good=36971 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+38.996465500	SYNC_SENSOR,ready=36972,notready=303,fresh=36971,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=93,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+39.004892900	SYNC_CTRL,ticks=28001,repeat=56,age_max=1770,age_gt1000=56,age_gt1500=56,p95_bin=1000,p99_bin=1000
+39.016226200	SYNC_AB,initial_nr=303,gyro_started=36972,gyro_skipped=303,retry_started=303,retry_ready=303,retry_nr=0,retry_expired=0,retry_busy=0
+39.027174300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+39.164019900	LOAD,stage=0,ticks=28201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+39.964207500	CLK,seq=38,us=38153790,ticks=38000,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+39.983758300	IMU,read_hz=999 good=37970 err=0 busy=0 timeout=0 age_us=933 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+39.997339500	SYNC_SENSOR,ready=37971,notready=315,fresh=37970,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=96,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+40.005704600	SYNC_CTRL,ticks=29001,repeat=58,age_max=1770,age_gt1000=58,age_gt1500=58,p95_bin=1000,p99_bin=1000
+40.016965200	SYNC_AB,initial_nr=315,gyro_started=37971,gyro_skipped=315,retry_started=315,retry_ready=315,retry_nr=0,retry_expired=0,retry_busy=0
+40.027934500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+40.164746900	LOAD,stage=0,ticks=29201,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+40.967779300	CAL_CHECK,elapsed_ms=30000 raw_drift_mdeg=76 lpf_no_deadzone_mdeg=76 raw_mdeg_per_min=152 current_bias_mdps=-1522
+40.975896400	CLK,seq=39,us=39154634,ticks=39001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+40.995364300	IMU,read_hz=998 good=38969 err=0 busy=0 timeout=0 age_us=1777 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+41.006847000	SYNC_SENSOR,ready=38970,notready=324,fresh=38969,stale=0,fgap_min=240,fgap_max=1986,fgap_gt1500=99,fgap_gt2000=0,poll_gap_max=1985,nr_run_max=1
+41.014995400	SYNC_CTRL,ticks=30002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+41.028663500	SYNC_AB,initial_nr=324,gyro_started=38969,gyro_skipped=324,retry_started=324,retry_ready=324,retry_nr=0,retry_expired=0,retry_busy=0
+41.038691800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+41.166695700	LOAD,stage=0,ticks=30202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+41.966941500	CLK,seq=40,us=40154636,ticks=40001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+41.986233200	IMU,read_hz=999 good=39969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=18 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+41.999998500	SYNC_SENSOR,ready=39969,notready=334,fresh=39969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=100,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+42.008281600	SYNC_CTRL,ticks=31002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+42.019483000	SYNC_AB,initial_nr=334,gyro_started=39969,gyro_skipped=334,retry_started=334,retry_ready=334,retry_nr=0,retry_expired=0,retry_busy=0
+42.030552700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+42.167413000	LOAD,stage=0,ticks=31202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+42.967826600	CLK,seq=41,us=41154636,ticks=41001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+42.987097100	IMU,read_hz=1000 good=40969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+43.000883300	SYNC_SENSOR,ready=40969,notready=343,fresh=40969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=101,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+43.009210600	SYNC_CTRL,ticks=32002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+43.020469600	SYNC_AB,initial_nr=343,gyro_started=40969,gyro_skipped=343,retry_started=343,retry_ready=343,retry_nr=0,retry_expired=0,retry_busy=0
+43.031673300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+43.168291300	LOAD,stage=0,ticks=32202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+43.968731500	CLK,seq=42,us=42154636,ticks=42001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+43.988087300	IMU,read_hz=1000 good=41969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+44.001854500	SYNC_SENSOR,ready=41969,notready=357,fresh=41969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=102,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+44.010128000	SYNC_CTRL,ticks=33002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+44.021420200	SYNC_AB,initial_nr=357,gyro_started=41969,gyro_skipped=357,retry_started=357,retry_ready=357,retry_nr=0,retry_expired=0,retry_busy=0
+44.032541300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+44.169360700	LOAD,stage=0,ticks=33202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+44.969788000	CLK,seq=43,us=43154636,ticks=43001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+44.989163300	IMU,read_hz=1000 good=42969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+45.002894200	SYNC_SENSOR,ready=42969,notready=367,fresh=42969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=103,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+45.011250300	SYNC_CTRL,ticks=34002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+45.022501900	SYNC_AB,initial_nr=367,gyro_started=42969,gyro_skipped=367,retry_started=367,retry_ready=367,retry_nr=0,retry_expired=0,retry_busy=0
+45.033671600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+45.170364600	LOAD,stage=0,ticks=34202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+45.971155500	CLK,seq=44,us=44154636,ticks=44001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+45.990579200	IMU,read_hz=1000 good=43969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+46.004286100	SYNC_SENSOR,ready=43969,notready=372,fresh=43969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=104,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+46.012660200	SYNC_CTRL,ticks=35002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+46.023803400	SYNC_AB,initial_nr=372,gyro_started=43969,gyro_skipped=372,retry_started=372,retry_ready=372,retry_nr=0,retry_expired=0,retry_busy=0
+46.035015800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+46.171827300	LOAD,stage=0,ticks=35202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+46.972579900	CLK,seq=45,us=45154636,ticks=45001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+46.991976500	IMU,read_hz=1000 good=44969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+47.005673500	SYNC_SENSOR,ready=44969,notready=382,fresh=44969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=105,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+47.014110900	SYNC_CTRL,ticks=36002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+47.025324900	SYNC_AB,initial_nr=382,gyro_started=44969,gyro_skipped=382,retry_started=382,retry_ready=382,retry_nr=0,retry_expired=0,retry_busy=0
+47.036419900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+47.173060400	LOAD,stage=0,ticks=36202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+47.974147300	CLK,seq=46,us=46154636,ticks=46001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+47.993586600	IMU,read_hz=1000 good=45969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+48.007375300	SYNC_SENSOR,ready=45969,notready=393,fresh=45969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=106,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+48.015854700	SYNC_CTRL,ticks=37002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+48.026916200	SYNC_AB,initial_nr=393,gyro_started=45969,gyro_skipped=393,retry_started=393,retry_ready=393,retry_nr=0,retry_expired=0,retry_busy=0
+48.038197400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+48.174731800	LOAD,stage=0,ticks=37202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+48.976012100	CLK,seq=47,us=47154636,ticks=47001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+48.995384300	IMU,read_hz=1000 good=46969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+49.009103300	SYNC_SENSOR,ready=46969,notready=397,fresh=46969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=107,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+49.017504600	SYNC_CTRL,ticks=38002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+49.028733100	SYNC_AB,initial_nr=397,gyro_started=46969,gyro_skipped=397,retry_started=397,retry_ready=397,retry_nr=0,retry_expired=0,retry_busy=0
+49.039909500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+49.176571400	LOAD,stage=0,ticks=38202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+49.977403800	CLK,seq=48,us=48154636,ticks=48001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+49.996783300	IMU,read_hz=1000 good=47969 err=0 busy=0 timeout=0 age_us=779 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+50.010476300	SYNC_SENSOR,ready=47969,notready=405,fresh=47969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=108,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+50.018880200	SYNC_CTRL,ticks=39002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+50.030098400	SYNC_AB,initial_nr=405,gyro_started=47969,gyro_skipped=405,retry_started=405,retry_ready=405,retry_nr=0,retry_expired=0,retry_busy=0
+50.041337800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+50.178127300	LOAD,stage=0,ticks=39202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+50.977780500	SYNC_POLICY,policy=B,skip_on_nr=1,retry_us=220,retry_max=1,motor_off=1,replay=1
+50.985981100	CLK,seq=49,us=49154637,ticks=49001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+51.005366500	IMU,read_hz=999 good=48969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+51.016674600	SYNC_SENSOR,ready=48969,notready=418,fresh=48969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=109,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+51.025364800	SYNC_CTRL,ticks=40002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+51.036436700	SYNC_AB,initial_nr=418,gyro_started=48969,gyro_skipped=418,retry_started=418,retry_ready=418,retry_nr=0,retry_expired=0,retry_busy=0
+51.048539700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+51.179504000	LOAD,stage=0,ticks=40202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+51.979960600	CLK,seq=50,us=50154637,ticks=50001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+51.999487600	IMU,read_hz=1000 good=49969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+52.013117700	SYNC_SENSOR,ready=49969,notready=428,fresh=49969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=110,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+52.021435700	SYNC_CTRL,ticks=41002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+52.032704300	SYNC_AB,initial_nr=428,gyro_started=49969,gyro_skipped=428,retry_started=428,retry_ready=428,retry_nr=0,retry_expired=0,retry_busy=0
+52.043986700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+52.180576400	LOAD,stage=0,ticks=41202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+52.980775300	CLK,seq=51,us=51154637,ticks=51001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+53.000137400	IMU,read_hz=1000 good=50969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+53.013827400	SYNC_SENSOR,ready=50969,notready=428,fresh=50969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=111,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+53.022192700	SYNC_CTRL,ticks=42002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+53.033456100	SYNC_AB,initial_nr=428,gyro_started=50969,gyro_skipped=428,retry_started=428,retry_ready=428,retry_nr=0,retry_expired=0,retry_busy=0
+53.044582300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+53.181361300	LOAD,stage=0,ticks=42202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+53.980835100	I2C_PROBE,selected=0,selected_scl=400000,400_id=0x68,replay=1,motor_off=1
+53.988965100	CLK,seq=52,us=52154637,ticks=52001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+54.006151700	IMU,read_hz=1000 good=51969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+54.019784400	SYNC_SENSOR,ready=51969,notready=440,fresh=51969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=112,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+54.028191200	SYNC_CTRL,ticks=43002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+54.039432200	SYNC_AB,initial_nr=440,gyro_started=51969,gyro_skipped=440,retry_started=440,retry_ready=440,retry_nr=0,retry_expired=0,retry_busy=0
+54.051480200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+54.182528700	LOAD,stage=0,ticks=43202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+54.983323800	CLK,seq=53,us=53154637,ticks=53001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+55.002749000	IMU,read_hz=1000 good=52969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+55.016355400	SYNC_SENSOR,ready=52969,notready=447,fresh=52969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=113,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+55.024793500	SYNC_CTRL,ticks=44002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+55.035997200	SYNC_AB,initial_nr=447,gyro_started=52969,gyro_skipped=447,retry_started=447,retry_ready=447,retry_nr=0,retry_expired=0,retry_busy=0
+55.047153300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+55.183909100	LOAD,stage=0,ticks=44202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+55.984944900	CLK,seq=54,us=54154637,ticks=54001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+56.004049900	IMU,read_hz=1000 good=53969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+56.017747500	SYNC_SENSOR,ready=53969,notready=458,fresh=53969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=114,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+56.026126700	SYNC_CTRL,ticks=45002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+56.037437900	SYNC_AB,initial_nr=458,gyro_started=53969,gyro_skipped=458,retry_started=458,retry_ready=458,retry_nr=0,retry_expired=0,retry_busy=0
+56.048660700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+56.185642800	LOAD,stage=0,ticks=45202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+56.986393700	CLK,seq=55,us=55154637,ticks=55001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+57.005445800	IMU,read_hz=1000 good=54969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+57.019173300	SYNC_SENSOR,ready=54969,notready=462,fresh=54969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=115,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+57.027544700	SYNC_CTRL,ticks=46002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+57.038739200	SYNC_AB,initial_nr=462,gyro_started=54969,gyro_skipped=462,retry_started=462,retry_ready=462,retry_nr=0,retry_expired=0,retry_busy=0
+57.050045300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+57.186728300	LOAD,stage=0,ticks=46202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+57.987533800	CLK,seq=56,us=56154637,ticks=56001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+58.006947500	IMU,read_hz=1000 good=55969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+58.020596700	SYNC_SENSOR,ready=55969,notready=474,fresh=55969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=116,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+58.029018600	SYNC_CTRL,ticks=47002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+58.040267600	SYNC_AB,initial_nr=474,gyro_started=55969,gyro_skipped=474,retry_started=474,retry_ready=474,retry_nr=0,retry_expired=0,retry_busy=0
+58.051529700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+58.188028700	LOAD,stage=0,ticks=47202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+58.988601500	CLK,seq=57,us=57154637,ticks=57001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+59.008080500	IMU,read_hz=1000 good=56969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+59.021750100	SYNC_SENSOR,ready=56969,notready=482,fresh=56969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=117,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+59.030174500	SYNC_CTRL,ticks=48002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+59.041421200	SYNC_AB,initial_nr=482,gyro_started=56969,gyro_skipped=482,retry_started=482,retry_ready=482,retry_nr=0,retry_expired=0,retry_busy=0
+59.052779300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+59.189293500	LOAD,stage=0,ticks=48202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+59.989622100	CLK,seq=58,us=58154637,ticks=58001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+60.009063300	IMU,read_hz=1000 good=57969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+60.022733300	SYNC_SENSOR,ready=57969,notready=489,fresh=57969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=118,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+60.031096700	SYNC_CTRL,ticks=49002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+60.042285400	SYNC_AB,initial_nr=489,gyro_started=57969,gyro_skipped=489,retry_started=489,retry_ready=489,retry_nr=0,retry_expired=0,retry_busy=0
+60.053589400	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+60.190299400	LOAD,stage=0,ticks=49202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+60.990482800	CLK,seq=59,us=59154637,ticks=59001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+61.009906100	IMU,read_hz=1000 good=58969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+61.023537800	SYNC_SENSOR,ready=58969,notready=497,fresh=58969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=119,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+61.032020100	SYNC_CTRL,ticks=50002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+61.043209700	SYNC_AB,initial_nr=497,gyro_started=58969,gyro_skipped=497,retry_started=497,retry_ready=497,retry_nr=0,retry_expired=0,retry_busy=0
+61.054432900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+61.191016600	LOAD,stage=0,ticks=50202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+61.991474700	CLK,seq=60,us=60154637,ticks=60001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+62.011327400	IMU,read_hz=1000 good=59969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+62.024543100	SYNC_SENSOR,ready=59969,notready=506,fresh=59969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=120,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+62.032944000	SYNC_CTRL,ticks=51002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+62.044207700	SYNC_AB,initial_nr=506,gyro_started=59969,gyro_skipped=506,retry_started=506,retry_ready=506,retry_nr=0,retry_expired=0,retry_busy=0
+62.055298000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+62.191973000	LOAD,stage=0,ticks=51202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+62.992830300	CLK,seq=61,us=61154637,ticks=61001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+63.012188200	IMU,read_hz=1000 good=60969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+63.025962900	SYNC_SENSOR,ready=60969,notready=511,fresh=60969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=121,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+63.034344900	SYNC_CTRL,ticks=52002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+63.045480300	SYNC_AB,initial_nr=511,gyro_started=60969,gyro_skipped=511,retry_started=511,retry_ready=511,retry_nr=0,retry_expired=0,retry_busy=0
+63.056770700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+63.193648100	LOAD,stage=0,ticks=52202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+63.994125500	CLK,seq=62,us=62154637,ticks=62001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+64.013665700	IMU,read_hz=1000 good=61969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+64.027181100	SYNC_SENSOR,ready=61969,notready=523,fresh=61969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=122,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+64.035591600	SYNC_CTRL,ticks=53002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+64.046795700	SYNC_AB,initial_nr=523,gyro_started=61969,gyro_skipped=523,retry_started=523,retry_ready=523,retry_nr=0,retry_expired=0,retry_busy=0
+64.057926300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+64.194730900	LOAD,stage=0,ticks=53202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+64.995066900	CLK,seq=63,us=63154637,ticks=63001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+65.014526700	IMU,read_hz=1000 good=62969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+65.028187300	SYNC_SENSOR,ready=62969,notready=530,fresh=62969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=123,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+65.036599100	SYNC_CTRL,ticks=54002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+65.047891300	SYNC_AB,initial_nr=530,gyro_started=62969,gyro_skipped=530,retry_started=530,retry_ready=530,retry_nr=0,retry_expired=0,retry_busy=0
+65.059008500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+65.195597900	LOAD,stage=0,ticks=54202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+65.995555600	CLK,seq=64,us=64154637,ticks=64001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+66.015092400	IMU,read_hz=1000 good=63969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+66.028615300	SYNC_SENSOR,ready=63969,notready=530,fresh=63969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=124,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+66.037127500	SYNC_CTRL,ticks=55002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+66.048485600	SYNC_AB,initial_nr=530,gyro_started=63969,gyro_skipped=530,retry_started=530,retry_ready=530,retry_nr=0,retry_expired=0,retry_busy=0
+66.059436300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+66.196144400	LOAD,stage=0,ticks=55202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+66.996256700	CLK,seq=65,us=65154637,ticks=65001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+67.015850400	IMU,read_hz=1000 good=64969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+67.029387900	SYNC_SENSOR,ready=64969,notready=538,fresh=64969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=125,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+67.037810100	SYNC_CTRL,ticks=56002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+67.049106700	SYNC_AB,initial_nr=538,gyro_started=64969,gyro_skipped=538,retry_started=538,retry_ready=538,retry_nr=0,retry_expired=0,retry_busy=0
+67.060255800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+67.197008000	LOAD,stage=0,ticks=56202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+67.997896800	CLK,seq=66,us=66154637,ticks=66001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+68.017222100	IMU,read_hz=1000 good=65969 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+68.031065700	SYNC_SENSOR,ready=65969,notready=549,fresh=65969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=126,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+68.039380500	SYNC_CTRL,ticks=57002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+68.050877900	SYNC_AB,initial_nr=549,gyro_started=65969,gyro_skipped=549,retry_started=549,retry_ready=549,retry_nr=0,retry_expired=0,retry_busy=0
+68.061840200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+68.198691900	LOAD,stage=0,ticks=57202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+68.999432200	CLK,seq=67,us=67154637,ticks=67001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+69.018876000	IMU,read_hz=1000 good=66969 err=0 busy=0 timeout=0 age_us=457 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+69.032569400	SYNC_SENSOR,ready=66969,notready=558,fresh=66969,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=127,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+69.040942300	SYNC_CTRL,ticks=58002,repeat=61,age_max=1770,age_gt1000=61,age_gt1500=61,p95_bin=1000,p99_bin=1000
+69.052127000	SYNC_AB,initial_nr=558,gyro_started=66969,gyro_skipped=558,retry_started=558,retry_ready=558,retry_nr=0,retry_expired=0,retry_busy=0
+69.063548700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+69.200482100	LOAD,stage=0,ticks=58202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+70.001790000	CLK,seq=68,us=68154637,ticks=68001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+70.020002100	IMU,read_hz=999 good=67968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=120 i2c_max_us=121 update_max_us=17 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+70.033721000	SYNC_SENSOR,ready=67968,notready=567,fresh=67968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=128,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+70.042094600	SYNC_CTRL,ticks=59002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+70.053350400	SYNC_AB,initial_nr=567,gyro_started=67968,gyro_skipped=567,retry_started=566,retry_ready=566,retry_nr=0,retry_expired=1,retry_busy=0
+70.064640500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=2 max_cycles=236 core_hz=96000000
+70.201386700	LOAD,stage=0,ticks=59202,max_cycles=189,over800=0,over1000=0,pid_milli=0,motor_off=1
+70.998128900	LOAD_SWITCH,stage=1,elapsed_s=60,motor_off=1
+71.006174500	CLK,seq=69,us=69154643,ticks=69001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+71.023155600	IMU,read_hz=999 good=68968 err=0 busy=0 timeout=0 age_us=786 i2c_last_us=120 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=999 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+71.036996200	SYNC_SENSOR,ready=68968,notready=571,fresh=68968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=129,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+71.045536800	SYNC_CTRL,ticks=60002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+71.056661700	SYNC_AB,initial_nr=571,gyro_started=68968,gyro_skipped=571,retry_started=570,retry_ready=570,retry_nr=0,retry_expired=1,retry_busy=0
+71.068904600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=816 core_hz=96000000
+71.202586000	LOAD,stage=1,ticks=201,max_cycles=772,over800=0,over1000=0,pid_milli=0,motor_off=1
+72.003420500	CLK,seq=70,us=70154643,ticks=70001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+72.022872400	IMU,read_hz=1000 good=69968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+72.036546600	SYNC_SENSOR,ready=69968,notready=581,fresh=69968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=130,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+72.044935300	SYNC_CTRL,ticks=61002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+72.056137000	SYNC_AB,initial_nr=581,gyro_started=69968,gyro_skipped=581,retry_started=580,retry_ready=580,retry_nr=0,retry_expired=1,retry_busy=0
+72.067311300	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=819 core_hz=96000000
+72.203992400	LOAD,stage=1,ticks=1201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+73.004661300	CLK,seq=71,us=71154643,ticks=71001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+73.024080600	IMU,read_hz=1000 good=70968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+73.037741100	SYNC_SENSOR,ready=70968,notready=586,fresh=70968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=131,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+73.046138000	SYNC_CTRL,ticks=62002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+73.057390200	SYNC_AB,initial_nr=586,gyro_started=70968,gyro_skipped=586,retry_started=585,retry_ready=585,retry_nr=0,retry_expired=1,retry_busy=0
+73.068532700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+73.205313200	LOAD,stage=1,ticks=2201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+74.006351200	CLK,seq=72,us=72154643,ticks=72001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+74.025768600	IMU,read_hz=1000 good=71968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+74.039411700	SYNC_SENSOR,ready=71968,notready=595,fresh=71968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=132,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+74.047951900	SYNC_CTRL,ticks=63002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+74.059070000	SYNC_AB,initial_nr=595,gyro_started=71968,gyro_skipped=595,retry_started=594,retry_ready=594,retry_nr=0,retry_expired=1,retry_busy=0
+74.070315900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+74.206926600	LOAD,stage=1,ticks=3201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+75.008072300	CLK,seq=73,us=73154643,ticks=73001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+75.027481600	IMU,read_hz=1000 good=72968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+75.041154100	SYNC_SENSOR,ready=72968,notready=603,fresh=72968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=133,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+75.049627900	SYNC_CTRL,ticks=64002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+75.060809500	SYNC_AB,initial_nr=603,gyro_started=72968,gyro_skipped=603,retry_started=602,retry_ready=602,retry_nr=0,retry_expired=1,retry_busy=0
+75.072028200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+75.208586800	LOAD,stage=1,ticks=4201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+76.009676000	CLK,seq=74,us=74154643,ticks=74001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+76.029276700	IMU,read_hz=1000 good=73968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+76.042793600	SYNC_SENSOR,ready=73968,notready=608,fresh=73968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=134,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+76.051254100	SYNC_CTRL,ticks=65002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+76.062346900	SYNC_AB,initial_nr=608,gyro_started=73968,gyro_skipped=608,retry_started=607,retry_ready=607,retry_nr=0,retry_expired=1,retry_busy=0
+76.073601500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+76.210170300	LOAD,stage=1,ticks=5201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+77.011152400	CLK,seq=75,us=75154643,ticks=75001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+77.030626000	IMU,read_hz=1000 good=74968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+77.044267500	SYNC_SENSOR,ready=74968,notready=618,fresh=74968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=135,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+77.052655000	SYNC_CTRL,ticks=66002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+77.063907800	SYNC_AB,initial_nr=618,gyro_started=74968,gyro_skipped=618,retry_started=617,retry_ready=617,retry_nr=0,retry_expired=1,retry_busy=0
+77.075056700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+77.211824300	LOAD,stage=1,ticks=6201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+78.012527100	CLK,seq=76,us=76154643,ticks=76001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+78.031942400	IMU,read_hz=1000 good=75968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+78.045596300	SYNC_SENSOR,ready=75968,notready=623,fresh=75968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=136,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+78.054027100	SYNC_CTRL,ticks=67002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+78.065300200	SYNC_AB,initial_nr=623,gyro_started=75968,gyro_skipped=623,retry_started=622,retry_ready=622,retry_nr=0,retry_expired=1,retry_busy=0
+78.076491700	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+78.213272400	LOAD,stage=1,ticks=7201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+79.014013500	CLK,seq=77,us=77154643,ticks=77001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+79.033401600	IMU,read_hz=1000 good=76968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+79.047008300	SYNC_SENSOR,ready=76968,notready=639,fresh=76968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=137,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+79.063337700	SYNC_CTRL,ticks=68002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+79.066774500	SYNC_AB,initial_nr=639,gyro_started=76968,gyro_skipped=639,retry_started=638,retry_ready=638,retry_nr=0,retry_expired=1,retry_busy=0
+79.077882900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+79.214708600	LOAD,stage=1,ticks=8201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+80.015360300	CLK,seq=78,us=78154643,ticks=78001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+80.034620300	IMU,read_hz=1000 good=77968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+80.048439600	SYNC_SENSOR,ready=77968,notready=645,fresh=77968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=138,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+80.056661900	SYNC_CTRL,ticks=69002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+80.068205900	SYNC_AB,initial_nr=645,gyro_started=77968,gyro_skipped=645,retry_started=644,retry_ready=644,retry_nr=0,retry_expired=1,retry_busy=0
+80.079142100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+80.215870400	LOAD,stage=1,ticks=9201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+81.016398500	CLK,seq=79,us=79154643,ticks=79001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+81.035900600	IMU,read_hz=1000 good=78968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+81.049536200	SYNC_SENSOR,ready=78968,notready=651,fresh=78968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=139,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+81.057920300	SYNC_CTRL,ticks=70002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+81.069156500	SYNC_AB,initial_nr=651,gyro_started=78968,gyro_skipped=651,retry_started=650,retry_ready=650,retry_nr=0,retry_expired=1,retry_busy=0
+81.080427000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+81.216953000	LOAD,stage=1,ticks=10201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+82.017802400	CLK,seq=80,us=80154643,ticks=80001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+82.037222200	IMU,read_hz=1000 good=79968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+82.050898600	SYNC_SENSOR,ready=79968,notready=664,fresh=79968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=140,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+82.059266400	SYNC_CTRL,ticks=71002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+82.070503100	SYNC_AB,initial_nr=664,gyro_started=79968,gyro_skipped=664,retry_started=663,retry_ready=663,retry_nr=0,retry_expired=1,retry_busy=0
+82.081856000	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+82.218383300	LOAD,stage=1,ticks=11201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+83.018744100	CLK,seq=81,us=81154643,ticks=81001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+83.038180700	IMU,read_hz=1000 good=80968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+83.051905700	SYNC_SENSOR,ready=80968,notready=672,fresh=80968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=141,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+83.060219900	SYNC_CTRL,ticks=72002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+83.071471800	SYNC_AB,initial_nr=672,gyro_started=80968,gyro_skipped=672,retry_started=671,retry_ready=671,retry_nr=0,retry_expired=1,retry_busy=0
+83.082860200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+83.219337400	LOAD,stage=1,ticks=12201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+84.020313200	CLK,seq=82,us=82154643,ticks=82001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+84.039823700	IMU,read_hz=1000 good=81968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+84.053422000	SYNC_SENSOR,ready=81968,notready=681,fresh=81968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=142,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+84.061796400	SYNC_CTRL,ticks=73002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+84.073145300	SYNC_AB,initial_nr=681,gyro_started=81968,gyro_skipped=681,retry_started=680,retry_ready=680,retry_nr=0,retry_expired=1,retry_busy=0
+84.084206200	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+84.221046100	LOAD,stage=1,ticks=13201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+85.021871600	CLK,seq=83,us=83154643,ticks=83001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+85.041200600	IMU,read_hz=1000 good=82968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+85.054903400	SYNC_SENSOR,ready=82968,notready=688,fresh=82968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=143,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+85.063321900	SYNC_CTRL,ticks=74002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+85.074485400	SYNC_AB,initial_nr=688,gyro_started=82968,gyro_skipped=688,retry_started=687,retry_ready=687,retry_nr=0,retry_expired=1,retry_busy=0
+85.085713900	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+85.222470300	LOAD,stage=1,ticks=14201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+86.023169800	CLK,seq=84,us=84154643,ticks=84001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+86.042590800	IMU,read_hz=1000 good=83968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+86.056239000	SYNC_SENSOR,ready=83968,notready=699,fresh=83968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=144,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+86.064743400	SYNC_CTRL,ticks=75002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+86.075951400	SYNC_AB,initial_nr=699,gyro_started=83968,gyro_skipped=699,retry_started=698,retry_ready=698,retry_nr=0,retry_expired=1,retry_busy=0
+86.087125500	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+86.223743100	LOAD,stage=1,ticks=15201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+87.024233600	CLK,seq=85,us=85154643,ticks=85001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+87.043619900	IMU,read_hz=1000 good=84968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+87.057279300	SYNC_SENSOR,ready=84968,notready=708,fresh=84968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=145,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+87.065728100	SYNC_CTRL,ticks=76002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+87.076894800	SYNC_AB,initial_nr=708,gyro_started=84968,gyro_skipped=708,retry_started=707,retry_ready=707,retry_nr=0,retry_expired=1,retry_busy=0
+87.088305800	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+87.224786200	LOAD,stage=1,ticks=16201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+88.025097800	CLK,seq=86,us=86154643,ticks=86001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+88.044488100	IMU,read_hz=1000 good=85968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+88.058163700	SYNC_SENSOR,ready=85968,notready=723,fresh=85968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=146,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+88.066582300	SYNC_CTRL,ticks=77002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+88.077783100	SYNC_AB,initial_nr=723,gyro_started=85968,gyro_skipped=723,retry_started=722,retry_ready=722,retry_nr=0,retry_expired=1,retry_busy=0
+88.088957100	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+88.225747500	LOAD,stage=1,ticks=17201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+89.025861000	CLK,seq=87,us=87154643,ticks=87001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
+89.045192100	IMU,read_hz=1000 good=86968 err=0 busy=0 timeout=0 age_us=780 i2c_last_us=119 i2c_max_us=121 update_max_us=16 cal=1 cal_n=4000 bias_mdps=-1522 gz_mdps=0 yaw_mdeg=0 ctrl_hz=1000 last_i2c_error=0 uart_drop=0 uart_dma_err=0
+89.058909900	SYNC_SENSOR,ready=86968,notready=736,fresh=86968,stale=0,fgap_min=240,fgap_max=2671,fgap_gt1500=147,fgap_gt2000=1,poll_gap_max=1985,nr_run_max=1
+89.067306500	SYNC_CTRL,ticks=78002,repeat=62,age_max=1770,age_gt1000=62,age_gt1500=61,p95_bin=1000,p99_bin=1000
+89.078508900	SYNC_AB,initial_nr=736,gyro_started=86968,gyro_skipped=736,retry_started=735,retry_ready=735,retry_nr=0,retry_expired=1,retry_busy=0
+89.089679600	TIMING,period_min_us=1000 period_max_us=1000 late_50us=0 gap_over_1500us=0 observed_isr_max_us=8 max_cycles=821 core_hz=96000000
+89.226305000	LOAD,stage=1,ticks=18201,max_cycles=774,over800=0,over1000=0,pid_milli=0,motor_off=1
+90.026630600	CLK,seq=88,us=88154643,ticks=88001,tx_drop=0,trim=25,fault=0,sysclk_nominal=96000000
