@@ -376,6 +376,28 @@ def self_test():
     assert mb["ab"]["gyro_skipped"] > 0
     assert mb["ab"]["retry_started"] > 0
 
+    # Strict handling of a malformed startup UART frame: without both
+    # policy motor-off proof and a standalone I2C_PROBE, never PASS.
+    damaged = [
+        x.replace(",motor_off=1", "") if x.startswith("SYNC_POLICY,")
+        else x for x in with_policy("B")
+        if not x.startswith("I2C_PROBE,")
+    ]
+    damaged_fails, _, _ = validate(fake, damaged)
+    assert any("Missing I2C_PROBE" in e for e in damaged_fails), damaged_fails
+    assert any("motor-off" in e for e in damaged_fails), damaged_fails
+    replay = damaged + [
+        "SYNC_POLICY,policy=B,skip_on_nr=1,retry_us=220,retry_max=1,"
+        "motor_off=1,replay=1",
+        "I2C_PROBE,selected=0,selected_scl=400000,400_id=0x68,"
+        "replay=1,motor_off=1",
+    ]
+    recovered_fails, _, recovered = validate(fake, replay)
+    assert not recovered_fails, recovered_fails
+    assert recovered["sampling_policy"] == "B"
+    tampered = replay[:-1] + [replay[-1].replace("400_id=0x68", "400_id=0x00")]
+    assert any("Malformed replayed I2C" in e for e in validate(fake, tampered)[0])
+
     # Real-world B captures may begin after firmware boot/calibration.
     # Preserve legitimate steady-state telemetry while explicitly refusing
     # to treat absent boot headers as complete firmware attestation.
