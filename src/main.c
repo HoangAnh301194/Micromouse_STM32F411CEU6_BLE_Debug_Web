@@ -438,6 +438,11 @@ int main(void)
     UART_Printf("MPU_SYNC_DIAG,mode=status_poll,trim=%lu,sysclk_nominal=%lu,motors_off=1\r\n",
                 (unsigned long)Board_GetHsiTrim(),
                 (unsigned long)SystemCoreClock);
+#if defined(MPU_FRESHNESS_AB_B)
+    UART_Printf("SYNC_POLICY,policy=B,skip_on_nr=1,retry_us=220,retry_max=1,motor_off=1\r\n");
+#else
+    UART_Printf("SYNC_POLICY,policy=A,skip_on_nr=0,retry_us=0,retry_max=0,motor_off=1\r\n");
+#endif
 #endif
 
     init_status = MPU6050_Init(&imu_test);
@@ -693,12 +698,26 @@ int main(void)
           (unsigned long)imu_test.diag_notready_run_max);
         UART_Printf(
           "SYNC_CTRL,ticks=%lu,repeat=%lu,age_max=%lu,"
-          "age_gt1000=%lu,age_gt1500=%lu\r\n",
+          "age_gt1000=%lu,age_gt1500=%lu,p95_bin=%lu,p99_bin=%lu\r\n",
           (unsigned long)imu_sync.control_ticks,
           (unsigned long)imu_sync.reused_sample_ticks,
           (unsigned long)imu_sync.age_max_us,
           (unsigned long)imu_sync.age_over1000_ticks,
-          (unsigned long)imu_sync.age_over1500_ticks);
+          (unsigned long)imu_sync.age_over1500_ticks,
+          (unsigned long)imu_sync.age_p95_bin_us,
+          (unsigned long)imu_sync.age_p99_bin_us);
+        UART_Printf(
+          "SYNC_AB,initial_nr=%lu,gyro_started=%lu,gyro_skipped=%lu,"
+          "retry_started=%lu,retry_ready=%lu,retry_nr=%lu,"
+          "retry_expired=%lu,retry_busy=%lu\r\n",
+          (unsigned long)imu_test.diag_ab_initial_notready,
+          (unsigned long)imu_test.diag_ab_gyro_started,
+          (unsigned long)imu_test.diag_ab_gyro_skipped,
+          (unsigned long)imu_test.diag_ab_retry_started,
+          (unsigned long)imu_test.diag_ab_retry_ready,
+          (unsigned long)imu_test.diag_ab_retry_notready,
+          (unsigned long)imu_test.diag_ab_retry_expired,
+          (unsigned long)imu_test.diag_ab_retry_busy);
 #else
         UART_Printf(
           "FRESH,status=%lu ready=%lu not_ready=%lu fresh=%lu stale=%lu "
