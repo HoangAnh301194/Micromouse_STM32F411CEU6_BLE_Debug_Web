@@ -399,6 +399,7 @@ int main(void)
 #if defined(CONTROL_LOAD_DIAG)
     Control_LoadStats_t load_stats;
     uint8_t load_stage_applied = 0U;
+    uint8_t startup_replay_step = 0U;
 #if defined(CONTROL_LOAD_LOG_STAGGER)
     uint32_t last_load_sent_report_us = 0U;
 #endif
@@ -556,6 +557,7 @@ int main(void)
 #if defined(CONTROL_LOAD_DIAG)
             Control_SetLoadStage(0U);
             load_stage_applied = 0U;
+            startup_replay_step = 0U;
 #endif
             UART_Printf(
                 "CAL_DONE,n=%u blocks=%u retries=%u "
@@ -585,6 +587,27 @@ int main(void)
                 load_stage_applied = desired_stage;
                 UART_Printf("LOAD_SWITCH,stage=%u,elapsed_s=%lu,motor_off=1\r\n",
                             (unsigned)desired_stage, (unsigned long)since_cal_s);
+            }
+        }
+#endif
+#if defined(CONTROL_LOAD_DIAG)
+        /* Re-emit important startup evidence AFTER calibration, split into
+         * separate 3s-spaced UART frames. An isolated malformed USB-UART
+         * startup line must not silently turn into diagnostic PASS.
+         * The analyzer still requires complete real motor-off/I2C fields. */
+        if (zeroed_after_cal && calibration_done_us != 0U) {
+            uint32_t cal_age_ms = (uint32_t)(micros() - calibration_done_us) / 1000U;
+            if ((startup_replay_step == 0U && cal_age_ms >= 10000U) ||
+                (startup_replay_step == 2U && cal_age_ms >= 40000U)) {
+                UART_Printf("SYNC_POLICY,policy=B,skip_on_nr=1,retry_us=220,retry_max=1,motor_off=1,replay=1\r\n");
+                startup_replay_step++;
+            } else if ((startup_replay_step == 1U && cal_age_ms >= 13000U) ||
+                       (startup_replay_step == 3U && cal_age_ms >= 43000U)) {
+                UART_Printf("I2C_PROBE,selected=%u,selected_scl=%lu,400_id=0x%02X,replay=1,motor_off=1\r\n",
+                            (unsigned)imu_test.selected_speed_index,
+                            (unsigned long)I2C_GetConfiguredSclHz(),
+                            (unsigned)imu_test.probe_who_value[0]);
+                startup_replay_step++;
             }
         }
 #endif
