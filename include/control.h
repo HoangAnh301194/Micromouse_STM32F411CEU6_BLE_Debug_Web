@@ -33,6 +33,21 @@ typedef struct {
 void Control_GetIntegrationStats(Control_IntegrationStats_t *out);
 #endif
 
+#if defined(MPU_PHASE_AB) && defined(MPU_INTEGRATION_BENCH)
+typedef struct {
+    uint32_t paired_ticks;
+    uint32_t irq_complete_reused;
+    uint32_t snapshot_published_reused;
+    uint32_t irq_ahead_of_snapshot_ticks;
+    uint32_t trace_contention_ticks;
+    uint32_t irq_completion_age_max_us;
+    uint32_t main_observed_age_max_us;
+    uint32_t last_irq_sequence;
+    uint32_t last_published_sequence;
+} Control_PhasePair_t;
+void Control_GetPhasePair(Control_PhasePair_t *out);
+#endif
+
 void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
