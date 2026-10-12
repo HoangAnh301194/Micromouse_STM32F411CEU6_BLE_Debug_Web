@@ -35,6 +35,10 @@ def analyze(lines, min_phases=30, min_valid_mint=150):
         "policy":"B","diag":"0","period_us":"1000",
         "trace_interval_s":"5","uart_in_isr":"0"}.items()):
         issues.append("PHASE_PROFILE missing or unexpected (wrong firmware)")
+    scheduler = (headers[0].get("scheduler","legacy_unlabeled")
+                 if len(headers) == 1 else "unknown")
+    if scheduler not in ("legacy_elapsed","tim11_tick","legacy_unlabeled"):
+        issues.append("Unrecognized MPU scheduler profile")
     req = tag("PHASE_REQ")
     latency = tag("PHASE_LAT")
     pair = tag("PHASE_PAIR")
@@ -177,6 +181,7 @@ def analyze(lines, min_phases=30, min_valid_mint=150):
     return {"status":status,"failures":sorted(set(issues)),
             "warnings":sorted(set(warnings)),
             "integration_gate":old.get("status"),
+            "scheduler": scheduler,
             "paired_interpretation":interpretation,
             "metrics":metrics,
             "scope":"motor-OFF, no sampling policy changes, two marker arms on identical ISR ticks"}
