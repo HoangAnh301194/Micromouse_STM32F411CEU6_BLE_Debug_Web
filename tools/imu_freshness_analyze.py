@@ -125,8 +125,28 @@ def validate(report: dict, lines: list[str]):
                             (("mode", "status_poll"), ("trim", "25"),
                              ("sysclk_nominal", "96000000"), ("motors_off", "1"))):
         failures.append("Wrong MPU synchronization diagnostic firmware")
-    if probes and probes[-1].get("selected") != "0":
-        cautions.append("I2C did not select 400kHz fast mode")
+    if probes:
+        selected_probe = probes[-1]
+        if selected_probe.get("selected") != "0" or (
+            selected_probe.get("selected_scl") is not None and
+            selected_probe.get("selected_scl") != "400000"
+        ):
+            failures.append("I2C did not select verified 400kHz fast mode")
+        # A replay proves initialization using its complete independent UART frame.
+        # Never infer missing motor-off or I2C configuration fields from statistics.
+        if selected_probe.get("replay") == "1" and any(
+            selected_probe.get(k) != v for k, v in (
+                ("400_id", "0x68"), ("motor_off", "1"),
+                ("selected", "0"), ("selected_scl", "400000")
+            )
+        ):
+            failures.append("Malformed replayed I2C attestation")
+    if mode == "B" and policy_rows and any(
+        policy_rows[-1].get(k) != v for k, v in (
+            ("skip_on_nr", "1"), ("retry_us", "220"), ("retry_max", "1")
+        )
+    ):
+        failures.append("Policy B retry/skip configuration mismatch")
     if cal:
         if cal[-1].get("n") != "4000" or cal[-1].get("retries") != "0":
             failures.append("4k-sample gyro calibration failed validation")
