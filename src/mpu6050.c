@@ -382,6 +382,14 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
      * Keep previous bias for post-calibration comparison; no bias update
      * occurs during motion because cal=0 disables yaw integration. */
     if (!h) return MPU6050_ERROR;
+    /* Invalidate the old publish BEFORE touching calibration, yaw or
+     * bias fields: TIM11 must not consume a pre-recalibration snapshot. */
+    {
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        h->published_valid = 0U;
+        if (!primask) __enable_irq();
+    }
     h->cal_previous_bias_dps = h->gyro_z_offset;
     h->cal_retries = 0U;
     h->cal_failure_reason = 0U;
@@ -412,14 +420,6 @@ MPU6050_Status MPU6050_Calibrate(MPU6050_Handle_t *h)
     h->yaw_no_deadzone = 0.0f;
     h->yaw_raw = 0.0f;
     h->last_update_us = 0U;
-    /* Clear published validity before a new calibration; never expose
-     * a previously calibrated value during warmup/retry. */
-    {
-        uint32_t primask = __get_PRIMASK();
-        __disable_irq();
-        h->published_valid = 0U;
-        if (!primask) __enable_irq();
-    }
     MPU6050_ClearNoiseWindow(h);
     return MPU6050_OK;
 }
