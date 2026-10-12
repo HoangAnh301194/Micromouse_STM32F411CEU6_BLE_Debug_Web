@@ -1,0 +1,42 @@
+{
+  "status": "PASS_PAIRED_TRACE_FOR_DIAGNOSIS",
+  "failures": [],
+  "warnings": [
+    "Freshness regression gate (>0.15% reuse): compare against RC1 overall 0.0441%, RC1 stage-0 0.10508%; verify different telemetry and ISR loads before attribution",
+    "Some request start intervals exceeded 1050us"
+  ],
+  "integration_gate": "REVIEW_FRESHNESS_REGRESSION",
+  "paired_interpretation": "Publication makes additional TIM11 ticks reuse a gyro sample whose I2C IRQ had already completed; measure main wake/filter path.",
+  "metrics": {
+    "paired_tim11_ticks": 225000,
+    "arm_A_irq_completion_reused": 451,
+    "arm_B_snapshot_published_reused": 452,
+    "arm_A_irq_completion_reuse_pct": 0.20044,
+    "arm_B_publication_reuse_pct": 0.20089,
+    "extra_publication_reuse_ticks": 1,
+    "irq_complete_but_not_published_ticks": 1,
+    "seqlock_contention_ticks": 0,
+    "sampling_requests": 224771,
+    "request_intervals": 224771,
+    "request_gap_gt1050_count": 453,
+    "request_gap_gt1500_count": 228,
+    "request_interval_avg_us_reported": 1001,
+    "request_interval_max_us_observed": 2000,
+    "request_to_irq_avg_us": 224,
+    "request_to_irq_max_us": 1122,
+    "irq_to_main_avg_us": 2,
+    "irq_to_main_max_us": 3,
+    "main_to_publish_avg_us": 13,
+    "main_to_publish_max_us": 18,
+    "irq_to_publish_avg_us": 15,
+    "irq_to_publish_max_us": 20,
+    "last_sample_timestamps_us": {
+      "request": 235152241,
+      "irq_complete": 235152463,
+      "main_observed": 235152465,
+      "snapshot_publish": 235152479
+    },
+    "window_phase_records": 46
+  },
+  "scope": "motor-OFF, no sampling policy changes, two marker arms on identical ISR ticks"
+}
