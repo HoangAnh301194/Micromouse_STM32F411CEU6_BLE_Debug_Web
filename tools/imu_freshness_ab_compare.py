@@ -33,7 +33,6 @@ def load(path: pathlib.Path, mode: str) -> dict:
 
 def compare(a: dict, b: dict) -> dict:
     fields = {
-        "postcal_status_not_ready_pct": "DATA_RDY=0 per status poll (%)",
         "gyro_reused_tick_pct": "TIM11 repeated gyro sample (%)",
         "fresh_gap_gt2000_count": "Accepted gyro gaps over 2ms (count)",
         "fresh_gap_gt1500_count": "Accepted gyro gaps over 1.5ms (count)",
@@ -61,6 +60,12 @@ def compare(a: dict, b: dict) -> dict:
     def rate(m, key):
         return 1000.0 * m[key] / m["postcal_TIM11_ticks"]
     derived = {
+        # Unlike total DATA_RDY=0 per status poll, this first-poll rate
+        # remains comparable even when B makes extra retry status reads.
+        "initial_nr_per_1000_ticks_a": round(
+            1000 * a.get("ab", {}).get("initial_nr", 0) / ar, 5),
+        "initial_nr_per_1000_ticks_b": round(
+            1000 * b.get("ab", {}).get("initial_nr", 0) / br, 5),
         "gap_gt2000_per_1000_ticks_a": round(rate(a, "fresh_gap_gt2000_count"), 5),
         "gap_gt2000_per_1000_ticks_b": round(rate(b, "fresh_gap_gt2000_count"), 5),
         "old_sample_age_gt1500_per_1000_ticks_a": round(rate(a, "gyro_completion_age_gt1500_ticks"), 5),
