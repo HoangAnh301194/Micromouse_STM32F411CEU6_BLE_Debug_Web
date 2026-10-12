@@ -396,9 +396,17 @@ int main(void)
 #if defined(MPU_FRESHNESS_DIAG)
     Control_ImuSync_t imu_sync;
 #endif
+#if defined(CONTROL_LOAD_DIAG)
+    Control_LoadStats_t load_stats;
+    uint8_t load_stage_applied = 0U;
+#endif
 
     Board_Init();
     SystemTimer_Init();
+#if defined(CONTROL_LOAD_DIAG)
+    /* Encoder timers only: do NOT initialize TIM2 motor PWM or motor driver. */
+    Encoder_Init();
+#endif
     UART_Init(); /* USART1 PA9: USB-TTL 115200, no BLE required. */
 
     UART_Printf("[BOOT] Isolated MPU6050/I2C test (motors disabled)\r\n");
@@ -505,6 +513,9 @@ int main(void)
 #endif
     Control_SetDiagnosticOnly(1U);
     Control_Start();
+#if defined(CONTROL_LOAD_DIAG)
+    UART_Printf("LOAD_PROFILE,mode=staged,stages=3,stage_seconds=60,motor_off=1,pwm_initialized=0\r\n");
+#endif
 
     UART_Printf("[IMU_READY] whoami=0x68 scl_nominal=%luHz gyro_range=2000dps dlpf=%u sensor_odr=1000Hz\r\n",
                 (unsigned long)I2C_GetConfiguredSclHz(),
@@ -557,6 +568,19 @@ int main(void)
                         (unsigned)imu_test.dlpf_cfg);
         }
 
+#if defined(CONTROL_LOAD_DIAG)
+        if (zeroed_after_cal && calibration_done_us != 0U) {
+            uint32_t since_cal_s = (uint32_t)(micros() - calibration_done_us) / 1000000UL;
+            uint8_t desired_stage = since_cal_s >= 120U ? 2U :
+                                    since_cal_s >= 60U ? 1U : 0U;
+            if (desired_stage != load_stage_applied) {
+                Control_SetLoadStage(desired_stage);
+                load_stage_applied = desired_stage;
+                UART_Printf("LOAD_SWITCH,stage=%u,elapsed_s=%lu,motor_off=1\r\n",
+                            (unsigned)desired_stage, (unsigned long)since_cal_s);
+            }
+        }
+#endif
         /* Diagnostic yaw drifts assume an independent stationary robot.
          * Report actual elapsed time; never update bias automatically. */
         if (zeroed_after_cal && calibration_done_us != 0U) {
@@ -677,6 +701,16 @@ int main(void)
          * This is NOT a 1Hz downsample: statistics include all valid reads. */
         MPU6050_GetNoiseWindow(&imu_test, &noise);
         Control_GetTiming(&timing);
+#if defined(CONTROL_LOAD_DIAG)
+        Control_GetLoadStats(&load_stats);
+        UART_Printf("LOAD,stage=%lu,ticks=%lu,max_cycles=%lu,over800=%lu,over1000=%lu,pid_milli=%ld,motor_off=1\r\n",
+                    (unsigned long)load_stats.stage,
+                    (unsigned long)load_stats.ticks,
+                    (unsigned long)load_stats.max_cycles,
+                    (unsigned long)load_stats.over_800us,
+                    (unsigned long)load_stats.over_1000us,
+                    (long)(int32_t)load_stats.pid_output_milli);
+#endif
 #if defined(MPU_FRESHNESS_DIAG)
         Control_GetImuSync(&imu_sync);
         /* Sensor-accepted samples and actual completion gaps; independent
