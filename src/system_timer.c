@@ -34,3 +34,35 @@ void delay_ms_blocking(uint32_t ms)
 {
     while (ms--) delay_us_blocking(1000UL);
 }
+
+#if defined(MPU_FRESHNESS_AB_B)
+/* TIM5 remains the 32-bit free-running 1MHz timestamp source.
+ * This channel-1 compare interrupt is a ONE-SHOT WFI wake for main. It never
+ * reads I2C or modifies the 1kHz TIM11 scheduler. Priority 14 is below
+ * TIM11 (0) and I2C event IRQs. The experiment runs motor OFF only. */
+void SystemTimer_ArmWakeAfterUs(uint32_t delay_us)
+{
+    if (delay_us < 100U || delay_us > 500U) return;
+    TIM5->DIER &= ~TIM_DIER_CC1IE;
+    TIM5->SR &= ~TIM_SR_CC1IF;
+    TIM5->CCR1 = TIM5->CNT + delay_us;
+    NVIC_ClearPendingIRQ(TIM5_IRQn);
+    NVIC_SetPriority(TIM5_IRQn, 14U);
+    NVIC_EnableIRQ(TIM5_IRQn);
+    TIM5->DIER |= TIM_DIER_CC1IE;
+}
+
+void SystemTimer_CancelWake(void)
+{
+    TIM5->DIER &= ~TIM_DIER_CC1IE;
+    TIM5->SR &= ~TIM_SR_CC1IF;
+}
+
+void TIM5_IRQHandler(void)
+{
+    if (TIM5->SR & TIM_SR_CC1IF) {
+        TIM5->DIER &= ~TIM_DIER_CC1IE;
+        TIM5->SR &= ~TIM_SR_CC1IF;
+    }
+}
+#endif /* MPU_FRESHNESS_AB_B */
