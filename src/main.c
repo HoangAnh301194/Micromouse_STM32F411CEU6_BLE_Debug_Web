@@ -353,6 +353,10 @@ int main(void)
 
 #endif /* old motor diagnostic harness */
 
+#if defined(MOTOR_PWM_DIAG)
+int MotorPwmDiag_Main(void);
+int main(void) { return MotorPwmDiag_Main(); }
+#else
 #include "mpu6050.h"
 
 #if defined(CONTROL_LOAD_DIAG) && !defined(MPU_FRESHNESS_AB_B)
@@ -885,3 +889,5 @@ int main(void)
         max_update_us = 0U;
     }
 }
+
+#endif /* MOTOR_PWM_DIAG: opt-in dedicated main path */
