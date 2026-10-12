@@ -490,6 +490,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     uint32_t duration_us = 0U;
     uint32_t now = micros();
     float dt;
+#if defined(MPU_TIM11_TICK_SCHED)
+    uint32_t control_tick_seq;
+#endif
 #if defined(MPU_PHASE_AB)
     uint32_t irq_complete_us = 0U;
     uint32_t irq_sequence = 0U;
@@ -744,13 +747,9 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     /* A tick is an opportunity, not a queue. Main starts the next
      * transaction when the I2C state machine is IDLE; no floating
      * 999us >=1000us time-window test is used in this experiment. */
-    uint32_t control_tick_seq;
-    {
-        uint32_t primask = __get_PRIMASK();
-        __disable_irq();
-        control_tick_seq = h->control_sample_tick_seq;
-        if (!primask) __enable_irq();
-    }
+    /* Aligned 32-bit volatile access is atomic on Cortex-M4; no need to
+     * briefly mask priority-0 TIM11 just to inspect this sequence. */
+    control_tick_seq = h->control_sample_tick_seq;
     if (h->sample_phase == 0U &&
         control_tick_seq != 0U &&
         control_tick_seq != h->control_last_started_tick_seq) {
