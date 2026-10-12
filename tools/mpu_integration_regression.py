@@ -9,8 +9,10 @@ Usage:
 """
 from __future__ import annotations
 import argparse
+import datetime as dt
 import json
 from pathlib import Path
+import time
 
 BASELINE = {
     "gyro_reused_pct": 0.0441,
@@ -164,8 +166,11 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     group=ap.add_mutually_exclusive_group(required=True)
     group.add_argument("--folder",type=Path)
+    group.add_argument("--port",help="COM6 / USB-TTL port to capture fresh integration run")
     group.add_argument("--self-test",action="store_true")
     group.add_argument("--source-check",action="store_true")
+    ap.add_argument("--seconds",type=float,default=240.0)
+    ap.add_argument("--baud",type=int,default=115200)
     args=ap.parse_args()
     if args.self_test:
         self_test()
@@ -175,13 +180,43 @@ def main():
                           "failures":errors},indent=2))
         if errors: raise SystemExit(1)
     else:
-        folder=args.folder
-        raw=(folder/"raw_serial.log")
+        if args.port:
+            if args.seconds < 180:
+                ap.error("Integration regression requires >=180 seconds of capture")
+            try:
+                import serial
+            except ImportError:
+                ap.error("Missing pyserial: python -m pip install pyserial")
+            folder=Path("mpu_integration_logs")/("session_"+dt.datetime.now().strftime("%Y%m%d_%H%M%S"))
+            folder.mkdir(parents=True,exist_ok=True)
+            raw=folder/"raw_serial.log"
+            print("Open",args.port,"at",args.baud,"baud. Press STM32 RESET once after opening.")
+            print("Motor-OFF only. Capturing",args.seconds,"s in",folder)
+            try:
+                with serial.Serial(args.port,args.baud,timeout=0.25) as ser:
+                    ser.reset_input_buffer()
+                    t0=time.perf_counter()
+                    with raw.open("w",encoding="utf-8") as fh:
+                        while time.perf_counter()-t0<args.seconds:
+                            rx=ser.readline()
+                            if not rx: continue
+                            line=rx.decode("utf-8",errors="replace").strip()
+                            fh.write(f"{time.perf_counter()-t0:.9f}\\t{line}\\n")
+                            if line.startswith(("MINT_BOOT_FAIL","MINT_CAL_FAIL")):
+                                print("MCU FAULT:",line)
+            except serial.SerialException as exc:
+                raise SystemExit("Serial capture failed: "+str(exc))
+            except KeyboardInterrupt:
+                print("Capture interrupted; processing available partial logs.")
+        else:
+            folder=args.folder
+            raw=folder/"raw_serial.log"
         if not raw.exists(): raise SystemExit("Missing raw_serial.log")
         report=analyze(raw.read_text(encoding="utf-8",errors="replace").splitlines())
         (folder/"mpu_integration_report.json").write_text(
-            json.dumps(report,indent=2)+"\n",encoding="utf-8")
+            json.dumps(report,indent=2)+"\\n",encoding="utf-8")
         print(json.dumps(report,indent=2))
+        print("Output:",folder)
         if report["status"]!="PASS_INTEGRATION_MOTOR_OFF": raise SystemExit(1)
 
 
