@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/mpu-i2c-integration-rc1
+      - feature/mpu-freshness-phase-ab
   pull_request:
     paths:
       - 'src/mpu6050.c'
@@ -13,6 +14,9 @@ on:
       - 'src/system_timer.c'
       - 'include/system_timer.h'
       - 'src/mpu_integration_bench.c'
+      - 'src/i2c.c'
+      - 'include/i2c.h'
+      - 'tools/mpu_phase_ab_analyze.py'
       - 'platformio.ini'
       - 'tools/mpu_integration_regression.py'
 
@@ -37,3 +41,7 @@ jobs:
         run: python -m platformio run -e control_load_staggered_96m_trim25
       - name: Build no-diagnostic Policy B integration
         run: python -m platformio run -e mpu_integration_policy_b_96m_trim25
+      - name: Phase A/B synthetic regression
+        run: python tools/mpu_phase_ab_analyze.py --self-test
+      - name: Build matched IRQ-vs-publication phase trace
+        run: python -m platformio run -e mpu_phase_ab_96m_trim25
