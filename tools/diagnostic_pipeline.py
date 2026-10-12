@@ -141,11 +141,16 @@ def main():
     report = phases(lines, boot)
     rc = run_tool("imu_freshness_analyze.py", ["--folder", folder])
     report["freshness_analyzer_exit"] = rc
+    if any(line.startswith("LOAD_PROFILE,") for line in lines):
+        stage_rc = run_tool("control_load_analyze.py", ["--folder", folder])
+        report["load_analyzer_exit"] = stage_rc
+    else:
+        stage_rc = 0
     report_path = folder / "pipeline_report.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     print("Pipeline report:", report_path)
-    if rc or not all(report["checks"].values()) or report["policy"] not in ("A", "B"):
+    if rc or stage_rc or not all(report["checks"].values()) or report["policy"] not in ("A", "B"):
         print("INCOMPLETE/FAIL: do not authorize motor operation.")
         return 1
     print("DIAGNOSTIC CAPTURE PASS (MOTOR OFF ONLY); NOT a production/motion approval")
