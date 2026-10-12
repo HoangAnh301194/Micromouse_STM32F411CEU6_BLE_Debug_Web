@@ -1,8 +1,8 @@
 {
-  "status": "PASS_INTEGRATION_MOTOR_OFF",
+  "status": "REVIEW_FRESHNESS_REGRESSION",
   "failures": [],
   "warnings": [
-    "Reuse > 0.15%; investigate vs reference 0.0441%"
+    "Freshness regression gate (>0.15% reuse): compare against RC1 overall 0.0441%, RC1 stage-0 0.10508%; verify different telemetry and ISR loads before attribution"
   ],
   "metrics": {
     "frames": 225,
