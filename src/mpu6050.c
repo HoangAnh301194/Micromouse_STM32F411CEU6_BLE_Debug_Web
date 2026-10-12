@@ -279,6 +279,11 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->published_completed_us = 0U;
     h->published_sequence = 0U;
     h->published_valid = 0U;
+#if defined(MPU_TIM11_TICK_SCHED)
+    h->control_sample_tick_seq = 0U;
+    h->control_sample_tick_us = 0U;
+    h->control_last_started_tick_seq = 0U;
+#endif
 #if defined(MPU_PHASE_AB)
     h->phase_prev_request_us = 0U;
     h->phase_last_request_us = 0U;
@@ -735,10 +740,29 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     }
 
     now = micros();
+#if defined(MPU_TIM11_TICK_SCHED)
+    /* A tick is an opportunity, not a queue. Main starts the next
+     * transaction when the I2C state machine is IDLE; no floating
+     * 999us >=1000us time-window test is used in this experiment. */
+    uint32_t control_tick_seq;
+    {
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        control_tick_seq = h->control_sample_tick_seq;
+        if (!primask) __enable_irq();
+    }
+    if (h->sample_phase == 0U &&
+        control_tick_seq != 0U &&
+        control_tick_seq != h->control_last_started_tick_seq) {
+#else
     if (h->sample_phase == 0U &&
         (uint32_t)(now - h->last_request_us) >= MPU_SAMPLE_PERIOD_US) {
+#endif
         start = I2C_ReadRegAsync_Start(h->address, MPU6050_INT_STATUS, 1U);
         if (start == I2C_OK) {
+#if defined(MPU_TIM11_TICK_SCHED)
+            h->control_last_started_tick_seq = control_tick_seq;
+#endif
 #if defined(MPU_PHASE_AB)
             if (h->calibrated) {
                 /* Actual START setup timestamp inside I2C driver. */
@@ -773,6 +797,16 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     }
     return MPU6050_OK;
 }
+
+#if defined(MPU_TIM11_TICK_SCHED)
+void MPU6050_NotifyControlTick(MPU6050_Handle_t *h, uint32_t entry_us)
+{
+    if (!h) return;
+    /* Called from TIM11; coherent main read uses a short IRQ mask. */
+    h->control_sample_tick_us = entry_us;
+    ++h->control_sample_tick_seq;
+}
+#endif
 
 uint8_t MPU6050_NeedsImmediatePoll(MPU6050_Handle_t *h)
 {
