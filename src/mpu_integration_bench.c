@@ -36,7 +36,11 @@ int MpuIntegrationBench_Main(void)
 #if defined(MPU_PHASE_AB)
     UART_Printf("PHASE_PROFILE,mode=paired_irq_vs_publish,version=1,"
                 "motor_off=1,policy=B,diag=0,period_us=1000,"
-                "trace_interval_s=5,uart_in_isr=0\r\n");
+#if defined(MPU_TIM11_TICK_SCHED)
+                "trace_interval_s=5,uart_in_isr=0,scheduler=tim11_tick\r\n");
+#else
+                "trace_interval_s=5,uart_in_isr=0,scheduler=legacy_elapsed\r\n");
+#endif
 #endif
     UART_Printf("MINT_PROFILE,policy=B,diag=0,ab_diag=0,load_diag=0,"
                 "motor_off=1,nominal_clock_hz=%lu,trim=%lu,"
