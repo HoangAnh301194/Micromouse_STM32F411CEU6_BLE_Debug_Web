@@ -33,6 +33,11 @@ int MpuIntegrationBench_Main(void)
     UART_Init();
 
     UART_Printf("\r\n[MINT_BOOT] MPU production sampling Policy B, motors disabled\r\n");
+#if defined(MPU_PHASE_AB)
+    UART_Printf("PHASE_PROFILE,mode=paired_irq_vs_publish,version=1,"
+                "motor_off=1,policy=B,diag=0,period_us=1000,"
+                "trace_interval_s=5,uart_in_isr=0\r\n");
+#endif
     UART_Printf("MINT_PROFILE,policy=B,diag=0,ab_diag=0,load_diag=0,"
                 "motor_off=1,nominal_clock_hz=%lu,trim=%lu,"
                 "retry_us=%u,retry_start_limit_us=%u,retry_end_limit_us=%u\r\n",
@@ -111,6 +116,59 @@ int MpuIntegrationBench_Main(void)
                (unsigned long)timing.gap_over_1500us,
                (unsigned long)timing.exec_max_cycles,
                (unsigned long)UART_GetDroppedMessages());
+#if defined(MPU_PHASE_AB)
+            if (mpu.calibrated && (seq % 5U) == 0U) {
+                MPU6050_PhaseStats_t phase;
+                Control_PhasePair_t pair;
+                MPU6050_GetPhaseStats(&mpu, &phase);
+                Control_GetPhasePair(&pair);
+                /* Print only 3 lines per 5s, outside TIM11.
+                 * Do not add printf() or I2C inside the ISR. */
+                UART_Printf(
+                    "PHASE_REQ,seq=%lu,n=%lu,intervals=%lu,avg=%lu,min=%lu,"
+                    "max=%lu,gt1050=%lu,gt1500=%lu,"
+                    "t_request=%lu,t_complete=%lu,t_main=%lu,t_publish=%lu\r\n",
+                    (unsigned long)seq,
+                    (unsigned long)phase.request_count,
+                    (unsigned long)phase.request_intervals,
+                    (unsigned long)phase.request_interval_avg_us,
+                    (unsigned long)phase.request_min_us,
+                    (unsigned long)phase.request_max_us,
+                    (unsigned long)phase.request_gt1050,
+                    (unsigned long)phase.request_gt1500,
+                    (unsigned long)phase.last_request_us,
+                    (unsigned long)phase.last_irq_us,
+                    (unsigned long)phase.last_main_us,
+                    (unsigned long)phase.last_publish_us);
+                UART_Printf(
+                    "PHASE_LAT,seq=%lu,n=%lu,r2irq_avg=%lu,r2irq_max=%lu,"
+                    "irq2main_avg=%lu,irq2main_max=%lu,"
+                    "main2pub_avg=%lu,main2pub_max=%lu,"
+                    "irq2pub_avg=%lu,irq2pub_max=%lu\r\n",
+                    (unsigned long)seq,(unsigned long)phase.processed_count,
+                    (unsigned long)phase.request_to_irq_avg_us,
+                    (unsigned long)phase.request_to_irq_max_us,
+                    (unsigned long)phase.irq_to_main_avg_us,
+                    (unsigned long)phase.irq_to_main_max_us,
+                    (unsigned long)phase.main_to_publish_avg_us,
+                    (unsigned long)phase.main_to_publish_max_us,
+                    (unsigned long)phase.irq_to_publish_avg_us,
+                    (unsigned long)phase.irq_to_publish_max_us);
+                UART_Printf(
+                    "PHASE_PAIR,seq=%lu,n=%lu,irq_reuse=%lu,pub_reuse=%lu,"
+                    "irq_ahead=%lu,contention=%lu,irq_age_max=%lu,"
+                    "main_age_max=%lu,irq_seq=%lu,pub_seq=%lu\r\n",
+                    (unsigned long)seq,(unsigned long)pair.paired_ticks,
+                    (unsigned long)pair.irq_complete_reused,
+                    (unsigned long)pair.snapshot_published_reused,
+                    (unsigned long)pair.irq_ahead_of_snapshot_ticks,
+                    (unsigned long)pair.trace_contention_ticks,
+                    (unsigned long)pair.irq_completion_age_max_us,
+                    (unsigned long)pair.main_observed_age_max_us,
+                    (unsigned long)pair.last_irq_sequence,
+                    (unsigned long)pair.last_published_sequence);
+            }
+#endif
             last_log_us = now;
         }
 
