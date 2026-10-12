@@ -8,6 +8,9 @@
  *   diagnostic validate96: 96 MHz nominal with fixed HSITRIM=25, motor off.
  *   original firmware and trimXX tests: 100 MHz nominal (unchanged).
  * Runtime HSITRIM/PLL switching is deliberately unsupported. */
+#if defined(MPU_FRESHNESS_AB_B) && !defined(MPU_FRESHNESS_DIAG)
+#error "MPU_FRESHNESS_AB_B requires MPU_FRESHNESS_DIAG"
+#endif
 #if defined(MPU_FRESHNESS_DIAG) && !defined(CLOCK_VALIDATE_96M)
 #error "MPU_FRESHNESS_DIAG requires the bounded 96MHz validation profile"
 #endif
