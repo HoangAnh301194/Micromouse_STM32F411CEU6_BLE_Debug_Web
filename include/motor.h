@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* API command scale: -1000..+1000 (0.1% resolution).
- * The low-level TIM2 PWM remains 20 kHz.
+ * TIM2 PWM frequency is configured by MOTOR_PWM_FREQUENCY (30 kHz in pinout.h).
  * All output changes, except immediate stop/brake, are serviced at 1 kHz. */
 typedef enum {
     MOTOR_STOP_COAST = 0,
