@@ -139,6 +139,16 @@ def main():
         return 2
     lines, boot = read_telemetry(raw)
     report = phases(lines, boot)
+    # UART TX-drop counters do not detect malformed bytes seen by USB-TTL.
+    # Record visible corruption without reconstructing missing safety fields.
+    suspect = [x for x in lines if "\uFFFD" in x or
+               ("I2C_PROBE," in x and not x.startswith("I2C_PROBE,"))]
+    report["uart_record_integrity"] = {
+        "suspect_records": len(suspect),
+        "examples": [x[:180] for x in suspect[:3]],
+        "note": ("Zero UART TX drops do not prove the entire received "
+                 "USB-TTL byte stream was intact.")
+    }
     rc = run_tool("imu_freshness_analyze.py", ["--folder", folder])
     report["freshness_analyzer_exit"] = rc
     if any(line.startswith("LOAD_PROFILE,") for line in lines):
