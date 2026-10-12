@@ -356,6 +356,26 @@ def self_test():
     assert mb["ab"]["gyro_skipped"] > 0
     assert mb["ab"]["retry_started"] > 0
 
+    # Real-world B captures may begin after firmware boot/calibration.
+    # Preserve legitimate steady-state telemetry while explicitly refusing
+    # to treat absent boot headers as complete firmware attestation.
+    partial_b = []
+    for item in with_policy("B"):
+        if item.startswith((
+            BOOT_MARKER, "CLOCK_TRIM,", "CLOCK_PROFILE,", "CLOCK_DIAG,",
+            "MPU_SYNC_DIAG,", "I2C_PROBE,", "CAL_DONE,", "SYNC_POLICY,",
+        )):
+            continue
+        if item.startswith("IMU,"):
+            item = item.replace("IMU,read_hz=", "IMU,cal=1 cal_n=4000 read_hz=")
+        partial_b.append(item)
+    partial_bad, partial_warning, partial_metrics = validate(fake, partial_b)
+    assert not partial_bad, partial_bad
+    assert partial_metrics["sampling_policy"] == "B"
+    assert partial_metrics["boot_verified"] is False
+    assert partial_metrics["policy_inferred"] is True
+    assert any("Partial capture" in x for x in partial_warning)
+
     bad = dict(fake, seq_missing_count=1)
     assert any("Missing CLK" in x for x in validate(bad, lines)[0])
     bad_lines = [x.replace("trim=25", "trim=26") if x.startswith("CLK,")
