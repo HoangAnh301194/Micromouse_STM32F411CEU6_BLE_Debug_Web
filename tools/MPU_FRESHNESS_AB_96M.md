@@ -106,3 +106,65 @@ If B appears slightly better, repeat A/B/A in similar temperatures
 and supply voltage to separate policy effect from oscillator drift.
 A failure or no benefit means we keep A while considering further
 alternatives. The experiment does not authorize production deployment.
+
+
+## Recovery: 2026-10-12 submitted A/B logs (no new hardware capture needed for preliminary comparison)
+
+Existing runs:
+- A: `clock_logs/20261012_082345/` contains full firmware boot headers,
+  but hardware RESET interrupted a UART line: the `[BOOT]` marker occurs
+  inside `SYNC_CTRL,ticks=0,re[BOOT]...`. New analyzer extracts the marker
+  suffix and uses only the post-RESET session.
+- B: `clock_logs/20261012_082926/` begins at `CLK seq=23`, roughly
+  23 seconds after boot, so it lacks `[BOOT]`, `CLOCK_PROFILE`,
+  `SYNC_POLICY` and `CAL_DONE` lines. Its full per-second `CLK`,
+  `IMU`, `SYNC_SENSOR`, `SYNC_CTRL`, `SYNC_AB`, and `TIMING`
+  telemetry is still usable to estimate steady-state performance.
+  Since the startup was NOT captured, B must remain
+  `PARTIAL_DIAGNOSTIC` (NOT a validated full PASS).
+
+Refresh from the feature branch, then rerun analysis **offline** on the
+existing folders. It does not require another flash/reset:
+
+```powershell
+git switch feature/motor-debug-console
+git status -sb
+git fetch origin
+git merge --ff-only origin/feature/motor-debug-console
+
+python tools/imu_freshness_analyze.py --self-test
+python tools/imu_freshness_ab_compare.py --self-test
+
+python tools/imu_freshness_analyze.py --folder ".\clock_logs\20261012_082345"
+python tools/imu_freshness_analyze.py --folder ".\clock_logs\20261012_082926"
+
+python tools/imu_freshness_ab_compare.py `
+  --a ".\clock_logs\20261012_082345\imu_freshness_report.json" `
+  --b ".\clock_logs\20261012_082926\imu_freshness_report.json" `
+  --allow-partial
+```
+
+Expected analyzer status: A `PASS_DIAGNOSTIC`, B `PARTIAL_DIAGNOSTIC`.
+The `--allow-partial` comparator option explicitly produces a
+**PROVISIONAL comparison**, never an authorization to enable motors or
+adopt sampling policy B in normal firmware.
+
+Offline numbers computed directly from the raw cumulative counters:
+
+| Measurement | A | B |
+| --- | ---: | ---: |
+| Compared control cycles | 227000 | 238001 |
+| TIM11 repeated-sample cycles | 1243 (0.5476%) | 10 (0.0042%) |
+| TIM11 age>1.5ms cycles | 1236 | 9 |
+| Gyro completion gaps >2ms | 3 | 2 |
+| First-poll not-ready per 1000 TIM11 ticks | 2.718 | 10.756 |
+| Estimated I2C transfers per 1000 TIM11 ticks | 1994.52 | 2010.69 |
+| B retries started / ready (within captured interval) | 0 / 0 | 2559 / 2559 |
+
+The improvement in accepted gyro freshness is substantial, although
+B requires ~0.81% more estimated I2C transactions in this comparison.
+A and B do NOT share the same exact start time, and B lacks boot and
+calibration metadata; review this as experimental evidence only. If B
+is later considered for permanent integration, repeat it with a clean
+boot capture and preferably an A/B/A comparison in consistent thermal
+conditions.
