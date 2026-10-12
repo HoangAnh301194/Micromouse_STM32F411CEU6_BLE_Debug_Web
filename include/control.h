@@ -10,6 +10,18 @@
 void Control_Init(MPU6050_Handle_t *mpu_handle);
 /* Diagnostics: timer ticks only, skip encoder/motor/IR/motion processing. */
 void Control_SetDiagnosticOnly(uint8_t enable);
+#if defined(CONTROL_LOAD_DIAG)
+typedef struct {
+    uint32_t stage;
+    uint32_t ticks;
+    uint32_t max_cycles;
+    uint32_t over_800us;
+    uint32_t over_1000us;
+    uint32_t pid_output_milli;
+} Control_LoadStats_t;
+void Control_SetLoadStage(uint8_t stage);
+void Control_GetLoadStats(Control_LoadStats_t *out);
+#endif
 void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
