@@ -34,6 +34,24 @@ static volatile uint32_t sync_age_over1000 = 0U;
 static volatile uint32_t sync_age_over1500 = 0U;
 static volatile uint32_t sync_age_max_us = 0U;
 static uint32_t sync_last_sequence = 0U;
+static volatile uint32_t sync_age_hist[8] = {0U};
+static uint32_t Control_AgeBinUpperBound(uint32_t bin)
+{
+    /* [0..249] ... [1500..1749], final bin is >=1750. */
+    return (bin < 7U) ? ((bin + 1U) * 250U) : 1750U;
+}
+static uint32_t Control_AgeQuantileBound(uint32_t total, uint32_t pct)
+{
+    uint32_t need = (total * pct + 99U) / 100U;
+    uint32_t acc = 0U;
+    uint32_t idx;
+    if (total == 0U) return 0U;
+    for (idx = 0U; idx < 8U; ++idx) {
+        acc += sync_age_hist[idx];
+        if (acc >= need) return Control_AgeBinUpperBound(idx);
+    }
+    return 1750U;
+}
 #endif
 
 static void Control_TimingFinish(uint32_t start_cycles)
@@ -54,6 +72,8 @@ void Control_GetImuSync(Control_ImuSync_t *out)
     out->age_over1000_ticks = sync_age_over1000;
     out->age_over1500_ticks = sync_age_over1500;
     out->age_max_us = sync_age_max_us;
+    out->age_p95_bin_us = Control_AgeQuantileBound(sync_ticks, 95U);
+    out->age_p99_bin_us = Control_AgeQuantileBound(sync_ticks, 99U);
     if (primask == 0U) __enable_irq();
 }
 #endif
@@ -98,6 +118,8 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
     sync_age_over1500 = 0U;
     sync_age_max_us = 0U;
     sync_last_sequence = 0U;
+    for (uint32_t idx = 0U; idx < 8U; ++idx)
+        sync_age_hist[idx] = 0U;
 #endif
 
     /* DWT cycle counter for short ISR duration measurements. */
@@ -207,6 +229,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         if (age_us > 1000U) ++sync_age_over1000;
         if (age_us > 1500U) ++sync_age_over1500;
         if (age_us > sync_age_max_us) sync_age_max_us = age_us;
+        ++sync_age_hist[(age_us >= 1750U) ? 7U : (age_us / 250U)];
     }
 #endif
     if (control_diagnostic_only) {
