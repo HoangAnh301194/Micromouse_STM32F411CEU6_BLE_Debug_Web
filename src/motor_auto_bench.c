@@ -21,7 +21,9 @@
 #endif
 
 #define AUTO_ROUNDS          3U
-#define AUTO_STEPS           7U
+#define AUTO_STEPS           9U
+#define AUTO_MAX_PERMILLE    200U
+#define AUTO_BOTH_PERMILLE   160U
 #define AUTO_PULSE_MS        200U
 #define AUTO_POST_MS         300U
 #define AUTO_SETTLE_MS      1000U
@@ -30,9 +32,11 @@
 #define AUTO_HOST_TIMEOUT_MS 1600U
 
 typedef struct { int16_t l, r; } AutoPulse_t;
+/* Increasing low-duty characterization. Max 20% for one wheel,
+ * both-wheel stage capped at 16%; no reverse/brake or stall tests. */
 static const AutoPulse_t matrix[AUTO_STEPS] = {
-    {80,0}, {0,80}, {100,0}, {0,100},
-    {120,0}, {0,120}, {120,120}
+    {80,0}, {0,80}, {120,0}, {0,120},
+    {160,0}, {0,160}, {200,0}, {0,200}, {160,160}
 };
 
 typedef enum {
@@ -87,6 +91,16 @@ static void FailSafe(const char *reason)
 static void StartStep(uint32_t now)
 {
     const AutoPulse_t *p = &matrix[step_i];
+    /* Keep cap in MCU independently of the host-side CSV validator. */
+    if (p->l < 0 || p->r < 0 ||
+        p->l > (int16_t)AUTO_MAX_PERMILLE ||
+        p->r > (int16_t)AUTO_MAX_PERMILLE ||
+        (p->l > 0 && p->r > 0 &&
+         (p->l > (int16_t)AUTO_BOTH_PERMILLE ||
+          p->r > (int16_t)AUTO_BOTH_PERMILLE))) {
+        FailSafe("DUTY_CAP");
+        return;
+    }
     Motor_SetDeadband(0U, 0U);
     Motor_SetSlewRates(10U, 20U);
     if (!MotorTest_StartPermille(p->l,p->r,AUTO_PULSE_MS,100U)) {
@@ -105,15 +119,15 @@ static void ReplyReady(void)
 {
     /* Repeat complete profile with each PING: host may connect after MCU
      * boot/flash and must still capture the exact firmware signature. */
-    UART_Printf("MOTOR_AUTO_PROFILE,version=1,nominal_hz=%lu,"
-                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=120,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=2,nominal_hz=%lu,"
+                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
                 "pulse_ms=200,post_ms=300,boot_neutral=1,"
-                "no_current_sense=1,stby_fixed_high=1\r\n",
+                "both_cap_permille=160,no_current_sense=1,stby_fixed_high=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
-    UART_Printf("MOTOR_AUTO_READY,version=1,rounds=%u,steps=%u,"
-                "hard_cap_permille=120,pulse_ms=200,post_ms=300,"
+    UART_Printf("MOTOR_AUTO_READY,version=2,rounds=%u,steps=%u,"
+                "hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=300,"
                 "one_shot=1,boot_neutral=1,rx=USART1_PA10,state=%u\r\n",
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,(unsigned)state);
 }
@@ -178,10 +192,10 @@ int MotorAutoBench_Main(void)
     Control_Start();
 
     UART_Printf("[BOOT] Motor auto baseline: neutral, USART1 host ARM required\r\n");
-    UART_Printf("MOTOR_AUTO_PROFILE,version=1,nominal_hz=%lu,"
-                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=120,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=2,nominal_hz=%lu,"
+                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
                 "pulse_ms=200,post_ms=300,boot_neutral=1,"
-                "no_current_sense=1,stby_fixed_high=1\r\n",
+                "both_cap_permille=160,no_current_sense=1,stby_fixed_high=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
