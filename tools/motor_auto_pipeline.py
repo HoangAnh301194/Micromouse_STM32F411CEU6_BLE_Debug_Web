@@ -26,6 +26,7 @@ FIRMWARE_ENV = "motor_auto_pipeline_96m_trim25"
 PROFILE_VERSION = 4
 FAMILIES = 4
 HIGH_PROFILE = False
+SENSOR_PROFILE = False
 BASE_STEPS = 21
 HIGH_PULSE_MS = 120
 HIGH_POST_MS = 800
@@ -54,14 +55,19 @@ CSV_FIELDS = ("round", "stage", "phase", "test", "rise", "ms", "elapsed",
               "ccr_r", "tim11_late", "tim11_max_cycles", "tim11_gaps", "tx_drop")
 
 
-def configure_profile(high=False):
-    """One profile per host invocation. V4 remains the normal, safe default."""
-    global FIRMWARE_ENV, PROFILE_VERSION, FAMILIES, HIGH_PROFILE
+def configure_profile(high=False, sensors=False):
+    """One strict mutually identified MCU firmware image per invocation."""
+    global FIRMWARE_ENV, PROFILE_VERSION, FAMILIES, HIGH_PROFILE, SENSOR_PROFILE
     global MATRIX, TESTS, RISE_RATES, MAX_CMD, MAX_CCR, EXPECTED
     HIGH_PROFILE = bool(high)
-    FIRMWARE_ENV = ("motor_auto_high_96m_trim25" if high else
-                    "motor_auto_pipeline_96m_trim25")
-    PROFILE_VERSION = 6 if high else 4
+    SENSOR_PROFILE = bool(sensors)
+    FIRMWARE_ENV = (
+        "motor_auto_sensor_high_96m_trim25" if sensors and high else
+        "motor_auto_sensor_96m_trim25" if sensors else
+        "motor_auto_high_96m_trim25" if high else
+        "motor_auto_pipeline_96m_trim25"
+    )
+    PROFILE_VERSION = (8 if high else 7) if sensors else (6 if high else 4)
     FAMILIES = 5 if high else 4
     MATRIX = (
         ((80,0),(0,80),(90,0),(0,90),(100,0),(0,100),
@@ -211,7 +217,7 @@ def analyze(lines, *, setup=None):
             "steps": len(MATRIX), "hard_cap_permille": MAX_CMD,
             "both_cap_permille": DUAL_MAX_CMD, "families": FAMILIES,
             "pulse_ms": PULSE_MS, "post_ms": POST_MS,
-            "boot_neutral": 1,
+            "boot_neutral": 1, "sensor": int(SENSOR_PROFILE),
         }.items():
             if intval(p, key) != value:
                 errors.append(f"Firmware profile mismatch: {key}")
@@ -222,6 +228,31 @@ def analyze(lines, *, setup=None):
             errors.append("High PWM pulse/settle protection profile mismatch")
     if not ready:
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
+    if ready and intval(ready[-1],"sensor") != int(SENSOR_PROFILE):
+        errors.append("READY sensor integration profile mismatch")
+    sensor_ready = by_kind.get("MOTOR_AUTO_SENSOR_READY", [])
+    sensor_rows = by_kind.get("MOTOR_AUTO_SENSORS", [])
+    if SENSOR_PROFILE:
+        if len(sensor_ready) != 1 or intval(sensor_ready[0],"ir",0) < 10:
+            errors.append("Integrated IMU calibration/IR scan readiness not confirmed")
+        if len(sensor_rows) != len(starts)*2:
+            errors.append(f"Missing integrated sensor telemetry: {len(sensor_rows)}/{len(starts)*2}")
+        previous = None
+        for x in sensor_rows:
+            if x.get("phase") not in ("drive","post"):
+                errors.append("Invalid sensor telemetry phase")
+            if previous is not None:
+                for key in ("good","fresh","err","timeout","ir","reused","aged","missing"):
+                    if intval(x,key) < intval(previous,key):
+                        errors.append(f"Integrated {key} counter decreased")
+            previous = x
+        if len(sensor_rows) >= 2:
+            if intval(sensor_rows[-1],"fresh") <= intval(sensor_rows[0],"fresh"):
+                errors.append("No new gyro samples were collected during combined run")
+            if intval(sensor_rows[-1],"ir") <= intval(sensor_rows[0],"ir"):
+                errors.append("IR scanning did not progress during combined run")
+    elif sensor_rows:
+        errors.append("Unexpected integrated sensor telemetry in motor-only image")
     if len(begins) != 1:
         errors.append("Expected exactly one host-triggered MOTOR_AUTO_BEGIN")
     if begins and (intval(begins[-1], "rounds") != NUM_ROUNDS or
@@ -441,6 +472,21 @@ def analyze(lines, *, setup=None):
         "test_families":["startup","response","slew_slow","slew_fast"]+
                         (["high"] if HIGH_PROFILE else []),
         "profile_version":PROFILE_VERSION, "high_profile":HIGH_PROFILE,
+        "sensor_profile":SENSOR_PROFILE,
+        "sensor_integration":{
+            "sensor_ready_records":len(sensor_ready),
+            "sensor_phase_records":len(sensor_rows),
+            "sensor_first":sensor_rows[0] if sensor_rows else None,
+            "sensor_last":sensor_rows[-1] if sensor_rows else None,
+            "gyro_fresh_delta":(intval(sensor_rows[-1],"fresh")-
+                                intval(sensor_rows[0],"fresh")) if len(sensor_rows)>=2 else None,
+            "ir_scans_delta":(intval(sensor_rows[-1],"ir")-
+                              intval(sensor_rows[0],"ir")) if len(sensor_rows)>=2 else None,
+            "i2c_error_delta":(intval(sensor_rows[-1],"err")-
+                               intval(sensor_rows[0],"err")) if len(sensor_rows)>=2 else None,
+            "i2c_timeout_delta":(intval(sensor_rows[-1],"timeout")-
+                                 intval(sensor_rows[0],"timeout")) if len(sensor_rows)>=2 else None,
+        },
         "stages_per_round":len(MATRIX),"post_stop_observation_ms":POST_MS,
         "repeat_statistics":stats,"trials":individual,
         "phase_findings":phase_findings(stats),
