@@ -20,7 +20,8 @@
 /* ============================================================================ */
 
 #define BT_BAUDRATE         115200
-#define BT_TX_BUF_SIZE      4096      /* Large buffer for maze map printing   */
+#define BT_TX_BUF_SIZE      4096
+#define BT_RX_BUF_SIZE      256      /* Large buffer for maze map printing   */
 
 /* Global enable/disable — set to 0 to compile-out all BT traffic */
 #define BT_DEBUG_ENABLED    1

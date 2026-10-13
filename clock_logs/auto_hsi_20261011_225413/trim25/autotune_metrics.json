@@ -1,0 +1,13 @@
+{
+  "nominal_profile_mhz": 80,
+  "measured_sysclk_mhz": 79.880989,
+  "effective_tim5_hz": 998512.363,
+  "effective_tim11_hz": 998.484,
+  "clock_error_pct": -0.148764,
+  "fit_records": 57,
+  "seq_missing_count": 0,
+  "tx_drop_delta": 0,
+  "host_span_s": 56.085,
+  "pc_seconds_per_mcu_second": 1.00148985,
+  "source": "Windows perf_counter + USB/UART; approximate, not a reference oscillator"
+}

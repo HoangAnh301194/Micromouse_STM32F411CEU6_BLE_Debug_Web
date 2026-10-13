@@ -1,0 +1,38 @@
+STM32 vs Windows monotonic clock comparison
+==================================================
+sessions: 1
+selected_session_records: 59
+fit_records: 56
+seq_first: 4
+seq_last: 59
+host_span_s: 55.808673
+device_span_s: 55.000845
+pc_seconds_per_mcu_second: 1.014618
+pc_minus_mcu_pct: 1.461796
+effective_tim5_hz: 985592.645912
+mcu_clock_rate_error_pct: -1.440735
+effective_tim11_hz: 985.527826
+tim11_ticks_per_mcu_second: 1000.002818
+fit_residual_p50_ms: 1.365958
+fit_residual_p95_ms: 3.747891
+host_interval_median_s: 1.014702
+host_interval_p95_s: 1.015331
+seq_missing_count: 0
+tx_drop_delta: 0
+robust_30s_pc_per_mcu: 1.014572
+
+Interpretation:
+  PC seconds / MCU second > 1 means the MCU's nominal microsecond
+  counter advances SLOWER than the host monotonic clock.
+  A 4.5% time-ratio error corresponds to about -4.3% MCU tick rate,
+  not +4.5% MCU frequency. These denominators are different.
+  TIM5 and TIM11 share the MCU clock; matching both is not a proof
+  that either has the correct *physical* frequency.
+  The p95 fit residual is dominated by host USB/serial scheduling
+  jitter; it is NOT TIM11 ISR jitter.
+
+WARNING: Prefer at least 120 CLK samples for confirmation.
+
+CHECK: Significant apparent clock mismatch (>1%).
+Re-run twice and consider a reference measurement before
+changing PLL, prescalers, gyro integration or PID dt.

@@ -1,0 +1,67 @@
+0.156655900	I2C_PROBE,400_a=2 400_w=255 400_id=0xFF 300_a=3 300_w=255 300_id=0xFF 200_a=2 200_w=255 200_id=0xFF 100_a=0 100_w=0 100_id=0x68 selected=3 selected_scl=100000
+0.162612500	I2C_LINES,scl_pb8=1 sda_pb9=1 idr=0x00000330
+0.171440900	[IMU_READY] whoami=0x68 scl_nominal=100000Hz gyro_range=2000dps dlpf=3 sensor_odr=1000Hz
+0.179444400	CAL_HELP,do not move robot during warmup+collection; KEY requests fresh calibration while idle; motors OFF
+0.186243100	DYN_HELP,D,<us>,<raw_corrected_mdps>,<lpf_mdps> at 100Hz for 1.5s after |gyro|>10dps
+1.170320800	CLK,seq=1,us=1312007,ticks=1000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+2.186867000	CLK,seq=2,us=2312007,ticks=2000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+3.204733200	CLK,seq=3,us=3312007,ticks=3000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+4.222558000	CLK,seq=4,us=4312007,ticks=4000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+5.240463500	CLK,seq=5,us=5312007,ticks=5000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+6.258941100	CLK,seq=6,us=6312007,ticks=6000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+7.277058200	CLK,seq=7,us=7312007,ticks=7000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+8.294962600	CLK,seq=8,us=8312007,ticks=8000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+9.313232900	CLK,seq=9,us=9312007,ticks=9000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+9.392872000	CAL_DONE,n=4000 blocks=8 retries=0 bias_mdps=-1542 previous_bias_mdps=0 delta_bias_mdps=-1542 max_block_std_mdps=47 block_mean_span_mdps=9
+9.395656800	DRIFT_START,bias_mdps=-1542,dlpf=3
+10.332004300	CLK,seq=10,us=10312007,ticks=10000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+11.350310100	CLK,seq=11,us=11312007,ticks=11000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+12.368534000	CLK,seq=12,us=12312007,ticks=12000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+13.386618500	CLK,seq=13,us=13312007,ticks=13000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+14.405056100	CLK,seq=14,us=14312007,ticks=14000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+15.423681800	CLK,seq=15,us=15312007,ticks=15000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+16.441710200	CLK,seq=16,us=16312007,ticks=16000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+17.459962600	CLK,seq=17,us=17312007,ticks=17000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+18.477661800	CLK,seq=18,us=18312007,ticks=18000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+19.495486400	CLK,seq=19,us=19312007,ticks=19000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+20.513840100	CLK,seq=20,us=20312007,ticks=20000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+21.531741000	CLK,seq=21,us=21312007,ticks=21000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+22.549517300	CLK,seq=22,us=22312007,ticks=22000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+23.567130500	CLK,seq=23,us=23312007,ticks=23000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+24.584509000	CLK,seq=24,us=24312007,ticks=24000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+25.602267100	CLK,seq=25,us=25312007,ticks=25000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+26.620055600	CLK,seq=26,us=26312007,ticks=26000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+27.637816500	CLK,seq=27,us=27312007,ticks=27000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+28.655920300	CLK,seq=28,us=28312007,ticks=28000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+29.673690100	CLK,seq=29,us=29312007,ticks=29000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+30.691637200	CLK,seq=30,us=30312007,ticks=30000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+31.709123600	CLK,seq=31,us=31312007,ticks=31000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+32.726662400	CLK,seq=32,us=32312007,ticks=32000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+33.744587600	CLK,seq=33,us=33312007,ticks=33000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+34.761573200	CLK,seq=34,us=34312007,ticks=34000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+35.779322800	CLK,seq=35,us=35312007,ticks=35000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+36.797297500	CLK,seq=36,us=36312007,ticks=36000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+37.815651300	CLK,seq=37,us=37312007,ticks=37000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+38.833461600	CLK,seq=38,us=38312007,ticks=38000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+39.851755700	CLK,seq=39,us=39312007,ticks=39000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+39.928347100	CAL_CHECK,elapsed_ms=30000 raw_drift_mdeg=43 lpf_no_deadzone_mdeg=43 raw_mdeg_per_min=86 current_bias_mdps=-1542
+40.869853300	CLK,seq=40,us=40312007,ticks=40000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+41.887608500	CLK,seq=41,us=41312007,ticks=41000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+42.906211500	CLK,seq=42,us=42312007,ticks=42000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+43.924649800	CLK,seq=43,us=43312007,ticks=43000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+44.943334900	CLK,seq=44,us=44312007,ticks=44000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+45.961781300	CLK,seq=45,us=45312007,ticks=45000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+46.980349000	CLK,seq=46,us=46312007,ticks=46000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+47.998813700	CLK,seq=47,us=47312007,ticks=47000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+49.017264600	CLK,seq=48,us=48312007,ticks=48000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+50.035976600	CLK,seq=49,us=49312007,ticks=49000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+51.054286100	CLK,seq=50,us=50312007,ticks=50000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+52.072758700	CLK,seq=51,us=51312007,ticks=51000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+53.091578900	CLK,seq=52,us=52312007,ticks=52000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+54.110142400	CLK,seq=53,us=53312007,ticks=53000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+55.128442200	CLK,seq=54,us=54312007,ticks=54000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+56.146801300	CLK,seq=55,us=55312007,ticks=55000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+57.165239100	CLK,seq=56,us=56312007,ticks=56000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+58.183637100	CLK,seq=57,us=57312007,ticks=57000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+59.201983500	CLK,seq=58,us=58312007,ticks=58000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000
+60.220349200	CLK,seq=59,us=59312007,ticks=59000,tx_drop=0,trim=21,fault=0,sysclk_nominal=80000000

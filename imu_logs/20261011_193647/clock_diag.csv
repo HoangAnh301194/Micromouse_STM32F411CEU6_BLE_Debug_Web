@@ -1,0 +1,2 @@
+﻿host_time_iso,elapsed_s,line_number,session_id,fault,rcc_cr,cfgr,pllcfgr,pwr_cr,pwr_csr,flash_acr
+2026-10-11T12:36:50.143+00:00,2.332717,13,0,0,0x03007D83,0x0000100A,0x05003210,0x0000C000,0x00004000,0x00000703

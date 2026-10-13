@@ -3,6 +3,37 @@
 
 #define HSI_HZ 16000000UL
 #define HSE_HZ 25000000UL
+/* PLL profiles are selected ONLY at compile time:
+ *   diagnostic autotune: 80 MHz nominal, motor off, safely surveys HSI.
+ *   diagnostic validate96: 96 MHz nominal with fixed HSITRIM=25, motor off.
+ *   original firmware and trimXX tests: 100 MHz nominal (unchanged).
+ * Runtime HSITRIM/PLL switching is deliberately unsupported. */
+#if defined(MPU_FRESHNESS_AB_B) && !defined(MPU_FRESHNESS_DIAG)
+#error "MPU_FRESHNESS_AB_B requires MPU_FRESHNESS_DIAG"
+#endif
+#if defined(MPU_FRESHNESS_DIAG) && !defined(CLOCK_VALIDATE_96M)
+#error "MPU_FRESHNESS_DIAG requires the bounded 96MHz validation profile"
+#endif
+#if defined(CLOCK_AUTOTUNE) && defined(CLOCK_VALIDATE_96M)
+#error "CLOCK_AUTOTUNE and CLOCK_VALIDATE_96M are mutually exclusive"
+#endif
+#if defined(CLOCK_AUTOTUNE)
+#ifndef CLOCK_HSI_TRIM
+#error "CLOCK_AUTOTUNE requires CLOCK_HSI_TRIM"
+#endif
+#define BOARD_PLLN 160UL
+#define BOARD_EXPECTED_SYSCLK 80000000UL
+#elif defined(CLOCK_VALIDATE_96M)
+#if !defined(CLOCK_HSI_TRIM) || (CLOCK_HSI_TRIM != 25)
+#error "CLOCK_VALIDATE_96M requires CLOCK_HSI_TRIM=25"
+#endif
+#define BOARD_PLLN 192UL
+#define BOARD_EXPECTED_SYSCLK 96000000UL
+#else
+#define BOARD_PLLN 200UL
+#define BOARD_EXPECTED_SYSCLK 100000000UL
+#endif
+
 
 static uint32_t Board_GetSystemClockHz(void)
 {
@@ -62,8 +93,106 @@ uint32_t Board_GetAPB2ClockHz(void) { return Board_GetAPBClockHz(1); }
 uint32_t Board_GetAPB1TimerClockHz(void) { return Board_GetAPBTimerClockHz(0); }
 uint32_t Board_GetAPB2TimerClockHz(void) { return Board_GetAPBTimerClockHz(1); }
 
+/* STM32F411 maximum HCLK is 100MHz, PCLK1<=50MHz, PCLK2<=100MHz.
+ * HSI 16MHz -> PLLM=16, PLLN=200, PLLP=2 -> 100MHz.
+ * PLLQ=5 gives 40MHz: USB FS 48MHz is NOT available in this profile.
+ * Intended for regulated 3.3V Micromouse board, VDD >= 2.7V.
+ * Uses bounded readiness waits and retains HSI 16MHz on PLL failure.
+ */
+/* 0: clock switch completed. Nonzero: last failed initialization stage. */
+static volatile uint32_t board_clock_fault = 0U;
+uint32_t Board_GetClockFault(void) { return board_clock_fault; }
+
+/* RM0383 RCC_CR: HSITRIM[4:0] = bits 7:3, HSICAL = bits 15:8.
+ * Read back for logs; these values do not measure actual frequency. */
+uint32_t Board_GetHsiTrim(void) { return (RCC->CR >> 3) & 0x1FUL; }
+uint32_t Board_GetHsiCal(void) { return (RCC->CR >> 8) & 0xFFUL; }
+
+#if defined(CLOCK_HSI_TRIM)
+#if (CLOCK_HSI_TRIM < 0) || (CLOCK_HSI_TRIM > 31)
+#error "CLOCK_HSI_TRIM must be in the STM32F411 HSITRIM range 0..31"
+#endif
+#endif
+
+static void Board_SetMaxClock100MHz(void)
+{
+    uint32_t timeout;
+    board_clock_fault = 0U;
+    RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+    (void)RCC->APB1ENR;
+    PWR->CR = (PWR->CR & ~PWR_CR_VOS) | PWR_CR_VOS;
+    /* Do NOT wait for VOSRDY with PLL off: STM32F411 applies newly
+     * selected voltage scale only after enabling PLL (RM0383). */
+    /* 3 flash wait states at 2.7V-3.6V for 100MHz, enable caches. */
+    FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) |
+                 FLASH_ACR_LATENCY_3WS |
+                 FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_PRFTEN;
+    timeout = 1000000UL;
+    while (((FLASH->ACR & FLASH_ACR_LATENCY) != FLASH_ACR_LATENCY_3WS)
+           && --timeout) {}
+    if (!timeout) { board_clock_fault = 2U; return; }
+
+    /* Safest prescaler order: APB1 /2 before raising SYSCLK. */
+    RCC->CFGR = (RCC->CFGR &
+                ~(RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2)) |
+                RCC_CFGR_PPRE1_DIV2;
+
+    /* Core starts from HSI after reset. Never reconfigure an active PLL. */
+    RCC->CR |= RCC_CR_HSION;
+    timeout = 1000000UL;
+    while (!(RCC->CR & RCC_CR_HSIRDY) && --timeout) {}
+    if (!timeout) { board_clock_fault = 1U; return; }
+    if ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
+        RCC->CFGR &= ~RCC_CFGR_SW;
+        timeout = 1000000UL;
+        while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
+               && --timeout) {}
+        if (!timeout) { board_clock_fault = 3U; return; }
+    }
+    RCC->CR &= ~RCC_CR_PLLON;
+    timeout = 1000000UL;
+    while ((RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
+    if (!timeout) { board_clock_fault = 4U; return; }
+
+    /* Optional debug-only, build-time HSI trim experiment.
+     * We are executing on HSI with PLL OFF at this point. The default
+     * production build does not touch HSITRIM. A full hardware RESET
+     * restores the factory boot trim (normally 16), and flashing the
+     * default PlatformIO environment restores original firmware logic.
+     * Never auto-sweep while running PLL/SYSCLK/USART or motor control. */
+#if defined(CLOCK_HSI_TRIM)
+    RCC->CR = (RCC->CR & ~(0x1FUL << 3)) |
+              (((uint32_t)CLOCK_HSI_TRIM & 0x1FUL) << 3);
+    /* Allow HSI to settle before PLL startup; CPU is still on HSI. */
+    for (volatile uint32_t settle = 0U; settle < 50000U; ++settle) {
+        __NOP();
+    }
+#endif
+
+    RCC->PLLCFGR = (16UL << 0) | (BOARD_PLLN << 6) |
+                   (0UL << 16) | (5UL << 24); /* PLLSRC=HSI */
+    RCC->CR |= RCC_CR_PLLON;
+    timeout = 1000000UL;
+    while (!(RCC->CR & RCC_CR_PLLRDY) && --timeout) {}
+    if (!timeout) { board_clock_fault = 5U; return; }
+#ifdef PWR_CSR_VOSRDY
+    timeout = 1000000UL;
+    while (!(PWR->CSR & PWR_CSR_VOSRDY) && --timeout) {}
+    if (!timeout) { board_clock_fault = 6U; return; }
+#endif
+    RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;
+    timeout = 1000000UL;
+    while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL)
+           && --timeout) {}
+    if (!timeout) { board_clock_fault = 7U; return; }
+    SystemCoreClockUpdate();
+    if (SystemCoreClock != BOARD_EXPECTED_SYSCLK)
+        board_clock_fault = 8U;
+}
+
 void Board_Init(void)
 {
+    Board_SetMaxClock100MHz();
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN |
                     RCC_AHB1ENR_GPIOBEN |
                     RCC_AHB1ENR_GPIOCEN;
@@ -95,8 +224,15 @@ void Board_StatusLed(uint8_t on)
 
 void HardFault_Handler(void)
 {
+    /* Do not rely on CCR preload alone: disabling CC outputs is immediate.
+     * Force direction pins low (coast) and stop the 1 kHz scheduler. */
+    TIM2->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC2E);
     TIM2->CCR1 = 0;
     TIM2->CCR2 = 0;
+    GPIOB->BSRR = (1UL << (MOTOR_L_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_L_IN2_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN2_PIN + 16U));
     TIM11->CR1 &= ~TIM_CR1_CEN;
     TIM10->CR1 &= ~TIM_CR1_CEN;
 

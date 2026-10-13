@@ -85,4 +85,12 @@ void delay_us_blocking(uint32_t us);
  */
 void delay_ms_blocking(uint32_t ms);
 
+#if defined(MPU_FRESHNESS_AB_B)
+/* Experimental one-shot wake only. TIM5 CH1 compare creates an interrupt
+ * after at least delay_us so main can retry INT_STATUS without busy-spinning.
+ * No I2C/formatting work occurs in TIM5_IRQHandler. */
+void SystemTimer_ArmWakeAfterUs(uint32_t delay_us);
+void SystemTimer_CancelWake(void);
+#endif
+
 #endif /* SYSTEM_TIMER_H */

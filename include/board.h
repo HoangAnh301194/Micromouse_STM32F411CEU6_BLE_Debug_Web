@@ -5,6 +5,11 @@
 #include <stdint.h>
 
 void Board_Init(void);
+/* Zero = clock PLL 100MHz success, nonzero = startup stage failure. */
+uint32_t Board_GetClockFault(void);
+/* Raw RCC_CR HSI trim/calibration fields; not a frequency measurement. */
+uint32_t Board_GetHsiTrim(void);
+uint32_t Board_GetHsiCal(void);
 uint8_t Board_ButtonPressed(void);
 void Board_StatusLed(uint8_t on);
 

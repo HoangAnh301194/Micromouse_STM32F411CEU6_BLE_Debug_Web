@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define ENCODER_LEFT_DIRECTION   1
-#define ENCODER_RIGHT_DIRECTION  1
+#define ENCODER_LEFT_DIRECTION   -1
+#define ENCODER_RIGHT_DIRECTION  -1
 
 void Encoder_Init(void);
 void Encoder_Update(float dt_s);

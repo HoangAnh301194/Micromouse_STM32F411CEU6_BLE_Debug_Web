@@ -1,0 +1,2 @@
+﻿host_time_iso,elapsed_s,line_number,session_id,sysclk,hsi_pll100,apb1,apb2,tim5_us_clock
+2026-10-11T12:36:50.095+00:00,2.284568,12,0,100000000,1,50000000,100000000,1000000

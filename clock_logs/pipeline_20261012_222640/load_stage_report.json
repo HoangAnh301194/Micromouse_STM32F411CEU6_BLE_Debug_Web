@@ -1,0 +1,45 @@
+{
+  "status": "PASS_LOAD_DIAGNOSTIC",
+  "motor_off_only": true,
+  "stages": {
+    "0": {
+      "frames": 60,
+      "ticks": 59202,
+      "max_cycles": 189,
+      "max_us_nominal_96mhz": 1.969,
+      "over800": 0,
+      "over1000": 0,
+      "sync_ticks_compared": 59001,
+      "gyro_reused_ticks": 62,
+      "gyro_reused_pct": 0.10508,
+      "gyro_age_gt1500_ticks": 62
+    },
+    "1": {
+      "frames": 60,
+      "ticks": 59201,
+      "max_cycles": 784,
+      "max_us_nominal_96mhz": 8.167,
+      "over800": 0,
+      "over1000": 0,
+      "sync_ticks_compared": 59000,
+      "gyro_reused_ticks": 2,
+      "gyro_reused_pct": 0.00339,
+      "gyro_age_gt1500_ticks": 1
+    },
+    "2": {
+      "frames": 108,
+      "ticks": 107201,
+      "max_cycles": 2193,
+      "max_us_nominal_96mhz": 22.844,
+      "over800": 0,
+      "over1000": 0,
+      "sync_ticks_compared": 107000,
+      "gyro_reused_ticks": 35,
+      "gyro_reused_pct": 0.03271,
+      "gyro_age_gt1500_ticks": 35
+    }
+  },
+  "failures": [],
+  "warnings": [],
+  "note": "Cycles/96MHz is nominal; physical timing uncertainty applies. Observed maxima are not formal WCET."
+}
