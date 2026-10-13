@@ -138,7 +138,7 @@ def analyze(lines, *, setup=None):
     else:
         p = profile[-1]
         for key, value in {
-            "version": 3, "nominal_hz": 96000000,
+            "version": 4, "nominal_hz": 96000000,
             "pwm_hz": 30000, "rounds": NUM_ROUNDS,
             "steps": len(MATRIX), "hard_cap_permille": MAX_CMD,
             "both_cap_permille": DUAL_MAX_CMD, "families": 4,
@@ -147,6 +147,8 @@ def analyze(lines, *, setup=None):
         }.items():
             if intval(p, key) != value:
                 errors.append(f"Firmware profile mismatch: {key}")
+        if p.get("rx_mode") != "irq256":
+            errors.append("Firmware missing USART1 RX interrupt ring profile")
     if not ready:
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
     if len(begins) != 1:
@@ -352,8 +354,8 @@ def analyze(lines, *, setup=None):
 def self_test():
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
-        f"MOTOR_AUTO_PROFILE,version=3,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,pulse_ms=200,post_ms=400,boot_neutral=1",
-        f"MOTOR_AUTO_READY,version=3,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1",
+        f"MOTOR_AUTO_PROFILE,version=4,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,rx_mode=irq256,pulse_ms=200,post_ms=400,boot_neutral=1",
+        f"MOTOR_AUTO_READY,version=4,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
     for r in range(NUM_ROUNDS):
@@ -500,11 +502,11 @@ def execute(args):
                 kind,v=split_record(frame)
                 if kind=="MOTOR_AUTO_READY" and not requested_start:
                     if any(intval(v,k)!=value for k,value in (
-                        ("version",3),("rounds",NUM_ROUNDS),
+                        ("version",4),("rounds",NUM_ROUNDS),
                         ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
                         ("both_cap_permille",DUAL_MAX_CMD),("families",4),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
-                        ("boot_neutral",1))) or intval(v,"state")!=0:
+                        ("boot_neutral",1))) or v.get("rx_mode")!="irq256" or intval(v,"state")!=0:
                         print("Unsafe/incompatible firmware or motor already active. REFUSING START:",frame)
                         break
                     print("RX handshake verified. Explicit host START issued.")
