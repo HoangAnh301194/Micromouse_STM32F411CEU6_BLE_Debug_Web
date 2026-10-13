@@ -19,9 +19,12 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_BASELINE = ROOT / "motor_logs" / "auto_20261013_105353"
-MAX_TB6612_CONTINUOUS_A = 1.2
-# Datasheet 3.2A single 10ms pulse is NOT a valid allowance for 120ms stages.
-MAX_ALLOWED_EVIDENCE_PEAK_A = 1.2
+# Toshiba operating-range max is 1.0A at VM >=4.5V without PWM;
+# 1.2A is an absolute maximum, not a continuous design target.
+# This conservative evidence prefilter is NOT current limitation.
+MAX_TB6612_CONTINUOUS_A = 1.0
+# The 3.2A absolute peak applies to a *single* 10ms pulse, NOT 120ms.
+MAX_ALLOWED_EVIDENCE_PEAK_A = 1.0
 
 
 def gate(code, label, status, explanation, evidence=None):
@@ -90,7 +93,7 @@ def evaluate_electrical(evidence_file):
                     f"Non-numeric measurement: {err}")
     if not(0<vm<=12) or peak<=0 or peak>=MAX_ALLOWED_EVIDENCE_PEAK_A or high<3.5 or temp>=65:
         return gate("P0-ELECTRICAL","Motor current, waveform, temperature","BLOCKED",
-                    "Measured values do not satisfy conservative gate: all provided amps <1.2A, VM<=12V, GPIO HIGH>=3.5V, case<65C. This is a project-specific gate, not device certification.",
+                    "Measured values do not satisfy conservative gate: all provided amps <1.0A, VM<=12V, GPIO HIGH>=3.5V, case<65C. This is a project-specific gate, not device certification.",
                     {"maximum_reported_current_a":peak,"vm_v":vm,"gpio_high_v":high,"case_temp_c":temp})
     return gate("P0-ELECTRICAL","Motor current, waveform, temperature","REVIEW",
                 "User-supplied external measurements pass conservative numeric filters but are not independently verified. Review scope waveforms, 10/20ms peak limitations, thermal rise and VM transient before any high test.",
