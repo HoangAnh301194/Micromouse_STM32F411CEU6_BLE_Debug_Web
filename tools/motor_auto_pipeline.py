@@ -22,6 +22,16 @@ import sys
 import time
 
 FIRMWARE_ENV = "motor_auto_pipeline_96m_trim25"
+PROFILE_VERSION = 4
+FAMILIES = 4
+HIGH_PROFILE = False
+BASE_STEPS = 21
+HIGH_PULSE_MS = 120
+HIGH_POST_MS = 800
+HIGH_STAGES = (
+    (300,0),(0,300),(400,0),(0,400),
+    (500,0),(0,500),(600,0),(0,600)
+)
 NUM_ROUNDS = 3
 PULSE_MS = 200
 POST_MS = 400
@@ -41,6 +51,38 @@ EXPECTED = NUM_ROUNDS * len(MATRIX)
 CSV_FIELDS = ("round", "stage", "phase", "test", "rise", "ms", "elapsed",
               "applied_l", "applied_r", "enc_l", "enc_r", "ccr_l",
               "ccr_r", "tim11_late", "tim11_max_cycles", "tim11_gaps", "tx_drop")
+
+
+def configure_profile(high=False):
+    """One profile per host invocation. V4 remains the normal, safe default."""
+    global FIRMWARE_ENV, PROFILE_VERSION, FAMILIES, HIGH_PROFILE
+    global MATRIX, TESTS, RISE_RATES, MAX_CMD, MAX_CCR, EXPECTED
+    HIGH_PROFILE = bool(high)
+    FIRMWARE_ENV = ("motor_auto_high_96m_trim25" if high else
+                    "motor_auto_pipeline_96m_trim25")
+    PROFILE_VERSION = 5 if high else 4
+    FAMILIES = 5 if high else 4
+    MATRIX = (
+        ((80,0),(0,80),(90,0),(0,90),(100,0),(0,100),
+         (110,0),(0,110),(120,0),(0,120),
+         (120,0),(0,120),(160,0),(0,160),(200,0),(0,200),(160,160),
+         (160,0),(0,160),(160,0),(0,160)) +
+        (HIGH_STAGES if high else ())
+    )
+    TESTS = (("startup",)*10 + ("response",)*7 + ("slew_slow",)*2 +
+             ("slew_fast",)*2 + (("high",)*8 if high else ()))
+    RISE_RATES = (10,)*17 + (5,)*2 + (20,)*2 + ((10,)*8 if high else ())
+    MAX_CMD = 600 if high else 200
+    MAX_CCR = 1920 if high else 640
+    EXPECTED = NUM_ROUNDS * len(MATRIX)
+
+
+def stage_pulse_ms(stage):
+    return HIGH_PULSE_MS if stage >= BASE_STEPS else PULSE_MS
+
+
+def stage_post_ms(stage):
+    return HIGH_POST_MS if stage >= BASE_STEPS else POST_MS
 
 
 def split_record(line: str):
@@ -144,10 +186,10 @@ def analyze(lines, *, setup=None):
     else:
         p = profile[-1]
         for key, value in {
-            "version": 4, "nominal_hz": 96000000,
+            "version": PROFILE_VERSION, "nominal_hz": 96000000,
             "pwm_hz": 30000, "rounds": NUM_ROUNDS,
             "steps": len(MATRIX), "hard_cap_permille": MAX_CMD,
-            "both_cap_permille": DUAL_MAX_CMD, "families": 4,
+            "both_cap_permille": DUAL_MAX_CMD, "families": FAMILIES,
             "pulse_ms": PULSE_MS, "post_ms": POST_MS,
             "boot_neutral": 1,
         }.items():
@@ -155,6 +197,9 @@ def analyze(lines, *, setup=None):
                 errors.append(f"Firmware profile mismatch: {key}")
         if p.get("rx_mode") != "irq256":
             errors.append("Firmware missing USART1 RX interrupt ring profile")
+        if HIGH_PROFILE and (intval(p,"high_pulse_ms") != HIGH_PULSE_MS or
+                             intval(p,"high_post_ms") != HIGH_POST_MS):
+            errors.append("High PWM pulse/settle protection profile mismatch")
     if not ready:
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
     if len(begins) != 1:
@@ -174,7 +219,7 @@ def analyze(lines, *, setup=None):
         if counts != sorted(counts):
             errors.append("Firmware KEEP count decreased during the run")
         if len(starts) == EXPECTED and (counts[0] < 1 or counts[-1] < 10):
-            errors.append("Insufficient decoded host heartbeats for complete 63-pulse session")
+            errors.append("Insufficient decoded host heartbeats for complete experiment")
         if any(intval(x,"rx_ore") > 0 or intval(x,"rx_fe") > 0 or
                intval(x,"rx_ring_drop") > 0 for x in links):
             errors.append("USART1 RX hardware/ring reported dropped or invalid bytes")
@@ -213,12 +258,13 @@ def analyze(lines, *, setup=None):
     if [intval(x,"round") for x in r_ends] != [1,2,3]:
         errors.append("Round end ordering mismatch")
     for i, end in enumerate(ends):
-        if intval(end, "reason") != 0 or intval(end, "elapsed") != PULSE_MS:
-            errors.append(f"Pulse #{i} exceeded/failed intended 200ms timeout")
+        expected_ms = stage_pulse_ms(intval(end,"stage"))
+        if intval(end, "reason") != 0 or intval(end, "elapsed") != expected_ms:
+            errors.append(f"Pulse #{i} failed configured {expected_ms}ms timeout")
         if intval(end, "ccr_l") != 0 or intval(end, "ccr_r") != 0:
             errors.append(f"Pulse #{i} did not clear TIM2 CCR on stop")
     for i, p in enumerate(posts):
-        if intval(p, "elapsed") != POST_MS or intval(p, "ccr_l") != 0 or intval(p, "ccr_r") != 0:
+        if intval(p, "elapsed") != stage_post_ms(intval(p,"stage")) or intval(p, "ccr_l") != 0 or intval(p, "ccr_r") != 0:
             errors.append(f"Post-stop observation #{i} invalid")
     for i, s in enumerate(samples):
         if s.get("phase") not in ("drive", "post"):
@@ -236,7 +282,7 @@ def analyze(lines, *, setup=None):
                 errors.append("Applied PWM exceeded hard cap")
         for k in ("ccr_l", "ccr_r"):
             if not (0 <= intval(s, k) <= MAX_CCR):
-                errors.append("Invalid CCR (PWM > 20% at 3200 counts)")
+                errors.append(f"Unexpected timer CCR beyond profile max {MAX_CMD} permille")
         if s.get("phase") == "post" and any(intval(s, k) != 0 for k in
                                              ("applied_l", "applied_r", "ccr_l", "ccr_r")):
             errors.append("Nonneutral PWM detected during post-stop observation")
@@ -245,7 +291,7 @@ def analyze(lines, *, setup=None):
         for stage, cmd in enumerate(MATRIX):
             key = (str(r), str(stage))
             drives = [x for x in samples if (x.get("round"), x.get("stage")) == key
-                      and x.get("phase") == "drive" and intval(x,"elapsed") < PULSE_MS]
+                      and x.get("phase") == "drive" and intval(x,"elapsed") < stage_pulse_ms(stage)]
             after = [x for x in samples if (x.get("round"), x.get("stage")) == key
                      and x.get("phase") == "post"]
             e = next((x for x in ends if (x.get("round"),x.get("stage")) == key), {})
@@ -254,7 +300,8 @@ def analyze(lines, *, setup=None):
                 # Never fabricate 0-count measurements for unexecuted stages
                 # when HOST_TIMEOUT or another fail-safe aborts the sequence.
                 continue
-            if len(drives) < 6 or len(after) < 10:
+            if len(drives) < (4 if stage >= BASE_STEPS else 6) or
+               len(after) < (30 if stage >= BASE_STEPS else 10):
                 errors.append(f"Insufficient 20ms samples round={r} stage={stage} drive={len(drives)} post={len(after)}")
             if any(intval(x, "ccr_l") != 0 for x in drives if cmd[0] == 0) or \
                any(intval(x, "ccr_r") != 0 for x in drives if cmd[1] == 0):
@@ -345,7 +392,9 @@ def analyze(lines, *, setup=None):
             "last_firmware_reported_host_age_ms":intval(links[-1],"host_age_ms",0) if links else None,
             "faults":faults,
         },
-        "test_families":["startup","response","slew_slow","slew_fast"],
+        "test_families":["startup","response","slew_slow","slew_fast"]+
+                        (["high"] if HIGH_PROFILE else []),
+        "profile_version":PROFILE_VERSION, "high_profile":HIGH_PROFILE,
         "stages_per_round":len(MATRIX),"post_stop_observation_ms":POST_MS,
         "repeat_statistics":stats,"trials":individual,
         "phase_findings":phase_findings(stats),
@@ -356,7 +405,7 @@ def analyze(lines, *, setup=None):
             "max_observed_uart_tx_drop": max((intval(x,"tx_drop",0) for x in samples), default=0),
         },
         "experiment_setup":setup or {},
-        "electrical_limitation":"3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM. 20pct duty is not a current limit.",
+        "electrical_limitation":"No current, stall-current, thermal, oscilloscope or physical output-mode measurement. STM32 GPIO=3.3V vs TB6612 VCC=5V outside VIH guarantee; STBY fixed high. 60pct command on high profile is NOT a current limit or electrical safety approval.",
         "interpretation":"Sustained_count_signal is an empirical >=5 encoder-count and >=5 tail-count heuristic, NOT a certified deadband threshold.",
     }, rows
 
