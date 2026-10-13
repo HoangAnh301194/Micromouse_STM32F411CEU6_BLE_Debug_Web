@@ -1,0 +1,35 @@
+Motor auto 3-round diagnostic
+Status: INCOMPLETE
+Stages: 0/87; samples: 0
+Encoder counts are not RPM. Electrical current/thermal limits were NOT measured.
+
+PHASE A: startup 8-12% (3/3 sustained encoder count heuristic)
+  l: confirmed-per-duty={'80': None, '90': None, '100': None, '110': None, '120': None}; lowest-test-3of3=None
+  r: confirmed-per-duty={'80': None, '90': None, '100': None, '110': None, '120': None}; lowest-test-3of3=None
+PHASE B: PWM response and post-zero encoder movement
+PHASE C: rise slew 5 vs 20 permille/ms at 16%
+  l: slow=None, fast=None, fast-minus-slow=None counts
+  r: slow=None, fast=None, fast-minus-slow=None counts
+PHASE D: executed-condition 400ms base / 800ms high neutral observations (details below)
+PHASE E: opt-in PWM 30/40/50/60% for each wheel; 120ms drive/800ms neutral, 3 rounds
+  l duty=30% counts=[], post-neutral=[], repeats=0
+  r duty=30% counts=[], post-neutral=[], repeats=0
+  l duty=40% counts=[], post-neutral=[], repeats=0
+  r duty=40% counts=[], post-neutral=[], repeats=0
+  l duty=50% counts=[], post-neutral=[], repeats=0
+  r duty=50% counts=[], post-neutral=[], repeats=0
+  l duty=60% counts=[], post-neutral=[], repeats=0
+  r duty=60% counts=[], post-neutral=[], repeats=0
+NOT_EXECUTED: 87 of 87 pulses; missing stages are excluded, not treated as 0 counts
+Host/Microcontroller link: {"link_records": 0, "keep_decoded_last": null, "max_uart_rx_overrun": null, "max_uart_rx_framing": null, "max_uart_rx_ring_drop": null, "last_firmware_reported_host_age_ms": null, "faults": []}
+
+ERRORS:
+END order differs from start matrix
+Expected exactly one host-triggered MOTOR_AUTO_BEGIN
+Missing UART RX handshake: MOTOR_AUTO_READY
+Missing/invalid full experiment completion record
+Missing/repeated per-round completion signatures
+Missing/repeated stages (start/end/post counts): 0/0/0 expected 87
+POST_END order differs from start matrix
+Round end ordering mismatch
+Start order or command matrix differs from three expected rounds
