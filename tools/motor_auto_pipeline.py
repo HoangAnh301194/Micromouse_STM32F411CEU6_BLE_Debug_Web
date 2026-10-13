@@ -15,6 +15,7 @@ import argparse
 import csv
 import datetime as dt
 import json
+import re
 from pathlib import Path
 import statistics
 import subprocess
@@ -60,7 +61,7 @@ def configure_profile(high=False):
     HIGH_PROFILE = bool(high)
     FIRMWARE_ENV = ("motor_auto_high_96m_trim25" if high else
                     "motor_auto_pipeline_96m_trim25")
-    PROFILE_VERSION = 5 if high else 4
+    PROFILE_VERSION = 6 if high else 4
     FAMILIES = 5 if high else 4
     MATRIX = (
         ((80,0),(0,80),(90,0),(0,90),(100,0),(0,100),
@@ -414,7 +415,37 @@ def analyze(lines, *, setup=None):
     }, rows
 
 
+def test_firmware_uart_profile_frame():
+    """Source-based guard for C UART_Printf's 256-byte record limit.
+
+    This specifically reproduces the v5 bug: an overlong PROFILE frame lost
+    CRLF, merging it with the following READY and blocking host handshake.
+    """
+    source = (Path(__file__).resolve().parent.parent /
+              "src" / "motor_auto_bench.c").read_text(encoding="utf-8")
+    section = source.split("static void ReplyReady(void)",1)[1].split(
+        "static void ReceiveLine(",1)[0]
+    match = re.search(r'UART_Printf\(\s*((?:"(?:\\.|[^"\\])*"\s*)+),',
+                      section, re.S)
+    assert match, "Missing firmware PROFILE UART_Printf frame"
+    literals = re.findall(r'"((?:\\.|[^"\\])*)"', match.group(1))
+    fmt = "".join(bytes(chunk,"utf-8").decode("unicode_escape")
+                  for chunk in literals)
+    profile = fmt % (PROFILE_VERSION, 96000000, 30000, NUM_ROUNDS,
+                     len(MATRIX), MAX_CMD, FAMILIES,
+                     HIGH_PULSE_MS if HIGH_PROFILE else 0,
+                     HIGH_POST_MS if HIGH_PROFILE else 0)
+    assert profile.startswith("MOTOR_AUTO_PROFILE,")
+    assert profile.endswith("\r\n"), "Firmware PROFILE must end in CRLF"
+    assert len(profile.encode("ascii")) < 256, (
+        f"Firmware PROFILE would truncate at UART_Printf 256B: "
+        f"{len(profile.encode('ascii'))} bytes")
+    print(f"UART framing guard: v{PROFILE_VERSION} PROFILE "
+          f"{len(profile.encode('ascii'))}/255 bytes; CRLF intact.")
+
+
 def self_test():
+    test_firmware_uart_profile_frame()
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
         f"MOTOR_AUTO_PROFILE,version={PROFILE_VERSION},nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,high_pulse_ms={HIGH_PULSE_MS if HIGH_PROFILE else 0},high_post_ms={HIGH_POST_MS if HIGH_PROFILE else 0},pulse_ms=200,post_ms=400,boot_neutral=1",
@@ -446,6 +477,13 @@ def self_test():
     incomplete([x for x in synthetic if not x.startswith("MOTOR_AUTO_PROFILE")])
     incomplete([x for x in synthetic if "MOTOR_AUTO_END,round=1,stage=3" not in x])
     incomplete(synthetic + ["MOTOR_AUTO_FAULT,reason=HOST_TIMEOUT"])
+    # v5 regression: a truncated PROFILE without CRLF merged into
+    # MOTOR_AUTO_READY, so a correct host must reject handshake.
+    merged = list(synthetic)
+    merged[1] = merged[1].removesuffix("boot_neutral=1") + (
+        "stby_fixed_MOTOR_AUTO_READY,version=5,rounds=3")
+    merged.pop(2)
+    incomplete(merged)
     interrupted_post = [x for x in synthetic if
                         "MOTOR_AUTO_POST_END,round=0,stage=1" not in x]
     partial_report,_ = analyze(interrupted_post)
