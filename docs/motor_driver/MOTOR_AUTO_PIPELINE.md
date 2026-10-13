@@ -68,9 +68,9 @@ one-command run includes STLINK reset/upload.
   PA10, in addition to USART1 TX PA9 and shared ground. The last
   `auto_20261013_093808` experiment successfully completed this
   handshake.
-- The host checks protocol v3, 3 rounds × 21 stages, 20% command cap,
+- The host checks protocol v4 with `rx_mode=irq256`, 3 rounds × 21 stages, 20% command cap,
   16% simultaneous-wheel cap, 200ms drive, 400ms neutral window and
-  idle firmware state before START. A v2 firmware will be rejected.
+  idle firmware state before START. Old v2/v3 firmware will be rejected, including with `--skip-flash`.
 - `MOTOR KEEP` heartbeat about every 350ms; on >1600ms host silence,
   a monitored TIM11 >1.5ms gap or unexpected pulse end, firmware
   latches fault, stops generating PWM commands and refuses further
@@ -87,14 +87,26 @@ one-command run includes STLINK reset/upload.
 1. `raw_serial.log`: untouched timestamped UART.
 2. `motor_auto_samples.csv`: round, stage, test, phase, rise, applied
    duty, TIM2 CCR, encoder counts, TIM11 timing and UART drop counters.
-3. `motor_auto_report.json`: 63 stage records, 3-repetition statistics
+3. `motor_auto_report.json`: 63 expected stage records, including
+   `NOT_TESTED` for skipped stages (never fabricated as 0 count),
+   `PARTIAL` for incomplete three-run observations, and
+   `MOTOR_AUTO_LINK` decoded-heartbeat/RX overrun diagnostics, 3-repetition statistics
    (mean, sample standard deviation, heuristic first-five-count time,
    sustained encoder count, motion after STOP), and strict pass/fail
    of protocol completeness, timing, no motor-PWM after stop, command
    ceiling, expected stage family and slew configuration.
 4. `motor_auto_summary.txt`: per-condition condensed findings.
-5. `session_meta.json`: declared VM state and optional hand-measured DC
-   voltage.
+5. `session_meta.json`: declared VM state, optional hand-measured DC
+   voltage and number of host `MOTOR KEEP` transmissions.
+
+**HOST_TIMEOUT fix:** v3 used polling for USART1 RX while main was
+printing a dense telemetry stream; RX bytes could be overrun unnoticed.
+v4 uses an interrupt-fed 256-byte RX ring, decoded KEEP count, explicit
+USART RX error counters and 250ms host KEEP cadence. The timeout remains
+1600ms and still causes a latched software stop. The actual root cause
+of the October 13 v3 failure is a plausible RX timing hypothesis, not
+proven in the pre-fix log. See
+[`HOST_TIMEOUT_RCA_20261013.md`](HOST_TIMEOUT_RCA_20261013.md).
 
 `TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL` indicates **trace validity
 only**, never electrical safety, current, winding temperature or
