@@ -235,7 +235,7 @@ def analyze(lines, *, setup=None):
     sensor_ready = by_kind.get("MOTOR_AUTO_SENSOR_READY", [])
     sensor_rows = by_kind.get("MOTOR_AUTO_SENSORS", [])
     if SENSOR_PROFILE:
-        if len(sensor_ready) != 1 or intval(sensor_ready[0],"ir",0) < 10:
+        if not sensor_ready or max((intval(x,"ir",0) for x in sensor_ready),default=0) < 10:
             errors.append("Integrated IMU calibration/IR scan readiness not confirmed")
         if len(sensor_rows) != len(starts)*2:
             errors.append(f"Missing integrated sensor telemetry: {len(sensor_rows)}/{len(starts)*2}")
@@ -666,6 +666,8 @@ def store(folder, raw, setup):
                          f"repeats={x['executed_replicates']}")
     lines.append(f"NOT_EXECUTED: {report['not_executed_pulses']} of {EXPECTED} pulses; missing stages are excluded, not treated as 0 counts")
     lines.append("Host/Microcontroller link: " + json.dumps(report["rx_heartbeat_diagnostics"]))
+    if SENSOR_PROFILE:
+        lines.append("IMU/I2C/IR combined telemetry: " + json.dumps(report["sensor_integration"]))
     for x in report["repeat_statistics"]:
         if x["measurement_status"] == "NOT_TESTED":
             continue
@@ -696,7 +698,7 @@ def execute(args):
            "rounds":NUM_ROUNDS,"stages_per_round":len(MATRIX),
            "diagnostic_phases":["startup","response","slew_slow","slew_fast"]+
                                   (["high"] if HIGH_PROFILE else []),
-           "high_profile": HIGH_PROFILE,
+           "high_profile": HIGH_PROFILE, "sensor_profile": SENSOR_PROFILE,
            "note":"VM state user-supplied, not measured by STM32; duty is not current limit."}
     if not args.skip_flash:
         print("Build + flash opt-in firmware via STLINK:", FIRMWARE_ENV,flush=True)
@@ -720,7 +722,7 @@ def execute(args):
             start=time.monotonic()
             ping_at=0.0
             keep_at=0.0
-            handshake_deadline=start+10.0
+            handshake_deadline=start+(60.0 if SENSOR_PROFILE else 10.0)
             print("Connected:",args.port,"- host must receive MOTOR_AUTO_READY before motion.")
             print("Wheels MUST be elevated; have a physical VM disconnect ready. STOP via UART is not a hardware kill switch.")
             while time.monotonic()-start<args.timeout:
@@ -734,7 +736,7 @@ def execute(args):
                     keep_at=now+0.25
                 if not requested_start and now>handshake_deadline:
                     handshake_error = (
-                        "No complete/valid PROFILE + READY within 10s. "
+                        "No complete/valid PROFILE + READY before calibration/handshake timeout. "
                         "Inspect raw_serial.log for truncated or merged records; "
                         "check USB-UART wiring only if no MCU bytes are received.")
                     print("HANDSHAKE FAILED:",handshake_error,
@@ -757,6 +759,7 @@ def execute(args):
                         ("both_cap_permille",DUAL_MAX_CMD),("families",FAMILIES),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
                         ("boot_neutral",1),("pwm_hz",30000),
+                        ("sensor",int(SENSOR_PROFILE)),
                         ("high_pulse_ms",HIGH_PULSE_MS if HIGH_PROFILE else 0),
                         ("high_post_ms",HIGH_POST_MS if HIGH_PROFILE else 0),
                     )
@@ -771,7 +774,7 @@ def execute(args):
                         ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
                         ("both_cap_permille",DUAL_MAX_CMD),("families",FAMILIES),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
-                        ("boot_neutral",1))
+                        ("boot_neutral",1),("sensor",int(SENSOR_PROFILE)))
                     if not verified_profile:
                         handshake_error = "READY received without a complete validated PROFILE."
                         print("HANDSHAKE FAILED:",handshake_error)
@@ -840,7 +843,7 @@ def check_link(args):
         ser.reset_input_buffer()
         start=time.monotonic()
         profile_ok = False
-        while time.monotonic()-start < 8.0:
+        while time.monotonic()-start < (60.0 if SENSOR_PROFILE else 8.0):
             ser.write(b"MOTOR PING\n")
             for _ in range(3):
                 data=ser.readline().decode(errors="replace").strip()
@@ -855,7 +858,8 @@ def check_link(args):
                         ("version",PROFILE_VERSION),("steps",len(MATRIX)),
                         ("hard_cap_permille",MAX_CMD),("families",FAMILIES),
                         ("high_pulse_ms",HIGH_PULSE_MS if HIGH_PROFILE else 0),
-                        ("high_post_ms",HIGH_POST_MS if HIGH_PROFILE else 0))
+                        ("high_post_ms",HIGH_POST_MS if HIGH_PROFILE else 0),
+                        ("sensor",int(SENSOR_PROFILE)))
                     if any(intval(values,k)!=v for k,v in requirements):
                         print("PROFILE mismatch; refusing to validate link.")
                         return 1
@@ -863,7 +867,8 @@ def check_link(args):
                 elif kind == "MOTOR_AUTO_READY":
                     if (not profile_ok or intval(values,"version") != PROFILE_VERSION
                         or intval(values,"state") != 0
-                        or intval(values,"steps") != len(MATRIX)):
+                        or intval(values,"steps") != len(MATRIX)
+                        or intval(values,"sensor",0) != int(SENSOR_PROFILE)):
                         print("READY without matching PROFILE/idle state; link not validated.")
                         return 1
                     print("BIDIRECTIONAL UART PROFILE + READY PASS; no motor drive commands sent.")
