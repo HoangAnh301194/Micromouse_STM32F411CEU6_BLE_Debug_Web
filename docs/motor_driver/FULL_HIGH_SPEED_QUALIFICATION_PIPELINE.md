@@ -112,9 +112,12 @@ with left/right CCR, direction GPIO ODR, OC1PE/OC2PE preload and ARR,
 but this register snapshot is NOT an oscilloscope reading. The MCU also
 emits `MOTOR_AUTO_SENSOR_READY` after calibration and
 `MOTOR_AUTO_SENSORS` in both drive and post-neutral phases of every stage.
-Every report validates monotonic sensor counters, real freshness/IR
-scan progress, 1kHz timing, host heartbeat, and fails closed for missing
-telemetry. USART1 UART RX IRQ ring and per-pulse software watchdog
+Every report validates monotonic sensor counters, gyro absolute-rate
+samples taken at 20ms intervals during drive and neutral observation,
+real freshness/IR scan progress, 1kHz timing, host heartbeat, and fails
+closed for missing telemetry. Differences between the gyro-on and
+gyro-neutral proxies can include vibration or genuine rotation: the
+pipeline cannot identify electrical EMI with certainty. USART1 UART RX IRQ ring and per-pulse software watchdog
 remain enabled. MCU STBY remains fixed HIGH, so UART STOP is not an
 emergency hardware kill.
 
