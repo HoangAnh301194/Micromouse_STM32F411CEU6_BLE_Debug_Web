@@ -72,9 +72,11 @@ def phase_findings(stats):
                          x["wheel"] == wheel), key=lambda x:x["cmd_permille"])
         reliable = [x["cmd_permille"] for x in subset if x["sustained_3of3"]]
         startup[wheel] = {
-            "tested_permille": [x["cmd_permille"] for x in subset],
+            "planned_permille": [x["cmd_permille"] for x in subset],
+            "measured_permille": [x["cmd_permille"] for x in subset if x["executed_replicates"] > 0],
             "sustained_replicates_by_duty": {
-                str(x["cmd_permille"]): x["sustained_replicates"] for x in subset},
+                str(x["cmd_permille"]): x["sustained_replicates"] if
+                x["executed_replicates"] > 0 else None for x in subset},
             "lowest_tested_3of3_permille": min(reliable) if reliable else None,
         }
     response = []
@@ -91,8 +93,12 @@ def phase_findings(stats):
                 "pwm_permille":duty,"mean_left_encoder_count":left["mean_count"],
                 "mean_right_encoder_count":base,
                 "relative_count_difference_pct":round(100*(left["mean_count"]-base)/base,2) if base else None,
-                "mean_left_post_stop_counts":round(statistics.mean(left["three_post_stop_deltas"]),2),
-                "mean_right_post_stop_counts":round(statistics.mean(right["three_post_stop_deltas"]),2),
+                "mean_left_post_stop_counts":round(statistics.mean(
+                    [n for n in left["three_post_stop_deltas"] if n is not None]),2)
+                    if any(n is not None for n in left["three_post_stop_deltas"]) else None,
+                "mean_right_post_stop_counts":round(statistics.mean(
+                    [n for n in right["three_post_stop_deltas"] if n is not None]),2)
+                    if any(n is not None for n in right["three_post_stop_deltas"]) else None,
             })
     slew = []
     for wheel in ("l","r"):
@@ -268,19 +274,22 @@ def analyze(lines, *, setup=None):
                         errors.append(f"PWM CCR mismatch r={r} stage={stage} wheel={wheel}: peak={peak}")
             driven_counts = []
             for wheel, request in (("l", cmd[0]), ("r", cmd[1])):
-                final = intval(e, f"enc_{wheel}", 0)
-                after_count = intval(p, f"enc_{wheel}", 0)
+                # Absence of END or POST_END is missing data, never a zero
+                # count, zero stop-distance or proof of no motor response.
+                final = intval(e, f"enc_{wheel}", None)
+                after_count = intval(p, f"enc_{wheel}", None)
                 tail = [x for x in drives if intval(x,"elapsed") >= 99]
                 tail_delta = (intval(tail[-1],f"enc_{wheel}",0) -
                               intval(tail[0],f"enc_{wheel}",0)) if len(tail)>1 else None
-                sustained = request > 0 and abs(final) >= 5 and \
+                sustained = request > 0 and final is not None and abs(final) >= 5 and \
                             (tail_delta is not None and abs(tail_delta) >= 5)
                 first5 = next((intval(x,"elapsed") for x in drives
                                if abs(intval(x,f"enc_{wheel}",0)) >= 5), None)
                 driven_counts.append({
                     "wheel":wheel, "requested_permille": request, "encoder_drive": final,
                     "encoder_after_post_ms": after_count,
-                    "post_stop_delta": after_count-final,
+                    "post_stop_delta": (after_count-final) if
+                        after_count is not None and final is not None else None,
                     "final_100ms_delta":tail_delta, "first_five_counts_ms":first5,
                     "sustained_count_signal": bool(sustained),
                 })
@@ -299,7 +308,7 @@ def analyze(lines, *, setup=None):
                           if x["wheel"]==wheel), None)
                     for trial in individual if trial["stage"]==stage]
             vals = [x for x in vals if x is not None]
-            counts = [x["encoder_drive"] for x in vals]
+            counts = [x["encoder_drive"] for x in vals if x["encoder_drive"] is not None]
             stats.append({
                 "stage":stage, "test":TESTS[stage],
                 "rise_rate_permille_per_ms":RISE_RATES[stage],
@@ -313,6 +322,7 @@ def analyze(lines, *, setup=None):
                 "sustained_3of3":all(x["sustained_count_signal"] for x in vals) and len(vals)==3,
                 "sustained_replicates":sum(x["sustained_count_signal"] for x in vals),
                 "three_post_stop_deltas":[x["post_stop_delta"] for x in vals],
+                "complete_post_stop_replicates":sum(x["post_stop_delta"] is not None for x in vals),
                 "first_five_counts_ms":[x["first_five_counts_ms"] for x in vals]
             })
     if done and (intval(done[-1],"ccr_l") != 0 or intval(done[-1],"ccr_r") != 0 or
@@ -382,6 +392,13 @@ def self_test():
     incomplete([x for x in synthetic if not x.startswith("MOTOR_AUTO_PROFILE")])
     incomplete([x for x in synthetic if "MOTOR_AUTO_END,round=1,stage=3" not in x])
     incomplete(synthetic + ["MOTOR_AUTO_FAULT,reason=HOST_TIMEOUT"])
+    interrupted_post = [x for x in synthetic if
+                        "MOTOR_AUTO_POST_END,round=0,stage=1" not in x]
+    partial_report,_ = analyze(interrupted_post)
+    assert partial_report["status"] == "INCOMPLETE"
+    st1 = next(x for x in partial_report["trials"]
+               if x["round"]==0 and x["stage"]==1)
+    assert st1["wheel_readings"][1]["post_stop_delta"] is None
     incomplete([x.replace("rx_ore=0,rx_fe=0","rx_ore=1,rx_fe=0")
                 if x.startswith("MOTOR_AUTO_LINK") else x for x in synthetic])
     aborted = [x for x in synthetic if not ("round=1,stage=" in x or
