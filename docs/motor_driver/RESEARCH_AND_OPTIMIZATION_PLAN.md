@@ -157,3 +157,91 @@ duty alone is not a guaranteed stall-current limit.
    per wheel, target wheel RPM and high-speed operating interval.
 
 **No driver firmware was changed as part of this source audit.**
+
+
+## Hardware owner update — 2026-10-13 (supersedes unknowns above)
+
+**Owner-confirmed observations, not independent meter/schematic verification:**
+- TB6612 VCC wired to **5V**.
+- TB6612 STBY hard-tied to **5V**, always enabled; no MCU STBY control.
+- N20 motors are **12V rated**; exact gearbox ratio, output RPM and stall
+  current are unknown.
+- Main supply is a 2S LiPo (~7.4V nominal, up to 8.4V fully charged).
+  Owner reports little *meter-visible* battery sag.
+- Exactly one reported filtering capacitor at VM; value, ESR, placement
+  and any VCC decoupling are unknown.
+- Only a voltage-reading multimeter is available; no current sensing,
+  current-limited lab PSU, oscilloscope or logic analyzer confirmed.
+
+### Newly established P0 blocker: guaranteed logic HIGH level
+
+Toshiba TB6612FNG control-input specification:
+`VIH(min) = 0.7 * VCC`, so with `VCC = 5V`, the driver is only
+guaranteed to recognize input HIGH at **>=3.5V**. STM32F411 3.3V
+GPIO nominal HIGH is **below the guaranteed threshold by 0.2V**.
+The board may appear to work but is **outside guaranteed logic HIGH**
+conditions. This takes precedence over motor PWM optimization.
+
+**Hardware remediation options (must check schematic, rails, and PCB):**
+
+- Preferred if supply routing allows: change **both VCC and tied-high
+  STBY** of the TB6612 to the **3.3V logic rail** and verify this rail
+  can power the driver logic; leave VM on the 2S battery. Do *not*
+  lower VCC alone while leaving STBY at 5V. Datasheet lists normal
+  control-input maximum as VCC+0.2V even though the absolute maximum
+  input voltage is higher.
+- Otherwise retain VCC=5V but add properly specified 3.3V->5V
+  translation for PWM/IN pins, with valid default-off behavior.
+- To achieve a hardware fault-disable path, rework STBY to a monitored
+  3.3V- or 5V-compatible output through an appropriately selected
+  circuit, with default LOW and no drive during MCU reset/fault.
+- Neither remediation is a firmware-only change. Avoid trial-and-error
+  power rerouting without confirming the schematic/other loads.
+
+**Datasheet truth-table stop detail:** High-impedance Stop is
+`IN1=LOW, IN2=LOW, PWM=HIGH, STBY=HIGH`; short-brake is documented
+for `IN1=IN2=HIGH` at any PWM and for directional IN1/IN2 when PWM LOW.
+The current firmware's `Motor_Stop()` sets `IN1=IN2=LOW` **and**
+`PWM=LOW`, which is not the stop row the manufacturer documents.
+Do not assert this exact combination produces guaranteed coast until
+tested, or change GPIO/CCR ordering blindly while CCR shadow preload
+and STBY fixed high. Rework the output-state machine in a separate
+reviewed experiment after logic voltage is corrected.
+
+### Revised testing boundary with voltage-only multimeter
+
+- **Allowed with motor VM physically disconnected and safely powered
+  MCU logic:** measure TB6612 VCC-to-GND, STBY-to-GND, measured static
+  3.3V GPIO HIGH and 0V GPIO LOW. Continuity-check hardwired STBY
+  with power disconnected only if the meter supports continuity mode.
+  Compare measured HIGH to 3.5V requirement. Do not use a DC meter
+  reading of a PWM signal as proof of frequency/duty/glitch-free edges.
+- **Software only:** verify static TIM2 ARR/PSC/CCR/CCER/AF pin
+  configuration and compile an explicitly safe motor-unpowered
+  test firmware; unit-test STOP/BRAKE/REVERSE state-machine logic
+  off-target. Keep motors disconnected and avoid auto 100% pulses.
+- **Deferred until minimum electrical measurement and protection are
+  available:** powered stalls, max duty, short-brake, high-speed
+  reversal, frequency sweeps, motor heating/current capability, and
+  any final safe current limit. A battery with low DC voltage sag is
+  not evidence that transient current or VM voltage ripple is safe.
+- **Minimal additional instrument:** borrow a current-limited PSU or
+  suitable current-measurement instrumentation plus a scope/logic
+  analyzer; verify motor rated/stall current when possible. Duty
+  clamping without current feedback is *not* active current limiting.
+
+The 12V N20 motor under 2S receives below-rated supply, generally
+reducing attainable steady speed/torque, **but it does not certify
+stall current to be <1A**. Toshiba TB6612 recommended current range
+at VM>=4.5V quotes 1.0A per channel; absolute max 1.2A alone is not
+a continuous design target.
+
+**Updated P0 sequence:**
+`confirm 5V/3.3V logic levels -> verify schematic and capacitor(s) ->
+select safe logic-level remediation/STBY architecture -> static
+driver state test -> current-limited wheel test -> quantitative PWM
+optimization`.
+
+References: Toshiba TB6612FNG datasheet pages 3, 4, 5, 7:
+https://toshiba.semicon-storage.com/info/TB6612FNG_datasheet_en_20141001.pdf?did=10660&prodName=TB6612FNG
+
