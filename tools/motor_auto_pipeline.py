@@ -300,8 +300,8 @@ def analyze(lines, *, setup=None):
                 # Never fabricate 0-count measurements for unexecuted stages
                 # when HOST_TIMEOUT or another fail-safe aborts the sequence.
                 continue
-            if len(drives) < (4 if stage >= BASE_STEPS else 6) or
-               len(after) < (30 if stage >= BASE_STEPS else 10):
+            if (len(drives) < (4 if stage >= BASE_STEPS else 6) or
+                len(after) < (30 if stage >= BASE_STEPS else 10)):
                 errors.append(f"Insufficient 20ms samples round={r} stage={stage} drive={len(drives)} post={len(after)}")
             if any(intval(x, "ccr_l") != 0 for x in drives if cmd[0] == 0) or \
                any(intval(x, "ccr_r") != 0 for x in drives if cmd[1] == 0):
