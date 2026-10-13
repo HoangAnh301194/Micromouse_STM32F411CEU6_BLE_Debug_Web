@@ -3,7 +3,7 @@
 
 The same Python process builds/flashes opt-in firmware, verifies bidirectional
 UART communication, sends the explicit START command, captures 3 rounds of
-9 stages, validates telemetry, computes replicate statistics, and writes files.
+21 stages covering startup sweep, open-loop response and slew sensitivity; collects 400ms neutral stop traces and statistics.
 NO KEY/button, no automatic motion on reset, no current/thermal safety claim.
 
 IMPORTANT: MCU PA10 / USART1 RX must physically connect to the USB-UART TX
@@ -24,18 +24,23 @@ import time
 FIRMWARE_ENV = "motor_auto_pipeline_96m_trim25"
 NUM_ROUNDS = 3
 PULSE_MS = 200
-POST_MS = 300
-# 8/12% anchor prior baseline; expand single-wheel to 16/20%;
-# dual-wheel remains 16% to avoid a simultaneous peak without current sensing.
-MATRIX = ((80, 0), (0, 80), (120, 0), (0, 120),
-          (160, 0), (0, 160), (200, 0), (0, 200), (160, 160))
+POST_MS = 400
+# Firmware owns this fixed capped matrix; host cannot submit arbitrary duty.
+MATRIX = (
+    (80,0),(0,80),(90,0),(0,90),(100,0),(0,100),
+    (110,0),(0,110),(120,0),(0,120),
+    (120,0),(0,120),(160,0),(0,160),(200,0),(0,200),(160,160),
+    (160,0),(0,160),(160,0),(0,160)
+)
+TESTS = ("startup",)*10 + ("response",)*7 + ("slew_slow",)*2 + ("slew_fast",)*2
+RISE_RATES = (10,)*17 + (5,)*2 + (20,)*2
 MAX_CMD = 200
 DUAL_MAX_CMD = 160
 MAX_CCR = 640  # TIM2 96MHz / 30kHz = 3200 counts, 20% = 640
 EXPECTED = NUM_ROUNDS * len(MATRIX)
-CSV_FIELDS = ("round", "stage", "phase", "ms", "elapsed", "applied_l",
-              "applied_r", "enc_l", "enc_r", "ccr_l", "ccr_r",
-              "tim11_late", "tim11_max_cycles", "tim11_gaps", "tx_drop")
+CSV_FIELDS = ("round", "stage", "phase", "test", "rise", "ms", "elapsed",
+              "applied_l", "applied_r", "enc_l", "enc_r", "ccr_l",
+              "ccr_r", "tim11_late", "tim11_max_cycles", "tim11_gaps", "tx_drop")
 
 
 def split_record(line: str):
@@ -80,10 +85,10 @@ def analyze(lines, *, setup=None):
     else:
         p = profile[-1]
         for key, value in {
-            "version": 2, "nominal_hz": 96000000,
+            "version": 3, "nominal_hz": 96000000,
             "pwm_hz": 30000, "rounds": NUM_ROUNDS,
             "steps": len(MATRIX), "hard_cap_permille": MAX_CMD,
-            "both_cap_permille": DUAL_MAX_CMD,
+            "both_cap_permille": DUAL_MAX_CMD, "families": 4,
             "pulse_ms": PULSE_MS, "post_ms": POST_MS,
             "boot_neutral": 1,
         }.items():
@@ -112,7 +117,7 @@ def analyze(lines, *, setup=None):
         try:
             row = {k: str(s[k]) for k in CSV_FIELDS}
             for k in CSV_FIELDS:
-                if k != "phase":
+                if k not in ("phase", "test"):
                     int(row[k])
             rows.append(row)
         except (KeyError, ValueError):
@@ -123,6 +128,12 @@ def analyze(lines, *, setup=None):
                 for st, pair in enumerate(MATRIX)]
     if seen != expected:
         errors.append("Start order or command matrix differs from three expected rounds")
+    for x in starts:
+        stage = intval(x, "stage")
+        if not (0 <= stage < len(MATRIX)):
+            errors.append("Invalid MCU START stage index")
+        elif x.get("test") != TESTS[stage] or intval(x, "rise") != RISE_RATES[stage]:
+            errors.append(f"Diagnostic test/slew mismatch in MCU START stage {stage}")
     if [(intval(x, "round"), intval(x, "stage")) for x in ends] != [x[:2] for x in expected]:
         errors.append("END order differs from start matrix")
     if [(intval(x, "round"), intval(x, "stage")) for x in posts] != [x[:2] for x in expected]:
@@ -140,6 +151,10 @@ def analyze(lines, *, setup=None):
     for i, s in enumerate(samples):
         if s.get("phase") not in ("drive", "post"):
             errors.append(f"Unknown sample phase {i}")
+        stage = intval(s, "stage")
+        if not (0 <= stage < len(MATRIX)) or \
+           s.get("test") != TESTS[stage] or intval(s, "rise") != RISE_RATES[stage]:
+            errors.append(f"Invalid test/slew telemetry at sample {i}")
         if intval(s, "tim11_gaps") != 0 or intval(s, "tim11_late") != 0:
             errors.append("TIM11 deadline/jitter issue")
         if intval(s, "tx_drop") != 0:
@@ -194,13 +209,15 @@ def analyze(lines, *, setup=None):
                                if abs(intval(x,f"enc_{wheel}",0)) >= 5), None)
                 driven_counts.append({
                     "wheel":wheel, "requested_permille": request, "encoder_drive": final,
-                    "encoder_after_300ms": after_count,
+                    "encoder_after_post_ms": after_count,
                     "post_stop_delta": after_count-final,
                     "final_100ms_delta":tail_delta, "first_five_counts_ms":first5,
                     "sustained_count_signal": bool(sustained),
                 })
             individual.append({
-                "round":r, "stage":stage,"cmd_left":cmd[0],"cmd_right":cmd[1],
+                "round":r, "stage":stage,"test":TESTS[stage],
+                "rise_rate_permille_per_ms":RISE_RATES[stage],
+                "cmd_left":cmd[0],"cmd_right":cmd[1],
                 "drive_samples":len(drives),"post_samples":len(after),
                 "wheel_readings":driven_counts,
             })
@@ -212,7 +229,9 @@ def analyze(lines, *, setup=None):
                     for trial in individual if trial["stage"]==stage]
             counts = [x["encoder_drive"] for x in vals]
             stats.append({
-                "stage":stage, "wheel":wheel, "cmd_permille":duty,
+                "stage":stage, "test":TESTS[stage],
+                "rise_rate_permille_per_ms":RISE_RATES[stage],
+                "wheel":wheel, "cmd_permille":duty,
                 "three_drive_counts":counts,
                 "mean_count":round(statistics.mean(counts),2) if counts else None,
                 "sample_std_count":round(statistics.stdev(counts),2) if len(counts)>1 else None,
@@ -230,6 +249,8 @@ def analyze(lines, *, setup=None):
         "rounds_requested": NUM_ROUNDS, "pulses_expected": EXPECTED,
         "starts":len(starts), "ends":len(ends), "post_ends":len(posts),
         "sample_count":len(samples),"errors":errors,
+        "test_families":["startup","response","slew_slow","slew_fast"],
+        "stages_per_round":len(MATRIX),"post_stop_observation_ms":POST_MS,
         "repeat_statistics":stats,"trials":individual,
         "experiment_setup":setup or {},
         "electrical_limitation":"3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM. 20pct duty is not a current limit.",
