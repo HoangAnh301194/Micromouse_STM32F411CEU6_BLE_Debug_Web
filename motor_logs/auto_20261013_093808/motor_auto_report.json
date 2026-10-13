@@ -1,0 +1,1075 @@
+{
+  "status": "TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL",
+  "rounds_requested": 3,
+  "pulses_expected": 27,
+  "starts": 27,
+  "ends": 27,
+  "post_ends": 27,
+  "sample_count": 675,
+  "errors": [],
+  "repeat_statistics": [
+    {
+      "stage": 0,
+      "wheel": "l",
+      "cmd_permille": 80,
+      "three_drive_counts": [
+        79,
+        1,
+        1
+      ],
+      "mean_count": 27,
+      "sample_std_count": 45.03,
+      "sustained_3of3": false,
+      "sustained_replicates": 1,
+      "three_post_stop_deltas": [
+        17,
+        -1,
+        -1
+      ],
+      "first_five_counts_ms": [
+        40,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 1,
+      "wheel": "r",
+      "cmd_permille": 80,
+      "three_drive_counts": [
+        69,
+        1,
+        1
+      ],
+      "mean_count": 23.67,
+      "sample_std_count": 39.26,
+      "sustained_3of3": false,
+      "sustained_replicates": 1,
+      "three_post_stop_deltas": [
+        15,
+        -1,
+        -1
+      ],
+      "first_five_counts_ms": [
+        60,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 2,
+      "wheel": "l",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        142,
+        138,
+        141
+      ],
+      "mean_count": 140.33,
+      "sample_std_count": 2.08,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        54,
+        57,
+        58
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 3,
+      "wheel": "r",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        132,
+        132,
+        130
+      ],
+      "mean_count": 131.33,
+      "sample_std_count": 1.15,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        45,
+        46,
+        48
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 4,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        199,
+        199,
+        204
+      ],
+      "mean_count": 200.67,
+      "sample_std_count": 2.89,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        112,
+        112,
+        109
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 5,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        186,
+        186,
+        190
+      ],
+      "mean_count": 187.33,
+      "sample_std_count": 2.31,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        94,
+        94,
+        89
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 6,
+      "wheel": "l",
+      "cmd_permille": 200,
+      "three_drive_counts": [
+        256,
+        255,
+        256
+      ],
+      "mean_count": 255.67,
+      "sample_std_count": 0.58,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        181,
+        184,
+        185
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 7,
+      "wheel": "r",
+      "cmd_permille": 200,
+      "three_drive_counts": [
+        242,
+        242,
+        242
+      ],
+      "mean_count": 242,
+      "sample_std_count": 0.0,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        154,
+        154,
+        155
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 8,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        196,
+        196,
+        195
+      ],
+      "mean_count": 195.67,
+      "sample_std_count": 0.58,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        95,
+        95,
+        101
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 8,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        196,
+        196,
+        197
+      ],
+      "mean_count": 196.33,
+      "sample_std_count": 0.58,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        99,
+        99,
+        97
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    }
+  ],
+  "trials": [
+    {
+      "round": 0,
+      "stage": 0,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 79,
+          "encoder_after_300ms": 96,
+          "post_stop_delta": 17,
+          "final_100ms_delta": 40,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 1,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 69,
+          "encoder_after_300ms": 84,
+          "post_stop_delta": 15,
+          "final_100ms_delta": 36,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 2,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 142,
+          "encoder_after_300ms": 196,
+          "post_stop_delta": 54,
+          "final_100ms_delta": 71,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 3,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 132,
+          "encoder_after_300ms": 177,
+          "post_stop_delta": 45,
+          "final_100ms_delta": 66,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 4,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 199,
+          "encoder_after_300ms": 311,
+          "post_stop_delta": 112,
+          "final_100ms_delta": 99,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 186,
+          "encoder_after_300ms": 280,
+          "post_stop_delta": 94,
+          "final_100ms_delta": 95,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 6,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 256,
+          "encoder_after_300ms": 437,
+          "post_stop_delta": 181,
+          "final_100ms_delta": 129,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 7,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 242,
+          "encoder_after_300ms": 396,
+          "post_stop_delta": 154,
+          "final_100ms_delta": 125,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 8,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 196,
+          "encoder_after_300ms": 291,
+          "post_stop_delta": 95,
+          "final_100ms_delta": 97,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 196,
+          "encoder_after_300ms": 295,
+          "post_stop_delta": 99,
+          "final_100ms_delta": 97,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 0,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 1,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 2,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 138,
+          "encoder_after_300ms": 195,
+          "post_stop_delta": 57,
+          "final_100ms_delta": 71,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 3,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 132,
+          "encoder_after_300ms": 178,
+          "post_stop_delta": 46,
+          "final_100ms_delta": 66,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 4,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 199,
+          "encoder_after_300ms": 311,
+          "post_stop_delta": 112,
+          "final_100ms_delta": 100,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_300ms": -3,
+          "post_stop_delta": -2,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 186,
+          "encoder_after_300ms": 280,
+          "post_stop_delta": 94,
+          "final_100ms_delta": 95,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 6,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 255,
+          "encoder_after_300ms": 439,
+          "post_stop_delta": 184,
+          "final_100ms_delta": 130,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 7,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 242,
+          "encoder_after_300ms": 396,
+          "post_stop_delta": 154,
+          "final_100ms_delta": 124,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 8,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 196,
+          "encoder_after_300ms": 291,
+          "post_stop_delta": 95,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 196,
+          "encoder_after_300ms": 295,
+          "post_stop_delta": 99,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 0,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 1,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 2,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 141,
+          "encoder_after_300ms": 199,
+          "post_stop_delta": 58,
+          "final_100ms_delta": 71,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 3,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 130,
+          "encoder_after_300ms": 178,
+          "post_stop_delta": 48,
+          "final_100ms_delta": 66,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 4,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 204,
+          "encoder_after_300ms": 313,
+          "post_stop_delta": 109,
+          "final_100ms_delta": 100,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_300ms": 1,
+          "post_stop_delta": 1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 190,
+          "encoder_after_300ms": 279,
+          "post_stop_delta": 89,
+          "final_100ms_delta": 95,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 6,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 256,
+          "encoder_after_300ms": 441,
+          "post_stop_delta": 185,
+          "final_100ms_delta": 129,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 1,
+          "encoder_after_300ms": 1,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 7,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_300ms": -1,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 242,
+          "encoder_after_300ms": 397,
+          "post_stop_delta": 155,
+          "final_100ms_delta": 124,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 8,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 15,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 195,
+          "encoder_after_300ms": 296,
+          "post_stop_delta": 101,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 197,
+          "encoder_after_300ms": 294,
+          "post_stop_delta": 97,
+          "final_100ms_delta": 97,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    }
+  ],
+  "experiment_setup": {
+    "vm_state_declared": "powered",
+    "dc_vm_volts_hand_measured": 8.2,
+    "firmware_env": "motor_auto_pipeline_96m_trim25",
+    "host_control": "USART1 RX PA10",
+    "rounds": 3,
+    "stages_per_round": 9,
+    "note": "VM state user-supplied, not measured by STM32; duty is not current limit."
+  },
+  "electrical_limitation": "3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM. 20pct duty is not a current limit.",
+  "interpretation": "Sustained_count_signal is an empirical >=5 encoder-count and >=5 tail-count heuristic, NOT a certified deadband threshold."
+}

@@ -1,0 +1,9 @@
+{
+  "vm_state_declared": "powered",
+  "dc_vm_volts_hand_measured": 8.2,
+  "firmware_env": "motor_auto_pipeline_96m_trim25",
+  "host_control": "USART1 RX PA10",
+  "rounds": 3,
+  "stages_per_round": 9,
+  "note": "VM state user-supplied, not measured by STM32; duty is not current limit."
+}

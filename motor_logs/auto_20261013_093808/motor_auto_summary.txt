@@ -1,0 +1,15 @@
+Motor auto 3-round diagnostic
+Status: TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL
+Stages: 27/27; samples: 675
+Encoder counts are not RPM. Electrical current/thermal limits were NOT measured.
+
+Stage 0 l 80permille: counts=[79, 1, 1], mean=27, std=45.03, sustained=1/3, post-stop-delta=[17, -1, -1]
+Stage 1 r 80permille: counts=[69, 1, 1], mean=23.67, std=39.26, sustained=1/3, post-stop-delta=[15, -1, -1]
+Stage 2 l 120permille: counts=[142, 138, 141], mean=140.33, std=2.08, sustained=3/3, post-stop-delta=[54, 57, 58]
+Stage 3 r 120permille: counts=[132, 132, 130], mean=131.33, std=1.15, sustained=3/3, post-stop-delta=[45, 46, 48]
+Stage 4 l 160permille: counts=[199, 199, 204], mean=200.67, std=2.89, sustained=3/3, post-stop-delta=[112, 112, 109]
+Stage 5 r 160permille: counts=[186, 186, 190], mean=187.33, std=2.31, sustained=3/3, post-stop-delta=[94, 94, 89]
+Stage 6 l 200permille: counts=[256, 255, 256], mean=255.67, std=0.58, sustained=3/3, post-stop-delta=[181, 184, 185]
+Stage 7 r 200permille: counts=[242, 242, 242], mean=242, std=0.0, sustained=3/3, post-stop-delta=[154, 154, 155]
+Stage 8 l 160permille: counts=[196, 196, 195], mean=195.67, std=0.58, sustained=3/3, post-stop-delta=[95, 95, 101]
+Stage 8 r 160permille: counts=[196, 196, 197], mean=196.33, std=0.58, sustained=3/3, post-stop-delta=[99, 99, 97]
