@@ -592,6 +592,8 @@ def execute(args):
     began=False
     complete=False
     requested_start=False
+    verified_profile=False
+    handshake_error=None
     try:
         with serial.Serial(args.port,115200,timeout=0.12,write_timeout=1.0) as ser:
             ser.reset_input_buffer()
@@ -611,7 +613,12 @@ def execute(args):
                     keep_sent += 1
                     keep_at=now+0.25
                 if not requested_start and now>handshake_deadline:
-                    print("NO BIDIRECTIONAL UART HANDSHAKE: PA10 RX may not be connected to USB-UART TX. No START was sent.")
+                    handshake_error = (
+                        "No complete/valid PROFILE + READY within 10s. "
+                        "Inspect raw_serial.log for truncated or merged records; "
+                        "check USB-UART wiring only if no MCU bytes are received.")
+                    print("HANDSHAKE FAILED:",handshake_error,
+                          "No START was sent.")
                     break
                 packet=ser.readline()
                 if not packet:
@@ -619,16 +626,41 @@ def execute(args):
                 frame=packet.decode("utf-8",errors="replace").strip()
                 raw.append(f"{now-start:.6f}\t{frame}")
                 kind,v=split_record(frame)
-                if kind=="MOTOR_AUTO_READY" and not requested_start:
-                    if any(intval(v,k)!=value for k,value in (
+                if not requested_start and "MOTOR_AUTO_READY" in frame and kind != "MOTOR_AUTO_READY":
+                    handshake_error = "UART framing corruption: READY merged into another record (old v5 PROFILE truncation)."
+                    print("HANDSHAKE FAILED:",handshake_error)
+                    break
+                if kind=="MOTOR_AUTO_PROFILE" and not requested_start:
+                    profile_expected = (
                         ("version",PROFILE_VERSION),("rounds",NUM_ROUNDS),
                         ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
                         ("both_cap_permille",DUAL_MAX_CMD),("families",FAMILIES),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
-                        ("boot_neutral",1))) or v.get("rx_mode")!="irq256" or intval(v,"state")!=0:
-                        print("Unsafe/incompatible firmware or motor already active. REFUSING START:",frame)
+                        ("boot_neutral",1),("pwm_hz",30000),
+                        ("high_pulse_ms",HIGH_PULSE_MS if HIGH_PROFILE else 0),
+                        ("high_post_ms",HIGH_POST_MS if HIGH_PROFILE else 0),
+                    )
+                    if any(intval(v,k)!=want for k,want in profile_expected) or v.get("rx_mode")!="irq256":
+                        handshake_error = "Firmware PROFILE fields/version do not match selected host mode."
+                        print("HANDSHAKE FAILED:",handshake_error,frame)
                         break
-                    print("RX handshake verified. Explicit host START issued.")
+                    verified_profile=True
+                elif kind=="MOTOR_AUTO_READY" and not requested_start:
+                    ready_expected = (
+                        ("version",PROFILE_VERSION),("rounds",NUM_ROUNDS),
+                        ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
+                        ("both_cap_permille",DUAL_MAX_CMD),("families",FAMILIES),
+                        ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
+                        ("boot_neutral",1))
+                    if not verified_profile:
+                        handshake_error = "READY received without a complete validated PROFILE."
+                        print("HANDSHAKE FAILED:",handshake_error)
+                        break
+                    if any(intval(v,k)!=want for k,want in ready_expected) or v.get("rx_mode")!="irq256" or intval(v,"state")!=0:
+                        handshake_error = "Unsafe/incompatible firmware or motor already active."
+                        print("HANDSHAKE FAILED:",handshake_error,frame)
+                        break
+                    print("Bidirectional UART PROFILE+READY validated. Explicit host START issued.")
                     ser.write(b"MOTOR START HIGH 600\n" if HIGH_PROFILE else b"MOTOR START\n")
                     requested_start=True
                     keep_at=0.0
@@ -666,11 +698,13 @@ def execute(args):
         raise SystemExit(f"Firmware upload failed: {e}") from e
 
     setup["host_keep_sent_count"] = keep_sent
+    setup["handshake_profile_validated"] = verified_profile
+    setup["handshake_error"] = handshake_error
     report=store(folder,raw,setup)
     print("Heartbeat link: host KEEP sent =",keep_sent,
           "; firmware last decoded =",report["rx_heartbeat_diagnostics"]["keep_decoded_last"])
     if not began:
-        print("No motor sequence began. If RX handshake failed, check COM6 USB-UART TX -> STM32 PA10 and common ground; board wiring must not be changed if prohibited.")
+        print("No motor sequence began. Inspect raw_serial.log first. If the MCU sends no bytes, then check COM6 and UART wiring; no hardware changes assumed.")
     return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
 
 
