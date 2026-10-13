@@ -26,7 +26,7 @@
  * 8 more short PWM stages, 30/40/50/60%, single-wheel only. */
 #define AUTO_STEPS          29U
 #define AUTO_MAX_PERMILLE    600U
-#define AUTO_VERSION         5U
+#define AUTO_VERSION         6U
 #define AUTO_FAMILIES        5U
 #define AUTO_HIGH_FIRST     21U
 #define AUTO_HIGH_PULSE_MS 120U
