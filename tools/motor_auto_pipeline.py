@@ -248,7 +248,7 @@ def self_test():
     def incomplete(lines):
         x,_=analyze(lines)
         assert x["status"]=="INCOMPLETE", x
-    incomplete(synthetic[1:])
+    incomplete([x for x in synthetic if not x.startswith("MOTOR_AUTO_PROFILE")])
     incomplete([x for x in synthetic if "MOTOR_AUTO_END,round=1,stage=3" not in x])
     incomplete(synthetic + ["MOTOR_AUTO_FAULT,reason=HOST_TIMEOUT"])
     incomplete([x.replace("ccr_l=0,ccr_r=0,tim11_late=0","ccr_l=384,ccr_r=0,tim11_late=0")
