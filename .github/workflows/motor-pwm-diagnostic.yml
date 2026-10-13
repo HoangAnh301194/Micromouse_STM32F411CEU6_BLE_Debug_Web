@@ -1,0 +1,31 @@
+name: Motor PWM Diagnostic Build and Host Gate
+on:
+  push:
+    branches:
+      - feature/motor-driver-optimization
+    paths:
+      - '.github/workflows/motor-pwm-diagnostic.yml'
+      - 'src/**'
+      - 'include/**'
+      - 'platformio.ini'
+      - 'tools/motor_pwm_capture.py'
+      - 'docs/motor_driver/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: python -m pip install --disable-pip-version-check platformio
+      - name: Host-side strict UART capture regression
+        run: python tools/motor_pwm_capture.py --self-test
+      - name: Compile explicit KEY-armed motor bench
+        run: python -m platformio run -e motor_pwm_key_bench_96m_trim25
+      - name: Compile unchanged MPU RC2 comparator
+        run: python -m platformio run -e mpu_phase_tick_96m_trim25
