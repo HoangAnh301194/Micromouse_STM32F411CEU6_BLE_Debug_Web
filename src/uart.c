@@ -185,10 +185,18 @@ void UART_Printf(const char *format, ...)
 {
     char buffer[256];
     va_list args;
+    int formatted_len;
 
     va_start(args, format);
-    (void)vsnprintf(buffer, sizeof(buffer), format, args);
+    formatted_len = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
+    /* A truncated record may lose CRLF and merge with the next frame,
+     * making a host handshake impossible or telemetry ambiguous.
+     * Always drop an overlong record atomically and count the error. */
+    if (formatted_len < 0 || formatted_len >= (int)sizeof(buffer)) {
+        ++tx_dropped_messages;
+        return;
+    }
     UART_SendString_DMA(buffer);
 }
 
