@@ -49,6 +49,8 @@ jobs:
         run: python tools/motor_full_qualification.py --self-test
       - name: Unified full qualification offline audit (prior log can be absent on CI checkout)
         run: python tools/motor_full_qualification.py --audit
+      - name: Compile unchanged MPU RC2 comparator
+        run: python -m platformio run -e mpu_phase_tick_96m_trim25
       - name: Install Python 3.14 for Windows-compatible argparse behavior regression
         uses: actions/setup-python@v5
         with:
@@ -59,5 +61,3 @@ jobs:
         run: python tools/motor_full_qualification.py --audit
       - name: Python 3.14 full qualification self-test
         run: python tools/motor_full_qualification.py --self-test
-      - name: Compile unchanged MPU RC2 comparator
-        run: python -m platformio run -e mpu_phase_tick_96m_trim25
