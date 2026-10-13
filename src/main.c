@@ -353,7 +353,12 @@ int main(void)
 
 #endif /* old motor diagnostic harness */
 
-#if defined(MPU_INTEGRATION_BENCH)
+#if defined(MOTOR_PWM_DIAG)
+/* Explicit opt-in, KEY-armed motor PWM characterization application.
+ * Never built by the default and RC2 IMU environments. */
+int MotorPwmDiag_Main(void);
+int main(void) { return MotorPwmDiag_Main(); }
+#elif defined(MPU_INTEGRATION_BENCH)
 /* Motor-off, production Policy B integration test; no diagnostic counters. */
 int MpuIntegrationBench_Main(void);
 int main(void) { return MpuIntegrationBench_Main(); }
