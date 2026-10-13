@@ -108,7 +108,7 @@ python -m platformio run -e mpu_phase_tick_96m_trim25
 
 ```powershell
 python -m platformio run -e motor_pwm_key_bench_96m_trim25 -t upload
-python tools/motor_pwm_capture.py --port COM6 --seconds 120
+python tools/motor_pwm_capture.py --port COM6 --seconds 120 --vm-state disconnected
 ```
 
 Press STM32 RESET **once after COM6 opens**. Confirm:
@@ -132,8 +132,19 @@ burning smell, unstable output or changed behavior. The preferred
 approach is a borrowed current-limited DC supply and ammeter; no
 safe stall current limit can be derived from GPIO duty alone.
 
-Run the same capture with physically disconnected USB/VM wiring
-adjustments done while power is off, then arm each stage individually.
+After safely preparing the elevated robot and performing all wiring
+changes while power is off, open a **new capture** that explicitly
+labels the motor supply as powered:
+
+```powershell
+python tools/motor_pwm_capture.py --port COM6 --seconds 120 --vm-state powered --meter-vm-volts 7.8
+```
+
+**Replace 7.8 with the actual DC VM voltage displayed on the meter.**
+The voltage option is optional; omit it if no reliable reading is
+available. It is never a current/peak-voltage measurement.
+
+Arm each stage individually.
 **Do not** manually increase duty or duration because an 8% pulse
 does not overcome deadband: that is valid baseline evidence. Avoid
 high-speed reverse, braking, blocked wheels, and any arbitrary 100%
@@ -145,6 +156,9 @@ The capture script records each received UART frame with host time in
 - `motor_samples.csv`: actual TIM2 CCR register reads
   (`ccr_l`, `ccr_r`), signed commanded/applied duty, encoder
   counts, TIM11 jitter/duration and UART drop counters.
+- `session_meta.json`: operator-declared VM state and optional
+  hand-measured DC VM voltage. The firmware does **not** know whether
+  the power rail is physically connected.
 - `motor_pwm_report.json`: five-stage startup/END completeness,
   ≤120-permille duty, correct phase order, bounded length, no
   TIM11 gaps, no missing output, no UART drops; each stage reports
