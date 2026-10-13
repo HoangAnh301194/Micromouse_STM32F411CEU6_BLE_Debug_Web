@@ -88,11 +88,15 @@ def analyze(lines, *, setup=None):
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
     if len(begins) != 1:
         errors.append("Expected exactly one host-triggered MOTOR_AUTO_BEGIN")
+    if begins and (intval(begins[-1], "rounds") != NUM_ROUNDS or
+                   intval(begins[-1], "steps") != len(MATRIX) or
+                   intval(begins[-1], "boot_neutral") != 1):
+        errors.append("Host START acknowledgment has incompatible run profile")
     if len(starts) != EXPECTED or len(ends) != EXPECTED or len(posts) != EXPECTED:
         errors.append(f"Missing/repeated stages (start/end/post counts): {len(starts)}/{len(ends)}/{len(posts)} expected {EXPECTED}")
     if len(r_ends) != NUM_ROUNDS:
         errors.append("Missing/repeated per-round completion signatures")
-    if len(done) != 1 or intval(done[-1], "pulses") != EXPECTED if done else True:
+    if len(done) != 1 or (done and intval(done[-1], "pulses") != EXPECTED):
         errors.append("Missing/invalid full experiment completion record")
     if faults:
         errors.append("Firmware reported MOTOR_AUTO_FAULT: " + ",".join(x.get("reason", "?") for x in faults))
@@ -364,7 +368,14 @@ def execute(args):
                 try: ser.write(b"MOTOR STOP\n")
                 except Exception: pass
     except KeyboardInterrupt:
-        print("Interrupted: STOP issued if serial connection remained open; physically cut VM if motor has not stopped.")
+        # The with-block closes the port before propagating KeyboardInterrupt.
+        # Reopen once to send a best-effort stop. This does NOT replace VM cut.
+        try:
+            with serial.Serial(args.port,115200,timeout=0.1,write_timeout=0.3) as stopser:
+                stopser.write(b"MOTOR STOP\n")
+        except (serial.SerialException, OSError):
+            pass
+        print("Interrupted: best-effort UART STOP requested. Physically cut VM if unexpected motion continues.")
     except serial.SerialException as e:
         print("UART failure:",e,"- physically disconnect VM if there is unexpected motion.")
     except subprocess.CalledProcessError as e:
