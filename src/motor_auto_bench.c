@@ -103,6 +103,15 @@ static void StartStep(uint32_t now)
 
 static void ReplyReady(void)
 {
+    /* Repeat complete profile with each PING: host may connect after MCU
+     * boot/flash and must still capture the exact firmware signature. */
+    UART_Printf("MOTOR_AUTO_PROFILE,version=1,nominal_hz=%lu,"
+                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=120,"
+                "pulse_ms=200,post_ms=300,boot_neutral=1,"
+                "no_current_sense=1,stby_fixed_high=1\r\n",
+                (unsigned long)SystemCoreClock,
+                (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
+                (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
     UART_Printf("MOTOR_AUTO_READY,version=1,rounds=%u,steps=%u,"
                 "hard_cap_permille=120,pulse_ms=200,post_ms=300,"
                 "one_shot=1,boot_neutral=1,rx=USART1_PA10,state=%u\r\n",
