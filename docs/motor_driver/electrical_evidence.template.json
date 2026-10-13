@@ -1,0 +1,19 @@
+{
+  "motor_exact_part": null,
+  "vm_measured_v": null,
+  "left_peak_a": null,
+  "right_peak_a": null,
+  "left_running_a": null,
+  "right_running_a": null,
+  "left_stall_a": null,
+  "right_stall_a": null,
+  "tb6612_case_temp_c": null,
+  "measured_gpio_high_v": null,
+  "output_waveform_verified": false,
+  "physical_vm_disconnect_verified": false,
+  "independent_current_cutoff_verified": false,
+  "measurement_method": null,
+  "operator": null,
+  "date": null,
+  "notes": "TEMPLATE ONLY. Fill only with actual external measurements and documented method. Do NOT directly stall an energized motor just to obtain stall current. Prefer motor datasheet or a separately protected current-limited characterization. Reject high duty when data unknown; MCU has no current sensing."
+}
