@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* USART1 DMA2 Stream7, Channel 4 TX. Optional polled RX for motor pipeline.
+/* USART1 DMA2 Stream7, Channel 4 TX. Optional interrupt RX for motor pipeline.
  * The producer runs in main context; DMA completion runs in its IRQ.
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
@@ -32,6 +32,17 @@ static volatile uint32_t dma_fe_errors;
 static volatile uint32_t dma_te_errors;
 static volatile uint32_t dma_dme_errors;
 static volatile uint32_t dma_complete_count;
+
+#if defined(MOTOR_AUTO_BENCH)
+/* Only auto-motor profile enables this USART1 RXNE IRQ ring.
+ * 256 bytes is ample for repeated 11-byte heartbeat frames.
+ * ISR writer / main reader, single producer-consumer, no interrupt locks. */
+#define UART_RX_BUFFER_SIZE 256U
+static volatile uint8_t rx_buffer[UART_RX_BUFFER_SIZE];
+static volatile uint16_t rx_head, rx_tail;
+static volatile uint32_t rx_bytes, rx_overrun, rx_framing;
+static volatile uint32_t rx_noise, rx_ring_overflows;
+#endif
 
 static uint32_t UART_LockIRQ(void)
 {
@@ -99,8 +110,14 @@ void UART_Init(void)
     USART1->BRR = (Board_GetAPB2ClockHz() + UART_BAUDRATE / 2U) / UART_BAUDRATE;
     USART1->CR1 = USART_CR1_TE | USART_CR1_UE;
 #if defined(MOTOR_AUTO_BENCH)
-    /* PA10 RX polling is exclusively enabled in the explicit motor bench. */
-    USART1->CR1 |= USART_CR1_RE;
+    /* USART1 RXNE IRQ, scoped only to the explicit motor bench.
+     * A polled RX can overrun while main formats telemetry for TX DMA. */
+    rx_head = rx_tail = 0U;
+    rx_bytes = rx_overrun = rx_framing = 0U;
+    rx_noise = rx_ring_overflows = 0U;
+    NVIC_SetPriority(USART1_IRQn, 6U); /* below TIM11, above DMA TX */
+    NVIC_EnableIRQ(USART1_IRQn);
+    USART1->CR1 |= USART_CR1_RE | USART_CR1_RXNEIE;
 #endif
 
     DMA2_Stream7->CR &= ~DMA_SxCR_EN;
@@ -227,16 +244,40 @@ void DMA2_Stream7_IRQHandler(void)
 }
 
 #if defined(MOTOR_AUTO_BENCH)
-uint8_t UART_TryReadByte(uint8_t *out)
+/* Independent of UART TX DMA and main-context printf execution. */
+void USART1_IRQHandler(void)
 {
     uint32_t sr = USART1->SR;
-    if (sr & (USART_SR_ORE | USART_SR_FE | USART_SR_NE)) {
-        volatile uint32_t discard = USART1->DR; /* SR followed by DR clears errors. */
-        (void)discard;
-        return 0U;
-    }
-    if (!(sr & USART_SR_RXNE) || out == 0) return 0U;
-    *out = (uint8_t)USART1->DR;
+    uint8_t ch;
+    uint16_t next;
+    if (!(sr & (USART_SR_RXNE | USART_SR_ORE | USART_SR_FE | USART_SR_NE))) return;
+    /* DR read after SR clears ORE/FE/NE; consume each byte only once. */
+    ch = (uint8_t)USART1->DR;
+    if (sr & USART_SR_ORE) ++rx_overrun;
+    if (sr & USART_SR_FE) ++rx_framing;
+    if (sr & USART_SR_NE) ++rx_noise;
+    if (!(sr & USART_SR_RXNE) ||
+        (sr & (USART_SR_ORE | USART_SR_FE | USART_SR_NE))) return;
+    next = (uint16_t)((rx_head + 1U) & (UART_RX_BUFFER_SIZE - 1U));
+    if (next == rx_tail) { ++rx_ring_overflows; return; }
+    rx_buffer[rx_head] = ch;
+    __DMB();
+    rx_head = next;
+    ++rx_bytes;
+}
+
+uint8_t UART_TryReadByte(uint8_t *out)
+{
+    if (out == 0 || rx_head == rx_tail) return 0U;
+    *out = rx_buffer[rx_tail];
+    __DMB();
+    rx_tail = (uint16_t)((rx_tail + 1U) & (UART_RX_BUFFER_SIZE - 1U));
     return 1U;
 }
+
+uint32_t UART_GetRxByteCount(void) { return rx_bytes; }
+uint32_t UART_GetRxOverrunCount(void) { return rx_overrun; }
+uint32_t UART_GetRxFramingCount(void) { return rx_framing; }
+uint32_t UART_GetRxNoiseCount(void) { return rx_noise; }
+uint32_t UART_GetRxRingOverflowCount(void) { return rx_ring_overflows; }
 #endif
