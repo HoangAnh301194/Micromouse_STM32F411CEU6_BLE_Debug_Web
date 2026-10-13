@@ -7,8 +7,13 @@
 
 void UART_Init(void);
 #if defined(MOTOR_AUTO_BENCH)
-/* Nonblocking USART1 PA10 RX poll in the explicit motor bench only. */
+/* USART1 PA10 RX interrupt/ring used by explicit motor bench only. */
 uint8_t UART_TryReadByte(uint8_t *out);
+uint32_t UART_GetRxByteCount(void);
+uint32_t UART_GetRxOverrunCount(void);
+uint32_t UART_GetRxFramingCount(void);
+uint32_t UART_GetRxNoiseCount(void);
+uint32_t UART_GetRxRingOverflowCount(void);
 #endif
 void UART_SendString(const char *str);
 void UART_SendString_DMA(const char *str);
