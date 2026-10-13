@@ -261,26 +261,27 @@ def analyze(lines, *, setup=None):
 def self_test():
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
-        f"MOTOR_AUTO_PROFILE,version=2,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=300,boot_neutral=1",
-        f"MOTOR_AUTO_READY,version=2,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=300,one_shot=1,boot_neutral=1",
+        f"MOTOR_AUTO_PROFILE,version=3,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,pulse_ms=200,post_ms=400,boot_neutral=1",
+        f"MOTOR_AUTO_READY,version=3,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
     for r in range(NUM_ROUNDS):
         for i,(left,right) in enumerate(MATRIX):
-            synthetic.append(f"MOTOR_AUTO_START,round={r},stage={i},l={left},r={right},pulse_ms=200")
+            test, rise = TESTS[i], RISE_RATES[i]
+            synthetic.append(f"MOTOR_AUTO_START,round={r},stage={i},l={left},r={right},test={test},rise={rise},pulse_ms=200")
             for n in range(1,11):
                 t=n*20-1
-                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10},ccr_r={right*32//10},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
+                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,test={test},rise={rise},ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10},ccr_r={right*32//10},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed=200,reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
-            for n in range(1,16):
+            for n in range(1,POST_MS//20+1):
                 t=n*20
-                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
-            synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed=300,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
+                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
+            synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={POST_MS},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
     synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
-    assert len(report["repeat_statistics"])==10
+    assert len(report["repeat_statistics"])==22
     def incomplete(lines):
         x,_=analyze(lines)
         assert x["status"]=="INCOMPLETE", x
@@ -289,7 +290,7 @@ def self_test():
     incomplete(synthetic + ["MOTOR_AUTO_FAULT,reason=HOST_TIMEOUT"])
     incomplete([x.replace("ccr_l=0,ccr_r=0,tim11_late=0","ccr_l=384,ccr_r=0,tim11_late=0")
                 if "phase=post" in x else x for x in synthetic])
-    print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse capture; bad profile, missing stage, fault, nonneutral post rejected.")
+    print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse four-phase capture; bad profile, missing stage, fault, nonneutral post rejected.")
     print("Host synthetic test only; not hardware validation.")
 
 
@@ -332,6 +333,7 @@ def execute(args):
            "dc_vm_volts_hand_measured":args.meter_vm_volts,
            "firmware_env":FIRMWARE_ENV,"host_control":"USART1 RX PA10",
            "rounds":NUM_ROUNDS,"stages_per_round":len(MATRIX),
+           "diagnostic_phases":["startup","response","slew_slow","slew_fast"],
            "note":"VM state user-supplied, not measured by STM32; duty is not current limit."}
     if not args.skip_flash:
         print("Build + flash opt-in firmware via STLINK:", FIRMWARE_ENV,flush=True)
@@ -374,9 +376,9 @@ def execute(args):
                 kind,v=split_record(frame)
                 if kind=="MOTOR_AUTO_READY" and not requested_start:
                     if any(intval(v,k)!=value for k,value in (
-                        ("version",2),("rounds",NUM_ROUNDS),
+                        ("version",3),("rounds",NUM_ROUNDS),
                         ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
-                        ("both_cap_permille",DUAL_MAX_CMD),
+                        ("both_cap_permille",DUAL_MAX_CMD),("families",4),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
                         ("boot_neutral",1))) or intval(v,"state")!=0:
                         print("Unsafe/incompatible firmware or motor already active. REFUSING START:",frame)
@@ -459,7 +461,7 @@ def main():
     p.add_argument("--vm-state",choices=["powered","disconnected"])
     p.add_argument("--meter-vm-volts",type=float)
     p.add_argument("--skip-flash",action="store_true")
-    p.add_argument("--timeout",type=float,default=90.0)
+    p.add_argument("--timeout",type=float,default=150.0)
     args=p.parse_args()
     if args.self_test:
         self_test()
@@ -474,8 +476,8 @@ def main():
         return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
     if not args.port:
         p.error("--port is required for --run or --check-link")
-    if args.timeout < 30:
-        p.error("--timeout must be at least 30 seconds")
+    if args.timeout < 80:
+        p.error("--timeout must be at least 80 seconds for the full four-phase suite")
     if args.check_link: return check_link(args)
     return execute(args)
 
