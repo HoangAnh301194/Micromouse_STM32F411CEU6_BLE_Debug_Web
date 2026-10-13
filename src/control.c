@@ -389,6 +389,16 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         }
     }
 #endif
+#if defined(MOTOR_PWM_DIAG)
+    /* Opt-in physical driver bench: ONLY encoder + PWM + test watchdog.
+     * Unlike Control_SetDiagnosticOnly(1), this path MUST service
+     * Motor_Update1ms and MotorTest_Tick1ms, but never IR, IMU or Motion. */
+    Encoder_Update(CONTROL_DT_S);
+    Motor_Update1ms();
+    MotorTest_Tick1ms();
+    Control_TimingFinish(start_cycles);
+    return;
+#endif
     if (control_diagnostic_only) {
 #if defined(CONTROL_LOAD_DIAG)
         /* Benchmark computational load ONLY. Motor_Init is never called.
