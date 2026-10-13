@@ -132,6 +132,7 @@ def analyze(lines, *, setup=None):
     samples = by_kind.get("MOTOR_AUTO_SAMPLE", [])
     faults = by_kind.get("MOTOR_AUTO_FAULT", [])
     r_ends = by_kind.get("MOTOR_AUTO_ROUND_END", [])
+    links = by_kind.get("MOTOR_AUTO_LINK", [])
     if not profile:
         errors.append("Missing firmware profile / wrong firmware loaded")
     else:
@@ -158,6 +159,17 @@ def analyze(lines, *, setup=None):
         errors.append(f"Missing/repeated stages (start/end/post counts): {len(starts)}/{len(ends)}/{len(posts)} expected {EXPECTED}")
     if len(r_ends) != NUM_ROUNDS:
         errors.append("Missing/repeated per-round completion signatures")
+    if len(links) != len(posts):
+        errors.append(f"Heartbeat/RX telemetry missing: link={len(links)}, post={len(posts)}")
+    if links:
+        counts = [intval(x, "keep_ok") for x in links]
+        if counts != sorted(counts):
+            errors.append("Firmware KEEP count decreased during the run")
+        if len(starts) == EXPECTED and (counts[0] < 1 or counts[-1] < 10):
+            errors.append("Insufficient decoded host heartbeats for complete 63-pulse session")
+        if any(intval(x,"rx_ore") > 0 or intval(x,"rx_fe") > 0 or
+               intval(x,"rx_ring_drop") > 0 for x in links):
+            errors.append("USART1 RX hardware/ring reported dropped or invalid bytes")
     if len(done) != 1 or (done and intval(done[-1], "pulses") != EXPECTED):
         errors.append("Missing/invalid full experiment completion record")
     if faults:
@@ -230,6 +242,10 @@ def analyze(lines, *, setup=None):
                      and x.get("phase") == "post"]
             e = next((x for x in ends if (x.get("round"),x.get("stage")) == key), {})
             p = next((x for x in posts if (x.get("round"),x.get("stage")) == key), {})
+            if not drives and not after and not e and not p:
+                # Never fabricate 0-count measurements for unexecuted stages
+                # when HOST_TIMEOUT or another fail-safe aborts the sequence.
+                continue
             if len(drives) < 6 or len(after) < 10:
                 errors.append(f"Insufficient 20ms samples round={r} stage={stage} drive={len(drives)} post={len(after)}")
             if any(intval(x, "ccr_l") != 0 for x in drives if cmd[0] == 0) or \
@@ -277,14 +293,19 @@ def analyze(lines, *, setup=None):
     for stage, cmd in enumerate(MATRIX):
         for wheel, duty in (("l",cmd[0]),("r",cmd[1])):
             if duty == 0: continue
-            vals = [next(x for x in trial["wheel_readings"] if x["wheel"]==wheel)
+            vals = [next((x for x in trial["wheel_readings"]
+                          if x["wheel"]==wheel), None)
                     for trial in individual if trial["stage"]==stage]
+            vals = [x for x in vals if x is not None]
             counts = [x["encoder_drive"] for x in vals]
             stats.append({
                 "stage":stage, "test":TESTS[stage],
                 "rise_rate_permille_per_ms":RISE_RATES[stage],
                 "wheel":wheel, "cmd_permille":duty,
                 "three_drive_counts":counts,
+                "executed_replicates":len(vals),
+                "measurement_status":"MEASURED" if len(vals)==3 else
+                     ("PARTIAL" if vals else "NOT_TESTED"),
                 "mean_count":round(statistics.mean(counts),2) if counts else None,
                 "sample_std_count":round(statistics.stdev(counts),2) if len(counts)>1 else None,
                 "sustained_3of3":all(x["sustained_count_signal"] for x in vals) and len(vals)==3,
@@ -293,14 +314,25 @@ def analyze(lines, *, setup=None):
                 "first_five_counts_ms":[x["first_five_counts_ms"] for x in vals]
             })
     if done and (intval(done[-1],"ccr_l") != 0 or intval(done[-1],"ccr_r") != 0 or
-                 intval(done[-1],"tim11_gaps") != 0 or intval(done[-1],"tx_drop") != 0):
+                 intval(done[-1],"tim11_gaps") != 0 or intval(done[-1],"tx_drop") != 0 or
+                 intval(done[-1],"rx_ore") != 0 or intval(done[-1],"rx_ring_drop") != 0):
         errors.append("Nonneutral/invalid final MCU status")
     errors = sorted(set(errors))
     return {
         "status": "TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" if not errors else "INCOMPLETE",
         "rounds_requested": NUM_ROUNDS, "pulses_expected": EXPECTED,
+        "not_executed_pulses":max(0,EXPECTED-len(starts)),
         "starts":len(starts), "ends":len(ends), "post_ends":len(posts),
         "sample_count":len(samples),"errors":errors,
+        "rx_heartbeat_diagnostics":{
+            "link_records":len(links),
+            "keep_decoded_last":intval(links[-1],"keep_ok",0) if links else None,
+            "max_uart_rx_overrun":max((intval(x,"rx_ore",0) for x in links), default=None),
+            "max_uart_rx_framing":max((intval(x,"rx_fe",0) for x in links), default=None),
+            "max_uart_rx_ring_drop":max((intval(x,"rx_ring_drop",0) for x in links), default=None),
+            "last_firmware_reported_host_age_ms":intval(links[-1],"host_age_ms",0) if links else None,
+            "faults":faults,
+        },
         "test_families":["startup","response","slew_slow","slew_fast"],
         "stages_per_round":len(MATRIX),"post_stop_observation_ms":POST_MS,
         "repeat_statistics":stats,"trials":individual,
