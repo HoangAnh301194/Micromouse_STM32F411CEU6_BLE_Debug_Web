@@ -719,16 +719,36 @@ def check_link(args):
     with serial.Serial(args.port,115200,timeout=0.2,write_timeout=1) as ser:
         ser.reset_input_buffer()
         start=time.monotonic()
+        profile_ok = False
         while time.monotonic()-start < 8.0:
             ser.write(b"MOTOR PING\n")
             for _ in range(3):
                 data=ser.readline().decode(errors="replace").strip()
                 if data:
                     print(data)
-                if split_record(data)[0]=="MOTOR_AUTO_READY":
-                    print("BIDIRECTIONAL UART PASS; no motor drive commands sent.")
+                kind, values = split_record(data)
+                if "MOTOR_AUTO_READY" in data and kind != "MOTOR_AUTO_READY":
+                    print("UART FRAME ERROR: READY merged into PROFILE or another frame.")
+                    return 1
+                if kind == "MOTOR_AUTO_PROFILE":
+                    requirements = (
+                        ("version",PROFILE_VERSION),("steps",len(MATRIX)),
+                        ("hard_cap_permille",MAX_CMD),("families",FAMILIES),
+                        ("high_pulse_ms",HIGH_PULSE_MS if HIGH_PROFILE else 0),
+                        ("high_post_ms",HIGH_POST_MS if HIGH_PROFILE else 0))
+                    if any(intval(values,k)!=v for k,v in requirements):
+                        print("PROFILE mismatch; refusing to validate link.")
+                        return 1
+                    profile_ok = True
+                elif kind == "MOTOR_AUTO_READY":
+                    if (not profile_ok or intval(values,"version") != PROFILE_VERSION
+                        or intval(values,"state") != 0
+                        or intval(values,"steps") != len(MATRIX)):
+                        print("READY without matching PROFILE/idle state; link not validated.")
+                        return 1
+                    print("BIDIRECTIONAL UART PROFILE + READY PASS; no motor drive commands sent.")
                     return 0
-        print("BIDIRECTIONAL UART NOT CONFIRMED. No motor drive command sent.")
+        print("BIDIRECTIONAL UART PROFILE + READY NOT CONFIRMED. No motor drive command sent.")
         return 1
 
 
