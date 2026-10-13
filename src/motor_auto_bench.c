@@ -266,6 +266,12 @@ static void ReplyReady(void)
         return;
     }
 #endif
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+    UART_Printf("MOTOR_AUTO_SENSOR_READY,good=%lu,ir=%lu,bias_mdps=%ld\r\n",
+                (unsigned long)integration_mpu.good_reads,
+                (unsigned long)ir_scan_count,
+                (long)(integration_mpu.gyro_z_offset * 1000.0f));
+#endif
     UART_Printf("MOTOR_AUTO_READY,version=%u,rounds=%u,steps=%u,"
                 "hard_cap_permille=%u,both_cap_permille=160,pulse_ms=200,post_ms=400,"
                 "families=%u,rx_mode=irq256,one_shot=1,boot_neutral=1,"
@@ -389,10 +395,6 @@ int MotorAutoBench_Main(void)
             if (!sensors_ready && integration_mpu.calibrated &&
                 integration_mpu.cal_state == 3U && ir_scan_count >= 10U) {
                 sensors_ready = 1U;
-                UART_Printf("MOTOR_AUTO_SENSOR_READY,good=%lu,ir=%lu,bias_mdps=%ld\r\n",
-                            (unsigned long)integration_mpu.good_reads,
-                            (unsigned long)ir_scan_count,
-                            (long)(integration_mpu.gyro_z_offset * 1000.0f));
                 ReplyReady();
             }
             if (sensors_ready && state >= AUTO_SETTLE && state <= AUTO_GAP) {
