@@ -41,10 +41,13 @@ static void Report(uint32_t now, uint32_t stage, uint32_t elapsed)
     UART_Printf(
        "MOTOR_SAMPLE,ms=%lu,stage=%lu,elapsed=%lu,"
        "applied_l=%d,applied_r=%d,enc_l=%ld,enc_r=%ld,"
+       "ccr_l=%lu,ccr_r=%lu,tim11_late=%lu,"
        "tim11_max_cycles=%lu,tim11_gaps=%lu,tx_drop=%lu\r\n",
        (unsigned long)now, (unsigned long)stage, (unsigned long)elapsed,
        (int)al, (int)ar,
        (long)Encoder_GetLeftCount(), (long)Encoder_GetRightCount(),
+       (unsigned long)TIM2->CCR2, (unsigned long)TIM2->CCR1,
+       (unsigned long)t.late_over_50us,
        (unsigned long)t.exec_max_cycles,
        (unsigned long)t.gap_over_1500us,
        (unsigned long)UART_GetDroppedMessages());
@@ -86,7 +89,7 @@ int MotorPwmDiag_Main(void)
     Control_Start();
 
     UART_Printf("\r\n[BOOT] KEY-armed motor PWM bench; MOTOR OFF\r\n");
-    UART_Printf("MOTOR_PROFILE,nominal_hz=%lu,pwm_hz=%lu,hard_cap_permille=120,"
+    UART_Printf("MOTOR_PROFILE,version=2,nominal_hz=%lu,pwm_hz=%lu,hard_cap_permille=120,"
                 "pulse_ms=200,key_arm_ms=1500,one_shot=1,motor_off_at_boot=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz() / (TIM2->ARR + 1U)));
