@@ -347,7 +347,23 @@ int MotorAutoBench_Main(void)
     Motor_Init();
     Motor_Stop();
     Encoder_Init();
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+    /* No motor arming until MPU initialized/calibrated + IR scans.
+     * Keep RC2 nonblocking acquisition in main, never I2C in TIM11. */
+    {
+        MPU6050_Status r = MPU6050_Init(&integration_mpu);
+        if (r != MPU6050_OK) {
+            UART_Printf("MOTOR_AUTO_FAULT,reason=IMU_INIT_%u\r\n",(unsigned)r);
+            while (1) { Board_StatusLed(1U); }
+        }
+        MPU6050_Calibrate(&integration_mpu);
+    }
+    IR_Init();
+    IR_StartScan();
+    Control_Init(&integration_mpu);
+#else
     Control_Init(0);
+#endif
     Control_SetDiagnosticOnly(1U);
     Control_Start();
 
@@ -358,6 +374,35 @@ int MotorAutoBench_Main(void)
     while (1) {
         uint32_t now = millis();
         Control_Timing_t t;
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+        {
+            IR_Data_t ir;
+            MPU6050_Update(&integration_mpu);
+            if (IR_GetLatest(&ir)) {
+                ir_scan_count = ir.scan_count;
+                ir_last_progress_ms = now;
+                IR_StartScan();
+            }
+            if (integration_mpu.cal_state == 4U) {
+                FailSafe("IMU_CAL_FAILED");
+            }
+            if (!sensors_ready && integration_mpu.calibrated &&
+                integration_mpu.cal_state == 3U && ir_scan_count >= 10U) {
+                sensors_ready = 1U;
+                UART_Printf("MOTOR_AUTO_SENSOR_READY,good=%lu,ir=%lu,bias_mdps=%ld\r\n",
+                            (unsigned long)integration_mpu.good_reads,
+                            (unsigned long)ir_scan_count,
+                            (long)(integration_mpu.gyro_z_offset * 1000.0f));
+                ReplyReady();
+            }
+            if (sensors_ready && state >= AUTO_SETTLE && state <= AUTO_GAP) {
+                if ((uint32_t)(micros()-integration_mpu.last_good_us) > 15000U)
+                    FailSafe("IMU_FRESH_STALLED");
+                if ((uint32_t)(now-ir_last_progress_ms) > 100U)
+                    FailSafe("IR_SCAN_STALLED");
+            }
+        }
+#endif
         PollHost(now);
         Control_GetTiming(&t);
         /* Independent main-loop check: TIM11's own tick watchdog will not
@@ -417,6 +462,9 @@ int MotorAutoBench_Main(void)
                 }
                 Motor_Stop(); /* neutral throughout subsequent observation */
                 EmitSample(now,PulseMs(),"drive");
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+                SensorReport("drive");
+#endif
                 UART_Printf("MOTOR_AUTO_END,round=%u,stage=%u,"
                             "elapsed=%lu,reason=%u,enc_l=%ld,enc_r=%ld,"
                             "ccr_l=%lu,ccr_r=%lu\r\n",
@@ -473,6 +521,9 @@ int MotorAutoBench_Main(void)
                     FailSafe("HIGH_NOT_SETTLED");
                     continue;
                 }
+#endif
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+                SensorReport("post");
 #endif
                 UART_Printf("MOTOR_AUTO_POST_END,round=%u,stage=%u,"
                             "elapsed=%u,enc_l=%ld,enc_r=%ld,"
