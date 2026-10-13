@@ -254,6 +254,10 @@ def analyze(lines, *, setup=None):
         for x in sensor_rows:
             if x.get("phase") not in ("drive","post"):
                 errors.append("Invalid sensor telemetry phase")
+            if (intval(x,"gyro_n",0) < 1 or
+                intval(x,"gyro_abs_avg",-1) < 0 or
+                intval(x,"gyro_abs_peak",-1) < intval(x,"gyro_abs_avg",0)):
+                errors.append("Missing/invalid encoder-synchronized gyro vibration/noise proxy")
             if previous is not None:
                 for key in ("good","fresh","err","timeout","ir","reused","aged","missing"):
                     if intval(x,key) < intval(previous,key):
@@ -504,6 +508,16 @@ def analyze(lines, *, setup=None):
                                intval(sensor_rows[0],"err")) if len(sensor_rows)>=2 else None,
             "i2c_timeout_delta":(intval(sensor_rows[-1],"timeout")-
                                  intval(sensor_rows[0],"timeout")) if len(sensor_rows)>=2 else None,
+            "gyro_abs_avg_drive_mdps":round(statistics.mean(
+                [intval(x,"gyro_abs_avg") for x in sensor_rows if x.get("phase")=="drive"]),2)
+                if any(x.get("phase")=="drive" for x in sensor_rows) else None,
+            "gyro_abs_avg_post_mdps":round(statistics.mean(
+                [intval(x,"gyro_abs_avg") for x in sensor_rows if x.get("phase")=="post"]),2)
+                if any(x.get("phase")=="post" for x in sensor_rows) else None,
+            "gyro_abs_peak_drive_mdps":max(
+                (intval(x,"gyro_abs_peak") for x in sensor_rows if x.get("phase")=="drive"),
+                default=None),
+            "gyro_interpretation":"20ms sampling of gyro angular rate includes real mechanical vibration; a difference between PWM-on and neutral is not by itself proof of electrical EMI.",
         },
         "stages_per_round":len(MATRIX),"post_stop_observation_ms":POST_MS,
         "repeat_statistics":stats,"trials":individual,
@@ -571,14 +585,14 @@ def self_test():
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,test={test},rise={rise},ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10},ccr_r={right*32//10},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             if SENSOR_PROFILE:
                 n = r*len(MATRIX)+i
-                synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=drive,good={9300+n*50},fresh={9250+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={100+n*30}")
+                synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=drive,good={9300+n*50},fresh={9250+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={100+n*30},gyro_n=6,gyro_abs_avg=200,gyro_abs_peak=350")
             synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed={pulse},reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
             for n in range(1,post//20+1):
                 t=n*20
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             if SENSOR_PROFILE:
                 n = r*len(MATRIX)+i
-                synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=post,good={9350+n*50},fresh={9300+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={120+n*30}")
+                synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=post,good={9350+n*50},fresh={9300+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={120+n*30},gyro_n=20,gyro_abs_avg=100,gyro_abs_peak=220")
             synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={post},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
             synthetic.append(f"MOTOR_AUTO_LINK,round={r},stage={i},keep_ok={1+r*len(MATRIX)+i},host_age_ms=100,rx_bytes={50+r*len(MATRIX)+i},rx_ore=0,rx_fe=0,rx_noise=0,rx_ring_drop=0,bad_commands=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
