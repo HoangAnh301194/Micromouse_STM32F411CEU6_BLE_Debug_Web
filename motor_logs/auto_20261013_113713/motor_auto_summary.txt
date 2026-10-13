@@ -1,0 +1,41 @@
+Motor auto 3-round diagnostic
+Status: TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL
+Stages: 63/63; samples: 1890
+Encoder counts are not RPM. Electrical current/thermal limits were NOT measured.
+
+PHASE A: startup 8-12% (3/3 sustained encoder count heuristic)
+  l: confirmed-per-duty={'80': 2, '90': 2, '100': 3, '110': 3, '120': 3}; naive-lowest-3of3=100; monotonic-suffix-candidate=100; nonmonotonic=[]
+  r: confirmed-per-duty={'80': 1, '90': 3, '100': 3, '110': 3, '120': 3}; naive-lowest-3of3=90; monotonic-suffix-candidate=90; nonmonotonic=[]
+PHASE B: PWM response and post-zero encoder movement
+  120 permille: L/R=144/123.67, delta=16.44%, postzero-L/R=58/44.33
+  160 permille: L/R=196.67/184.33, delta=6.69%, postzero-L/R=111/88
+  200 permille: L/R=251/236, delta=6.36%, postzero-L/R=177.67/146.67
+PHASE C: rise slew 5 vs 20 permille/ms at 16%
+  l: slow=186.33, fast=205.33, fast-minus-slow=19.0 counts
+  r: slow=172.67, fast=190, fast-minus-slow=17.33 counts
+PHASE D: executed-condition 400ms base / 800ms high neutral observations (details below)
+NOT_EXECUTED: 0 of 63 pulses; missing stages are excluded, not treated as 0 counts
+Host/Microcontroller link: {"link_records": 63, "keep_decoded_last": 192, "max_uart_rx_overrun": 0, "max_uart_rx_framing": 0, "max_uart_rx_ring_drop": 0, "last_firmware_reported_host_age_ms": 139, "faults": []}
+IMU/I2C/IR combined telemetry: {"sensor_ready_records": 1, "sensor_phase_records": 126, "sensor_first": {"round": "0", "stage": "0", "phase": "drive", "good": "10272", "fresh": "10272", "err": "0", "timeout": "0", "busy": "0", "reused": "0", "aged": "0", "missing": "9000", "ir": "14367", "gyro_n": "10", "gyro_abs_avg": "43", "gyro_abs_peak": "103"}, "sensor_last": {"round": "2", "stage": "20", "phase": "post", "good": "63303", "fresh": "63303", "err": "0", "timeout": "0", "busy": "0", "reused": "8", "aged": "1", "missing": "9000", "ir": "88332", "gyro_n": "20", "gyro_abs_avg": "38", "gyro_abs_peak": "140"}, "gyro_fresh_delta": 53031, "ir_scans_delta": 73965, "i2c_error_delta": 0, "i2c_timeout_delta": 0, "gyro_abs_avg_drive_mdps": 47.78, "gyro_abs_avg_post_mdps": 44.94, "gyro_abs_peak_drive_mdps": 286, "gyro_interpretation": "20ms sampling of gyro angular rate includes real mechanical vibration; a difference between PWM-on and neutral is not by itself proof of electrical EMI."}
+[startup] Stage 0 l 80permille, rise=10: counts=[1, 60, 83], mean=48, std=42.3, sustained=2/3, post-stop-delta=[-1, 15, 20]
+[startup] Stage 1 r 80permille, rise=10: counts=[68, 1, 2], mean=23.67, std=38.4, sustained=1/3, post-stop-delta=[11, -1, -2]
+[startup] Stage 2 l 90permille, rise=10: counts=[2, 81, 92], mean=58.33, std=49.1, sustained=2/3, post-stop-delta=[-2, 26, 22]
+[startup] Stage 3 r 90permille, rise=10: counts=[73, 78, 82], mean=77.67, std=4.51, sustained=3/3, post-stop-delta=[20, 16, 12]
+[startup] Stage 4 l 100permille, rise=10: counts=[98, 114, 106], mean=106, std=8.0, sustained=3/3, post-stop-delta=[33, 31, 34]
+[startup] Stage 5 r 100permille, rise=10: counts=[94, 98, 96], mean=96, std=2.0, sustained=3/3, post-stop-delta=[29, 24, 27]
+[startup] Stage 6 l 110permille, rise=10: counts=[123, 124, 122], mean=123, std=1.0, sustained=3/3, post-stop-delta=[45, 44, 46]
+[startup] Stage 7 r 110permille, rise=10: counts=[108, 112, 112], mean=110.67, std=2.31, sustained=3/3, post-stop-delta=[31, 32, 36]
+[startup] Stage 8 l 120permille, rise=10: counts=[138, 138, 137], mean=137.67, std=0.58, sustained=3/3, post-stop-delta=[54, 54, 55]
+[startup] Stage 9 r 120permille, rise=10: counts=[125, 132, 123], mean=126.67, std=4.73, sustained=3/3, post-stop-delta=[45, 43, 45]
+[response] Stage 10 l 120permille, rise=10: counts=[145, 142, 145], mean=144, std=1.73, sustained=3/3, post-stop-delta=[56, 59, 59]
+[response] Stage 11 r 120permille, rise=10: counts=[119, 129, 123], mean=123.67, std=5.03, sustained=3/3, post-stop-delta=[42, 46, 45]
+[response] Stage 12 l 160permille, rise=10: counts=[197, 197, 196], mean=196.67, std=0.58, sustained=3/3, post-stop-delta=[110, 111, 112]
+[response] Stage 13 r 160permille, rise=10: counts=[190, 182, 181], mean=184.33, std=4.93, sustained=3/3, post-stop-delta=[85, 89, 90]
+[response] Stage 14 l 200permille, rise=10: counts=[254, 249, 250], mean=251, std=2.65, sustained=3/3, post-stop-delta=[176, 179, 178]
+[response] Stage 15 r 200permille, rise=10: counts=[235, 236, 237], mean=236, std=1.0, sustained=3/3, post-stop-delta=[146, 148, 146]
+[response] Stage 16 l 160permille, rise=10: counts=[191, 189, 190], mean=190, std=1.0, sustained=3/3, post-stop-delta=[94, 94, 95]
+[response] Stage 16 r 160permille, rise=10: counts=[190, 189, 190], mean=189.67, std=0.58, sustained=3/3, post-stop-delta=[94, 94, 95]
+[slew_slow] Stage 17 l 160permille, rise=5: counts=[188, 182, 189], mean=186.33, std=3.79, sustained=3/3, post-stop-delta=[106, 110, 110]
+[slew_slow] Stage 18 r 160permille, rise=5: counts=[168, 175, 175], mean=172.67, std=4.04, sustained=3/3, post-stop-delta=[86, 88, 91]
+[slew_fast] Stage 19 l 160permille, rise=20: counts=[204, 206, 206], mean=205.33, std=1.15, sustained=3/3, post-stop-delta=[113, 109, 107]
+[slew_fast] Stage 20 r 160permille, rise=20: counts=[189, 193, 188], mean=190, std=2.65, sustained=3/3, post-stop-delta=[89, 90, 88]

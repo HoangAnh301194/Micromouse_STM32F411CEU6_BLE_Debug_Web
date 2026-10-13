@@ -1,0 +1,18 @@
+MICROMOUSE MOTOR DRIVER FULL QUALIFICATION
+UTC: 2026-10-13T04:38:30.546461+00:00
+
+P0-STOP: REVIEW | STOP/COAST/BRAKE and CCR preload
+  Source-level command states audited; live short-brake/reversal deliberately NOT triggered.
+P0-ELECTRICAL: BLOCKED | Motor current, waveform, temperature
+  No qualified external current/thermal/logic/scope evidence. STM32 does not measure current.
+P1-ENCODER: REVIEW | Startup/encoder 8-12% and repeatability
+  Existing v6 87-pulse measurement reused; nonmonotonic startup and test-order effects cannot be resolved from this fixed-order run.
+P1-INTEGRATION: PASS_BENCH | Motor+MPU6050/I2C+IR+TIM11
+  Bench PASS requires samples and scans progressing, no new I2C timeout/errors and no TIM11 late/gaps or UART drops. Gyro-on/neutral differences still cannot prove EMI.
+P2-HIGH: REVIEW | 30-60% and 80-100%
+  30-60% have only short, elevated-wheel 120ms pulses in v6, not continuous operation. 80-100% and loaded tests BLOCKED pending electrical limits.
+P2-LOADED: BLOCKED | Loaded travel and 80-100% PWM
+  No independent current-limited instrumented setup, heat/VM scope review, loaded drivetrain data or qualified brake/reverse control. This script does not issue these motions.
+
+Blocked != failed motor: it means required sensors/measurement or approvals are absent.
+No current, brake, reverse or loaded 80-100% test is automatically executed.

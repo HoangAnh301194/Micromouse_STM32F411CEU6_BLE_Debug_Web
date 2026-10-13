@@ -1,0 +1,3589 @@
+{
+  "status": "TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL",
+  "rounds_requested": 3,
+  "pulses_expected": 63,
+  "not_executed_pulses": 0,
+  "starts": 63,
+  "ends": 63,
+  "post_ends": 63,
+  "sample_count": 1890,
+  "errors": [],
+  "rx_heartbeat_diagnostics": {
+    "link_records": 63,
+    "keep_decoded_last": 192,
+    "max_uart_rx_overrun": 0,
+    "max_uart_rx_framing": 0,
+    "max_uart_rx_ring_drop": 0,
+    "last_firmware_reported_host_age_ms": 139,
+    "faults": []
+  },
+  "test_families": [
+    "startup",
+    "response",
+    "slew_slow",
+    "slew_fast"
+  ],
+  "profile_version": 7,
+  "high_profile": false,
+  "sensor_profile": true,
+  "stop_register_snapshot": {
+    "records": 23,
+    "last": {
+      "ccr_l": "0",
+      "ccr_r": "0",
+      "in_l1": "0",
+      "in_l2": "0",
+      "in_r1": "0",
+      "in_r2": "0",
+      "oc1pe": "1",
+      "oc2pe": "1",
+      "arr": "3199"
+    },
+    "note": "GPIO ODR/CCR != measured TB6612 output or brake current"
+  },
+  "sensor_integration": {
+    "sensor_ready_records": 1,
+    "sensor_phase_records": 126,
+    "sensor_first": {
+      "round": "0",
+      "stage": "0",
+      "phase": "drive",
+      "good": "10272",
+      "fresh": "10272",
+      "err": "0",
+      "timeout": "0",
+      "busy": "0",
+      "reused": "0",
+      "aged": "0",
+      "missing": "9000",
+      "ir": "14367",
+      "gyro_n": "10",
+      "gyro_abs_avg": "43",
+      "gyro_abs_peak": "103"
+    },
+    "sensor_last": {
+      "round": "2",
+      "stage": "20",
+      "phase": "post",
+      "good": "63303",
+      "fresh": "63303",
+      "err": "0",
+      "timeout": "0",
+      "busy": "0",
+      "reused": "8",
+      "aged": "1",
+      "missing": "9000",
+      "ir": "88332",
+      "gyro_n": "20",
+      "gyro_abs_avg": "38",
+      "gyro_abs_peak": "140"
+    },
+    "gyro_fresh_delta": 53031,
+    "ir_scans_delta": 73965,
+    "i2c_error_delta": 0,
+    "i2c_timeout_delta": 0,
+    "gyro_abs_avg_drive_mdps": 47.78,
+    "gyro_abs_avg_post_mdps": 44.94,
+    "gyro_abs_peak_drive_mdps": 286,
+    "gyro_interpretation": "20ms sampling of gyro angular rate includes real mechanical vibration; a difference between PWM-on and neutral is not by itself proof of electrical EMI."
+  },
+  "stages_per_round": 21,
+  "post_stop_observation_ms": 400,
+  "repeat_statistics": [
+    {
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 80,
+      "three_drive_counts": [
+        1,
+        60,
+        83
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 48,
+      "sample_std_count": 42.3,
+      "sustained_3of3": false,
+      "sustained_replicates": 2,
+      "three_post_stop_deltas": [
+        -1,
+        15,
+        20
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        null,
+        40,
+        80
+      ],
+      "post_t99_ms": [
+        null,
+        40,
+        80
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        80,
+        40
+      ]
+    },
+    {
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 80,
+      "three_drive_counts": [
+        68,
+        1,
+        2
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 23.67,
+      "sample_std_count": 38.4,
+      "sustained_3of3": false,
+      "sustained_replicates": 1,
+      "three_post_stop_deltas": [
+        11,
+        -1,
+        -2
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        40,
+        null,
+        null
+      ],
+      "post_t99_ms": [
+        40,
+        null,
+        null
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 90,
+      "three_drive_counts": [
+        2,
+        81,
+        92
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 58.33,
+      "sample_std_count": 49.1,
+      "sustained_3of3": false,
+      "sustained_replicates": 2,
+      "three_post_stop_deltas": [
+        -2,
+        26,
+        22
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        null,
+        80,
+        60
+      ],
+      "post_t99_ms": [
+        null,
+        80,
+        60
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        60,
+        40
+      ]
+    },
+    {
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 90,
+      "three_drive_counts": [
+        73,
+        78,
+        82
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 77.67,
+      "sample_std_count": 4.51,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        20,
+        16,
+        12
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        80,
+        40,
+        40
+      ],
+      "post_t99_ms": [
+        80,
+        40,
+        40
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        60,
+        60,
+        60
+      ]
+    },
+    {
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 100,
+      "three_drive_counts": [
+        98,
+        114,
+        106
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 106,
+      "sample_std_count": 8.0,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        33,
+        31,
+        34
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        80,
+        80,
+        80
+      ],
+      "post_t99_ms": [
+        80,
+        80,
+        80
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        60,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 100,
+      "three_drive_counts": [
+        94,
+        98,
+        96
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 96,
+      "sample_std_count": 2.0,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        29,
+        24,
+        27
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        100,
+        60,
+        80
+      ],
+      "post_t99_ms": [
+        100,
+        60,
+        80
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 110,
+      "three_drive_counts": [
+        123,
+        124,
+        122
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 123,
+      "sample_std_count": 1.0,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        45,
+        44,
+        46
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        100,
+        100,
+        100
+      ],
+      "post_t99_ms": [
+        120,
+        100,
+        120
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 110,
+      "three_drive_counts": [
+        108,
+        112,
+        112
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 110.67,
+      "sample_std_count": 2.31,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        31,
+        32,
+        36
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        80,
+        80,
+        100
+      ],
+      "post_t99_ms": [
+        80,
+        80,
+        100
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        138,
+        138,
+        137
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 137.67,
+      "sample_std_count": 0.58,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        54,
+        54,
+        55
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        100,
+        100,
+        100
+      ],
+      "post_t99_ms": [
+        100,
+        120,
+        120
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        125,
+        132,
+        123
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 126.67,
+      "sample_std_count": 4.73,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        45,
+        43,
+        45
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        100,
+        100,
+        100
+      ],
+      "post_t99_ms": [
+        120,
+        100,
+        100
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        145,
+        142,
+        145
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 144,
+      "sample_std_count": 1.73,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        56,
+        59,
+        59
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        100,
+        120,
+        120
+      ],
+      "post_t99_ms": [
+        120,
+        140,
+        140
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        119,
+        129,
+        123
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 123.67,
+      "sample_std_count": 5.03,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        42,
+        46,
+        45
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        80,
+        120,
+        100
+      ],
+      "post_t99_ms": [
+        100,
+        120,
+        100
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        60,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        197,
+        197,
+        196
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 196.67,
+      "sample_std_count": 0.58,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        110,
+        111,
+        112
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        140,
+        160,
+        160
+      ],
+      "post_t99_ms": [
+        180,
+        180,
+        180
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        190,
+        182,
+        181
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 184.33,
+      "sample_std_count": 4.93,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        85,
+        89,
+        90
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        120,
+        120,
+        120
+      ],
+      "post_t99_ms": [
+        120,
+        140,
+        140
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 200,
+      "three_drive_counts": [
+        254,
+        249,
+        250
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 251,
+      "sample_std_count": 2.65,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        176,
+        179,
+        178
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        180,
+        200,
+        180
+      ],
+      "post_t99_ms": [
+        220,
+        240,
+        220
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 200,
+      "three_drive_counts": [
+        235,
+        236,
+        237
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 236,
+      "sample_std_count": 1.0,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        146,
+        148,
+        146
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        160,
+        160,
+        160
+      ],
+      "post_t99_ms": [
+        180,
+        180,
+        180
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        191,
+        189,
+        190
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 190,
+      "sample_std_count": 1.0,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        94,
+        94,
+        95
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        140,
+        140,
+        140
+      ],
+      "post_t99_ms": [
+        160,
+        140,
+        160
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        190,
+        189,
+        190
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 189.67,
+      "sample_std_count": 0.58,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        94,
+        94,
+        95
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        140,
+        140,
+        140
+      ],
+      "post_t99_ms": [
+        140,
+        140,
+        160
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        188,
+        182,
+        189
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 186.33,
+      "sample_std_count": 3.79,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        106,
+        110,
+        110
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        140,
+        140,
+        160
+      ],
+      "post_t99_ms": [
+        160,
+        160,
+        160
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        60,
+        40
+      ]
+    },
+    {
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        168,
+        175,
+        175
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 172.67,
+      "sample_std_count": 4.04,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        86,
+        88,
+        91
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        120,
+        120,
+        140
+      ],
+      "post_t99_ms": [
+        140,
+        180,
+        180
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        60,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        204,
+        206,
+        206
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 205.33,
+      "sample_std_count": 1.15,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        113,
+        109,
+        107
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        160,
+        140,
+        140
+      ],
+      "post_t99_ms": [
+        200,
+        160,
+        160
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    },
+    {
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        189,
+        193,
+        188
+      ],
+      "executed_replicates": 3,
+      "measurement_status": "MEASURED",
+      "mean_count": 190,
+      "sample_std_count": 2.65,
+      "sustained_3of3": true,
+      "sustained_replicates": 3,
+      "three_post_stop_deltas": [
+        89,
+        90,
+        88
+      ],
+      "complete_post_stop_replicates": 3,
+      "post_t95_ms": [
+        120,
+        140,
+        120
+      ],
+      "post_t99_ms": [
+        160,
+        160,
+        140
+      ],
+      "post_last100ms_net_counts": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        40,
+        40,
+        40
+      ]
+    }
+  ],
+  "trials": [
+    {
+      "round": 0,
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 68,
+          "encoder_after_post_ms": 79,
+          "post_stop_delta": 11,
+          "post_t95_ms": 40,
+          "post_t99_ms": 40,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 34,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 90,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 90,
+          "encoder_drive": 2,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -2,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 90,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 1,
+          "post_stop_delta": 1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 90,
+          "encoder_drive": 73,
+          "encoder_after_post_ms": 93,
+          "post_stop_delta": 20,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 41,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 100,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 100,
+          "encoder_drive": 98,
+          "encoder_after_post_ms": 131,
+          "post_stop_delta": 33,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 54,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 100,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 100,
+          "encoder_drive": 94,
+          "encoder_after_post_ms": 123,
+          "post_stop_delta": 29,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 49,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 110,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 110,
+          "encoder_drive": 123,
+          "encoder_after_post_ms": 168,
+          "post_stop_delta": 45,
+          "post_t95_ms": 100,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 63,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 110,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 110,
+          "encoder_drive": 108,
+          "encoder_after_post_ms": 139,
+          "post_stop_delta": 31,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 56,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 138,
+          "encoder_after_post_ms": 192,
+          "post_stop_delta": 54,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 69,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 125,
+          "encoder_after_post_ms": 170,
+          "post_stop_delta": 45,
+          "post_t95_ms": 100,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 63,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 145,
+          "encoder_after_post_ms": 201,
+          "post_stop_delta": 56,
+          "post_t95_ms": 100,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 70,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 119,
+          "encoder_after_post_ms": 161,
+          "post_stop_delta": 42,
+          "post_t95_ms": 80,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 64,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 197,
+          "encoder_after_post_ms": 307,
+          "post_stop_delta": 110,
+          "post_t95_ms": 140,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 190,
+          "encoder_after_post_ms": 275,
+          "post_stop_delta": 85,
+          "post_t95_ms": 120,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 93,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 254,
+          "encoder_after_post_ms": 430,
+          "post_stop_delta": 176,
+          "post_t95_ms": 180,
+          "post_t99_ms": 220,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 126,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 235,
+          "encoder_after_post_ms": 381,
+          "post_stop_delta": 146,
+          "post_t95_ms": 160,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 121,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 191,
+          "encoder_after_post_ms": 285,
+          "post_stop_delta": 94,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 95,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 190,
+          "encoder_after_post_ms": 284,
+          "post_stop_delta": 94,
+          "post_t95_ms": 140,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 94,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 188,
+          "encoder_after_post_ms": 294,
+          "post_stop_delta": 106,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -2,
+          "post_stop_delta": -2,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 168,
+          "encoder_after_post_ms": 254,
+          "post_stop_delta": 86,
+          "post_t95_ms": 120,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 91,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 204,
+          "encoder_after_post_ms": 317,
+          "post_stop_delta": 113,
+          "post_t95_ms": 160,
+          "post_t99_ms": 200,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -2,
+          "post_stop_delta": -2,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 189,
+          "encoder_after_post_ms": 278,
+          "post_stop_delta": 89,
+          "post_t95_ms": 120,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 93,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 60,
+          "encoder_after_post_ms": 75,
+          "post_stop_delta": 15,
+          "post_t95_ms": 40,
+          "post_t99_ms": 40,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 37,
+          "first_five_counts_ms": 80,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 2,
+          "encoder_after_post_ms": 2,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 90,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 90,
+          "encoder_drive": 81,
+          "encoder_after_post_ms": 107,
+          "post_stop_delta": 26,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 47,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 90,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 90,
+          "encoder_drive": 78,
+          "encoder_after_post_ms": 94,
+          "post_stop_delta": 16,
+          "post_t95_ms": 40,
+          "post_t99_ms": 40,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 43,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 100,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 100,
+          "encoder_drive": 114,
+          "encoder_after_post_ms": 145,
+          "post_stop_delta": 31,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 56,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 100,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 100,
+          "encoder_drive": 98,
+          "encoder_after_post_ms": 122,
+          "post_stop_delta": 24,
+          "post_t95_ms": 60,
+          "post_t99_ms": 60,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 50,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 110,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 110,
+          "encoder_drive": 124,
+          "encoder_after_post_ms": 168,
+          "post_stop_delta": 44,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 63,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 110,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 110,
+          "encoder_drive": 112,
+          "encoder_after_post_ms": 144,
+          "post_stop_delta": 32,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 57,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 138,
+          "encoder_after_post_ms": 192,
+          "post_stop_delta": 54,
+          "post_t95_ms": 100,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 70,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 132,
+          "encoder_after_post_ms": 175,
+          "post_stop_delta": 43,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 65,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 142,
+          "encoder_after_post_ms": 201,
+          "post_stop_delta": 59,
+          "post_t95_ms": 120,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 70,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 129,
+          "encoder_after_post_ms": 175,
+          "post_stop_delta": 46,
+          "post_t95_ms": 120,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 64,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 197,
+          "encoder_after_post_ms": 308,
+          "post_stop_delta": 111,
+          "post_t95_ms": 160,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 182,
+          "encoder_after_post_ms": 271,
+          "post_stop_delta": 89,
+          "post_t95_ms": 120,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 92,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 249,
+          "encoder_after_post_ms": 428,
+          "post_stop_delta": 179,
+          "post_t95_ms": 200,
+          "post_t99_ms": 240,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 126,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 236,
+          "encoder_after_post_ms": 384,
+          "post_stop_delta": 148,
+          "post_t95_ms": 160,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 121,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 189,
+          "encoder_after_post_ms": 283,
+          "post_stop_delta": 94,
+          "post_t95_ms": 140,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 95,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 189,
+          "encoder_after_post_ms": 283,
+          "post_stop_delta": 94,
+          "post_t95_ms": 140,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 95,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 182,
+          "encoder_after_post_ms": 292,
+          "post_stop_delta": 110,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 175,
+          "encoder_after_post_ms": 263,
+          "post_stop_delta": 88,
+          "post_t95_ms": 120,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 92,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 206,
+          "encoder_after_post_ms": 315,
+          "post_stop_delta": 109,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 99,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -2,
+          "encoder_after_post_ms": -2,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 193,
+          "encoder_after_post_ms": 283,
+          "post_stop_delta": 90,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 93,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 83,
+          "encoder_after_post_ms": 103,
+          "post_stop_delta": 20,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 40,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 2,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -2,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 90,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 90,
+          "encoder_drive": 92,
+          "encoder_after_post_ms": 114,
+          "post_stop_delta": 22,
+          "post_t95_ms": 60,
+          "post_t99_ms": 60,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 47,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 90,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 90,
+          "encoder_drive": 82,
+          "encoder_after_post_ms": 94,
+          "post_stop_delta": 12,
+          "post_t95_ms": 40,
+          "post_t99_ms": 40,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 43,
+          "first_five_counts_ms": 60,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 100,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 100,
+          "encoder_drive": 106,
+          "encoder_after_post_ms": 140,
+          "post_stop_delta": 34,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 55,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 100,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 100,
+          "encoder_drive": 96,
+          "encoder_after_post_ms": 123,
+          "post_stop_delta": 27,
+          "post_t95_ms": 80,
+          "post_t99_ms": 80,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 49,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 110,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 110,
+          "encoder_drive": 122,
+          "encoder_after_post_ms": 168,
+          "post_stop_delta": 46,
+          "post_t95_ms": 100,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 62,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 110,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 110,
+          "encoder_drive": 112,
+          "encoder_after_post_ms": 148,
+          "post_stop_delta": 36,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 57,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 137,
+          "encoder_after_post_ms": 192,
+          "post_stop_delta": 55,
+          "post_t95_ms": 100,
+          "post_t99_ms": 120,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 69,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 123,
+          "encoder_after_post_ms": 168,
+          "post_stop_delta": 45,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 64,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 145,
+          "encoder_after_post_ms": 204,
+          "post_stop_delta": 59,
+          "post_t95_ms": 120,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 70,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 123,
+          "encoder_after_post_ms": 168,
+          "post_stop_delta": 45,
+          "post_t95_ms": 100,
+          "post_t99_ms": 100,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 64,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 196,
+          "encoder_after_post_ms": 308,
+          "post_stop_delta": 112,
+          "post_t95_ms": 160,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 181,
+          "encoder_after_post_ms": 271,
+          "post_stop_delta": 90,
+          "post_t95_ms": 120,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 92,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 250,
+          "encoder_after_post_ms": 428,
+          "post_stop_delta": 178,
+          "post_t95_ms": 180,
+          "post_t99_ms": 220,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 127,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": -1,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 237,
+          "encoder_after_post_ms": 383,
+          "post_stop_delta": 146,
+          "post_t95_ms": 160,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 121,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 190,
+          "encoder_after_post_ms": 285,
+          "post_stop_delta": 95,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 94,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 190,
+          "encoder_after_post_ms": 285,
+          "post_stop_delta": 95,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 94,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 189,
+          "encoder_after_post_ms": 299,
+          "post_stop_delta": 110,
+          "post_t95_ms": 160,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": -1,
+          "encoder_after_post_ms": -1,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 175,
+          "encoder_after_post_ms": 266,
+          "post_stop_delta": 91,
+          "post_t95_ms": 140,
+          "post_t99_ms": 180,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 92,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 206,
+          "encoder_after_post_ms": 313,
+          "post_stop_delta": 107,
+          "post_t95_ms": 140,
+          "post_t99_ms": 160,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 98,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "post_t95_ms": null,
+          "post_t99_ms": null,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 188,
+          "encoder_after_post_ms": 276,
+          "post_stop_delta": 88,
+          "post_t95_ms": 120,
+          "post_t99_ms": 140,
+          "post_last100ms_net_counts": 0,
+          "final_100ms_delta": 92,
+          "first_five_counts_ms": 40,
+          "sustained_count_signal": true
+        }
+      ]
+    }
+  ],
+  "phase_findings": {
+    "startup_threshold_heuristic": {
+      "l": {
+        "planned_permille": [
+          80,
+          90,
+          100,
+          110,
+          120
+        ],
+        "measured_permille": [
+          80,
+          90,
+          100,
+          110,
+          120
+        ],
+        "sustained_replicates_by_duty": {
+          "80": 2,
+          "90": 2,
+          "100": 3,
+          "110": 3,
+          "120": 3
+        },
+        "lowest_tested_3of3_permille": 100,
+        "lowest_monotonic_suffix_3of3_permille": 100,
+        "nonmonotonic_success_decreases": []
+      },
+      "r": {
+        "planned_permille": [
+          80,
+          90,
+          100,
+          110,
+          120
+        ],
+        "measured_permille": [
+          80,
+          90,
+          100,
+          110,
+          120
+        ],
+        "sustained_replicates_by_duty": {
+          "80": 1,
+          "90": 3,
+          "100": 3,
+          "110": 3,
+          "120": 3
+        },
+        "lowest_tested_3of3_permille": 90,
+        "lowest_monotonic_suffix_3of3_permille": 90,
+        "nonmonotonic_success_decreases": []
+      }
+    },
+    "open_loop_response": [
+      {
+        "pwm_permille": 120,
+        "mean_left_encoder_count": 144,
+        "mean_right_encoder_count": 123.67,
+        "relative_count_difference_pct": 16.44,
+        "mean_left_post_stop_counts": 58,
+        "mean_right_post_stop_counts": 44.33
+      },
+      {
+        "pwm_permille": 160,
+        "mean_left_encoder_count": 196.67,
+        "mean_right_encoder_count": 184.33,
+        "relative_count_difference_pct": 6.69,
+        "mean_left_post_stop_counts": 111,
+        "mean_right_post_stop_counts": 88
+      },
+      {
+        "pwm_permille": 200,
+        "mean_left_encoder_count": 251,
+        "mean_right_encoder_count": 236,
+        "relative_count_difference_pct": 6.36,
+        "mean_left_post_stop_counts": 177.67,
+        "mean_right_post_stop_counts": 146.67
+      }
+    ],
+    "rise_slew_comparison": [
+      {
+        "wheel": "l",
+        "duty_permille": 160,
+        "rise_slow_permille_per_ms": 5,
+        "rise_fast_permille_per_ms": 20,
+        "mean_count_slow": 186.33,
+        "mean_count_fast": 205.33,
+        "mean_count_fast_minus_slow": 19.0
+      },
+      {
+        "wheel": "r",
+        "duty_permille": 160,
+        "rise_slow_permille_per_ms": 5,
+        "rise_fast_permille_per_ms": 20,
+        "mean_count_slow": 172.67,
+        "mean_count_fast": 190,
+        "mean_count_fast_minus_slow": 17.33
+      }
+    ],
+    "limitations": "Based on encoder count only; startup is a heuristic at the tested 8-12% settings and 3 repeats. Nonzero post-STOP counts do not establish exact electrical coast/brake mode."
+  },
+  "timing_integrity": {
+    "max_tim11_dwt_cycles_seen": 1749,
+    "max_observed_tim11_late_ticks": 0,
+    "max_observed_tim11_gaps": 0,
+    "max_observed_uart_tx_drop": 0
+  },
+  "experiment_setup": {
+    "vm_state_declared": "powered",
+    "dc_vm_volts_hand_measured": 8.0,
+    "firmware_env": "motor_auto_sensor_96m_trim25",
+    "host_control": "USART1 RX PA10",
+    "rounds": 3,
+    "stages_per_round": 21,
+    "diagnostic_phases": [
+      "startup",
+      "response",
+      "slew_slow",
+      "slew_fast"
+    ],
+    "high_profile": false,
+    "sensor_profile": true,
+    "note": "VM state user-supplied, not measured by STM32; duty is not current limit.",
+    "host_keep_sent_count": 192,
+    "handshake_profile_validated": true,
+    "handshake_error": null
+  },
+  "electrical_limitation": "No current, stall-current, thermal, oscilloscope or physical output-mode measurement. STM32 GPIO=3.3V vs TB6612 VCC=5V outside VIH guarantee; STBY fixed high. 60pct command on high profile is NOT a current limit or electrical safety approval.",
+  "interpretation": "Sustained_count_signal is an empirical >=5 encoder-count and >=5 tail-count heuristic, NOT a certified deadband threshold."
+}

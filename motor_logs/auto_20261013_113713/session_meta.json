@@ -1,0 +1,20 @@
+{
+  "vm_state_declared": "powered",
+  "dc_vm_volts_hand_measured": 8.0,
+  "firmware_env": "motor_auto_sensor_96m_trim25",
+  "host_control": "USART1 RX PA10",
+  "rounds": 3,
+  "stages_per_round": 21,
+  "diagnostic_phases": [
+    "startup",
+    "response",
+    "slew_slow",
+    "slew_fast"
+  ],
+  "high_profile": false,
+  "sensor_profile": true,
+  "note": "VM state user-supplied, not measured by STM32; duty is not current limit.",
+  "host_keep_sent_count": 192,
+  "handshake_profile_validated": true,
+  "handshake_error": null
+}
