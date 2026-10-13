@@ -118,13 +118,34 @@ static MPU6050_Handle_t integration_mpu;
 static uint8_t sensors_ready = 0U;
 static uint32_t ir_scan_count = 0U;
 static uint32_t ir_last_progress_ms = 0U;
+static uint32_t gyro_sample_count = 0U, gyro_abs_peak_mdps = 0U;
+static uint64_t gyro_abs_sum_mdps = 0ULL;
+/* Motor-vibration/EMI proxy in encoder-aligned 20ms snapshots.
+ * Without a stationary reference it does NOT isolate true electrical EMI. */
+static void GyroCapture(void)
+{
+    int32_t v;
+    uint32_t a;
+    if (!sensors_ready || !integration_mpu.calibrated) return;
+    v = (int32_t)(integration_mpu.gyro_z_raw_corrected * 1000.0f);
+    a = (uint32_t)(v < 0 ? -v : v);
+    gyro_abs_sum_mdps += a;
+    if (a > gyro_abs_peak_mdps) gyro_abs_peak_mdps = a;
+    ++gyro_sample_count;
+}
+static void GyroResetWindow(void)
+{
+    gyro_abs_sum_mdps = 0ULL;
+    gyro_abs_peak_mdps = gyro_sample_count = 0U;
+}
 static void SensorReport(const char *phase)
 {
     Control_IntegrationStats_t stats;
     Control_GetIntegrationStats(&stats);
     UART_Printf("MOTOR_AUTO_SENSORS,round=%u,stage=%u,phase=%s,"
                 "good=%lu,fresh=%lu,err=%lu,timeout=%lu,busy=%lu,"
-                "reused=%lu,aged=%lu,missing=%lu,ir=%lu\r\n",
+                "reused=%lu,aged=%lu,missing=%lu,ir=%lu,"
+                "gyro_n=%lu,gyro_abs_avg=%lu,gyro_abs_peak=%lu\r\n",
                 (unsigned)round_i,(unsigned)step_i,phase,
                 (unsigned long)integration_mpu.good_reads,
                 (unsigned long)integration_mpu.fresh_gyro_reads,
@@ -134,7 +155,12 @@ static void SensorReport(const char *phase)
                 (unsigned long)stats.reused,
                 (unsigned long)stats.age_over1500,
                 (unsigned long)stats.missing_or_expired,
-                (unsigned long)ir_scan_count);
+                (unsigned long)ir_scan_count,
+                (unsigned long)gyro_sample_count,
+                (unsigned long)(gyro_sample_count ?
+                    (gyro_abs_sum_mdps/gyro_sample_count) : 0ULL),
+                (unsigned long)gyro_abs_peak_mdps);
+    GyroResetWindow();
 }
 #endif
 #if defined(MOTOR_AUTO_HIGH_TEST)
@@ -165,6 +191,9 @@ static void EmitSample(uint32_t now, uint32_t elapsed, const char *phase)
     Motor_GetAppliedPairPermille(&al,&ar);
     Control_GetTiming(&t);
     const AutoPulse_t *p = &matrix[step_i];
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+    GyroCapture();
+#endif
     UART_Printf("MOTOR_AUTO_SAMPLE,round=%u,stage=%u,phase=%s,"
                 "test=%s,rise=%u,ms=%lu,elapsed=%lu,"
                 "applied_l=%d,applied_r=%d,enc_l=%ld,enc_r=%ld,"
@@ -217,6 +246,9 @@ static void StartStep(uint32_t now)
         FailSafe("DUTY_CAP");
         return;
     }
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+    GyroResetWindow();
+#endif
     Motor_SetDeadband(0U, 0U);
     Motor_SetSlewRates(p->rise, 20U);
     if (!MotorTest_StartPermille(p->l,p->r,PulseMs(),100U)) {
