@@ -3,7 +3,7 @@
  * @brief Micromouse Robot - Pin Configuration (UPDATED 2025)
  * @author HoangAnhNguyenHuu & Gemini
  * * --- MOTOR MAPPING CHANGES ---
- * Motor A (Right): PWM=PA15, IN1=PB14, IN2=PB15
+ * Motor A (Right): PWM=PA15, IN1=PB15, IN2=PB14 (compiled macros)
  * Motor B (Left):  PWM=PB3,  IN1=PB13, IN2=PB12
  */
 
@@ -17,7 +17,7 @@
 /* TIMER & MOTOR SYSTEM (TIM2)                                     */
 /* ============================================================================ */
 
-/* Motor A (Right) - PA15 + PB14/PB15 */
+/* Motor A (Right) - PA15 + PB15/PB14 (IN1/IN2 order) */
 #define MOTOR_R_PWM_PORT        GPIOA
 #define MOTOR_R_PWM_PIN         15          /* PA15 - TIM2_CH1 */
 #define MOTOR_R_PWM_AF          1
