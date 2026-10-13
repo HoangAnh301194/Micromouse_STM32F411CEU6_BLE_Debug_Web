@@ -154,17 +154,17 @@ static void ReplyReady(void)
 {
     /* Repeat complete profile with each PING: host may connect after MCU
      * boot/flash and must still capture the exact firmware signature. */
-    UART_Printf("MOTOR_AUTO_PROFILE,version=3,nominal_hz=%lu,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=4,nominal_hz=%lu,"
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
                 "pulse_ms=200,post_ms=400,boot_neutral=1,"
-                "both_cap_permille=160,families=4,no_current_sense=1,"
+                "both_cap_permille=160,families=4,rx_mode=irq256,no_current_sense=1,"
                 "stby_fixed_high=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
-    UART_Printf("MOTOR_AUTO_READY,version=3,rounds=%u,steps=%u,"
+    UART_Printf("MOTOR_AUTO_READY,version=4,rounds=%u,steps=%u,"
                 "hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=400,"
-                "families=4,one_shot=1,boot_neutral=1,"
+                "families=4,rx_mode=irq256,one_shot=1,boot_neutral=1,"
                 "rx=USART1_PA10,state=%u\r\n",
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,(unsigned)state);
 }
@@ -236,7 +236,7 @@ int MotorAutoBench_Main(void)
     Control_Start();
 
     UART_Printf("[BOOT] Motor auto baseline: neutral, USART1 host ARM required\r\n");
-    UART_Printf("MOTOR_AUTO_PROFILE,version=3,nominal_hz=%lu,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=4,nominal_hz=%lu,"
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
                 "pulse_ms=200,post_ms=400,boot_neutral=1,"
                 "both_cap_permille=160,families=4,no_current_sense=1,"
