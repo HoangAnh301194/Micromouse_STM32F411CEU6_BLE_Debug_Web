@@ -21,8 +21,22 @@
 #endif
 
 #define AUTO_ROUNDS          3U
+#if defined(MOTOR_AUTO_HIGH_TEST)
+/* Deliberately separate opt-in firmware: regular v4 bench is unchanged.
+ * 8 more short PWM stages, 30/40/50/60%, single-wheel only. */
+#define AUTO_STEPS          29U
+#define AUTO_MAX_PERMILLE    600U
+#define AUTO_VERSION         5U
+#define AUTO_FAMILIES        5U
+#define AUTO_HIGH_FIRST     21U
+#define AUTO_HIGH_PULSE_MS 120U
+#define AUTO_HIGH_POST_MS  800U
+#else
 #define AUTO_STEPS          21U
 #define AUTO_MAX_PERMILLE    200U
+#define AUTO_VERSION         4U
+#define AUTO_FAMILIES        4U
+#endif
 #define AUTO_BOTH_PERMILLE   160U
 #define AUTO_PULSE_MS        200U
 #define AUTO_POST_MS         400U
@@ -37,11 +51,11 @@
  * No polarity reversal, motor electrical braking or intentional stall. */
 typedef enum {
     FAMILY_STARTUP=0, FAMILY_RESPONSE=1,
-    FAMILY_SLEW_SLOW=2, FAMILY_SLEW_FAST=3
+    FAMILY_SLEW_SLOW=2, FAMILY_SLEW_FAST=3, FAMILY_HIGH=4
 } AutoFamily_t;
 typedef struct { int16_t l, r; uint8_t family; uint8_t rise; } AutoPulse_t;
 static const char * const family_names[] = {
-    "startup", "response", "slew_slow", "slew_fast"
+    "startup", "response", "slew_slow", "slew_fast", "high"
 };
 static const AutoPulse_t matrix[AUTO_STEPS] = {
     { 80,  0,FAMILY_STARTUP,10}, {  0, 80,FAMILY_STARTUP,10},
@@ -55,6 +69,12 @@ static const AutoPulse_t matrix[AUTO_STEPS] = {
     {160,160,FAMILY_RESPONSE,10},
     {160,  0,FAMILY_SLEW_SLOW, 5}, {0,160,FAMILY_SLEW_SLOW, 5},
     {160,  0,FAMILY_SLEW_FAST,20}, {0,160,FAMILY_SLEW_FAST,20}
+#if defined(MOTOR_AUTO_HIGH_TEST)
+    ,{300,  0,FAMILY_HIGH,10}, {  0,300,FAMILY_HIGH,10}
+    ,{400,  0,FAMILY_HIGH,10}, {  0,400,FAMILY_HIGH,10}
+    ,{500,  0,FAMILY_HIGH,10}, {  0,500,FAMILY_HIGH,10}
+    ,{600,  0,FAMILY_HIGH,10}, {  0,600,FAMILY_HIGH,10}
+#endif
 };
 
 typedef enum {
@@ -71,6 +91,24 @@ static uint32_t last_tick_gaps = 0;
 static uint32_t completed_pulses = 0;
 static uint32_t keep_ok = 0U;
 static uint32_t bad_rx_commands = 0U;
+#if defined(MOTOR_AUTO_HIGH_TEST)
+static int32_t high_post_ref_l = 0, high_post_ref_r = 0;
+static uint8_t high_post_ref_valid = 0U;
+#endif
+static uint32_t PulseMs(void)
+{
+#if defined(MOTOR_AUTO_HIGH_TEST)
+    if (step_i >= AUTO_HIGH_FIRST) return AUTO_HIGH_PULSE_MS;
+#endif
+    return AUTO_PULSE_MS;
+}
+static uint32_t PostMs(void)
+{
+#if defined(MOTOR_AUTO_HIGH_TEST)
+    if (step_i >= AUTO_HIGH_FIRST) return AUTO_HIGH_POST_MS;
+#endif
+    return AUTO_POST_MS;
+}
 static uint8_t rx_count = 0;
 static char rx_line[32];
 
@@ -128,14 +166,14 @@ static void StartStep(uint32_t now)
         (p->l > 0 && p->r > 0 &&
          (p->l > (int16_t)AUTO_BOTH_PERMILLE ||
           p->r > (int16_t)AUTO_BOTH_PERMILLE)) ||
-        p->family > FAMILY_SLEW_FAST ||
+        p->family >= AUTO_FAMILIES ||
         p->rise < 5U || p->rise > 20U) {
         FailSafe("DUTY_CAP");
         return;
     }
     Motor_SetDeadband(0U, 0U);
     Motor_SetSlewRates(p->rise, 20U);
-    if (!MotorTest_StartPermille(p->l,p->r,AUTO_PULSE_MS,100U)) {
+    if (!MotorTest_StartPermille(p->l,p->r,PulseMs(),100U)) {
         FailSafe("START_REJECTED");
         return;
     }
@@ -147,26 +185,36 @@ static void StartStep(uint32_t now)
                 (unsigned)round_i,(unsigned)step_i,
                 (int)p->l,(int)p->r,
                 family_names[p->family],(unsigned)p->rise,
-                (unsigned)AUTO_PULSE_MS);
+                (unsigned)PulseMs());
 }
 
 static void ReplyReady(void)
 {
     /* Repeat complete profile with each PING: host may connect after MCU
      * boot/flash and must still capture the exact firmware signature. */
-    UART_Printf("MOTOR_AUTO_PROFILE,version=4,nominal_hz=%lu,"
-                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=%u,nominal_hz=%lu,"
+                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=%u,"
                 "pulse_ms=200,post_ms=400,boot_neutral=1,"
-                "both_cap_permille=160,families=4,rx_mode=irq256,no_current_sense=1,"
+                "both_cap_permille=160,families=%u,rx_mode=irq256,"
+                "high_pulse_ms=%u,high_post_ms=%u,no_current_sense=1,"
                 "stby_fixed_high=1\r\n",
-                (unsigned long)SystemCoreClock,
+                (unsigned)AUTO_VERSION,(unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
-                (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
-    UART_Printf("MOTOR_AUTO_READY,version=4,rounds=%u,steps=%u,"
-                "hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=400,"
-                "families=4,rx_mode=irq256,one_shot=1,boot_neutral=1,"
+                (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,
+                (unsigned)AUTO_MAX_PERMILLE,(unsigned)AUTO_FAMILIES,
+#if defined(MOTOR_AUTO_HIGH_TEST)
+                (unsigned)AUTO_HIGH_PULSE_MS,(unsigned)AUTO_HIGH_POST_MS
+#else
+                0U,0U
+#endif
+                );
+    UART_Printf("MOTOR_AUTO_READY,version=%u,rounds=%u,steps=%u,"
+                "hard_cap_permille=%u,both_cap_permille=160,pulse_ms=200,post_ms=400,"
+                "families=%u,rx_mode=irq256,one_shot=1,boot_neutral=1,"
                 "rx=USART1_PA10,state=%u\r\n",
-                (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,(unsigned)state);
+                (unsigned)AUTO_VERSION,(unsigned)AUTO_ROUNDS,
+                (unsigned)AUTO_STEPS,(unsigned)AUTO_MAX_PERMILLE,
+                (unsigned)AUTO_FAMILIES,(unsigned)state);
 }
 
 static void ReceiveLine(const char *line, uint32_t now)
@@ -180,7 +228,11 @@ static void ReceiveLine(const char *line, uint32_t now)
         }
     } else if (strcmp(line,"MOTOR STOP") == 0) {
         FailSafe("HOST_STOP");
+#if defined(MOTOR_AUTO_HIGH_TEST)
+    } else if (strcmp(line,"MOTOR START HIGH 600") == 0 && state == AUTO_WAIT) {
+#else
     } else if (strcmp(line,"MOTOR START") == 0 && state == AUTO_WAIT) {
+#endif
         last_host_ms = now;
         state = AUTO_SETTLE;
         state_since_ms = now;
@@ -236,14 +288,8 @@ int MotorAutoBench_Main(void)
     Control_Start();
 
     UART_Printf("[BOOT] Motor auto baseline: neutral, USART1 host ARM required\r\n");
-    UART_Printf("MOTOR_AUTO_PROFILE,version=4,nominal_hz=%lu,"
-                "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
-                "pulse_ms=200,post_ms=400,boot_neutral=1,"
-                "both_cap_permille=160,families=4,no_current_sense=1,"
-                "stby_fixed_high=1\r\n",
-                (unsigned long)SystemCoreClock,
-                (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
-                (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
+    /* Boot banner is informational; every PING repeats strict profile. */
+    ReplyReady();
 
     while (1) {
         uint32_t now = millis();
@@ -269,14 +315,27 @@ int MotorAutoBench_Main(void)
         } else if (state == AUTO_DRIVE) {
             MotorTest_Snapshot_t snapshot;
             MotorTest_GetSnapshot(&snapshot);
+#if defined(MOTOR_AUTO_HIGH_TEST)
+            /* Encoder motion gate: useful for jam detection but cannot
+             * measure or limit stall current during the first ~100ms. */
+            if (step_i >= AUTO_HIGH_FIRST && snapshot.state == MOTOR_TEST_RUNNING &&
+                snapshot.elapsed_ms >= 100U) {
+                const AutoPulse_t *p = &matrix[step_i];
+                if ((p->l > 0 && Encoder_GetLeftCount() < 5) ||
+                    (p->r > 0 && Encoder_GetRightCount() < 5)) {
+                    FailSafe("HIGH_ENCODER_NO_MOTION");
+                    continue;
+                }
+            }
+#endif
             if (snapshot.state == MOTOR_TEST_ENDED) {
                 if (snapshot.reason != MOTOR_TEST_END_TIMEOUT ||
-                    snapshot.elapsed_ms != AUTO_PULSE_MS) {
+                    snapshot.elapsed_ms != PulseMs()) {
                     FailSafe("PULSE_INTERRUPTED");
                     continue;
                 }
                 Motor_Stop(); /* neutral throughout subsequent observation */
-                EmitSample(now,AUTO_PULSE_MS,"drive");
+                EmitSample(now,PulseMs(),"drive");
                 UART_Printf("MOTOR_AUTO_END,round=%u,stage=%u,"
                             "elapsed=%lu,reason=%u,enc_l=%ld,enc_r=%ld,"
                             "ccr_l=%lu,ccr_r=%lu\r\n",
@@ -290,22 +349,44 @@ int MotorAutoBench_Main(void)
                 completed_pulses++;
                 state = AUTO_POST;
                 state_since_ms = now;
+#if defined(MOTOR_AUTO_HIGH_TEST)
+                high_post_ref_valid = 0U;
+#endif
                 sample_since_ms = now;
             } else if (now - sample_since_ms >= AUTO_SAMPLE_MS) {
                 sample_since_ms = now;
                 EmitSample(now,snapshot.elapsed_ms,"drive");
             }
         } else if (state == AUTO_POST) {
+#if defined(MOTOR_AUTO_HIGH_TEST)
+            if (step_i >= AUTO_HIGH_FIRST && !high_post_ref_valid &&
+                now - state_since_ms >= AUTO_HIGH_POST_MS - 100U) {
+                high_post_ref_l = Encoder_GetLeftCount();
+                high_post_ref_r = Encoder_GetRightCount();
+                high_post_ref_valid = 1U;
+            }
+#endif
             if (now - sample_since_ms >= AUTO_SAMPLE_MS) {
                 sample_since_ms = now;
                 EmitSample(now,now-state_since_ms,"post");
             }
-            if (now - state_since_ms >= AUTO_POST_MS) {
+            if (now - state_since_ms >= PostMs()) {
+#if defined(MOTOR_AUTO_HIGH_TEST)
+                if (step_i >= AUTO_HIGH_FIRST &&
+                    (!high_post_ref_valid ||
+                     (Encoder_GetLeftCount()-high_post_ref_l > 5) ||
+                     (Encoder_GetLeftCount()-high_post_ref_l < -5) ||
+                     (Encoder_GetRightCount()-high_post_ref_r > 5) ||
+                     (Encoder_GetRightCount()-high_post_ref_r < -5))) {
+                    FailSafe("HIGH_NOT_SETTLED");
+                    continue;
+                }
+#endif
                 UART_Printf("MOTOR_AUTO_POST_END,round=%u,stage=%u,"
                             "elapsed=%u,enc_l=%ld,enc_r=%ld,"
                             "ccr_l=%lu,ccr_r=%lu\r\n",
                             (unsigned)round_i,(unsigned)step_i,
-                            (unsigned)AUTO_POST_MS,
+                            (unsigned)PostMs(),
                             (long)Encoder_GetLeftCount(),
                             (long)Encoder_GetRightCount(),
                             (unsigned long)TIM2->CCR2,
