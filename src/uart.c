@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* USART1 TX only: DMA2 Stream7, Channel 4.
+/* USART1 DMA2 Stream7, Channel 4 TX. Optional polled RX for motor pipeline.
  * The producer runs in main context; DMA completion runs in its IRQ.
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
@@ -98,6 +98,10 @@ void UART_Init(void)
     USART1->CR3 = 0;
     USART1->BRR = (Board_GetAPB2ClockHz() + UART_BAUDRATE / 2U) / UART_BAUDRATE;
     USART1->CR1 = USART_CR1_TE | USART_CR1_UE;
+#if defined(MOTOR_AUTO_BENCH)
+    /* PA10 RX polling is exclusively enabled in the explicit motor bench. */
+    USART1->CR1 |= USART_CR1_RE;
+#endif
 
     DMA2_Stream7->CR &= ~DMA_SxCR_EN;
     while (DMA2_Stream7->CR & DMA_SxCR_EN) {
@@ -221,3 +225,18 @@ void DMA2_Stream7_IRQHandler(void)
         UART_DMA_StartNext();
     }
 }
+
+#if defined(MOTOR_AUTO_BENCH)
+uint8_t UART_TryReadByte(uint8_t *out)
+{
+    uint32_t sr = USART1->SR;
+    if (sr & (USART_SR_ORE | USART_SR_FE | USART_SR_NE)) {
+        volatile uint32_t discard = USART1->DR; /* SR followed by DR clears errors. */
+        (void)discard;
+        return 0U;
+    }
+    if (!(sr & USART_SR_RXNE) || out == 0) return 0U;
+    *out = (uint8_t)USART1->DR;
+    return 1U;
+}
+#endif
