@@ -1,103 +1,125 @@
-# Motor Debug v2 — one Python command, zero KEY presses, 3 independent rounds
+# Motor Driver — one-command multi-phase diagnostic v3
 
-**Firmware profile**: \`motor_auto_pipeline_96m_trim25\`.
-**One host script**: \`tools/motor_auto_pipeline.py\`.
-**Branch**: \`feature/motor-driver-optimization\`.
+**Branch:** `feature/motor-driver-optimization`
+**Entry point:** `tools/motor_auto_pipeline.py`
+**Opt-in PlatformIO profile:** `motor_auto_pipeline_96m_trim25`
+**Protocol:** `MOTOR_AUTO_PROFILE,version=3`
+**Hardware limits:** fixed PCB; no hardware modifications; TB6612 VCC=5V, STBY hard-wired 5V; STM32 I/O nominal 3.3V; N20 rated 12V; VM from 2S battery, current/driver temperature not measured.
 
-## Purpose
+## Objective — one flash, one capture, one report
 
-The 2026-10-13 five-stage motor log proved the left and right N20 respond to 12% PWM, but the right wheel recorded only 1 encoder count with 8% PWM. This new experiment quantifies repeatability with **three independent rounds** at 8%, 12%, 16% and 20% for each wheel, plus a both-wheel 16% stage and 300ms encoder measurement **after PWM is set to neutral**. Exactly 27 short pulses are emitted in a successful session.
+All **four low-level diagnostic families** execute sequentially in one
+firmware session after a single host START. Each of the **21 stages runs
+three times** (63 total short pulses). The script builds and uploads the
+firmware once, connects USART1, verifies the firmware profile and
+bidirectional PING, sends START, maintains KEEP heartbeat, captures every
+UART sample, and writes CSV/JSON/text reports. No KEY or manual RESET.
 
-## No KEY and no accidental motor startup
+| Family | Stage indices (within each round) | Left / right commanded PWM | Slew rise rate | What it measures |
+| --- | --- | --- | ---: | --- |
+| Startup | 0–9 | single-wheel 8%, 9%, 10%, 11%, 12%, left then right at each duty | 10 permille/ms | repeatable startup threshold and first encoder counts |
+| Response | 10–16 | left/right at 12%,16%,20% each; both together 16% | 10 permille/ms | encoder counts vs command, asymmetry and simultaneous operation |
+| Slew slow | 17–18 | left then right at 16% | 5 permille/ms | impact of gradual rise |
+| Slew fast | 19–20 | left then right at 16% | 20 permille/ms | comparison with faster rise |
 
-- MCU initializes TIM2 PWM neutral; after every RESET it is **disarmed**.
-- Host opens USB-UART serial, sends \`MOTOR PING\`; STM32 answers \`MOTOR_AUTO_PROFILE\` and \`MOTOR_AUTO_READY\`.
-- The Python script checks expected version, duty ceiling, number of rounds and that firmware state is idle, then sends **exactly one** \`MOTOR START\`.
-- MCU waits 1000ms neutral, then executes a fixed matrix; no KEY button use.
-- Host sends \`MOTOR KEEP\` about every 350ms. If none for 1600ms, firmware latches \`MOTOR_AUTO_FAULT\` and forces software PWM neutral. Each active pulse is hard stopped in the existing TIM11 1kHz motor-test watchdog after 200ms; there are no indefinite run commands.
-- TIM11 gap faults also latch, prevent further pulses until RESET. Host \`MOTOR STOP\` aborts a run. STOP is only a firmware command and cannot substitute for physical VM power removal if firmware is unresponsive.
-- Firmware automatically ends after exactly 3 rounds; no further START will be accepted until RESET.
+For every stage: **200ms active PWM**, then **400ms at software-zero
+PWM** with encoder telemetry, then 250ms stage-to-stage idle interval.
+Initial neutral settling is 1000ms. Sampling every ~20ms. The
+maximum per-wheel command is **20%**, the simultaneous-wheel limit is
+**16%**, and no reverse, short-brake, deliberate stall or PID motion
+controller is exercised. This is **not current limiting**.
 
-**Required UART direction:** Prior bench only used USART1 TX PA9 -> USB-UART RX. This protocol additionally requires the same USB-UART adapter's TX -> STM32 **PA10 USART1 RX**, with common GND. Firmware can enable PA10 RX in software, but it **cannot create a physical return wire**. If the existing USB-UART hookup is one-way and PCB wiring cannot be changed, \`--check-link\` / \`--run\` will fail closed, with no PWM motion. There is intentionally no dangerous automatic-on-reset fallback.
+## Single command on Windows (PowerShell)
 
-## Software sequence (all in one invocation)
+Update the branch once:
 
-One-time local checkout/update:
-
-\`\`\`powershell
+```powershell
 git fetch origin
 git switch feature/motor-driver-optimization
 git pull --ff-only origin feature/motor-driver-optimization
-\`\`\`
+```
 
-Then **only one Python command** is needed for build, STLINK upload, host handshake, all three measurement rounds and analysis:
+For a complete experiment with both wheels **elevated and free to spin**
+and an immediate physical VM disconnect available:
 
-\`\`\`powershell
+```powershell
 python tools/motor_auto_pipeline.py --run --port COM6 --vm-state powered --meter-vm-volts 8.2
-\`\`\`
+```
 
-Replace 8.2 with the voltage actually measured across VM/GND, or omit \`--meter-vm-volts\` if not measured. \`--vm-state powered\` is a required *operator declaration*, not a measurement. Be prepared to physically disconnect VM, put the chassis upside-down or safely suspend both wheels, and prevent contact with wheels/shaft. **Do not hold/stall the wheels or try braking/reversing in this test.** This firmware only operates at low short duty and does **not** sense/limit motor current.
+The 8.2 value is a **manual voltmeter observation**, never measured by
+the STM32; replace or omit it as appropriate. The script takes care of
+build, STLINK flashing, serial capture and analysis. It now permits a
+longer default UART capture timeout (150s) for the extended suite.
+It ends on `MOTOR_AUTO_DONE` without using all 150 seconds if the
+firmware completes sooner.
 
-The script does:
-\`platformio build + STLINK upload -> COM6 PING/READY -> START -> KEEP heartbeat -> 27 isolated drive/post-stage cycles -> raw log -> CSV -> JSON + text summary\`.
+**Optional on subsequent experiments with exactly the same compiled
+firmware**: add `--skip-flash` to avoid a second upload. This does
+not skip the strict firmware version/profile handshake. Since the
+firmware allows only one run per MCU boot, the operator must RESET it
+before attempting to run again using `--skip-flash`; the normal
+one-command run includes STLINK reset/upload.
 
-The host needs Python, PlatformIO and pyserial:
-\`\`\`powershell
-python -m pip install platformio pyserial
-\`\`\`
+## Boundaries and protections
 
-These are dependencies, **not extra pipeline scripts** to run for each experiment. A missing pyserial module causes the pipeline to fail before sending START. Both legacy KEY-bench and MPU RC2 remain untouched. Previous capture Python stays available but is **not called** by the new pipeline.
+- No automatic startup on MCU reset, no KEY handling. No PWM until the
+  host opens a **bidirectional** USART1 link and sends `MOTOR START`.
+- Existing USB-UART TX must be physically connected to STM32 USART1 RX
+  PA10, in addition to USART1 TX PA9 and shared ground. The last
+  `auto_20261013_093808` experiment successfully completed this
+  handshake.
+- The host checks protocol v3, 3 rounds × 21 stages, 20% command cap,
+  16% simultaneous-wheel cap, 200ms drive, 400ms neutral window and
+  idle firmware state before START. A v2 firmware will be rejected.
+- `MOTOR KEEP` heartbeat about every 350ms; on >1600ms host silence,
+  a monitored TIM11 >1.5ms gap or unexpected pulse end, firmware
+  latches fault, stops generating PWM commands and refuses further
+  stages. The MotorTest tick independently ends each pulse at 200ms.
+- STOP and MCU fault handling only provide a **software** neutral
+  output. STBY is wired permanently HIGH and no external current
+  limiting has been verified. Immediately remove VM on unexpected
+  motion, smoke, smell or heating; never lock the wheels.
 
-Optional no-motion UART check if unsure whether PA10 is wired:
-\`\`\`powershell
-python tools/motor_auto_pipeline.py --check-link --port COM6
-\`\`\`
-This command uploads the new firmware then validates host-to-STM32 communication; **never sends START**. Only needed if troubleshooting; normal \`--run\` already performs the same handshake.
+## Outputs: single session directory
 
-## Firmware fixed matrix — executed three times automatically
+`motor_logs/auto_YYYYMMDD_HHMMSS/`
 
-| Step | Left duty | Right duty | Drive | Neutral encoder observation |
-| --- | ---: | ---: | ---: | ---: |
-| 0 | 8% | 0 | 200ms | 300ms |
-| 1 | 0 | 8% | 200ms | 300ms |
-| 2 | 12% | 0 | 200ms | 300ms |
-| 3 | 0 | 12% | 200ms | 300ms |
-| 4 | 16% | 0 | 200ms | 300ms |
-| 5 | 0 | 16% | 200ms | 300ms |
-| 6 | 20% | 0 | 200ms | 300ms |
-| 7 | 0 | 20% | 200ms | 300ms |
-| 8 | 16% | 16% | 200ms | 300ms |
+1. `raw_serial.log`: untouched timestamped UART.
+2. `motor_auto_samples.csv`: round, stage, test, phase, rise, applied
+   duty, TIM2 CCR, encoder counts, TIM11 timing and UART drop counters.
+3. `motor_auto_report.json`: 63 stage records, 3-repetition statistics
+   (mean, sample standard deviation, heuristic first-five-count time,
+   sustained encoder count, motion after STOP), and strict pass/fail
+   of protocol completeness, timing, no motor-PWM after stop, command
+   ceiling, expected stage family and slew configuration.
+4. `motor_auto_summary.txt`: per-condition condensed findings.
+5. `session_meta.json`: declared VM state and optional hand-measured DC
+   voltage.
 
-Each pulse uses deadband=0 and slew rates rise=10 / fall=20 permille per ms, as in the previous baseline. There is a fixed 250ms gap between stages and 1000ms neutral before stage 0. No PID, IMU or IR runs in this opt-in build; TIM11 handles motor/encoder updates only.
+`TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL` indicates **trace validity
+only**, never electrical safety, current, winding temperature or
+real PWM waveform verification.
 
-Because the robot is not equipped with a verified current sensor, duty is **not a current limit**. 12V rated N20 running on 2S and successful historical movement still do not establish safe stall current.
+Afterward, push the result once:
 
-## Outputs
-
-**Why the conservative limit:** the previous 12% experiment confirmed motion, but no electrical current or motor stall rating has been measured. The 20% *per-wheel* ceiling (16% both wheels) is an incremental diagnostic expansion, **not** a proven safe duty/current level. If unusual sound, heating, unexpected motion or other anomaly occurs, disconnect VM immediately. Never hold/stall wheels or raise duty just because an 8% case fails to move.
-
-The program creates \`motor_logs/auto_YYYYMMDD_HHMMSS/\`:
-
-- \`raw_serial.log\`: every UART record with host monotonic-relative time.
-- \`motor_auto_samples.csv\`: PWM applied, CCR registers, motor encoder counts and TIM11 status, every 20ms in drive and post-neutral phase.
-- \`motor_auto_report.json\`: completeness gate and detailed 3-round condition statistics (mean / sample std, count differences after STOP, first time 5 encoder counts observed, heuristic sustained count signal).
-- \`motor_auto_summary.txt\`: condensed per-condition findings.
-- \`session_meta.json\`: operator-declared powered VM state and hand-measured DC voltage (if supplied).
-
-An unpowered or non-moving wheel is **not automatically a failed experiment** if the requested PWM was issued: that is relevant deadband evidence. The report instead fails for missing/unexpected pulse commands, malformed/missing telemetry, unsafe PWM duty, incomplete post-stop observation, timeout and UART/TIM11 faults.
-
-\`TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL\` means a COMPLETE measured trace, **not** electrical current/temperature/voltage approval. 5 encoder counts and last-100ms encoder movement are only heuristics to distinguish a twitch/single count from sustained movement; these are not speed control or calibrated deadband values. Encoder counts-per-wheel-revolution remain unverified.
-
-After a successful run:
-
-\`\`\`powershell
+```powershell
 git add motor_logs/
-git commit -m "test(motor): three-round autonomous host-armed baseline"
+git commit -m "test(motor): capture v3 integrated 3x21 motor baseline"
 git push origin feature/motor-driver-optimization
-\`\`\`
+```
 
-This is the only user action required to upload the evidence. Review \`motor_auto_report.json\` before proceeding with driver tuning.
+## What this suite deliberately excludes
 
-## Hardware limitation
+Active electrical short-braking, reversing at speed, high duty/high
+load, deliberately stalled wheels, measured motor current, oscilloscope
+validation of PWM waveforms and **MPU/I2C mixed-load** operation.
+Those require independent safety gates or a later integration profile
+and cannot be inferred from encoder-only traces. The 8–12% startup
+boundary is a statistical observation in an elevated-wheel test,
+not a universally calibrated deadband under load. Encoder
+counts-per-revolution have not been independently calibrated.
 
-Existing fixed PCB: TB6612 VCC=5V and STBY tied to 5V, STM32 GPIO nominal 3.3V, one reported VM capacitor, no verified current sensing. Datasheet guarantees HIGH for VIH>=3.5V at 5V VCC, so this board works in practice *outside guaranteed HIGH-level margin*. The device cannot be put into STBY by firmware. Power and heat during motor load have **not** been characterized. External physical disconnect is required if unexpected motion continues.
+Toshiba TB6612 datasheet documents VIH minimum = 0.7×VCC, so logic
+VCC=5V implies a guaranteed HIGH threshold 3.5V: above nominal
+STM32 3.3V output. This fixed-configuration margin risk persists
+despite previous successful motor rotation.
