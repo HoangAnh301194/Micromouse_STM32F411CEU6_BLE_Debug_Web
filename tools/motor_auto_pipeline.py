@@ -217,10 +217,12 @@ def analyze(lines, *, setup=None):
             "steps": len(MATRIX), "hard_cap_permille": MAX_CMD,
             "both_cap_permille": DUAL_MAX_CMD, "families": FAMILIES,
             "pulse_ms": PULSE_MS, "post_ms": POST_MS,
-            "boot_neutral": 1, "sensor": int(SENSOR_PROFILE),
+            "boot_neutral": 1,
         }.items():
             if intval(p, key) != value:
                 errors.append(f"Firmware profile mismatch: {key}")
+        if intval(p,"sensor",0) != int(SENSOR_PROFILE):
+            errors.append("Firmware sensor mode mismatch")
         if p.get("rx_mode") != "irq256":
             errors.append("Firmware missing USART1 RX interrupt ring profile")
         if HIGH_PROFILE and (intval(p,"high_pulse_ms") != HIGH_PULSE_MS or
@@ -521,7 +523,8 @@ def test_firmware_uart_profile_frame():
     profile = fmt % (PROFILE_VERSION, 96000000, 30000, NUM_ROUNDS,
                      len(MATRIX), MAX_CMD, FAMILIES,
                      HIGH_PULSE_MS if HIGH_PROFILE else 0,
-                     HIGH_POST_MS if HIGH_PROFILE else 0)
+                     HIGH_POST_MS if HIGH_PROFILE else 0,
+                     int(SENSOR_PROFILE))
     assert profile.startswith("MOTOR_AUTO_PROFILE,")
     assert profile.endswith("\r\n"), "Firmware PROFILE must end in CRLF"
     assert len(profile.encode("ascii")) < 256, (
@@ -535,10 +538,12 @@ def self_test():
     test_firmware_uart_profile_frame()
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
-        f"MOTOR_AUTO_PROFILE,version={PROFILE_VERSION},nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,high_pulse_ms={HIGH_PULSE_MS if HIGH_PROFILE else 0},high_post_ms={HIGH_POST_MS if HIGH_PROFILE else 0},pulse_ms=200,post_ms=400,boot_neutral=1",
-        f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1",
+        f"MOTOR_AUTO_PROFILE,version={PROFILE_VERSION},nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,high_pulse_ms={HIGH_PULSE_MS if HIGH_PROFILE else 0},high_post_ms={HIGH_POST_MS if HIGH_PROFILE else 0},pulse_ms=200,post_ms=400,boot_neutral=1,sensor={int(SENSOR_PROFILE)}",
+        f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1,sensor={int(SENSOR_PROFILE)}",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
+    if SENSOR_PROFILE:
+        synthetic.append("MOTOR_AUTO_SENSOR_READY,good=9300,ir=100,bias_mdps=0")
     for r in range(NUM_ROUNDS):
         for i,(left,right) in enumerate(MATRIX):
             test, rise = TESTS[i], RISE_RATES[i]
@@ -547,16 +552,25 @@ def self_test():
             for n in range(1,pulse//20+1):
                 t=n*20-1
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,test={test},rise={rise},ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10},ccr_r={right*32//10},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
+            if SENSOR_PROFILE:
+                n = r*len(MATRIX)+i
+                synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=drive,good={9300+n*50},fresh={9250+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={100+n*30}")
             synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed={pulse},reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
             for n in range(1,post//20+1):
                 t=n*20
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
+            if SENSOR_PROFILE:
+                n = r*len(MATRIX)+i
+                synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=post,good={9350+n*50},fresh={9300+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={120+n*30}")
             synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={post},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
             synthetic.append(f"MOTOR_AUTO_LINK,round={r},stage={i},keep_ok={1+r*len(MATRIX)+i},host_age_ms=100,rx_bytes={50+r*len(MATRIX)+i},rx_ore=0,rx_fe=0,rx_noise=0,rx_ring_drop=0,bad_commands=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
     synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0,keep_ok={EXPECTED},rx_ore=0,rx_ring_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
+    if SENSOR_PROFILE:
+        assert report["sensor_integration"]["gyro_fresh_delta"]>0
+        assert report["sensor_integration"]["ir_scans_delta"]>0
     assert len(report["repeat_statistics"])==(30 if HIGH_PROFILE else 22)
     # Regression from powered v6 dataset: left 8% works 3/3, 9% fails
     # 0/3, 10% works 3/3. "lowest successful" 8% is NOT a robust
@@ -869,13 +883,15 @@ def main():
     p.add_argument("--vm-state",choices=["powered","disconnected"])
     p.add_argument("--meter-vm-volts",type=float)
     p.add_argument("--skip-flash",action="store_true")
+    p.add_argument("--sensor-integration",action="store_true",
+                   help="Opt-in combined motor+MPU RC2/IR single-flash image; calibration before READY")
     p.add_argument("--high-pwm",action="store_true",
                    help="Opt-in additional 30/40/50/60 percent elevated-wheel 120ms per-motor pulses; no current measurement")
     p.add_argument("--confirm-wheels-elevated",action="store_true",
                    help="Confirm elevated, free-spinning wheels and immediate physical VM disconnect")
     p.add_argument("--timeout",type=float,default=150.0)
     args=p.parse_args()
-    configure_profile(args.high_pwm)
+    configure_profile(args.high_pwm,args.sensor_integration)
     if args.high_pwm and args.run and not args.confirm_wheels_elevated:
         p.error("High PWM requires --confirm-wheels-elevated; duty cannot substitute for current limit")
     if args.self_test:
@@ -887,7 +903,8 @@ def main():
             p.error(f"Missing {raw_path}")
         meta_path=args.folder/"session_meta.json"
         meta=json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-        configure_profile(bool(meta.get("high_profile", False)))
+        configure_profile(bool(meta.get("high_profile", False)),
+                          bool(meta.get("sensor_profile", False)))
         report=store(args.folder,raw_path.read_text(encoding="utf-8").splitlines(),meta)
         return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
     if not args.port:
