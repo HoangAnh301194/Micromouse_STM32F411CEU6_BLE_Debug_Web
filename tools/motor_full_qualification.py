@@ -220,7 +220,7 @@ def main():
     p.add_argument("--electrical-evidence",type=Path,
                    help="Manually measured and independently reviewed current/temperature/waveform JSON")
     p.add_argument("--with-high",action="store_true",
-                   help="Opt-in to 30-60% only after external electrical gate; never auto 80-100%")
+                   help="Opt-in to 30-60 percent only after external electrical gate; never auto 80-100 percent")
     p.add_argument("--port",default="COM6")
     p.add_argument("--vm-state",choices=("powered","disconnected"),default="disconnected")
     p.add_argument("--meter-vm-volts",type=float)
