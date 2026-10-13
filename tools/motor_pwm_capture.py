@@ -133,6 +133,12 @@ def write_report(folder: Path):
         writer = csv.DictWriter(f, fieldnames=FIELDS, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(samples)
+    meta_file = folder / "session_meta.json"
+    if meta_file.exists():
+        metadata = json.loads(meta_file.read_text(encoding="utf-8"))
+        report["experiment_setup"] = metadata
+        (folder / "motor_pwm_report.json").write_text(
+            json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     print("Output:", folder.resolve())
     return 0 if report["status"].startswith("TRACE_COMPLETE") else 1
@@ -168,6 +174,10 @@ def main():
     group.add_argument("--self-test", action="store_true")
     ap.add_argument("--baud", type=int, default=115200)
     ap.add_argument("--seconds", type=float, default=90)
+    ap.add_argument("--vm-state", choices=("disconnected","powered"),
+                    help="Required for a live capture: externally recorded VM supply state")
+    ap.add_argument("--meter-vm-volts", type=float,
+                    help="Optional hand-measured DC VM voltage; not a peak/ripple measurement")
     args = ap.parse_args()
     if args.self_test:
         self_test()
@@ -176,6 +186,10 @@ def main():
         raise SystemExit(write_report(args.folder))
     if not args.port:
         ap.error("Use --port COMx or --folder PATH, or --self-test")
+    if not args.vm_state:
+        ap.error("Live capture requires --vm-state disconnected|powered")
+    if args.meter_vm_volts is not None and not (0.0 <= args.meter_vm_volts <= 15.0):
+        ap.error("Recorded DC VM voltage must be in range 0..15V")
     if args.seconds < 20:
         ap.error("Capture should last at least 20s")
     try:
@@ -184,10 +198,18 @@ def main():
         ap.error("pip install pyserial")
     folder = Path("motor_logs") / ("pwm_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S"))
     folder.mkdir(parents=True, exist_ok=True)
+    (folder / "session_meta.json").write_text(
+        json.dumps({
+            "vm_state_user_supplied": args.vm_state,
+            "vm_dc_volts_hand_measured": args.meter_vm_volts,
+            "motor_bench_profile": "motor_pwm_key_bench_96m_trim25",
+            "measurement_limitation": "Supply state is manually reported; DC multimeter does not detect PWM current peaks or EMI."
+        }, indent=2) + "\n", encoding="utf-8")
     print("Open", args.port, "- after opening, press STM32 RESET once.")
     print("Motor does NOT start until deliberate KEY arm + fresh press.")
     print("Lift wheels and provide direct physical VM disconnect. 3.3V MCU GPIO HIGH is outside the guaranteed TB6612 HIGH threshold at VCC=5V.")
     print("This test does NOT measure current, heat, motor rated duty or switching transients.")
+    print("VM state recorded (NOT MCU-measured):", args.vm_state)
     print("Capture duration", args.seconds, "seconds, folder", folder)
     try:
         with serial.Serial(args.port, args.baud, timeout=0.2) as ser:
