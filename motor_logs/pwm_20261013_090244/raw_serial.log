@@ -1,0 +1,5 @@
+2.712132000	
+2.715075900	[BOOT] KEY-armed motor PWM bench; MOTOR OFF
+2.726409400	MOTOR_PROFILE,version=2,nominal_hz=96000000,pwm_hz=30000,hard_cap_permille=120,pulse_ms=200,key_arm_ms=1500,one_shot=1,motor_off_at_boot=1
+2.734528000	MOTOR_WARNING,5V_TB6612_logic_from_3p3V_GPIO_not_guaranteed_no_current_measurement
+2.742404200	MOTOR_HELP,hold_KEY_1p5s_then_release_to_arm;press_and_hold_for_one_short_pulse;release_stops

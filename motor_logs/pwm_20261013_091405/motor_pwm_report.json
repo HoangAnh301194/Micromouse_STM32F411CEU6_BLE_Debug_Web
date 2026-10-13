@@ -1,0 +1,76 @@
+{
+  "status": "TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL",
+  "pulses_started": 5,
+  "pulses_ended": 5,
+  "stages": [
+    {
+      "stage": 0,
+      "records": 11,
+      "last_left_count": 71,
+      "last_right_count": -1,
+      "max_applied_l_permille": 80,
+      "max_applied_r_permille": 0,
+      "last_ccr_left": 0,
+      "last_ccr_right": 0,
+      "max_tim11_late_ticks": 0,
+      "any_encoder_count_changed": true
+    },
+    {
+      "stage": 1,
+      "records": 11,
+      "last_left_count": 0,
+      "last_right_count": 1,
+      "max_applied_l_permille": 0,
+      "max_applied_r_permille": 80,
+      "last_ccr_left": 0,
+      "last_ccr_right": 0,
+      "max_tim11_late_ticks": 0,
+      "any_encoder_count_changed": true
+    },
+    {
+      "stage": 2,
+      "records": 11,
+      "last_left_count": 138,
+      "last_right_count": 0,
+      "max_applied_l_permille": 120,
+      "max_applied_r_permille": 0,
+      "last_ccr_left": 0,
+      "last_ccr_right": 0,
+      "max_tim11_late_ticks": 0,
+      "any_encoder_count_changed": true
+    },
+    {
+      "stage": 3,
+      "records": 11,
+      "last_left_count": -1,
+      "last_right_count": 125,
+      "max_applied_l_permille": 0,
+      "max_applied_r_permille": 120,
+      "last_ccr_left": 0,
+      "last_ccr_right": 0,
+      "max_tim11_late_ticks": 0,
+      "any_encoder_count_changed": true
+    },
+    {
+      "stage": 4,
+      "records": 11,
+      "last_left_count": 135,
+      "last_right_count": 136,
+      "max_applied_l_permille": 120,
+      "max_applied_r_permille": 120,
+      "last_ccr_left": 0,
+      "last_ccr_right": 0,
+      "max_tim11_late_ticks": 0,
+      "any_encoder_count_changed": true
+    }
+  ],
+  "errors": [],
+  "motor_response_observed": true,
+  "safety_note": "Commanded PWM, TIM2 CCR and encoder only. No current sensing, scope measurements, guaranteed logic-high margin or stall-current approval.",
+  "experiment_setup": {
+    "vm_state_user_supplied": "powered",
+    "vm_dc_volts_hand_measured": 8.2,
+    "motor_bench_profile": "motor_pwm_key_bench_96m_trim25",
+    "measurement_limitation": "Supply state is manually reported; DC multimeter does not detect PWM current peaks or EMI."
+  }
+}

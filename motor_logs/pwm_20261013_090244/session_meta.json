@@ -1,0 +1,6 @@
+{
+  "vm_state_user_supplied": "disconnected",
+  "vm_dc_volts_hand_measured": null,
+  "motor_bench_profile": "motor_pwm_key_bench_96m_trim25",
+  "measurement_limitation": "Supply state is manually reported; DC multimeter does not detect PWM current peaks or EMI."
+}
