@@ -242,7 +242,7 @@ static void ReplyReady(void)
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=%u,"
                 "pulse_ms=200,post_ms=400,boot_neutral=1,"
                 "both_cap_permille=160,families=%u,rx_mode=irq256,"
-                "high_pulse_ms=%u,high_post_ms=%u\r\n",
+                "high_pulse_ms=%u,high_post_ms=%u,sensor=%u\r\n",
                 (unsigned)AUTO_VERSION,(unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,
@@ -252,14 +252,33 @@ static void ReplyReady(void)
 #else
                 0U,0U
 #endif
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+                ,1U
+#else
+                ,0U
+#endif
                 );
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+    if (!sensors_ready) {
+        UART_Printf("MOTOR_AUTO_WAIT_SENSORS,cal=%u,state=%u,good=%lu\r\n",
+                    (unsigned)integration_mpu.cal_state,(unsigned)state,
+                    (unsigned long)integration_mpu.good_reads);
+        return;
+    }
+#endif
     UART_Printf("MOTOR_AUTO_READY,version=%u,rounds=%u,steps=%u,"
                 "hard_cap_permille=%u,both_cap_permille=160,pulse_ms=200,post_ms=400,"
                 "families=%u,rx_mode=irq256,one_shot=1,boot_neutral=1,"
-                "rx=USART1_PA10,state=%u\r\n",
+                "rx=USART1_PA10,state=%u,sensor=%u\r\n",
                 (unsigned)AUTO_VERSION,(unsigned)AUTO_ROUNDS,
                 (unsigned)AUTO_STEPS,(unsigned)AUTO_MAX_PERMILLE,
-                (unsigned)AUTO_FAMILIES,(unsigned)state);
+                (unsigned)AUTO_FAMILIES,(unsigned)state,
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+                1U
+#else
+                0U
+#endif
+                );
 }
 
 static void ReceiveLine(const char *line, uint32_t now)
