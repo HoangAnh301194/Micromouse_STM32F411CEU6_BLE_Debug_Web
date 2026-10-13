@@ -32,5 +32,9 @@ jobs:
         run: python tools/motor_auto_pipeline.py --self-test
       - name: Compile integrated serial-host-armed 3x21 motor suite
         run: python -m platformio run -e motor_auto_pipeline_96m_trim25
+      - name: Extended high PWM (30-60 percent) parser self-test
+        run: python tools/motor_auto_pipeline.py --self-test --high-pwm
+      - name: Compile opt-in 3x29 high PWM bench
+        run: python -m platformio run -e motor_auto_high_96m_trim25
       - name: Compile unchanged MPU RC2 comparator
         run: python -m platformio run -e mpu_phase_tick_96m_trim25
