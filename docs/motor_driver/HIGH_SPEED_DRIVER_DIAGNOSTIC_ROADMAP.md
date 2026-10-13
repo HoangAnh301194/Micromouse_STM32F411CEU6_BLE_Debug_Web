@@ -3,7 +3,7 @@
 **Repo branch**: `feature/motor-driver-optimization`
 **Evidence reviewed**: `motor_logs/auto_20261013_101254` (valid 63/63 motor-off-load pulses; 192/192 host/Microcontroller heartbeat; 0 observed timing gaps).
 **Firmware opt-in high profile**: `motor_auto_high_96m_trim25` (`MOTOR_AUTO_BENCH + MOTOR_AUTO_HIGH_TEST`)
-**One Python entrypoint**: `tools/motor_auto_pipeline.py`.
+**One Python entrypoint**: `tools/motor_auto_pipeline.py`. High profile UART format fixed and protocol bumped to v6 after the v5 concatenated PROFILE/READY bug. See [v5 UART root-cause analysis](V5_UART_HANDSHAKE_ROOT_CAUSE_20261013.md).
 **Parent MPU RC2** is frozen and not modified by this work.
 
 ## What the 63-pulse v4 session establishes, and does not
@@ -20,7 +20,7 @@
 
 | Gate | Specific test | Automated now? | Decision and rationale |
 | --- | --- | --- | --- |
-| D0 | Boot neutral, serial version, heartbeat fail-stop | v4 verified, retained v5 | Software guard. Still not independent hardware kill because STBY fixed HIGH |
+| D0 | Boot neutral, serial version, heartbeat fail-stop | v4 verified, retained v6 | Software guard. Still not independent hardware kill because STBY fixed HIGH |
 | D1 | 8/9/10/11/12% start response, 3 repeats per wheel | Yes | 10% left / 9% right lowest observed 3/3, not universal calibrated deadband |
 | D2 | 12/16/20% open-loop, both 16%, 3 repeats | Yes | Base motor-response comparison |
 | D3 | Rise 5 vs 20 permille/ms at 16%, 3 repeats | Yes | Slew affects 200ms accumulated count |
@@ -51,7 +51,7 @@ This selects **exactly one** PlatformIO high-test image and flashes it **once**,
 - Existing **21 stages**: startup 8–12%, response 12–20%, slew 5 vs 20 permille/ms, each with 200ms drive + 400ms software-neutral window.
 - **Eight new stages** per round: L/R at **30/40/50/60%** individually (not simultaneous) with 120ms drive and 800ms software-neutral observation.
 - The hardware must remain fully supported and wheel-free; this is NOT a declaration that 60% is electrically safe. No current/thermal sensing available. Stage guard aborts if after ~100ms energized motor has <5 counts; high-stage post-neutral guard aborts if count changes by >5 in last 100ms. These guards **cannot** prevent peak startup/stall current or protect against a failed MCU/bridge.
-- The firmware **does not accept** ordinary `MOTOR START` in high profile. Only host script after `--high-pwm` strict version 5 handshake sends `MOTOR START HIGH 600`.
+- The firmware **does not accept** ordinary `MOTOR START` in high profile. Only host script after `--high-pwm` strict version 6 handshake sends `MOTOR START HIGH 600`.
 - The base v4 environment remains available with the old command (no `--high-pwm`), no high stages.
 - A failed stage latches software-neutral state and reports a fault. **Do not repeatedly rerun** a failed high duty, and do not touch stall/brake/reverse when driver electrical limits are unverified.
 
