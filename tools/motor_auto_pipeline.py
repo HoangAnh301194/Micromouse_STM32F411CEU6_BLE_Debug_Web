@@ -232,6 +232,17 @@ def analyze(lines, *, setup=None):
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
     if ready and intval(ready[-1],"sensor") != int(SENSOR_PROFILE):
         errors.append("READY sensor integration profile mismatch")
+    static_regs = by_kind.get("MOTOR_AUTO_STATIC", [])
+    if SENSOR_PROFILE and not static_regs:
+        errors.append("Missing read-only MCU STOP pin/CCR/preload snapshot")
+    for rec in static_regs:
+        expected_static = {
+            "ccr_l":0,"ccr_r":0,
+            "in_l1":0,"in_l2":0,"in_r1":0,"in_r2":0,
+            "oc1pe":1,"oc2pe":1,"arr":3199,
+        }
+        if any(intval(rec,key)!=value for key,value in expected_static.items()):
+            errors.append("MCU STOP/static direction pins or CCR preload incorrect at PING")
     sensor_ready = by_kind.get("MOTOR_AUTO_SENSOR_READY", [])
     sensor_rows = by_kind.get("MOTOR_AUTO_SENSORS", [])
     if SENSOR_PROFILE:
@@ -475,6 +486,11 @@ def analyze(lines, *, setup=None):
                         (["high"] if HIGH_PROFILE else []),
         "profile_version":PROFILE_VERSION, "high_profile":HIGH_PROFILE,
         "sensor_profile":SENSOR_PROFILE,
+        "stop_register_snapshot":{
+            "records":len(static_regs),
+            "last":static_regs[-1] if static_regs else None,
+            "note":"GPIO ODR/CCR != measured TB6612 output or brake current"
+        },
         "sensor_integration":{
             "sensor_ready_records":len(sensor_ready),
             "sensor_phase_records":len(sensor_rows),
@@ -542,6 +558,7 @@ def self_test():
         f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1,sensor={int(SENSOR_PROFILE)}",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
+    synthetic.insert(2,"MOTOR_AUTO_STATIC,ccr_l=0,ccr_r=0,in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199")
     if SENSOR_PROFILE:
         synthetic.append("MOTOR_AUTO_SENSOR_READY,good=9300,ir=100,bias_mdps=0")
     for r in range(NUM_ROUNDS):
@@ -617,6 +634,8 @@ def self_test():
     assert all(x["mean_count"] is None and x["three_drive_counts"] == []
                for x in partial["repeat_statistics"]
                if x["test"] == "slew_fast" and x["measurement_status"] == "NOT_TESTED")
+    incomplete([x.replace("in_l1=0,in_l2=0","in_l1=1,in_l2=0")
+                if x.startswith("MOTOR_AUTO_STATIC") else x for x in synthetic])
     incomplete([x.replace("ccr_l=0,ccr_r=0,tim11_late=0","ccr_l=384,ccr_r=0,tim11_late=0")
                 if "phase=post" in x else x for x in synthetic])
     print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.")
