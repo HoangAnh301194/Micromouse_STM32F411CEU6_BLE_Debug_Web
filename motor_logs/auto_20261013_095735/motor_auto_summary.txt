@@ -1,0 +1,109 @@
+Motor auto 3-round diagnostic
+Status: INCOMPLETE
+Stages: 2/63; samples: 57
+Encoder counts are not RPM. Electrical current/thermal limits were NOT measured.
+
+PHASE A: startup 8-12% (3/3 sustained encoder count heuristic)
+  l: confirmed-per-duty={'80': 1, '90': 0, '100': 0, '110': 0, '120': 0}; lowest-test-3of3=None
+  r: confirmed-per-duty={'80': 0, '90': 0, '100': 0, '110': 0, '120': 0}; lowest-test-3of3=None
+PHASE B: PWM response and post-zero encoder movement
+  120 permille: L/R=0/0, delta=None%, postzero-L/R=0/0
+  160 permille: L/R=0/0, delta=None%, postzero-L/R=0/0
+  200 permille: L/R=0/0, delta=None%, postzero-L/R=0/0
+PHASE C: rise slew 5 vs 20 permille/ms at 16%
+  l: slow=0, fast=0, fast-minus-slow=0 counts
+  r: slow=0, fast=0, fast-minus-slow=0 counts
+PHASE D: per-condition 400ms post-zero observations (details below)
+[startup] Stage 0 l 80permille, rise=10: counts=[63, 0, 0], mean=21, std=36.37, sustained=1/3, post-stop-delta=[21, 0, 0]
+[startup] Stage 1 r 80permille, rise=10: counts=[1, 0, 0], mean=0.33, std=0.58, sustained=0/3, post-stop-delta=[-1, 0, 0]
+[startup] Stage 2 l 90permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 3 r 90permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 4 l 100permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 5 r 100permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 6 l 110permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 7 r 110permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 8 l 120permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[startup] Stage 9 r 120permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 10 l 120permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 11 r 120permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 12 l 160permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 13 r 160permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 14 l 200permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 15 r 200permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 16 l 160permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[response] Stage 16 r 160permille, rise=10: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[slew_slow] Stage 17 l 160permille, rise=5: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[slew_slow] Stage 18 r 160permille, rise=5: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[slew_fast] Stage 19 l 160permille, rise=20: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+[slew_fast] Stage 20 r 160permille, rise=20: counts=[0, 0, 0], mean=0, std=0.0, sustained=0/3, post-stop-delta=[0, 0, 0]
+
+ERRORS:
+END order differs from start matrix
+Firmware reported MOTOR_AUTO_FAULT: HOST_TIMEOUT
+Insufficient 20ms samples round=0 stage=10 drive=0 post=0
+Insufficient 20ms samples round=0 stage=11 drive=0 post=0
+Insufficient 20ms samples round=0 stage=12 drive=0 post=0
+Insufficient 20ms samples round=0 stage=13 drive=0 post=0
+Insufficient 20ms samples round=0 stage=14 drive=0 post=0
+Insufficient 20ms samples round=0 stage=15 drive=0 post=0
+Insufficient 20ms samples round=0 stage=16 drive=0 post=0
+Insufficient 20ms samples round=0 stage=17 drive=0 post=0
+Insufficient 20ms samples round=0 stage=18 drive=0 post=0
+Insufficient 20ms samples round=0 stage=19 drive=0 post=0
+Insufficient 20ms samples round=0 stage=2 drive=0 post=0
+Insufficient 20ms samples round=0 stage=20 drive=0 post=0
+Insufficient 20ms samples round=0 stage=3 drive=0 post=0
+Insufficient 20ms samples round=0 stage=4 drive=0 post=0
+Insufficient 20ms samples round=0 stage=5 drive=0 post=0
+Insufficient 20ms samples round=0 stage=6 drive=0 post=0
+Insufficient 20ms samples round=0 stage=7 drive=0 post=0
+Insufficient 20ms samples round=0 stage=8 drive=0 post=0
+Insufficient 20ms samples round=0 stage=9 drive=0 post=0
+Insufficient 20ms samples round=1 stage=0 drive=0 post=0
+Insufficient 20ms samples round=1 stage=1 drive=0 post=0
+Insufficient 20ms samples round=1 stage=10 drive=0 post=0
+Insufficient 20ms samples round=1 stage=11 drive=0 post=0
+Insufficient 20ms samples round=1 stage=12 drive=0 post=0
+Insufficient 20ms samples round=1 stage=13 drive=0 post=0
+Insufficient 20ms samples round=1 stage=14 drive=0 post=0
+Insufficient 20ms samples round=1 stage=15 drive=0 post=0
+Insufficient 20ms samples round=1 stage=16 drive=0 post=0
+Insufficient 20ms samples round=1 stage=17 drive=0 post=0
+Insufficient 20ms samples round=1 stage=18 drive=0 post=0
+Insufficient 20ms samples round=1 stage=19 drive=0 post=0
+Insufficient 20ms samples round=1 stage=2 drive=0 post=0
+Insufficient 20ms samples round=1 stage=20 drive=0 post=0
+Insufficient 20ms samples round=1 stage=3 drive=0 post=0
+Insufficient 20ms samples round=1 stage=4 drive=0 post=0
+Insufficient 20ms samples round=1 stage=5 drive=0 post=0
+Insufficient 20ms samples round=1 stage=6 drive=0 post=0
+Insufficient 20ms samples round=1 stage=7 drive=0 post=0
+Insufficient 20ms samples round=1 stage=8 drive=0 post=0
+Insufficient 20ms samples round=1 stage=9 drive=0 post=0
+Insufficient 20ms samples round=2 stage=0 drive=0 post=0
+Insufficient 20ms samples round=2 stage=1 drive=0 post=0
+Insufficient 20ms samples round=2 stage=10 drive=0 post=0
+Insufficient 20ms samples round=2 stage=11 drive=0 post=0
+Insufficient 20ms samples round=2 stage=12 drive=0 post=0
+Insufficient 20ms samples round=2 stage=13 drive=0 post=0
+Insufficient 20ms samples round=2 stage=14 drive=0 post=0
+Insufficient 20ms samples round=2 stage=15 drive=0 post=0
+Insufficient 20ms samples round=2 stage=16 drive=0 post=0
+Insufficient 20ms samples round=2 stage=17 drive=0 post=0
+Insufficient 20ms samples round=2 stage=18 drive=0 post=0
+Insufficient 20ms samples round=2 stage=19 drive=0 post=0
+Insufficient 20ms samples round=2 stage=2 drive=0 post=0
+Insufficient 20ms samples round=2 stage=20 drive=0 post=0
+Insufficient 20ms samples round=2 stage=3 drive=0 post=0
+Insufficient 20ms samples round=2 stage=4 drive=0 post=0
+Insufficient 20ms samples round=2 stage=5 drive=0 post=0
+Insufficient 20ms samples round=2 stage=6 drive=0 post=0
+Insufficient 20ms samples round=2 stage=7 drive=0 post=0
+Insufficient 20ms samples round=2 stage=8 drive=0 post=0
+Insufficient 20ms samples round=2 stage=9 drive=0 post=0
+Missing/invalid full experiment completion record
+Missing/repeated per-round completion signatures
+Missing/repeated stages (start/end/post counts): 2/2/1 expected 63
+POST_END order differs from start matrix
+Round end ordering mismatch
+Start order or command matrix differs from three expected rounds

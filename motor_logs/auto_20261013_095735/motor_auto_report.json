@@ -1,0 +1,2788 @@
+{
+  "status": "INCOMPLETE",
+  "rounds_requested": 3,
+  "pulses_expected": 63,
+  "starts": 2,
+  "ends": 2,
+  "post_ends": 1,
+  "sample_count": 57,
+  "errors": [
+    "END order differs from start matrix",
+    "Firmware reported MOTOR_AUTO_FAULT: HOST_TIMEOUT",
+    "Insufficient 20ms samples round=0 stage=10 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=11 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=12 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=13 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=14 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=15 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=16 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=17 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=18 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=19 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=2 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=20 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=3 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=4 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=5 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=6 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=7 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=8 drive=0 post=0",
+    "Insufficient 20ms samples round=0 stage=9 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=0 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=1 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=10 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=11 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=12 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=13 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=14 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=15 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=16 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=17 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=18 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=19 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=2 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=20 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=3 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=4 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=5 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=6 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=7 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=8 drive=0 post=0",
+    "Insufficient 20ms samples round=1 stage=9 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=0 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=1 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=10 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=11 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=12 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=13 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=14 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=15 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=16 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=17 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=18 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=19 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=2 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=20 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=3 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=4 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=5 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=6 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=7 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=8 drive=0 post=0",
+    "Insufficient 20ms samples round=2 stage=9 drive=0 post=0",
+    "Missing/invalid full experiment completion record",
+    "Missing/repeated per-round completion signatures",
+    "Missing/repeated stages (start/end/post counts): 2/2/1 expected 63",
+    "POST_END order differs from start matrix",
+    "Round end ordering mismatch",
+    "Start order or command matrix differs from three expected rounds"
+  ],
+  "test_families": [
+    "startup",
+    "response",
+    "slew_slow",
+    "slew_fast"
+  ],
+  "stages_per_round": 21,
+  "post_stop_observation_ms": 400,
+  "repeat_statistics": [
+    {
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 80,
+      "three_drive_counts": [
+        63,
+        0,
+        0
+      ],
+      "mean_count": 21,
+      "sample_std_count": 36.37,
+      "sustained_3of3": false,
+      "sustained_replicates": 1,
+      "three_post_stop_deltas": [
+        21,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        80,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 80,
+      "three_drive_counts": [
+        1,
+        0,
+        0
+      ],
+      "mean_count": 0.33,
+      "sample_std_count": 0.58,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        -1,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 90,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 90,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 100,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 100,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 110,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 110,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 120,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 200,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 200,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "wheel": "l",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "wheel": "r",
+      "cmd_permille": 160,
+      "three_drive_counts": [
+        0,
+        0,
+        0
+      ],
+      "mean_count": 0,
+      "sample_std_count": 0.0,
+      "sustained_3of3": false,
+      "sustained_replicates": 0,
+      "three_post_stop_deltas": [
+        0,
+        0,
+        0
+      ],
+      "first_five_counts_ms": [
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "trials": [
+    {
+      "round": 0,
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 9,
+      "post_samples": 20,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 63,
+          "encoder_after_post_ms": 84,
+          "post_stop_delta": 21,
+          "final_100ms_delta": 39,
+          "first_five_counts_ms": 80,
+          "sustained_count_signal": true
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 9,
+      "post_samples": 17,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 1,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": -1,
+          "final_100ms_delta": 0,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 90,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 90,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 90,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 90,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 100,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 100,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 100,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 100,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 110,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 110,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 110,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 110,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 90,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 90,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 90,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 90,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 100,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 100,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 100,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 100,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 110,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 110,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 110,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 110,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 0,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 80,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 80,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 1,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 80,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 80,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 2,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 90,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 90,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 3,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 90,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 90,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 4,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 100,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 100,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 5,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 100,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 100,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 6,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 110,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 110,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 7,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 110,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 110,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 8,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 9,
+      "test": "startup",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 10,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 120,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 11,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 120,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 120,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 12,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 13,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 14,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 200,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 200,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 15,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 0,
+      "cmd_right": 200,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 200,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 16,
+      "test": "response",
+      "rise_rate_permille_per_ms": 10,
+      "cmd_left": 160,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 17,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 18,
+      "test": "slew_slow",
+      "rise_rate_permille_per_ms": 5,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 19,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 160,
+      "cmd_right": 0,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "stage": 20,
+      "test": "slew_fast",
+      "rise_rate_permille_per_ms": 20,
+      "cmd_left": 0,
+      "cmd_right": 160,
+      "drive_samples": 0,
+      "post_samples": 0,
+      "wheel_readings": [
+        {
+          "wheel": "l",
+          "requested_permille": 0,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        },
+        {
+          "wheel": "r",
+          "requested_permille": 160,
+          "encoder_drive": 0,
+          "encoder_after_post_ms": 0,
+          "post_stop_delta": 0,
+          "final_100ms_delta": null,
+          "first_five_counts_ms": null,
+          "sustained_count_signal": false
+        }
+      ]
+    }
+  ],
+  "phase_findings": {
+    "startup_threshold_heuristic": {
+      "l": {
+        "tested_permille": [
+          80,
+          90,
+          100,
+          110,
+          120
+        ],
+        "sustained_replicates_by_duty": {
+          "80": 1,
+          "90": 0,
+          "100": 0,
+          "110": 0,
+          "120": 0
+        },
+        "lowest_tested_3of3_permille": null
+      },
+      "r": {
+        "tested_permille": [
+          80,
+          90,
+          100,
+          110,
+          120
+        ],
+        "sustained_replicates_by_duty": {
+          "80": 0,
+          "90": 0,
+          "100": 0,
+          "110": 0,
+          "120": 0
+        },
+        "lowest_tested_3of3_permille": null
+      }
+    },
+    "open_loop_response": [
+      {
+        "pwm_permille": 120,
+        "mean_left_encoder_count": 0,
+        "mean_right_encoder_count": 0,
+        "relative_count_difference_pct": null,
+        "mean_left_post_stop_counts": 0,
+        "mean_right_post_stop_counts": 0
+      },
+      {
+        "pwm_permille": 160,
+        "mean_left_encoder_count": 0,
+        "mean_right_encoder_count": 0,
+        "relative_count_difference_pct": null,
+        "mean_left_post_stop_counts": 0,
+        "mean_right_post_stop_counts": 0
+      },
+      {
+        "pwm_permille": 200,
+        "mean_left_encoder_count": 0,
+        "mean_right_encoder_count": 0,
+        "relative_count_difference_pct": null,
+        "mean_left_post_stop_counts": 0,
+        "mean_right_post_stop_counts": 0
+      }
+    ],
+    "rise_slew_comparison": [
+      {
+        "wheel": "l",
+        "duty_permille": 160,
+        "rise_slow_permille_per_ms": 5,
+        "rise_fast_permille_per_ms": 20,
+        "mean_count_slow": 0,
+        "mean_count_fast": 0,
+        "mean_count_fast_minus_slow": 0
+      },
+      {
+        "wheel": "r",
+        "duty_permille": 160,
+        "rise_slow_permille_per_ms": 5,
+        "rise_fast_permille_per_ms": 20,
+        "mean_count_slow": 0,
+        "mean_count_fast": 0,
+        "mean_count_fast_minus_slow": 0
+      }
+    ],
+    "limitations": "Based on encoder count only; startup is a heuristic at the tested 8-12% settings and 3 repeats. Nonzero post-STOP counts do not establish exact electrical coast/brake mode."
+  },
+  "timing_integrity": {
+    "max_tim11_dwt_cycles_seen": 1405,
+    "max_observed_tim11_late_ticks": 0,
+    "max_observed_tim11_gaps": 0,
+    "max_observed_uart_tx_drop": 0
+  },
+  "experiment_setup": {
+    "vm_state_declared": "powered",
+    "dc_vm_volts_hand_measured": 8.2,
+    "firmware_env": "motor_auto_pipeline_96m_trim25",
+    "host_control": "USART1 RX PA10",
+    "rounds": 3,
+    "stages_per_round": 21,
+    "diagnostic_phases": [
+      "startup",
+      "response",
+      "slew_slow",
+      "slew_fast"
+    ],
+    "note": "VM state user-supplied, not measured by STM32; duty is not current limit."
+  },
+  "electrical_limitation": "3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM. 20pct duty is not a current limit.",
+  "interpretation": "Sustained_count_signal is an empirical >=5 encoder-count and >=5 tail-count heuristic, NOT a certified deadband threshold."
+}
