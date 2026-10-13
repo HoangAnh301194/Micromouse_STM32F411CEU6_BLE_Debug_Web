@@ -100,6 +100,31 @@ def evaluate_electrical(evidence_file):
                 {"maximum_reported_current_a":peak,"model":e["motor_exact_part"],"case_temp_c":temp})
 
 
+def startup_reinterpretation(stats):
+    """Independently repair the v6 '8% succeeds, 9% fails' inference."""
+    result={}
+    for wheel in ("l","r"):
+        old=stats.get(wheel,{})
+        counts=old.get("sustained_replicates_by_duty",{})
+        try:
+            pairs=sorted((int(k),int(v)) for k,v in counts.items() if v is not None)
+        except (TypeError,ValueError):
+            pairs=[]
+        monotonic = [d for i,(d,n) in enumerate(pairs)
+                     if all(value==3 for _,value in pairs[i:])]
+        inversions=[{"lower_duty_permille":a,"higher_duty_permille":b}
+                    for (a,na),(b,nb) in zip(pairs,pairs[1:]) if na>nb]
+        result[wheel]={
+            "observed_repetitions":pairs,
+            "naive_min_successful_permille":min(
+                (d for d,n in pairs if n==3),default=None),
+            "conservative_monotonic_suffix_candidate_permille":min(monotonic,default=None),
+            "nonmonotonic_pairs":inversions,
+            "calibrated_under_load":False,
+        }
+    return result
+
+
 def build_report(reference, evidence_file, latest=None):
     checks,blockers=inspect_driver()
     gates=[
@@ -117,7 +142,8 @@ def build_report(reference, evidence_file, latest=None):
                      "REVIEW" if source_status=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else "INCOMPLETE",
                      "Existing v6 87-pulse measurement reused; nonmonotonic startup and test-order effects cannot be resolved from this fixed-order run.",
                      {"source":str(reference.relative_to(ROOT)) if reference.is_relative_to(ROOT) else str(reference),
-                      "left":stats.get("l"),"right":stats.get("r")})
+                      "original_startup":stats,
+                      "corrected_startup_interpretation":startup_reinterpretation(stats)})
         high=gate("P2-HIGH","30-60% and 80-100%","REVIEW" if
                   source_status=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else "INCOMPLETE",
                   "30-60% have only short, elevated-wheel 120ms pulses in v6, not continuous operation. 80-100% and loaded tests BLOCKED pending electrical limits.",
@@ -195,6 +221,12 @@ def main():
     if a.self_test:
         audit=build_report(a.reference,None)
         assert audit["statuses"]["P0-ELECTRICAL"]=="BLOCKED"
+        sample={"l":{"sustained_replicates_by_duty":{
+            "80":3,"90":0,"100":3,"110":3,"120":3}}}
+        interpretation=startup_reinterpretation(sample)["l"]
+        assert interpretation["naive_min_successful_permille"]==80
+        assert interpretation["conservative_monotonic_suffix_candidate_permille"]==100
+        assert interpretation["nonmonotonic_pairs"]
         assert audit["statuses"]["P2-LOADED"]=="BLOCKED"
         print("PASS: offline P0 hardware block, STOP audit, P1 pending, P2 80-100 block.")
         return 0
