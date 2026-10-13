@@ -11,13 +11,25 @@
 #include "pinout.h"
 #include "system_timer.h"
 #include "uart.h"
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+#include "mpu6050.h"
+#include "ir_sensor.h"
+#endif
 #include "stm32f4xx.h"
 #include <string.h>
 
 #if defined(MOTOR_AUTO_BENCH)
-#if defined(MOTOR_PWM_DIAG) || defined(MPU_INTEGRATION_BENCH) || \
-    defined(MPU_FRESHNESS_DIAG) || defined(MPU_SAMPLING_POLICY_B)
-#error "MOTOR_AUTO_BENCH must be compiled independently from motor key/IMU modes"
+#if defined(MOTOR_PWM_DIAG) || defined(MPU_FRESHNESS_DIAG)
+#error "MOTOR_AUTO_BENCH cannot run KEY/FRESHNESS diagnostic simultaneously"
+#endif
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+#if !defined(MPU_INTEGRATION_BENCH) || !defined(MPU_SAMPLING_POLICY_B)
+#error "Integrated motor bench requires MPU policy B and integration statistics"
+#endif
+#else
+#if defined(MPU_INTEGRATION_BENCH) || defined(MPU_SAMPLING_POLICY_B)
+#error "Motor-only bench must not silently include IMU"
+#endif
 #endif
 
 #define AUTO_ROUNDS          3U
@@ -26,7 +38,11 @@
  * 8 more short PWM stages, 30/40/50/60%, single-wheel only. */
 #define AUTO_STEPS          29U
 #define AUTO_MAX_PERMILLE    600U
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+#define AUTO_VERSION         8U
+#else
 #define AUTO_VERSION         6U
+#endif
 #define AUTO_FAMILIES        5U
 #define AUTO_HIGH_FIRST     21U
 #define AUTO_HIGH_PULSE_MS 120U
@@ -34,7 +50,11 @@
 #else
 #define AUTO_STEPS          21U
 #define AUTO_MAX_PERMILLE    200U
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+#define AUTO_VERSION         7U
+#else
 #define AUTO_VERSION         4U
+#endif
 #define AUTO_FAMILIES        4U
 #endif
 #define AUTO_BOTH_PERMILLE   160U
@@ -93,6 +113,30 @@ static uint32_t last_tick_seen_ms = 0U;
 static uint32_t completed_pulses = 0;
 static uint32_t keep_ok = 0U;
 static uint32_t bad_rx_commands = 0U;
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+static MPU6050_Handle_t integration_mpu;
+static uint8_t sensors_ready = 0U;
+static uint32_t ir_scan_count = 0U;
+static uint32_t ir_last_progress_ms = 0U;
+static void SensorReport(const char *phase)
+{
+    Control_IntegrationStats_t stats;
+    Control_GetIntegrationStats(&stats);
+    UART_Printf("MOTOR_AUTO_SENSORS,round=%u,stage=%u,phase=%s,"
+                "good=%lu,fresh=%lu,err=%lu,timeout=%lu,busy=%lu,"
+                "reused=%lu,aged=%lu,missing=%lu,ir=%lu\r\n",
+                (unsigned)round_i,(unsigned)step_i,phase,
+                (unsigned long)integration_mpu.good_reads,
+                (unsigned long)integration_mpu.fresh_gyro_reads,
+                (unsigned long)integration_mpu.error_reads,
+                (unsigned long)integration_mpu.timeout_reads,
+                (unsigned long)integration_mpu.busy_retries,
+                (unsigned long)stats.reused,
+                (unsigned long)stats.age_over1500,
+                (unsigned long)stats.missing_or_expired,
+                (unsigned long)ir_scan_count);
+}
+#endif
 #if defined(MOTOR_AUTO_HIGH_TEST)
 static int32_t high_post_ref_l = 0, high_post_ref_r = 0;
 static uint8_t high_post_ref_valid = 0U;
