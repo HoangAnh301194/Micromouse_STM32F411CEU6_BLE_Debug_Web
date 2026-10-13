@@ -21,22 +21,40 @@
 #endif
 
 #define AUTO_ROUNDS          3U
-#define AUTO_STEPS           9U
+#define AUTO_STEPS          21U
 #define AUTO_MAX_PERMILLE    200U
 #define AUTO_BOTH_PERMILLE   160U
 #define AUTO_PULSE_MS        200U
-#define AUTO_POST_MS         300U
+#define AUTO_POST_MS         400U
 #define AUTO_SETTLE_MS      1000U
 #define AUTO_STAGE_GAP_MS    250U
 #define AUTO_SAMPLE_MS       20U
 #define AUTO_HOST_TIMEOUT_MS 1600U
 
-typedef struct { int16_t l, r; } AutoPulse_t;
-/* Increasing low-duty characterization. Max 20% for one wheel,
- * both-wheel stage capped at 16%; no reverse/brake or stall tests. */
+/* Four diagnostics in ONE flash/session:
+ * startup threshold at 8-12%, full response at 12/16/20%,
+ * simultaneous 16%, and rise-slew sensitivity at 16%.
+ * No polarity reversal, motor electrical braking or intentional stall. */
+typedef enum {
+    FAMILY_STARTUP=0, FAMILY_RESPONSE=1,
+    FAMILY_SLEW_SLOW=2, FAMILY_SLEW_FAST=3
+} AutoFamily_t;
+typedef struct { int16_t l, r; uint8_t family; uint8_t rise; } AutoPulse_t;
+static const char * const family_names[] = {
+    "startup", "response", "slew_slow", "slew_fast"
+};
 static const AutoPulse_t matrix[AUTO_STEPS] = {
-    {80,0}, {0,80}, {120,0}, {0,120},
-    {160,0}, {0,160}, {200,0}, {0,200}, {160,160}
+    { 80,  0,FAMILY_STARTUP,10}, {  0, 80,FAMILY_STARTUP,10},
+    { 90,  0,FAMILY_STARTUP,10}, {  0, 90,FAMILY_STARTUP,10},
+    {100,  0,FAMILY_STARTUP,10}, {  0,100,FAMILY_STARTUP,10},
+    {110,  0,FAMILY_STARTUP,10}, {  0,110,FAMILY_STARTUP,10},
+    {120,  0,FAMILY_STARTUP,10}, {  0,120,FAMILY_STARTUP,10},
+    {120,  0,FAMILY_RESPONSE,10},{  0,120,FAMILY_RESPONSE,10},
+    {160,  0,FAMILY_RESPONSE,10},{  0,160,FAMILY_RESPONSE,10},
+    {200,  0,FAMILY_RESPONSE,10},{  0,200,FAMILY_RESPONSE,10},
+    {160,160,FAMILY_RESPONSE,10},
+    {160,  0,FAMILY_SLEW_SLOW, 5}, {0,160,FAMILY_SLEW_SLOW, 5},
+    {160,  0,FAMILY_SLEW_FAST,20}, {0,160,FAMILY_SLEW_FAST,20}
 };
 
 typedef enum {
@@ -60,12 +78,14 @@ static void EmitSample(uint32_t now, uint32_t elapsed, const char *phase)
     int16_t al=0, ar=0;
     Motor_GetAppliedPairPermille(&al,&ar);
     Control_GetTiming(&t);
+    const AutoPulse_t *p = &matrix[step_i];
     UART_Printf("MOTOR_AUTO_SAMPLE,round=%u,stage=%u,phase=%s,"
-                "ms=%lu,elapsed=%lu,applied_l=%d,applied_r=%d,"
-                "enc_l=%ld,enc_r=%ld,ccr_l=%lu,ccr_r=%lu,"
-                "tim11_late=%lu,tim11_max_cycles=%lu,"
-                "tim11_gaps=%lu,tx_drop=%lu\r\n",
+                "test=%s,rise=%u,ms=%lu,elapsed=%lu,"
+                "applied_l=%d,applied_r=%d,enc_l=%ld,enc_r=%ld,"
+                "ccr_l=%lu,ccr_r=%lu,tim11_late=%lu,"
+                "tim11_max_cycles=%lu,tim11_gaps=%lu,tx_drop=%lu\r\n",
                 (unsigned)round_i,(unsigned)step_i,phase,
+                family_names[p->family],(unsigned)p->rise,
                 (unsigned long)now,(unsigned long)elapsed,(int)al,(int)ar,
                 (long)Encoder_GetLeftCount(),(long)Encoder_GetRightCount(),
                 (unsigned long)TIM2->CCR2,(unsigned long)TIM2->CCR1,
@@ -97,12 +117,14 @@ static void StartStep(uint32_t now)
         p->r > (int16_t)AUTO_MAX_PERMILLE ||
         (p->l > 0 && p->r > 0 &&
          (p->l > (int16_t)AUTO_BOTH_PERMILLE ||
-          p->r > (int16_t)AUTO_BOTH_PERMILLE))) {
+          p->r > (int16_t)AUTO_BOTH_PERMILLE)) ||
+        p->family > FAMILY_SLEW_FAST ||
+        p->rise < 5U || p->rise > 20U) {
         FailSafe("DUTY_CAP");
         return;
     }
     Motor_SetDeadband(0U, 0U);
-    Motor_SetSlewRates(10U, 20U);
+    Motor_SetSlewRates(p->rise, 20U);
     if (!MotorTest_StartPermille(p->l,p->r,AUTO_PULSE_MS,100U)) {
         FailSafe("START_REJECTED");
         return;
@@ -111,24 +133,29 @@ static void StartStep(uint32_t now)
     state_since_ms = now;
     sample_since_ms = now;
     UART_Printf("MOTOR_AUTO_START,round=%u,stage=%u,l=%d,r=%d,"
-                "pulse_ms=%u\r\n",(unsigned)round_i,(unsigned)step_i,
-                (int)p->l,(int)p->r,(unsigned)AUTO_PULSE_MS);
+                "test=%s,rise=%u,pulse_ms=%u\r\n",
+                (unsigned)round_i,(unsigned)step_i,
+                (int)p->l,(int)p->r,
+                family_names[p->family],(unsigned)p->rise,
+                (unsigned)AUTO_PULSE_MS);
 }
 
 static void ReplyReady(void)
 {
     /* Repeat complete profile with each PING: host may connect after MCU
      * boot/flash and must still capture the exact firmware signature. */
-    UART_Printf("MOTOR_AUTO_PROFILE,version=2,nominal_hz=%lu,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=3,nominal_hz=%lu,"
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
-                "pulse_ms=200,post_ms=300,boot_neutral=1,"
-                "both_cap_permille=160,no_current_sense=1,stby_fixed_high=1\r\n",
+                "pulse_ms=200,post_ms=400,boot_neutral=1,"
+                "both_cap_permille=160,families=4,no_current_sense=1,"
+                "stby_fixed_high=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
-    UART_Printf("MOTOR_AUTO_READY,version=2,rounds=%u,steps=%u,"
-                "hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=300,"
-                "one_shot=1,boot_neutral=1,rx=USART1_PA10,state=%u\r\n",
+    UART_Printf("MOTOR_AUTO_READY,version=3,rounds=%u,steps=%u,"
+                "hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=400,"
+                "families=4,one_shot=1,boot_neutral=1,"
+                "rx=USART1_PA10,state=%u\r\n",
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,(unsigned)state);
 }
 
@@ -192,10 +219,11 @@ int MotorAutoBench_Main(void)
     Control_Start();
 
     UART_Printf("[BOOT] Motor auto baseline: neutral, USART1 host ARM required\r\n");
-    UART_Printf("MOTOR_AUTO_PROFILE,version=2,nominal_hz=%lu,"
+    UART_Printf("MOTOR_AUTO_PROFILE,version=3,nominal_hz=%lu,"
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=200,"
-                "pulse_ms=200,post_ms=300,boot_neutral=1,"
-                "both_cap_permille=160,no_current_sense=1,stby_fixed_high=1\r\n",
+                "pulse_ms=200,post_ms=400,boot_neutral=1,"
+                "both_cap_permille=160,families=4,no_current_sense=1,"
+                "stby_fixed_high=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS);
