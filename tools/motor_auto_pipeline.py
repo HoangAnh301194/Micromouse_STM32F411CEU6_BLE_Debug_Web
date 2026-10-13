@@ -114,6 +114,23 @@ def phase_findings(stats):
         subset = sorted((x for x in stats if x["test"] == "startup" and
                          x["wheel"] == wheel), key=lambda x:x["cmd_permille"])
         reliable = [x["cmd_permille"] for x in subset if x["sustained_3of3"]]
+        # Do NOT interpret a nonmonotonic series (8% works, 9% fails)
+        # as a calibrated startup threshold. A conservative *observed*
+        # candidate requires all higher tested PWM to succeed 3/3 too.
+        stable_up = [
+            x["cmd_permille"] for i,x in enumerate(subset)
+            if all(z["sustained_3of3"] for z in subset[i:]) and
+               len(subset[i:]) > 0
+        ]
+        anomalies = [
+            {"lower_permille":x["cmd_permille"],
+             "higher_permille":y["cmd_permille"],
+             "lower_successful_repeats":x["sustained_replicates"],
+             "higher_successful_repeats":y["sustained_replicates"]}
+            for x,y in zip(subset, subset[1:])
+            if x["executed_replicates"]==3 and y["executed_replicates"]==3
+            and x["sustained_replicates"] > y["sustained_replicates"]
+        ]
         startup[wheel] = {
             "planned_permille": [x["cmd_permille"] for x in subset],
             "measured_permille": [x["cmd_permille"] for x in subset if x["executed_replicates"] > 0],
@@ -121,6 +138,8 @@ def phase_findings(stats):
                 str(x["cmd_permille"]): x["sustained_replicates"] if
                 x["executed_replicates"] > 0 else None for x in subset},
             "lowest_tested_3of3_permille": min(reliable) if reliable else None,
+            "lowest_monotonic_suffix_3of3_permille": min(stable_up) if stable_up else None,
+            "nonmonotonic_success_decreases": anomalies,
         }
     response = []
     for duty in (120,160,200):
@@ -337,11 +356,30 @@ def analyze(lines, *, setup=None):
                             (tail_delta is not None and abs(tail_delta) >= 5)
                 first5 = next((intval(x,"elapsed") for x in drives
                                if abs(intval(x,f"enc_{wheel}",0)) >= 5), None)
+                post_delta = ((after_count-final) if
+                              after_count is not None and final is not None else None)
+                # Post-stop response is a position trajectory, NOT a brake
+                # current measurement or exact instant of mechanical rest.
+                end_window = stage_post_ms(stage)
+                neutral_tail = [x for x in after if
+                                intval(x,"elapsed") >= end_window-100]
+                post_last100_net = (
+                    intval(neutral_tail[-1],f"enc_{wheel}") -
+                    intval(neutral_tail[0],f"enc_{wheel}")
+                    if len(neutral_tail) >= 2 else None)
+                def post_reached(frac):
+                    if post_delta is None or post_delta <= 5:
+                        return None
+                    goal = final + post_delta*frac
+                    return next((intval(x,"elapsed") for x in after
+                                 if intval(x,f"enc_{wheel}") >= goal),None)
                 driven_counts.append({
                     "wheel":wheel, "requested_permille": request, "encoder_drive": final,
                     "encoder_after_post_ms": after_count,
-                    "post_stop_delta": (after_count-final) if
-                        after_count is not None and final is not None else None,
+                    "post_stop_delta": post_delta,
+                    "post_t95_ms": post_reached(0.95),
+                    "post_t99_ms": post_reached(0.99),
+                    "post_last100ms_net_counts": post_last100_net,
                     "final_100ms_delta":tail_delta, "first_five_counts_ms":first5,
                     "sustained_count_signal": bool(sustained),
                 })
@@ -375,6 +413,9 @@ def analyze(lines, *, setup=None):
                 "sustained_replicates":sum(x["sustained_count_signal"] for x in vals),
                 "three_post_stop_deltas":[x["post_stop_delta"] for x in vals],
                 "complete_post_stop_replicates":sum(x["post_stop_delta"] is not None for x in vals),
+                "post_t95_ms":[x["post_t95_ms"] for x in vals],
+                "post_t99_ms":[x["post_t99_ms"] for x in vals],
+                "post_last100ms_net_counts":[x["post_last100ms_net_counts"] for x in vals],
                 "first_five_counts_ms":[x["first_five_counts_ms"] for x in vals]
             })
     if done and (intval(done[-1],"ccr_l") != 0 or intval(done[-1],"ccr_r") != 0 or
@@ -529,7 +570,10 @@ def store(folder, raw, setup):
     lines.append("PHASE A: startup 8-12% (3/3 sustained encoder count heuristic)")
     for wheel in ("l","r"):
         th = findings["startup_threshold_heuristic"][wheel]
-        lines.append(f"  {wheel}: confirmed-per-duty={th['sustained_replicates_by_duty']}; lowest-test-3of3={th['lowest_tested_3of3_permille']}")
+        lines.append(f"  {wheel}: confirmed-per-duty={th['sustained_replicates_by_duty']}; "
+                     f"naive-lowest-3of3={th['lowest_tested_3of3_permille']}; "
+                     f"monotonic-suffix-candidate={th['lowest_monotonic_suffix_3of3_permille']}; "
+                     f"nonmonotonic={th['nonmonotonic_success_decreases']}")
     lines.append("PHASE B: PWM response and post-zero encoder movement")
     for x in findings["open_loop_response"]:
         lines.append(f"  {x['pwm_permille']} permille: L/R={x['mean_left_encoder_count']}/{x['mean_right_encoder_count']}, "
@@ -543,7 +587,10 @@ def store(folder, raw, setup):
         lines.append("PHASE E: opt-in PWM 30/40/50/60% for each wheel; 120ms drive/800ms neutral, 3 rounds")
         high = [x for x in report["repeat_statistics"] if x["test"] == "high"]
         for x in high:
-            lines.append(f"  {x['wheel']} duty={x['cmd_permille']/10:.0f}% counts={x['three_drive_counts']}, post-neutral={x['three_post_stop_deltas']}, repeats={x['executed_replicates']}")
+            lines.append(f"  {x['wheel']} duty={x['cmd_permille']/10:.0f}% counts={x['three_drive_counts']}, "
+                         f"post-neutral={x['three_post_stop_deltas']}, post-t95-ms={x['post_t95_ms']}, "
+                         f"post-t99-ms={x['post_t99_ms']}, last100ms-net={x['post_last100ms_net_counts']}, "
+                         f"repeats={x['executed_replicates']}")
     lines.append(f"NOT_EXECUTED: {report['not_executed_pulses']} of {EXPECTED} pulses; missing stages are excluded, not treated as 0 counts")
     lines.append("Host/Microcontroller link: " + json.dumps(report["rx_heartbeat_diagnostics"]))
     for x in report["repeat_statistics"]:
