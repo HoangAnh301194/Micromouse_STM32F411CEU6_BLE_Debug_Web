@@ -17,6 +17,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from motor_stop_truth_table_audit import inspect_driver
+
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_BASELINE = ROOT / "motor_logs" / "auto_20261013_105353"
 # Toshiba operating-range max is 1.0A at VM >=4.5V without PWM;
@@ -31,36 +33,6 @@ def gate(code, label, status, explanation, evidence=None):
     result = {"gate":code,"label":label,"status":status,"explanation":explanation}
     if evidence is not None: result["evidence"] = evidence
     return result
-
-
-def inspect_driver():
-    motor=(ROOT/"src/motor.c").read_text(encoding="utf-8")
-    pins=(ROOT/"include/pinout.h").read_text(encoding="utf-8")
-    checks = {
-        "stop_zero_ccr": "TIM2->CCR1 = TIM2->CCR2 = 0;" in motor,
-        "stop_both_inputs_low": "AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, 0);" in motor,
-        "active_brake_implemented": "void Motor_Brake(void)" in motor and
-            "TIM2->CCR1 = pwm_period + 1U;" in motor,
-        "preload_enabled": "TIM_CCMR1_OC1PE" in motor and "TIM_CCMR1_OC2PE" in motor,
-        "reverse_gap_30ms": "#define MOTOR_REVERSE_GAP_MS 30U" in motor,
-        "hardware_pwm_30khz": "#define MOTOR_PWM_FREQUENCY     30000" in pins,
-        "stby_controllable_from_firmware": False,
-        "pinout_comment_vs_macro_mismatch":
-            "IN1=PB14, IN2=PB15" in pins and
-            "#define MOTOR_R_IN1_PIN         15" in pins,
-    }
-    blockers=[]
-    if not all(checks[k] for k in (
-        "stop_zero_ccr","stop_both_inputs_low","preload_enabled",
-        "reverse_gap_30ms","hardware_pwm_30khz")):
-        blockers.append("Software STOP/PWM/pin mapping invariants require repair.")
-    blockers += [
-        "TB6612 OUT1/OUT2 coast/short-brake cannot be confirmed by GPIO/CCR register log alone.",
-        "IN1/IN2 change immediately but timer CCR is preloaded, requiring scope transition check.",
-        "STBY tied HIGH; no independent MCU-controlled power-stage disable.",
-        "TB6612 VCC=5V requires VIH>=3.5V; MCU 3.3V HIGH lacks guaranteed margin.",
-    ]
-    return checks,blockers
 
 
 def evaluate_electrical(evidence_file):
@@ -159,11 +131,22 @@ def counter_delta(si, field):
 
 def build_report(reference, evidence_file, latest=None):
     checks,blockers=inspect_driver()
+    stop_source_ok = (
+        checks["software_coast_defined"] and checks["active_brake_implemented"]
+        and checks["preload_enabled"] and checks["brake_release_neutral_guard"]
+        and checks["reverse_gap_30ms"]
+    )
     gates=[
-        gate("P0-STOP","STOP/COAST/BRAKE and CCR preload","REVIEW" if all([
-            checks["stop_zero_ccr"],checks["stop_both_inputs_low"],checks["preload_enabled"]]) else "BLOCKED",
-            "Source-level command states audited; live short-brake/reversal deliberately NOT triggered.",
-            {"checks":checks,"blockers":blockers}),
+        gate("P0-STOP","STOP/COAST/BRAKE and CCR preload",
+             "REVIEW" if stop_source_ok else "BLOCKED",
+             ("Static truth-table/source conditions match; physical H-bridge terminal "
+              "mode, current and PWM preload transitions still unverified."
+              if stop_source_ok else
+              "Motor_Stop currently uses LOW/LOW/LOW, which is UNSPECIFIED in Toshiba "
+              "TB6612FNG truth table; intended Hi-Z Stop requires LOW/LOW/HIGH. "
+              "Brake source looks consistent but electrical switching is not measured. "
+              "DO NOT conduct powered braking/reverse tests yet."),
+             {"checks":checks,"blockers":blockers,"physical_validation":False}),
         evaluate_electrical(evidence_file),
     ]
     try:
@@ -281,6 +264,8 @@ def main():
     if a.self_test:
         audit=build_report(a.reference,None)
         assert audit["statuses"]["P0-ELECTRICAL"]=="BLOCKED"
+        assert audit["statuses"]["P0-STOP"]=="BLOCKED"
+        assert audit["gates"][0]["evidence"]["checks"]["software_stop_truth_table_mode"]=="UNSPECIFIED_BY_DATASHEET"
         assert counter_delta({"sensor_first":{"missing":"9000","reused":"0","aged":"0"},
                               "sensor_last":{"missing":"9000","reused":"8","aged":"1"}},
                              "missing")==0
