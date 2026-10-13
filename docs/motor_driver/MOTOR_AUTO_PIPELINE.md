@@ -6,7 +6,7 @@
 
 ## Purpose
 
-The 2026-10-13 five-stage motor log proved the left and right N20 respond to 12% PWM, but the right wheel recorded only 1 encoder count with 8% PWM. This new experiment quantifies repeatability with **three independent rounds** at 8%, 10%, and 12%, plus 300ms encoder measurement **after PWM is set to neutral**. Exactly 21 short pulses are emitted in a successful session.
+The 2026-10-13 five-stage motor log proved the left and right N20 respond to 12% PWM, but the right wheel recorded only 1 encoder count with 8% PWM. This new experiment quantifies repeatability with **three independent rounds** at 8%, 12%, 16% and 20% for each wheel, plus a both-wheel 16% stage and 300ms encoder measurement **after PWM is set to neutral**. Exactly 27 short pulses are emitted in a successful session.
 
 ## No KEY and no accidental motor startup
 
@@ -39,7 +39,7 @@ python tools/motor_auto_pipeline.py --run --port COM6 --vm-state powered --meter
 Replace 8.2 with the voltage actually measured across VM/GND, or omit \`--meter-vm-volts\` if not measured. \`--vm-state powered\` is a required *operator declaration*, not a measurement. Be prepared to physically disconnect VM, put the chassis upside-down or safely suspend both wheels, and prevent contact with wheels/shaft. **Do not hold/stall the wheels or try braking/reversing in this test.** This firmware only operates at low short duty and does **not** sense/limit motor current.
 
 The script does:
-\`platformio build + STLINK upload -> COM6 PING/READY -> START -> KEEP heartbeat -> 21 isolated drive/post-stage cycles -> raw log -> CSV -> JSON + text summary\`.
+\`platformio build + STLINK upload -> COM6 PING/READY -> START -> KEEP heartbeat -> 27 isolated drive/post-stage cycles -> raw log -> CSV -> JSON + text summary\`.
 
 The host needs Python, PlatformIO and pyserial:
 \`\`\`powershell
@@ -60,17 +60,21 @@ This command uploads the new firmware then validates host-to-STM32 communication
 | --- | ---: | ---: | ---: | ---: |
 | 0 | 8% | 0 | 200ms | 300ms |
 | 1 | 0 | 8% | 200ms | 300ms |
-| 2 | 10% | 0 | 200ms | 300ms |
-| 3 | 0 | 10% | 200ms | 300ms |
-| 4 | 12% | 0 | 200ms | 300ms |
-| 5 | 0 | 12% | 200ms | 300ms |
-| 6 | 12% | 12% | 200ms | 300ms |
+| 2 | 12% | 0 | 200ms | 300ms |
+| 3 | 0 | 12% | 200ms | 300ms |
+| 4 | 16% | 0 | 200ms | 300ms |
+| 5 | 0 | 16% | 200ms | 300ms |
+| 6 | 20% | 0 | 200ms | 300ms |
+| 7 | 0 | 20% | 200ms | 300ms |
+| 8 | 16% | 16% | 200ms | 300ms |
 
 Each pulse uses deadband=0 and slew rates rise=10 / fall=20 permille per ms, as in the previous baseline. There is a fixed 250ms gap between stages and 1000ms neutral before stage 0. No PID, IMU or IR runs in this opt-in build; TIM11 handles motor/encoder updates only.
 
 Because the robot is not equipped with a verified current sensor, duty is **not a current limit**. 12V rated N20 running on 2S and successful historical movement still do not establish safe stall current.
 
 ## Outputs
+
+**Why the conservative limit:** the previous 12% experiment confirmed motion, but no electrical current or motor stall rating has been measured. The 20% *per-wheel* ceiling (16% both wheels) is an incremental diagnostic expansion, **not** a proven safe duty/current level. If unusual sound, heating, unexpected motion or other anomaly occurs, disconnect VM immediately. Never hold/stall wheels or raise duty just because an 8% case fails to move.
 
 The program creates \`motor_logs/auto_YYYYMMDD_HHMMSS/\`:
 
