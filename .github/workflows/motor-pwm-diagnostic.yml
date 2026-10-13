@@ -36,5 +36,13 @@ jobs:
         run: python tools/motor_auto_pipeline.py --self-test --high-pwm
       - name: Compile opt-in 3x29 high PWM bench
         run: python -m platformio run -e motor_auto_high_96m_trim25
+      - name: v7 integrated motor MPU IR host parser self-test
+        run: python tools/motor_auto_pipeline.py --self-test --sensor-integration
+      - name: v7 integrated motor MPU IR firmware compile
+        run: python -m platformio run -e motor_auto_sensor_96m_trim25
+      - name: v8 high motor MPU IR host parser self-test
+        run: python tools/motor_auto_pipeline.py --self-test --sensor-integration --high-pwm
+      - name: v8 high motor MPU IR firmware compile
+        run: python -m platformio run -e motor_auto_sensor_high_96m_trim25
       - name: Compile unchanged MPU RC2 comparator
         run: python -m platformio run -e mpu_phase_tick_96m_trim25
