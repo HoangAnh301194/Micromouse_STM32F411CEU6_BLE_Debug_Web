@@ -353,7 +353,11 @@ int main(void)
 
 #endif /* old motor diagnostic harness */
 
-#if defined(MOTOR_PWM_DIAG)
+#if defined(MOTOR_AUTO_BENCH)
+/* Serial-host-armed repeatable 3-round motor PWM characterization. */
+int MotorAutoBench_Main(void);
+int main(void) { return MotorAutoBench_Main(); }
+#elif defined(MOTOR_PWM_DIAG)
 /* Explicit opt-in, KEY-armed motor PWM characterization application.
  * Never built by the default and RC2 IMU environments. */
 int MotorPwmDiag_Main(void);
