@@ -389,7 +389,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         }
     }
 #endif
-#if defined(MOTOR_PWM_DIAG)
+#if defined(MOTOR_PWM_DIAG) || defined(MOTOR_AUTO_BENCH)
     /* Opt-in physical driver bench: ONLY encoder + PWM + test watchdog.
      * Unlike Control_SetDiagnosticOnly(1), this path MUST service
      * Motor_Update1ms and MotorTest_Tick1ms, but never IR, IMU or Motion. */
