@@ -508,6 +508,20 @@ def analyze(lines, *, setup=None):
                                intval(sensor_rows[0],"err")) if len(sensor_rows)>=2 else None,
             "i2c_timeout_delta":(intval(sensor_rows[-1],"timeout")-
                                  intval(sensor_rows[0],"timeout")) if len(sensor_rows)>=2 else None,
+            # Timing/IMU counters also run while the stationary MPU is
+            # calibrating before READY. Assess the CHANGE during motor
+            # stages, never reject because an accumulated baseline != 0.
+            "missing_before_motor_phase":intval(sensor_rows[0],"missing") if sensor_rows else None,
+            "missing_delta":(intval(sensor_rows[-1],"missing")-
+                             intval(sensor_rows[0],"missing")) if len(sensor_rows)>=2 else None,
+            "reused_delta":(intval(sensor_rows[-1],"reused")-
+                            intval(sensor_rows[0],"reused")) if len(sensor_rows)>=2 else None,
+            "aged_over1500_delta":(intval(sensor_rows[-1],"aged")-
+                                   intval(sensor_rows[0],"aged")) if len(sensor_rows)>=2 else None,
+            "reused_per_1000_fresh":round(
+                1000.0*(intval(sensor_rows[-1],"reused")-intval(sensor_rows[0],"reused"))/
+                (intval(sensor_rows[-1],"fresh")-intval(sensor_rows[0],"fresh")),3)
+                if len(sensor_rows)>=2 and intval(sensor_rows[-1],"fresh")>intval(sensor_rows[0],"fresh") else None,
             "gyro_abs_avg_drive_mdps":round(statistics.mean(
                 [intval(x,"gyro_abs_avg") for x in sensor_rows if x.get("phase")=="drive"]),2)
                 if any(x.get("phase")=="drive" for x in sensor_rows) else None,
@@ -602,6 +616,10 @@ def self_test():
     if SENSOR_PROFILE:
         assert report["sensor_integration"]["gyro_fresh_delta"]>0
         assert report["sensor_integration"]["ir_scans_delta"]>0
+        assert report["sensor_integration"]["missing_delta"]==0
+        assert report["sensor_integration"]["missing_before_motor_phase"]==0
+        assert report["sensor_integration"]["reused_delta"]==0
+        assert report["sensor_integration"]["aged_over1500_delta"]==0
     assert len(report["repeat_statistics"])==(30 if HIGH_PROFILE else 22)
     # Regression from powered v6 dataset: left 8% works 3/3, 9% fails
     # 0/3, 10% works 3/3. "lowest successful" 8% is NOT a robust
