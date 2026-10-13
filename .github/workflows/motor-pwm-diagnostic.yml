@@ -49,5 +49,15 @@ jobs:
         run: python tools/motor_full_qualification.py --self-test
       - name: Unified full qualification offline audit (prior log can be absent on CI checkout)
         run: python tools/motor_full_qualification.py --audit
+      - name: Install Python 3.14 for Windows-compatible argparse behavior regression
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Python 3.14 CLI --help smoke test (rejects bad percent formatting)
+        run: python tools/motor_full_qualification.py --help
+      - name: Python 3.14 non-powered audit smoke test
+        run: python tools/motor_full_qualification.py --audit
+      - name: Python 3.14 full qualification self-test
+        run: python tools/motor_full_qualification.py --self-test
       - name: Compile unchanged MPU RC2 comparator
         run: python -m platformio run -e mpu_phase_tick_96m_trim25
