@@ -301,6 +301,15 @@ static void ReplyReady(void)
                 );
 }
 
+static uint8_t CanArm(void)
+{
+#if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
+    return sensors_ready && integration_mpu.calibrated &&
+           integration_mpu.cal_state == 3U && ir_scan_count >= 10U;
+#else
+    return 1U;
+#endif
+}
 static void ReceiveLine(const char *line, uint32_t now)
 {
     if (strcmp(line,"MOTOR PING") == 0) {
@@ -313,9 +322,9 @@ static void ReceiveLine(const char *line, uint32_t now)
     } else if (strcmp(line,"MOTOR STOP") == 0) {
         FailSafe("HOST_STOP");
 #if defined(MOTOR_AUTO_HIGH_TEST)
-    } else if (strcmp(line,"MOTOR START HIGH 600") == 0 && state == AUTO_WAIT) {
+    } else if (strcmp(line,"MOTOR START HIGH 600") == 0 && state == AUTO_WAIT && CanArm()) {
 #else
-    } else if (strcmp(line,"MOTOR START") == 0 && state == AUTO_WAIT) {
+    } else if (strcmp(line,"MOTOR START") == 0 && state == AUTO_WAIT && CanArm()) {
 #endif
         last_host_ms = now;
         state = AUTO_SETTLE;
