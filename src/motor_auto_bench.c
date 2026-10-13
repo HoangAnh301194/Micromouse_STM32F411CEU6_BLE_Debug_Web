@@ -198,8 +198,7 @@ static void ReplyReady(void)
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=%u,"
                 "pulse_ms=200,post_ms=400,boot_neutral=1,"
                 "both_cap_permille=160,families=%u,rx_mode=irq256,"
-                "high_pulse_ms=%u,high_post_ms=%u,no_current_sense=1,"
-                "stby_fixed_high=1\r\n",
+                "high_pulse_ms=%u,high_post_ms=%u\r\n",
                 (unsigned)AUTO_VERSION,(unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,
