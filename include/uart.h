@@ -6,6 +6,10 @@
 #define UART_BAUDRATE 115200U
 
 void UART_Init(void);
+#if defined(MOTOR_AUTO_BENCH)
+/* Nonblocking USART1 PA10 RX poll in the explicit motor bench only. */
+uint8_t UART_TryReadByte(uint8_t *out);
+#endif
 void UART_SendString(const char *str);
 void UART_SendString_DMA(const char *str);
 void UART_Printf(const char *format, ...);
