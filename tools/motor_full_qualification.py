@@ -125,6 +125,38 @@ def startup_reinterpretation(stats):
     return result
 
 
+def latest_integrated_session(log_root=ROOT / "motor_logs"):
+    """Locate latest v7/v8 motor+sensor result for offline re-audit.
+
+    Select newest by folder timestamp, including incomplete runs so that an
+    old PASS is never silently substituted for a newer failed experiment.
+    """
+    for folder in sorted(log_root.glob("auto_*"), reverse=True):
+        if not folder.is_dir(): continue
+        meta=folder / "session_meta.json"
+        report=folder / "motor_auto_report.json"
+        if not (meta.is_file() and report.is_file()): continue
+        try:
+            m=json.loads(meta.read_text(encoding="utf-8"))
+            r=json.loads(report.read_text(encoding="utf-8"))
+        except (OSError,ValueError): continue
+        if m.get("sensor_profile") is True and r.get("sensor_profile") is True:
+            return folder
+    return None
+
+
+def counter_delta(si, field):
+    """Use new parser deltas, or derive from old v7 logs without reflashing."""
+    explicit=si.get(field+"_delta")
+    if explicit is not None: return int(explicit)
+    first=si.get("sensor_first") or {}
+    last=si.get("sensor_last") or {}
+    key={"missing":"missing","reused":"reused","aged_over1500":"aged"}.get(field)
+    if key is None or key not in first or key not in last: return None
+    try: return int(last[key])-int(first[key])
+    except (TypeError,ValueError): return None
+
+
 def build_report(reference, evidence_file, latest=None):
     checks,blockers=inspect_driver()
     gates=[
@@ -166,8 +198,19 @@ def build_report(reference, evidence_file, latest=None):
                       (si.get("gyro_fresh_delta") or 0)>0 and
                       (si.get("ir_scans_delta") or 0)>0)
             timing=merged.get("timing_integrity",{})
+            missing_delta=counter_delta(si,"missing")
+            reused_delta=counter_delta(si,"reused")
+            aged_delta=counter_delta(si,"aged_over1500")
+            fresh_delta=si.get("gyro_fresh_delta") or 0
+            # A few reused/aged samples are visible in this bench result,
+            # but an increase in missing/expired >0 is REVIEW, not PASS.
+            # Also flag repeated/aged samples exceeding 0.1% of new samples.
             sensor_anomaly=((si.get("i2c_error_delta") or 0)>0 or
                             (si.get("i2c_timeout_delta") or 0)>0 or
+                            missing_delta is None or missing_delta != 0 or
+                            reused_delta is None or aged_delta is None or
+                            reused_delta > max(1,fresh_delta*0.001) or
+                            aged_delta > max(1,fresh_delta*0.001) or
                             (timing.get("max_observed_tim11_late_ticks") or 0)>0 or
                             (timing.get("max_observed_tim11_gaps") or 0)>0 or
                             (timing.get("max_observed_uart_tx_drop") or 0)>0)
@@ -175,9 +218,15 @@ def build_report(reference, evidence_file, latest=None):
                     "REVIEW" if trace_ok else "INCOMPLETE")
             gates.append(gate("P1-INTEGRATION","Motor+MPU6050/I2C+IR+TIM11",
                               status,
-                              "Bench PASS requires samples and scans progressing, no new I2C timeout/errors and no TIM11 late/gaps or UART drops. Gyro-on/neutral differences still cannot prove EMI.",
+                              "Bench PASS requires MPU/IR progress, zero new missing/expired snapshots, no I2C faults or TIM11 gaps, and low reused/aged fraction. Counters accumulated before calibration are separate. Gyro-on/neutral cannot prove EMI.",
                               {"source":str(latest),"report_status":merged.get("status"),
-                               "sensor_integration":si,"timing":merged.get("timing_integrity")}))
+                               "sensor_integration":si,"timing":merged.get("timing_integrity"),
+                               "motor_phase_quality":{"missing_delta":missing_delta,
+                                   "reused_delta":reused_delta,
+                                   "aged_over1500_delta":aged_delta,
+                                   "fresh_delta":fresh_delta,
+                                   "reused_per_1000_fresh":round(1000*reused_delta/fresh_delta,3)
+                                       if reused_delta is not None and fresh_delta else None}}))
         except (OSError,ValueError) as err:
             gates.append(gate("P1-INTEGRATION","Motor+MPU6050/I2C+IR+TIM11","INCOMPLETE",
                               f"Cannot read latest integrated output: {err}"))
@@ -217,6 +266,8 @@ def main():
     p.add_argument("--run-integrated",action="store_true",help="One STLINK flash + one sequential MPU/IR/motor diagnostic run")
     p.add_argument("--reference",type=Path,default=DEFAULT_BASELINE,
                    help="Existing high PWM v6 baseline log directory")
+    p.add_argument("--integrated-log",type=Path,
+                   help="Choose integrated v7/v8 log for offline audit; default is newest integrated motor log")
     p.add_argument("--electrical-evidence",type=Path,
                    help="Manually measured and independently reviewed current/temperature/waveform JSON")
     p.add_argument("--with-high",action="store_true",
@@ -230,6 +281,15 @@ def main():
     if a.self_test:
         audit=build_report(a.reference,None)
         assert audit["statuses"]["P0-ELECTRICAL"]=="BLOCKED"
+        assert counter_delta({"sensor_first":{"missing":"9000","reused":"0","aged":"0"},
+                              "sensor_last":{"missing":"9000","reused":"8","aged":"1"}},
+                             "missing")==0
+        assert counter_delta({"sensor_first":{"missing":"9000"},
+                              "sensor_last":{"missing":"9001"}},"missing")==1
+        integrated=latest_integrated_session()
+        if integrated is not None:
+            assert build_report(a.reference,None,integrated)["statuses"]["P1-INTEGRATION"] in (
+                "PASS_BENCH","REVIEW","INCOMPLETE")
         sample={"l":{"sustained_replicates_by_duty":{
             "80":3,"90":0,"100":3,"110":3,"120":3}}}
         interpretation=startup_reinterpretation(sample)["l"]
@@ -241,7 +301,9 @@ def main():
         return 0
     if a.with_high and not a.run_integrated:
         p.error("--with-high requires --run-integrated")
-    audit=build_report(a.reference,a.electrical_evidence)
+    latest_for_audit=(a.integrated_log if a.integrated_log is not None else
+                      latest_integrated_session())
+    audit=build_report(a.reference,a.electrical_evidence,latest_for_audit)
     if not a.run_integrated:
         write_results(audit)
         return 0
