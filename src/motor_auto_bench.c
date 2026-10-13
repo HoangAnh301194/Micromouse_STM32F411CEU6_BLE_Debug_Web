@@ -69,6 +69,8 @@ static uint32_t sample_since_ms = 0;
 static uint32_t last_host_ms = 0;
 static uint32_t last_tick_gaps = 0;
 static uint32_t completed_pulses = 0;
+static uint32_t keep_ok = 0U;
+static uint32_t bad_rx_commands = 0U;
 static uint8_t rx_count = 0;
 static char rx_line[32];
 
@@ -102,10 +104,18 @@ static void FailSafe(const char *reason)
     Motor_Stop();
     state = AUTO_FAULT;
     UART_Printf("MOTOR_AUTO_FAULT,reason=%s,round=%u,stage=%u,"
-                "completed=%lu,ccr_l=%lu,ccr_r=%lu\r\n",
+                "completed=%lu,ccr_l=%lu,ccr_r=%lu,"
+                "host_age_ms=%lu,keep_ok=%lu,rx_bytes=%lu,"
+                "rx_ore=%lu,rx_fe=%lu,rx_ring_drop=%lu\r\n",
                 reason,(unsigned)round_i,(unsigned)step_i,
                 (unsigned long)completed_pulses,
-                (unsigned long)TIM2->CCR2,(unsigned long)TIM2->CCR1);
+                (unsigned long)TIM2->CCR2,(unsigned long)TIM2->CCR1,
+                (unsigned long)(millis()-last_host_ms),
+                (unsigned long)keep_ok,
+                (unsigned long)UART_GetRxByteCount(),
+                (unsigned long)UART_GetRxOverrunCount(),
+                (unsigned long)UART_GetRxFramingCount(),
+                (unsigned long)UART_GetRxRingOverflowCount());
 }
 
 static void StartStep(uint32_t now)
@@ -164,7 +174,10 @@ static void ReceiveLine(const char *line, uint32_t now)
     if (strcmp(line,"MOTOR PING") == 0) {
         ReplyReady();
     } else if (strcmp(line,"MOTOR KEEP") == 0) {
-        if (state != AUTO_WAIT) last_host_ms = now;
+        if (state >= AUTO_SETTLE && state <= AUTO_GAP) {
+            last_host_ms = now;
+            ++keep_ok;
+        }
     } else if (strcmp(line,"MOTOR STOP") == 0) {
         FailSafe("HOST_STOP");
     } else if (strcmp(line,"MOTOR START") == 0 && state == AUTO_WAIT) {
@@ -174,11 +187,15 @@ static void ReceiveLine(const char *line, uint32_t now)
         round_i = 0U;
         step_i = 0U;
         completed_pulses = 0U;
+        keep_ok = 0U;
+        bad_rx_commands = 0U;
         Motor_Stop();
         UART_Printf("MOTOR_AUTO_BEGIN,rounds=%u,steps=%u,"
                     "settle_ms=%u,boot_neutral=1\r\n",
                     (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,
                     (unsigned)AUTO_SETTLE_MS);
+    } else {
+        ++bad_rx_commands;
     }
 }
 
@@ -293,6 +310,20 @@ int MotorAutoBench_Main(void)
                             (long)Encoder_GetRightCount(),
                             (unsigned long)TIM2->CCR2,
                             (unsigned long)TIM2->CCR1);
+                UART_Printf("MOTOR_AUTO_LINK,round=%u,stage=%u,"
+                            "keep_ok=%lu,host_age_ms=%lu,"
+                            "rx_bytes=%lu,rx_ore=%lu,rx_fe=%lu,"
+                            "rx_noise=%lu,rx_ring_drop=%lu,"
+                            "bad_commands=%lu\r\n",
+                            (unsigned)round_i,(unsigned)step_i,
+                            (unsigned long)keep_ok,
+                            (unsigned long)(now-last_host_ms),
+                            (unsigned long)UART_GetRxByteCount(),
+                            (unsigned long)UART_GetRxOverrunCount(),
+                            (unsigned long)UART_GetRxFramingCount(),
+                            (unsigned long)UART_GetRxNoiseCount(),
+                            (unsigned long)UART_GetRxRingOverflowCount(),
+                            (unsigned long)bad_rx_commands);
                 MotorTest_AcknowledgeEnd();
                 step_i++;
                 if (step_i >= AUTO_STEPS) {
@@ -308,13 +339,17 @@ int MotorAutoBench_Main(void)
                     state = AUTO_DONE;
                     UART_Printf("MOTOR_AUTO_DONE,rounds=%u,pulses=%lu,"
                                 "ccr_l=%lu,ccr_r=%lu,tim11_gaps=%lu,"
-                                "tx_drop=%lu\r\n",
+                                "tx_drop=%lu,keep_ok=%lu,"
+                                "rx_ore=%lu,rx_ring_drop=%lu\r\n",
                                 (unsigned)AUTO_ROUNDS,
                                 (unsigned long)completed_pulses,
                                 (unsigned long)TIM2->CCR2,
                                 (unsigned long)TIM2->CCR1,
                                 (unsigned long)t.gap_over_1500us,
-                                (unsigned long)UART_GetDroppedMessages());
+                                (unsigned long)UART_GetDroppedMessages(),
+                                (unsigned long)keep_ok,
+                                (unsigned long)UART_GetRxOverrunCount(),
+                                (unsigned long)UART_GetRxRingOverflowCount());
                 } else {
                     state = AUTO_GAP;
                     state_since_ms = now;
