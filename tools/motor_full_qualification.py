@@ -162,11 +162,20 @@ def build_report(reference, evidence_file, latest=None):
         try:
             merged=json.loads((latest/"motor_auto_report.json").read_text(encoding="utf-8"))
             si=merged.get("sensor_integration",{})
-            okay=(merged.get("status")=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" and
-                  si.get("gyro_fresh_delta",0)>0 and si.get("ir_scans_delta",0)>0)
+            trace_ok=(merged.get("status")=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" and
+                      (si.get("gyro_fresh_delta") or 0)>0 and
+                      (si.get("ir_scans_delta") or 0)>0)
+            timing=merged.get("timing_integrity",{})
+            sensor_anomaly=((si.get("i2c_error_delta") or 0)>0 or
+                            (si.get("i2c_timeout_delta") or 0)>0 or
+                            (timing.get("max_observed_tim11_late_ticks") or 0)>0 or
+                            (timing.get("max_observed_tim11_gaps") or 0)>0 or
+                            (timing.get("max_observed_uart_tx_drop") or 0)>0)
+            status=("PASS_BENCH" if trace_ok and not sensor_anomaly else
+                    "REVIEW" if trace_ok else "INCOMPLETE")
             gates.append(gate("P1-INTEGRATION","Motor+MPU6050/I2C+IR+TIM11",
-                              "PASS_BENCH" if okay else "INCOMPLETE",
-                              "Evidence from the combined opt-in hardware profile; review I2C error/reuse and actual EMI separately.",
+                              status,
+                              "Bench PASS requires samples and scans progressing, no new I2C timeout/errors and no TIM11 late/gaps or UART drops. Gyro-on/neutral differences still cannot prove EMI.",
                               {"source":str(latest),"report_status":merged.get("status"),
                                "sensor_integration":si,"timing":merged.get("timing_integrity")}))
         except (OSError,ValueError) as err:
