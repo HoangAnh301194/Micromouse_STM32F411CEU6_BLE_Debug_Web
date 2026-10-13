@@ -258,6 +258,20 @@ static void ReplyReady(void)
                 ,0U
 #endif
                 );
+    /* Read-only register snapshot: exact *software* neutral state, not
+     * measured TB6612 terminal voltages/Hi-Z or electrical brake current.
+     * Replayed on PING even if host missed the boot banner. */
+    UART_Printf("MOTOR_AUTO_STATIC,ccr_l=%lu,ccr_r=%lu,"
+                "in_l1=%u,in_l2=%u,in_r1=%u,in_r2=%u,"
+                "oc1pe=%u,oc2pe=%u,arr=%lu\r\n",
+                (unsigned long)TIM2->CCR2,(unsigned long)TIM2->CCR1,
+                (unsigned)((GPIOB->ODR >> MOTOR_L_IN1_PIN)&1U),
+                (unsigned)((GPIOB->ODR >> MOTOR_L_IN2_PIN)&1U),
+                (unsigned)((GPIOB->ODR >> MOTOR_R_IN1_PIN)&1U),
+                (unsigned)((GPIOB->ODR >> MOTOR_R_IN2_PIN)&1U),
+                (unsigned)((TIM2->CCMR1 & TIM_CCMR1_OC1PE)!=0U),
+                (unsigned)((TIM2->CCMR1 & TIM_CCMR1_OC2PE)!=0U),
+                (unsigned long)TIM2->ARR);
 #if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
     if (!sensors_ready) {
         UART_Printf("MOTOR_AUTO_WAIT_SENSORS,cal=%u,state=%u,good=%lu\r\n",
