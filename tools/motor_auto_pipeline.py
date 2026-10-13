@@ -528,6 +528,9 @@ def execute(args):
         raise SystemExit("--run requires explicit --vm-state powered. For unpowered host protocol validation use --check-link.")
     if args.meter_vm_volts is not None and not (0 <= args.meter_vm_volts <= 12):
         raise SystemExit("Measured VM DC voltage must be in the range 0..12V")
+    # One-command gate: verify the selected v4/v5 host parser (including
+    # missing/faulted traces) BEFORE flashing/arming a motor.
+    self_test()
     folder=Path("motor_logs")/("auto_"+dt.datetime.now().strftime("%Y%m%d_%H%M%S"))
     setup={"vm_state_declared":args.vm_state,
            "dc_vm_volts_hand_measured":args.meter_vm_volts,
