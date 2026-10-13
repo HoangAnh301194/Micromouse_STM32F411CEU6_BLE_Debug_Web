@@ -88,6 +88,8 @@ static uint32_t state_since_ms = 0;
 static uint32_t sample_since_ms = 0;
 static uint32_t last_host_ms = 0;
 static uint32_t last_tick_gaps = 0;
+static uint32_t last_tick_seen = 0U;
+static uint32_t last_tick_seen_ms = 0U;
 static uint32_t completed_pulses = 0;
 static uint32_t keep_ok = 0U;
 static uint32_t bad_rx_commands = 0U;
@@ -296,8 +298,25 @@ int MotorAutoBench_Main(void)
         Control_Timing_t t;
         PollHost(now);
         Control_GetTiming(&t);
-
+        /* Independent main-loop check: TIM11's own tick watchdog will not
+         * progress if TIM11 stalls. SysTick/main may still force neutral. */
+        {
+            uint32_t ticks = Control_GetTickCount();
+            if (ticks != last_tick_seen) {
+                last_tick_seen = ticks;
+                last_tick_seen_ms = now;
+            }
+        }
         if (state >= AUTO_SETTLE && state <= AUTO_GAP) {
+            if (now - last_tick_seen_ms > 20U) {
+                FailSafe("TIM11_STALLED");
+                continue;
+            }
+            if (state == AUTO_DRIVE &&
+                now - state_since_ms > PulseMs() + 25U) {
+                FailSafe("MAIN_WALL_PULSE_TIMEOUT");
+                continue;
+            }
             if (now - last_host_ms > AUTO_HOST_TIMEOUT_MS) {
                 FailSafe("HOST_TIMEOUT");
                 continue;
