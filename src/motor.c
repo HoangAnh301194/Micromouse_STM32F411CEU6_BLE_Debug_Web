@@ -143,7 +143,7 @@ void Motor_SetPairPermille(int16_t left, int16_t right)
         GPIOB->BSRR = neutral;
         wheel_l.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
         wheel_r.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
-        brake_release_ticks = 2U; /* >= one full 20 kHz update before drive */
+        brake_release_ticks = 2U; /* >= one full 30 kHz TIM2 update before drive */
     }
     brake_latched = 0;
     wheel_l.target = ClampCmd(left);
@@ -219,7 +219,7 @@ void Motor_Update1ms(void)
 
     /* Direction GPIO is changed only on the 1 kHz update boundary.
      * Reversal always traverses 0 PWM and a neutral gap >= 30 ms;
-     * the CCR preload takes effect at the following 20 kHz PWM update. */
+     * the CCR preload takes effect at the following 30 kHz PWM update. */
     AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, wheel_l.applied);
     AddDirection(&bsrr, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, wheel_r.applied);
     GPIOB->BSRR = bsrr;
@@ -236,7 +236,10 @@ void Motor_GetAppliedPairPermille(int16_t *l, int16_t *r)
 void Motor_Stop(void)
 {
     uint32_t bsrr = 0, x = LockIRQ();
-    /* Hard stop takes precedence over a pending ramp. */
+    /* Software-neutral command takes precedence over a pending ramp.
+     * At TB6612 VCC=5V, IN1=IN2=LOW + PWM=LOW is NOT a guaranteed
+     * Hi-Z coast entry in the manufacturer's input truth table.
+     * Do not energize brake/reverse tests until power-stage validation. */
     if (wheel_l.applied != 0) {
         wheel_l.last_direction = Sign(wheel_l.applied);
         wheel_l.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
