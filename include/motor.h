@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* API command scale: -1000..+1000 (0.1% resolution).
- * The low-level TIM2 PWM remains 20 kHz.
+ * The low-level TIM2 PWM is configured for 30 kHz (MOTOR_PWM_FREQUENCY).
  * All output changes, except immediate stop/brake, are serviced at 1 kHz. */
 typedef enum {
     MOTOR_STOP_COAST = 0,
@@ -19,8 +19,8 @@ void Motor_SetSlewRates(uint16_t rise_permille_per_ms, uint16_t fall_permille_pe
 void Motor_Update1ms(void);
 void Motor_GetAppliedPairPermille(int16_t *left, int16_t *right);
 
-void Motor_Stop(void);   /* immediate COAST; clears target & pending ramp */
-void Motor_Brake(void);  /* immediate short brake, latched until next command */
+void Motor_Stop(void);   /* software neutral: IN1=IN2=0, CCR=0; electrical Hi-Z NOT verified */
+void Motor_Brake(void);  /* short-brake command per IN truth table; live electrical effects NOT verified */
 void Motor_StopWithMode(MotorStopMode_t mode);
 
 #endif
