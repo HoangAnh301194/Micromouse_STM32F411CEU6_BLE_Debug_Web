@@ -10,6 +10,7 @@ on:
       - 'platformio.ini'
       - 'tools/motor_pwm_capture.py'
       - 'tools/motor_auto_pipeline.py'
+      - 'tools/motor_full_qualification.py'
       - 'docs/motor_driver/**'
   workflow_dispatch:
 
@@ -44,5 +45,9 @@ jobs:
         run: python tools/motor_auto_pipeline.py --self-test --sensor-integration --high-pwm
       - name: v8 high motor MPU IR firmware compile
         run: python -m platformio run -e motor_auto_sensor_high_96m_trim25
+      - name: Unified five-gate high-speed qualification self-test (never powers motors)
+        run: python tools/motor_full_qualification.py --self-test
+      - name: Unified full qualification offline audit (prior log can be absent on CI checkout)
+        run: python tools/motor_full_qualification.py --audit
       - name: Compile unchanged MPU RC2 comparator
         run: python -m platformio run -e mpu_phase_tick_96m_trim25
