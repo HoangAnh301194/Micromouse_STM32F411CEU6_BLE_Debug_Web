@@ -29,6 +29,19 @@ The Toshiba TB6612FNG official documentation lists IOUT ~1.2A average and a 3.2A
 
 Neither stall nor active brake nor reversal will be triggered automatically. **Do not deliberately stall a powered motor without an independently qualified current-limited measurement setup.** Stall current may be estimated from manufacturer data or separately characterized with a properly limited power supply; record method, do not invent a value.
 
+## Sensor/module boundary: integration health only
+
+The integrated v7/v8 program tests **whether the Motor Driver, MPU6050/I2C, infrared acquisition and 1kHz timer can operate concurrently** without unacceptable scheduling/communications interference.
+
+Within this Motor Driver integration test, check only:
+- MPU6050 initialization and stationary startup calibration as an **arming prerequisite**; during PWM run: fresh sample sequence increases, I2C error/timeout counters, repeated or over-age samples, and a coarse 20ms-sampled absolute gyro-rate proxy while powered vs neutral
+- IR ADC/DMA scanning progresses and does not stall; no assessment of geometric accuracy or reflectance calibration
+- TIM11 1kHz deadline/gaps, UART heartbeat/drop counters, PWM caps and encoder continuity
+
+**Not covered here:** absolute MPU yaw accuracy, angular drift, gyro bandwidth and DLPF selection, IR distance conversion, linearity, calibration, wall detection thresholds or motion feedback performance. Those belong in their respective MPU6050, IR, or Motion modules. The absolute gyro proxy includes genuine vibration and cannot on its own prove electromagnetic interference. The session's sensor health result is a **system interoperability test**, not a sensor accuracy certificate.
+
+For a completely motor-off review of existing evidence, use `--audit` alone. This does not require the new VM voltage argument and never uploads firmware.
+
 ## First command: audit everything already measured, no flashing/motion
 
 From project root after updating Git:
@@ -50,10 +63,10 @@ Results use **PASS_BENCH**, **REVIEW**, **BLOCKED**, **NOT_RUN**, or
 With robot stationary, wheels elevated/free, physical VM cutoff accessible:
 
 ```powershell
-python tools/motor_full_qualification.py --run-integrated --port COM6 --vm-state powered --meter-vm-volts 8.2 --confirm-wheels-elevated
+python tools/motor_full_qualification.py --run-integrated --port COM6 --vm-state powered --meter-vm-volts 8.0 --confirm-wheels-elevated
 ```
 
-Replace `8.2` with the *actual hand-measured* VM or omit if unknown.
+For the current session, the operator reports **VM = 8.0 V**; repeat the external measurement before powered tests and update this argument if the voltage changes. The MCU does not measure VM, and this number is metadata only.
 The orchestrator reuses existing high-PWM measurements, calls the
 v7 motor runner, flashes **one** integrated image, waits for **IMU
 calibration and IR scan readiness** before allowing UART START,
@@ -95,7 +108,7 @@ conditions and a physical cutoff are verified, the explicit combined
 v8 mode can be requested:
 
 ```powershell
-python tools/motor_full_qualification.py --run-integrated --with-high --electrical-evidence docs/motor_driver/electrical_evidence.measured.json --port COM6 --vm-state powered --meter-vm-volts 8.2 --confirm-wheels-elevated
+python tools/motor_full_qualification.py --run-integrated --with-high --electrical-evidence docs/motor_driver/electrical_evidence.measured.json --port COM6 --vm-state powered --meter-vm-volts 8.0 --confirm-wheels-elevated
 ```
 
 This still stops at **60%**, never commands 80–100%. It does not make
