@@ -368,8 +368,9 @@ def self_test():
                 t=n*20
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={POST_MS},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
+            synthetic.append(f"MOTOR_AUTO_LINK,round={r},stage={i},keep_ok={1+r*len(MATRIX)+i},host_age_ms=100,rx_bytes={50+r*len(MATRIX)+i},rx_ore=0,rx_fe=0,rx_noise=0,rx_ring_drop=0,bad_commands=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
-    synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0")
+    synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0,keep_ok={EXPECTED},rx_ore=0,rx_ring_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
     assert len(report["repeat_statistics"])==22
@@ -379,9 +380,21 @@ def self_test():
     incomplete([x for x in synthetic if not x.startswith("MOTOR_AUTO_PROFILE")])
     incomplete([x for x in synthetic if "MOTOR_AUTO_END,round=1,stage=3" not in x])
     incomplete(synthetic + ["MOTOR_AUTO_FAULT,reason=HOST_TIMEOUT"])
+    incomplete([x.replace("rx_ore=0,rx_fe=0","rx_ore=1,rx_fe=0")
+                if x.startswith("MOTOR_AUTO_LINK") else x for x in synthetic])
+    aborted = [x for x in synthetic if not ("round=1,stage=" in x or
+               "round=2,stage=" in x)]
+    partial,_ = analyze(aborted)
+    assert partial["status"] == "INCOMPLETE"
+    assert partial["repeat_statistics"][0]["measurement_status"] == "PARTIAL"
+    assert partial["repeat_statistics"][0]["three_drive_counts"] == [50]
+    assert partial["repeat_statistics"][3]["measurement_status"] == "PARTIAL"
+    assert all(x["mean_count"] is None and x["three_drive_counts"] == []
+               for x in partial["repeat_statistics"]
+               if x["test"] == "slew_fast" and x["measurement_status"] == "NOT_TESTED")
     incomplete([x.replace("ccr_l=0,ccr_r=0,tim11_late=0","ccr_l=384,ccr_r=0,tim11_late=0")
                 if "phase=post" in x else x for x in synthetic])
-    print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse four-phase capture; bad profile, missing stage, fault, nonneutral post rejected.")
+    print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.")
     print("Host synthetic test only; not hardware validation.")
 
 
@@ -414,8 +427,12 @@ def store(folder, raw, setup):
     for x in findings["rise_slew_comparison"]:
         lines.append(f"  {x['wheel']}: slow={x['mean_count_slow']}, fast={x['mean_count_fast']}, "
                      f"fast-minus-slow={x['mean_count_fast_minus_slow']} counts")
-    lines.append("PHASE D: per-condition 400ms post-zero observations (details below)")
+    lines.append("PHASE D: executed-condition 400ms post-zero observations (details below)")
+    lines.append(f"NOT_EXECUTED: {report['not_executed_pulses']} of {EXPECTED} pulses; missing stages are excluded, not treated as 0 counts")
+    lines.append("Host/Microcontroller link: " + json.dumps(report["rx_heartbeat_diagnostics"]))
     for x in report["repeat_statistics"]:
+        if x["measurement_status"] == "NOT_TESTED":
+            continue
         lines.append(f"[{x['test']}] Stage {x['stage']} {x['wheel']} {x['cmd_permille']}permille, rise={x['rise_rate_permille_per_ms']}: "
                      f"counts={x['three_drive_counts']}, mean={x['mean_count']}, "
                      f"std={x['sample_std_count']}, sustained={x['sustained_replicates']}/3, "
@@ -450,6 +467,7 @@ def execute(args):
     except ImportError as e:
         raise SystemExit("Install dependency: python -m pip install pyserial") from e
     raw=[]
+    keep_sent=0
     began=False
     complete=False
     requested_start=False
@@ -469,7 +487,8 @@ def execute(args):
                     ping_at=now+0.4
                 if requested_start and now>=keep_at and not complete:
                     ser.write(b"MOTOR KEEP\n")
-                    keep_at=now+0.35
+                    keep_sent += 1
+                    keep_at=now+0.25
                 if not requested_start and now>handshake_deadline:
                     print("NO BIDIRECTIONAL UART HANDSHAKE: PA10 RX may not be connected to USB-UART TX. No START was sent.")
                     break
@@ -525,7 +544,10 @@ def execute(args):
     except subprocess.CalledProcessError as e:
         raise SystemExit(f"Firmware upload failed: {e}") from e
 
+    setup["host_keep_sent_count"] = keep_sent
     report=store(folder,raw,setup)
+    print("Heartbeat link: host KEEP sent =",keep_sent,
+          "; firmware last decoded =",report["rx_heartbeat_diagnostics"]["keep_decoded_last"])
     if not began:
         print("No motor sequence began. If RX handshake failed, check COM6 USB-UART TX -> STM32 PA10 and common ground; board wiring must not be changed if prohibited.")
     return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
