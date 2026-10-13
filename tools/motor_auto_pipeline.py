@@ -512,6 +512,19 @@ def self_test():
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
     assert len(report["repeat_statistics"])==(30 if HIGH_PROFILE else 22)
+    # Regression from powered v6 dataset: left 8% works 3/3, 9% fails
+    # 0/3, 10% works 3/3. "lowest successful" 8% is NOT a robust
+    # deadband threshold in this nonmonotonic situation.
+    test_stats = [
+        {"test":"startup", "wheel":"l", "cmd_permille":duty,
+         "sustained_3of3":ok, "sustained_replicates":3 if ok else 0,
+         "executed_replicates":3}
+        for duty,ok in ((80,True),(90,False),(100,True),(110,True),(120,True))
+    ]
+    threshold = phase_findings(test_stats)["startup_threshold_heuristic"]["l"]
+    assert threshold["lowest_tested_3of3_permille"] == 80
+    assert threshold["lowest_monotonic_suffix_3of3_permille"] == 100
+    assert threshold["nonmonotonic_success_decreases"][0]["higher_permille"] == 90
     def incomplete(lines):
         x,_=analyze(lines)
         assert x["status"]=="INCOMPLETE", x
