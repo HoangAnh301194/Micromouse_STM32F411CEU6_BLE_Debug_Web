@@ -413,28 +413,29 @@ def analyze(lines, *, setup=None):
 def self_test():
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
-        f"MOTOR_AUTO_PROFILE,version=4,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,rx_mode=irq256,pulse_ms=200,post_ms=400,boot_neutral=1",
-        f"MOTOR_AUTO_READY,version=4,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,families=4,rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1",
+        f"MOTOR_AUTO_PROFILE,version={PROFILE_VERSION},nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,high_pulse_ms={HIGH_PULSE_MS if HIGH_PROFILE else 0},high_post_ms={HIGH_POST_MS if HIGH_PROFILE else 0},pulse_ms=200,post_ms=400,boot_neutral=1",
+        f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
     for r in range(NUM_ROUNDS):
         for i,(left,right) in enumerate(MATRIX):
             test, rise = TESTS[i], RISE_RATES[i]
-            synthetic.append(f"MOTOR_AUTO_START,round={r},stage={i},l={left},r={right},test={test},rise={rise},pulse_ms=200")
-            for n in range(1,11):
+            pulse, post = stage_pulse_ms(i), stage_post_ms(i)
+            synthetic.append(f"MOTOR_AUTO_START,round={r},stage={i},l={left},r={right},test={test},rise={rise},pulse_ms={pulse}")
+            for n in range(1,pulse//20+1):
                 t=n*20-1
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,test={test},rise={rise},ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10},ccr_r={right*32//10},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
-            synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed=200,reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
-            for n in range(1,POST_MS//20+1):
+            synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed={pulse},reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
+            for n in range(1,post//20+1):
                 t=n*20
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
-            synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={POST_MS},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
+            synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={post},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
             synthetic.append(f"MOTOR_AUTO_LINK,round={r},stage={i},keep_ok={1+r*len(MATRIX)+i},host_age_ms=100,rx_bytes={50+r*len(MATRIX)+i},rx_ore=0,rx_fe=0,rx_noise=0,rx_ring_drop=0,bad_commands=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
     synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0,keep_ok={EXPECTED},rx_ore=0,rx_ring_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
-    assert len(report["repeat_statistics"])==22
+    assert len(report["repeat_statistics"])==(30 if HIGH_PROFILE else 22)
     def incomplete(lines):
         x,_=analyze(lines)
         assert x["status"]=="INCOMPLETE", x
@@ -495,7 +496,12 @@ def store(folder, raw, setup):
     for x in findings["rise_slew_comparison"]:
         lines.append(f"  {x['wheel']}: slow={x['mean_count_slow']}, fast={x['mean_count_fast']}, "
                      f"fast-minus-slow={x['mean_count_fast_minus_slow']} counts")
-    lines.append("PHASE D: executed-condition 400ms post-zero observations (details below)")
+    lines.append("PHASE D: executed-condition 400ms base / 800ms high neutral observations (details below)")
+    if HIGH_PROFILE:
+        lines.append("PHASE E: opt-in PWM 30/40/50/60% for each wheel; 120ms drive/800ms neutral, 3 rounds")
+        high = [x for x in report["repeat_statistics"] if x["test"] == "high"]
+        for x in high:
+            lines.append(f"  {x['wheel']} duty={x['cmd_permille']/10:.0f}% counts={x['three_drive_counts']}, post-neutral={x['three_post_stop_deltas']}, repeats={x['executed_replicates']}")
     lines.append(f"NOT_EXECUTED: {report['not_executed_pulses']} of {EXPECTED} pulses; missing stages are excluded, not treated as 0 counts")
     lines.append("Host/Microcontroller link: " + json.dumps(report["rx_heartbeat_diagnostics"]))
     for x in report["repeat_statistics"]:
@@ -523,7 +529,9 @@ def execute(args):
            "dc_vm_volts_hand_measured":args.meter_vm_volts,
            "firmware_env":FIRMWARE_ENV,"host_control":"USART1 RX PA10",
            "rounds":NUM_ROUNDS,"stages_per_round":len(MATRIX),
-           "diagnostic_phases":["startup","response","slew_slow","slew_fast"],
+           "diagnostic_phases":["startup","response","slew_slow","slew_fast"]+
+                                  (["high"] if HIGH_PROFILE else []),
+           "high_profile": HIGH_PROFILE,
            "note":"VM state user-supplied, not measured by STM32; duty is not current limit."}
     if not args.skip_flash:
         print("Build + flash opt-in firmware via STLINK:", FIRMWARE_ENV,flush=True)
@@ -568,15 +576,15 @@ def execute(args):
                 kind,v=split_record(frame)
                 if kind=="MOTOR_AUTO_READY" and not requested_start:
                     if any(intval(v,k)!=value for k,value in (
-                        ("version",4),("rounds",NUM_ROUNDS),
+                        ("version",PROFILE_VERSION),("rounds",NUM_ROUNDS),
                         ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
-                        ("both_cap_permille",DUAL_MAX_CMD),("families",4),
+                        ("both_cap_permille",DUAL_MAX_CMD),("families",FAMILIES),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
                         ("boot_neutral",1))) or v.get("rx_mode")!="irq256" or intval(v,"state")!=0:
                         print("Unsafe/incompatible firmware or motor already active. REFUSING START:",frame)
                         break
                     print("RX handshake verified. Explicit host START issued.")
-                    ser.write(b"MOTOR START\n")
+                    ser.write(b"MOTOR START HIGH 600\n" if HIGH_PROFILE else b"MOTOR START\n")
                     requested_start=True
                     keep_at=0.0
                 elif kind=="MOTOR_AUTO_BEGIN":
@@ -656,8 +664,15 @@ def main():
     p.add_argument("--vm-state",choices=["powered","disconnected"])
     p.add_argument("--meter-vm-volts",type=float)
     p.add_argument("--skip-flash",action="store_true")
+    p.add_argument("--high-pwm",action="store_true",
+                   help="Opt-in additional 30/40/50/60 percent elevated-wheel 120ms per-motor pulses; no current measurement")
+    p.add_argument("--confirm-wheels-elevated",action="store_true",
+                   help="Confirm elevated, free-spinning wheels and immediate physical VM disconnect")
     p.add_argument("--timeout",type=float,default=150.0)
     args=p.parse_args()
+    configure_profile(args.high_pwm)
+    if args.high_pwm and args.run and not args.confirm_wheels_elevated:
+        p.error("High PWM requires --confirm-wheels-elevated; duty cannot substitute for current limit")
     if args.self_test:
         self_test()
         return 0
@@ -667,6 +682,7 @@ def main():
             p.error(f"Missing {raw_path}")
         meta_path=args.folder/"session_meta.json"
         meta=json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+        configure_profile(bool(meta.get("high_profile", False)))
         report=store(args.folder,raw_path.read_text(encoding="utf-8").splitlines(),meta)
         return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
     if not args.port:
