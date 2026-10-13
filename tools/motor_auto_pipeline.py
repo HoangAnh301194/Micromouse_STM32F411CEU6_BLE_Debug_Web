@@ -64,6 +64,58 @@ def intval(obj, key, default=-999999):
         return default
 
 
+def phase_findings(stats):
+    """Summaries derived only from encoder counts, not physical voltage/current."""
+    startup = {}
+    for wheel in ("l", "r"):
+        subset = sorted((x for x in stats if x["test"] == "startup" and
+                         x["wheel"] == wheel), key=lambda x:x["cmd_permille"])
+        reliable = [x["cmd_permille"] for x in subset if x["sustained_3of3"]]
+        startup[wheel] = {
+            "tested_permille": [x["cmd_permille"] for x in subset],
+            "sustained_replicates_by_duty": {
+                str(x["cmd_permille"]): x["sustained_replicates"] for x in subset},
+            "lowest_tested_3of3_permille": min(reliable) if reliable else None,
+        }
+    response = []
+    for duty in (120,160,200):
+        left = next((x for x in stats if x["test"] == "response" and
+                     x["wheel"] == "l" and x["cmd_permille"] == duty and
+                     x["stage"] != 16), None)
+        right = next((x for x in stats if x["test"] == "response" and
+                      x["wheel"] == "r" and x["cmd_permille"] == duty and
+                      x["stage"] != 16), None)
+        if left is not None and right is not None and left["mean_count"] is not None and right["mean_count"] is not None:
+            base = right["mean_count"]
+            response.append({
+                "pwm_permille":duty,"mean_left_encoder_count":left["mean_count"],
+                "mean_right_encoder_count":base,
+                "relative_count_difference_pct":round(100*(left["mean_count"]-base)/base,2) if base else None,
+                "mean_left_post_stop_counts":round(statistics.mean(left["three_post_stop_deltas"]),2),
+                "mean_right_post_stop_counts":round(statistics.mean(right["three_post_stop_deltas"]),2),
+            })
+    slew = []
+    for wheel in ("l","r"):
+        slow = next((x for x in stats if x["test"] == "slew_slow" and x["wheel"] == wheel),None)
+        fast = next((x for x in stats if x["test"] == "slew_fast" and x["wheel"] == wheel),None)
+        if slow is not None and fast is not None:
+            slew.append({
+                "wheel":wheel, "duty_permille":160,
+                "rise_slow_permille_per_ms":5,
+                "rise_fast_permille_per_ms":20,
+                "mean_count_slow":slow["mean_count"],
+                "mean_count_fast":fast["mean_count"],
+                "mean_count_fast_minus_slow":round(fast["mean_count"]-slow["mean_count"],2) if
+                    fast["mean_count"] is not None and slow["mean_count"] is not None else None,
+            })
+    return {
+        "startup_threshold_heuristic":startup,
+        "open_loop_response":response,
+        "rise_slew_comparison":slew,
+        "limitations":"Based on encoder count only; startup is a heuristic at the tested 8-12% settings and 3 repeats. Nonzero post-STOP counts do not establish exact electrical coast/brake mode."
+    }
+
+
 def analyze(lines, *, setup=None):
     records = [split_record(x) for x in lines]
     by_kind = {}
@@ -252,6 +304,13 @@ def analyze(lines, *, setup=None):
         "test_families":["startup","response","slew_slow","slew_fast"],
         "stages_per_round":len(MATRIX),"post_stop_observation_ms":POST_MS,
         "repeat_statistics":stats,"trials":individual,
+        "phase_findings":phase_findings(stats),
+        "timing_integrity":{
+            "max_tim11_dwt_cycles_seen": max((intval(x,"tim11_max_cycles",0) for x in samples), default=0),
+            "max_observed_tim11_late_ticks": max((intval(x,"tim11_late",0) for x in samples), default=0),
+            "max_observed_tim11_gaps": max((intval(x,"tim11_gaps",0) for x in samples), default=0),
+            "max_observed_uart_tx_drop": max((intval(x,"tx_drop",0) for x in samples), default=0),
+        },
         "experiment_setup":setup or {},
         "electrical_limitation":"3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM. 20pct duty is not a current limit.",
         "interpretation":"Sustained_count_signal is an empirical >=5 encoder-count and >=5 tail-count heuristic, NOT a certified deadband threshold.",
@@ -310,8 +369,22 @@ def store(folder, raw, setup):
            f"Stages: {report['starts']}/{EXPECTED}; samples: {report['sample_count']}",
            "Encoder counts are not RPM. Electrical current/thermal limits were NOT measured.",
            ""]
+    findings = report["phase_findings"]
+    lines.append("PHASE A: startup 8-12% (3/3 sustained encoder count heuristic)")
+    for wheel in ("l","r"):
+        th = findings["startup_threshold_heuristic"][wheel]
+        lines.append(f"  {wheel}: confirmed-per-duty={th['sustained_replicates_by_duty']}; lowest-test-3of3={th['lowest_tested_3of3_permille']}")
+    lines.append("PHASE B: PWM response and post-zero encoder movement")
+    for x in findings["open_loop_response"]:
+        lines.append(f"  {x['pwm_permille']} permille: L/R={x['mean_left_encoder_count']}/{x['mean_right_encoder_count']}, "
+                     f"delta={x['relative_count_difference_pct']}%, postzero-L/R={x['mean_left_post_stop_counts']}/{x['mean_right_post_stop_counts']}")
+    lines.append("PHASE C: rise slew 5 vs 20 permille/ms at 16%")
+    for x in findings["rise_slew_comparison"]:
+        lines.append(f"  {x['wheel']}: slow={x['mean_count_slow']}, fast={x['mean_count_fast']}, "
+                     f"fast-minus-slow={x['mean_count_fast_minus_slow']} counts")
+    lines.append("PHASE D: per-condition 400ms post-zero observations (details below)")
     for x in report["repeat_statistics"]:
-        lines.append(f"Stage {x['stage']} {x['wheel']} {x['cmd_permille']}permille: "
+        lines.append(f"[{x['test']}] Stage {x['stage']} {x['wheel']} {x['cmd_permille']}permille, rise={x['rise_rate_permille_per_ms']}: "
                      f"counts={x['three_drive_counts']}, mean={x['mean_count']}, "
                      f"std={x['sample_std_count']}, sustained={x['sustained_replicates']}/3, "
                      f"post-stop-delta={x['three_post_stop_deltas']}")
