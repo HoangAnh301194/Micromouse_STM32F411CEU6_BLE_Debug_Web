@@ -325,7 +325,11 @@ def analyze(lines, *, setup=None):
                 # count, zero stop-distance or proof of no motor response.
                 final = intval(e, f"enc_{wheel}", None)
                 after_count = intval(p, f"enc_{wheel}", None)
-                tail = [x for x in drives if intval(x,"elapsed") >= 99]
+                # Short 120ms high-duty pulses have only ~5 pre-stop
+                # samples; choose last-half window rather than >=99ms.
+                tail_start = (stage_pulse_ms(stage)//2
+                              if stage >= BASE_STEPS else 99)
+                tail = [x for x in drives if intval(x,"elapsed") >= tail_start]
                 tail_delta = (intval(tail[-1],f"enc_{wheel}",0) -
                               intval(tail[0],f"enc_{wheel}",0)) if len(tail)>1 else None
                 sustained = request > 0 and final is not None and abs(final) >= 5 and \
