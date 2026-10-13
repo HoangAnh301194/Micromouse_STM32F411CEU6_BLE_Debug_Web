@@ -391,6 +391,17 @@ int MotorAutoBench_Main(void)
             }
             if (now - state_since_ms >= PostMs()) {
 #if defined(MOTOR_AUTO_HIGH_TEST)
+                /* A valid low-duty baseline is required before this session
+                 * reaches 30%+. A missing encoder or motor-power failure
+                 * must not lead to blind higher-duty escalation. */
+                if (step_i == 14U && Encoder_GetLeftCount() < 50) {
+                    FailSafe("BASELINE_20PCT_LEFT_WEAK");
+                    continue;
+                }
+                if (step_i == 15U && Encoder_GetRightCount() < 50) {
+                    FailSafe("BASELINE_20PCT_RIGHT_WEAK");
+                    continue;
+                }
                 if (step_i >= AUTO_HIGH_FIRST &&
                     (!high_post_ref_valid ||
                      (Encoder_GetLeftCount()-high_post_ref_l > 5) ||
