@@ -3,7 +3,7 @@
 
 The same Python process builds/flashes opt-in firmware, verifies bidirectional
 UART communication, sends the explicit START command, captures 3 rounds of
-7 stages, validates telemetry, computes replicate statistics, and writes files.
+9 stages, validates telemetry, computes replicate statistics, and writes files.
 NO KEY/button, no automatic motion on reset, no current/thermal safety claim.
 
 IMPORTANT: MCU PA10 / USART1 RX must physically connect to the USB-UART TX
@@ -25,9 +25,13 @@ FIRMWARE_ENV = "motor_auto_pipeline_96m_trim25"
 NUM_ROUNDS = 3
 PULSE_MS = 200
 POST_MS = 300
-MATRIX = ((80, 0), (0, 80), (100, 0), (0, 100),
-          (120, 0), (0, 120), (120, 120))
-MAX_CMD = 120
+# 8/12% anchor prior baseline; expand single-wheel to 16/20%;
+# dual-wheel remains 16% to avoid a simultaneous peak without current sensing.
+MATRIX = ((80, 0), (0, 80), (120, 0), (0, 120),
+          (160, 0), (0, 160), (200, 0), (0, 200), (160, 160))
+MAX_CMD = 200
+DUAL_MAX_CMD = 160
+MAX_CCR = 640  # TIM2 96MHz / 30kHz = 3200 counts, 20% = 640
 EXPECTED = NUM_ROUNDS * len(MATRIX)
 CSV_FIELDS = ("round", "stage", "phase", "ms", "elapsed", "applied_l",
               "applied_r", "enc_l", "enc_r", "ccr_l", "ccr_r",
@@ -76,9 +80,10 @@ def analyze(lines, *, setup=None):
     else:
         p = profile[-1]
         for key, value in {
-            "version": 1, "nominal_hz": 96000000,
+            "version": 2, "nominal_hz": 96000000,
             "pwm_hz": 30000, "rounds": NUM_ROUNDS,
             "steps": len(MATRIX), "hard_cap_permille": MAX_CMD,
+            "both_cap_permille": DUAL_MAX_CMD,
             "pulse_ms": PULSE_MS, "post_ms": POST_MS,
             "boot_neutral": 1,
         }.items():
@@ -143,8 +148,8 @@ def analyze(lines, *, setup=None):
             if abs(intval(s, k)) > MAX_CMD:
                 errors.append("Applied PWM exceeded hard cap")
         for k in ("ccr_l", "ccr_r"):
-            if not (0 <= intval(s, k) <= 400):
-                errors.append("Invalid CCR (PWM > 12.5% at 3200 counts)")
+            if not (0 <= intval(s, k) <= MAX_CCR):
+                errors.append("Invalid CCR (PWM > 20% at 3200 counts)")
         if s.get("phase") == "post" and any(intval(s, k) != 0 for k in
                                              ("applied_l", "applied_r", "ccr_l", "ccr_r")):
             errors.append("Nonneutral PWM detected during post-stop observation")
@@ -166,6 +171,16 @@ def analyze(lines, *, setup=None):
             if drives and any(abs(intval(x,"applied_l")) > cmd[0] or
                               abs(intval(x,"applied_r")) > cmd[1] for x in drives):
                 errors.append(f"Requested PWM cap exceeded r={r} stage={stage}")
+            if cmd[0] and cmd[1] and (cmd[0] > DUAL_MAX_CMD or cmd[1] > DUAL_MAX_CMD):
+                errors.append(f"Dual-wheel duty beyond allowed cap r={r} stage={stage}")
+            # Compare actual timer CCR peak against commanded levels. A zero
+            # or truncated PWM implementation must not pass just because
+            # all 21/27 START/END records exist.
+            if drives:
+                for wheel, duty in (("l", cmd[0]), ("r", cmd[1])):
+                    peak = max(intval(x, f"ccr_{wheel}") for x in drives)
+                    if duty > 0 and peak != duty * 3200 // 1000:
+                        errors.append(f"PWM CCR mismatch r={r} stage={stage} wheel={wheel}: peak={peak}")
             driven_counts = []
             for wheel, request in (("l", cmd[0]), ("r", cmd[1])):
                 final = intval(e, f"enc_{wheel}", 0)
@@ -217,7 +232,7 @@ def analyze(lines, *, setup=None):
         "sample_count":len(samples),"errors":errors,
         "repeat_statistics":stats,"trials":individual,
         "experiment_setup":setup or {},
-        "electrical_limitation":"3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM.",
+        "electrical_limitation":"3.3V MCU GPIO HIGH is below guaranteed TB6612 VIH with logic VCC=5V; STBY tied 5V; no measured current/temperature/physical PWM waveform. Encoder signal is not verified wheel RPM. 20pct duty is not a current limit.",
         "interpretation":"Sustained_count_signal is an empirical >=5 encoder-count and >=5 tail-count heuristic, NOT a certified deadband threshold.",
     }, rows
 
@@ -225,9 +240,9 @@ def analyze(lines, *, setup=None):
 def self_test():
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
-        "MOTOR_AUTO_PROFILE,version=1,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps=7,hard_cap_permille=120,pulse_ms=200,post_ms=300,boot_neutral=1",
-        "MOTOR_AUTO_READY,version=1,rounds=3,steps=7,hard_cap_permille=120,pulse_ms=200,post_ms=300,one_shot=1,boot_neutral=1",
-        "MOTOR_AUTO_BEGIN,rounds=3,steps=7,settle_ms=1000,boot_neutral=1"
+        f"MOTOR_AUTO_PROFILE,version=2,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=300,boot_neutral=1",
+        f"MOTOR_AUTO_READY,version=2,rounds=3,steps={len(MATRIX)},hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=300,one_shot=1,boot_neutral=1",
+        f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
     for r in range(NUM_ROUNDS):
         for i,(left,right) in enumerate(MATRIX):
@@ -241,10 +256,10 @@ def self_test():
                 synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed=300,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
-    synthetic.append("MOTOR_AUTO_DONE,rounds=3,pulses=21,ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0")
+    synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
-    assert len(report["repeat_statistics"])==8
+    assert len(report["repeat_statistics"])==10
     def incomplete(lines):
         x,_=analyze(lines)
         assert x["status"]=="INCOMPLETE", x
@@ -253,7 +268,7 @@ def self_test():
     incomplete(synthetic + ["MOTOR_AUTO_FAULT,reason=HOST_TIMEOUT"])
     incomplete([x.replace("ccr_l=0,ccr_r=0,tim11_late=0","ccr_l=384,ccr_r=0,tim11_late=0")
                 if "phase=post" in x else x for x in synthetic])
-    print("SELF-TEST PASSED: 3-round 21-stage capture; missing profile, stage, fault, nonneutral post correctly rejected.")
+    print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse capture; bad profile, missing stage, fault, nonneutral post rejected.")
     print("Host synthetic test only; not hardware validation.")
 
 
@@ -338,8 +353,9 @@ def execute(args):
                 kind,v=split_record(frame)
                 if kind=="MOTOR_AUTO_READY" and not requested_start:
                     if any(intval(v,k)!=value for k,value in (
-                        ("version",1),("rounds",NUM_ROUNDS),
+                        ("version",2),("rounds",NUM_ROUNDS),
                         ("steps",len(MATRIX)),("hard_cap_permille",MAX_CMD),
+                        ("both_cap_permille",DUAL_MAX_CMD),
                         ("pulse_ms",PULSE_MS),("post_ms",POST_MS),
                         ("boot_neutral",1))) or intval(v,"state")!=0:
                         print("Unsafe/incompatible firmware or motor already active. REFUSING START:",frame)
