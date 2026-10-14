@@ -276,27 +276,66 @@ def self_test() -> None:
     # Synthesized CSV serves only to exercise the host parser. It is NOT
     # written to the user's measurement folder or used as hardware evidence.
     with TemporaryDirectory(prefix="motor_p0_synthetic_") as temp:
-        path = Path(temp) / "drive_to_coast_left.csv"
-        # 0-2ms forward PWM chopping, 2-4ms steady Coast at 1us sample.
-        with path.open("w", newline="", encoding="utf-8") as fp:
-            writer = csv.writer(fp)
-            writer.writerow(("t_us", "in1", "in2", "pwm"))
-            for t in range(5000):
-                writer.writerow((t, 1 if t < 2000 else 0,
-                                 0, int(t % 33 < 7) if t < 2000 else 1))
-        good = inspect_capture(read_capture(path), "drive_to_coast")
-        assert good["status"] == "PIN_SEQUENCE_REVIEW", good
-        with path.open("a", encoding="utf-8") as fp:
-            fp.write("5000,2,0,1\n")
+        folder = Path(temp)
+        for case in CASES:
+            for wheel in WHEELS:
+                with (folder / f"{case}_{wheel}.csv").open(
+                        "w", newline="", encoding="utf-8") as fp:
+                    writer = csv.writer(fp)
+                    writer.writerow(("t_us", "in1", "in2", "pwm"))
+                    # Reversals require >30 ms neutral interval, so record
+                    # 42 ms; all other sequences use 8 ms.
+                    limit = 42000 if "reverse" in case else 8000
+                    for t in range(0, limit, 2):
+                        if case == "drive_to_coast":
+                            state = "forward" if t < 3000 else "coast"
+                        elif case == "coast_to_drive":
+                            state = "coast" if t < 3000 else "forward"
+                        elif case == "drive_to_brake":
+                            state = "forward" if t < 3000 else "brake"
+                        elif case == "brake_to_coast":
+                            state = "brake" if t < 3000 else "coast"
+                        elif case == "forward_to_reverse":
+                            state = ("forward" if t < 2000 else
+                                     "coast" if t < 38000 else "reverse")
+                        else:
+                            state = ("reverse" if t < 2000 else
+                                     "coast" if t < 38000 else "forward")
+                        in1 = int(state in ("forward", "brake"))
+                        in2 = int(state in ("reverse", "brake"))
+                        pwm = 1 if state in ("coast", "brake") else int(t % 34 < 8)
+                        writer.writerow((t, in1, in2, pwm))
+        measured = capture_bundle(folder)
+        assert measured["status"] == "PIN_SEQUENCE_REVIEW", [
+            (name, v["issues"]) for name, v in measured["traces"].items()
+            if v["status"] != "PIN_SEQUENCE_REVIEW"
+        ]
+        assert measured["coverage"] == "12/12"
+        # A command reversal separated by just 4 ms must fail, even
+        # when the beginning/end windows superficially look correct.
+        bad_reverse = [
+            (float(t), 1 if t < 2000 else 0 if t < 6000 else 0,
+             0 if t < 6000 else 1, int(t % 34 < 8) if t < 2000 or t >= 6000 else 1)
+            for t in range(0, 10000, 2)
+        ]
+        illegal = inspect_capture(bad_reverse, "forward_to_reverse")
+        assert illegal["status"] == "FAIL"
+        assert any("30000" in issue for issue in illegal["issues"])
+        # Missing file must never silently qualify the entire bundle.
+        (folder / REQUIRED[0]).unlink()
+        partial = capture_bundle(folder)
+        assert partial["status"] == "INCOMPLETE_OR_FAIL"
+        assert partial["coverage"] == "11/12"
+        # Reject malformed digital levels and sampling gaps.
+        invalid = folder / "invalid.csv"
+        with invalid.open("w", encoding="utf-8") as fp:
+            fp.write("t_us,in1,in2,pwm\n0,2,0,1\n")
         try:
-            read_capture(path)
+            read_capture(invalid)
         except CaptureError:
             pass
         else:
-            raise AssertionError("Bad logic pin level was accepted")
-        partial = capture_bundle(Path(temp))
-        assert partial["status"] == "INCOMPLETE_OR_FAIL"
-        assert partial["coverage"] == "0/12"
+            raise AssertionError("Invalid logic levels were accepted")
     print("PASS: eight offline P0 gates, waveform CSV guards and missing-evidence gate.")
     print("SYNTHETIC WAVEFORMS ARE NOT HARDWARE EVIDENCE. No flash, START or serial access.")
 
