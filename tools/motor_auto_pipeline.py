@@ -956,9 +956,8 @@ def execute(args):
 
 
 def check_link(args):
-    print("Link test: no START will be sent. Validates STM32 UART RX only.")
-    if not args.skip_flash:
-        subprocess.run([sys.executable,"-m","platformio","run","-e",FIRMWARE_ENV,"-t","upload"],check=True)
+    # A read-only link check must never upload firmware as a hidden side effect.
+    print("Read-only UART link check: no upload, no START or motor drive.")
     try:
         import serial
     except ImportError as e:
@@ -1007,7 +1006,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     group=p.add_mutually_exclusive_group(required=True)
     group.add_argument("--run",action="store_true",help="Explicitly authorize one 3-round experiment")
-    group.add_argument("--check-link",action="store_true",help="UART RX-only test; no motor drive")
+    group.add_argument("--check-link",action="store_true",help="Read-only UART handshake; no flash, START or motor drive")
     group.add_argument("--self-test",action="store_true",help="Offline host parser regression")
     group.add_argument("--folder",type=Path,help="Re-analyze a saved raw log directory")
     p.add_argument("--port",help="USB-UART port e.g. COM6")
