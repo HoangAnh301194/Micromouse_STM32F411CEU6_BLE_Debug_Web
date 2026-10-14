@@ -366,9 +366,9 @@ static void ReceiveLine(const char *line, uint32_t now)
         /* Read-only 512-ms software-register/encoder capture.
          * No StartStep(), no Motor_SetPair, no brake or reverse. */
         if (state == AUTO_WAIT && MotorFunctionalTrace_Begin()) {
-            UART_Printf("MFD_ARMED,n=512,motor_start=0\\r\\n");
+            UART_Printf("MFD_ARMED,n=512,motor_start=0\r\n");
         } else {
-            UART_Printf("MFD_REJECT,reason=BUSY_OR_NOT_IDLE\\r\\n");
+            UART_Printf("MFD_REJECT,reason=BUSY_OR_NOT_IDLE\r\n");
         }
     } else if (strcmp(line,"MOTOR KEEP") == 0) {
         if (state >= AUTO_SETTLE && state <= AUTO_GAP) {
