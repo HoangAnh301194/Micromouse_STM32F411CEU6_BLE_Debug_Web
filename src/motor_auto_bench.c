@@ -32,16 +32,19 @@
 #endif
 #endif
 
+/* New source-level TB6612 STOP_HIZ semantics: new protocol IDs 14/16/17/18.
+ * Versions 4/6/7/8 correspond to archived CCR=0 firmware only.
+ * All new versions report CCR=ARR+1 for unpowered input-level Coast. */
 #define AUTO_ROUNDS          3U
 #if defined(MOTOR_AUTO_HIGH_TEST)
-/* Deliberately separate opt-in firmware: regular v4 bench is unchanged.
+/* Deliberately separate opt-in firmware: previous v4/v6/v7/v8 logs remain archived.
  * 8 more short PWM stages, 30/40/50/60%, single-wheel only. */
 #define AUTO_STEPS          29U
 #define AUTO_MAX_PERMILLE    600U
 #if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
-#define AUTO_VERSION         8U
+#define AUTO_VERSION        18U
 #else
-#define AUTO_VERSION         6U
+#define AUTO_VERSION        16U
 #endif
 #define AUTO_FAMILIES        5U
 #define AUTO_HIGH_FIRST     21U
@@ -51,9 +54,9 @@
 #define AUTO_STEPS          21U
 #define AUTO_MAX_PERMILLE    200U
 #if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
-#define AUTO_VERSION         7U
+#define AUTO_VERSION        17U
 #else
-#define AUTO_VERSION         4U
+#define AUTO_VERSION        14U
 #endif
 #define AUTO_FAMILIES        4U
 #endif
