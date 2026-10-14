@@ -396,17 +396,43 @@ def main() -> int:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--run", action="store_true", help="Full no-power batch and JSON/TXT results")
     group.add_argument("--self-test", action="store_true", help="Host-only pipeline regression")
-    parser.add_argument("--waveforms", type=Path, help="Folder containing all 12 scope CSV captures")
-    parser.add_argument("--output", type=Path, help="Report folder; defaults to timestamped motor_logs/p0_batch")
+    parser.add_argument("--waveforms", type=Path,
+                        help="Optional external scope CSV directory, NOT REQUIRED")
+    input_group = parser.add_mutually_exclusive_group()
+    input_group.add_argument("--uart-port", help="Read-only, already-flashed locked bench on COM6")
+    input_group.add_argument("--uart-trace", type=Path, help="Previously saved MFD UART log")
+    parser.add_argument("--confirm-vm-disconnected", action="store_true",
+                        help="Required for --uart-port: motor supply physically disconnected")
+    parser.add_argument("--timeout", type=int, default=65)
+    parser.add_argument("--output", type=Path, help="Report directory")
     args = parser.parse_args()
     if args.self_test:
+        if args.uart_port:
+            parser.error("--self-test never accesses hardware")
         self_test()
         return 0
+    if args.uart_port and not args.confirm_vm_disconnected:
+        parser.error("--uart-port requires physically disconnected VM and --confirm-vm-disconnected")
+    if args.timeout < 25:
+        parser.error("--timeout must be >=25 seconds for 512 UART samples")
     out = args.output or ROOT / "motor_logs" / (
         "p0_batch_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     )
-    report = run_batch(args.waveforms)
+    uart_data, uart_error = None, None
+    if args.uart_port:
+        try:
+            uart_data = capture_functional_trace(args.uart_port, args.timeout)
+        except (RuntimeError, OSError) as exc:
+            uart_error = str(exc)
+    elif args.uart_trace:
+        try:
+            uart_data = args.uart_trace.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            uart_error = str(exc)
+    report = run_batch(args.waveforms, uart_data, uart_error)
     out.mkdir(parents=True, exist_ok=True)
+    if uart_data is not None:
+        (out / "motor_functional_trace_raw.log").write_text(uart_data, encoding="utf-8")
     (out / "p0_batch_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -416,7 +442,7 @@ def main() -> int:
     print("Output:", out.resolve())
     # Missing scope captures (without --waveforms) are an expected REVIEW,
     # not a source regression. Supplied malformed/partial captures do fail.
-    return 1 if report["overall"] in ("BLOCKED_SOURCE", "FAIL_PIN_CAPTURE") else 0
+    return 1 if report["overall"] in ("BLOCKED_SOURCE", "FAIL_PIN_CAPTURE", "FAIL_UART_TRACE") else 0
 
 
 if __name__ == "__main__":
