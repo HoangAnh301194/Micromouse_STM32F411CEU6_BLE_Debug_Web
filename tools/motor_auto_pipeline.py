@@ -86,6 +86,28 @@ def configure_profile(high=False, sensors=False, *, legacy=False):
     EXPECTED = NUM_ROUNDS * len(MATRIX)
 
 
+
+def configure_from_saved_log(raw: list[str], *, high: bool, sensors: bool):
+    """Select archived/new telemetry by on-wire version, not today's source."""
+    versions = {
+        intval(values, "version")
+        for line in raw
+        for name, values in [split_record(line)]
+        if name == "MOTOR_AUTO_PROFILE"
+    }
+    old_version = (8 if high else 7) if sensors else (6 if high else 4)
+    new_version = old_version + 10
+    if versions == {old_version}:
+        configure_profile(high, sensors, legacy=True)
+    elif versions == {new_version}:
+        configure_profile(high, sensors, legacy=False)
+    else:
+        raise ValueError(
+            f"Missing/mixed/incorrect MOTOR_AUTO_PROFILE versions {sorted(versions)}; "
+            f"expected only {old_version} (archived CCR=0) or "
+            f"{new_version} (STOP_HIZ CCR=3200)"
+        )
+
 def stage_pulse_ms(stage):
     return HIGH_PULSE_MS if stage >= BASE_STEPS else PULSE_MS
 
@@ -976,9 +998,14 @@ def main():
             p.error(f"Missing {raw_path}")
         meta_path=args.folder/"session_meta.json"
         meta=json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
-        configure_profile(bool(meta.get("high_profile", False)),
-                          bool(meta.get("sensor_profile", False)))
-        report=store(args.folder,raw_path.read_text(encoding="utf-8").splitlines(),meta)
+        raw = raw_path.read_text(encoding="utf-8").splitlines()
+        try:
+            configure_from_saved_log(raw,
+                high=bool(meta.get("high_profile", False)),
+                sensors=bool(meta.get("sensor_profile", False)))
+        except ValueError as exc:
+            p.error(str(exc))
+        report=store(args.folder,raw,meta)
         return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
     if args.run:
         p.error(
