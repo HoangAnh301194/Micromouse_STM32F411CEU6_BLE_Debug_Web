@@ -68,11 +68,11 @@ def inspect_driver(root: Path = ROOT):
         f"AddDirection(&bsrr, MOTOR_{w}_IN1_PIN, MOTOR_{w}_IN2_PIN, 0);"
         in stop for w in ("L", "R")
     )
-    stop_ccr_zero = "TIM2->CCR1 = TIM2->CCR2 = 0;" in stop
+    stop_ccr_high = "TIM2->CCR1 = TIM2->CCR2 = pwm_period + 1U;" in stop
     # Both PWM channels use PWM mode 1, non-inverted output CCxP reset at init.
     pwm_mode1 = "(6UL << 4)" in init and "(6UL << 12)" in init
     # PWM=H is specified to coast only in IN1=IN2=L state.
-    stop_expected = mode(0, 0, 0) if stop_pins_low and stop_ccr_zero and pwm_mode1 else "UNKNOWN"
+    stop_expected = mode(0, 0, 1) if stop_pins_low and stop_ccr_high and pwm_mode1 else "UNKNOWN"
     active_brake = (
         all(f"AddPinLevel(&bsrr, MOTOR_{w}_IN{n}_PIN, 1);" in brake
             for w in ("L", "R") for n in (1, 2)) and
@@ -82,7 +82,7 @@ def inspect_driver(root: Path = ROOT):
     preload = all(x in init for x in ("TIM_CCMR1_OC1PE", "TIM_CCMR1_OC2PE"))
     reverse_gap = "#define MOTOR_REVERSE_GAP_MS 30U" in motor
     brake_release = (all(x in release for x in (
-        "if (brake_latched)", "TIM2->CCR1 = TIM2->CCR2 = 0;",
+        "if (brake_latched)", "TIM2->CCR1 = TIM2->CCR2 = pwm_period + 1U;",
         "brake_release_ticks = 2U",
         "wheel_l.reverse_gap_ms = MOTOR_REVERSE_GAP_MS",
         "wheel_r.reverse_gap_ms = MOTOR_REVERSE_GAP_MS"))
@@ -99,8 +99,12 @@ def inspect_driver(root: Path = ROOT):
     pin_comment_disagrees = ("IN1=PB14, IN2=PB15" in header and
                              pins["right_in1_pb"] == 15 and
                              pins["right_in2_pb"] == 14)
+    start_guard = all(x in update for x in ("was_stopped_l = (wheel_l.applied == 0);", "was_stopped_r = (wheel_r.applied == 0);", "was_stopped_l ? 0 : wheel_l.applied", "was_stopped_r ? 0 : wheel_r.applied"))
+    init_safe = all(x in init for x in ("TIM2->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;", "TIM2->CCR1 = pwm_period + 1U;", "TIM2->CCR2 = pwm_period + 1U;"))
     checks = {
-        "stop_zero_ccr": stop_ccr_zero,
+        "stop_high_ccr": stop_ccr_high,
+        "stop_drive_preload_guard": start_guard,
+        "init_coast_and_active_high": init_safe,
         "stop_both_inputs_low": stop_pins_low,
         "software_coast_defined": stop_expected == "STOP_HIZ",
         "software_stop_truth_table_mode": stop_expected,
@@ -116,14 +120,14 @@ def inspect_driver(root: Path = ROOT):
         "pinout_comment_vs_macro_mismatch": pin_comment_disagrees,
     }
     blockers = []
-    if not stop_pins_low or not stop_ccr_zero or not pwm_mode1:
+    if not stop_pins_low or not stop_ccr_high or not pwm_mode1:
         blockers.append("Motor_Stop register/PWM mode 1 state not fully recognized; inspect source before using hardware.")
     if stop_expected != "STOP_HIZ":
         blockers.append(
-            "P0 FAIL: Motor_Stop() writes IN1=IN2=LOW and TIM2 CCR=0 (PWM LOW), "
-            "but Toshiba defines high-impedance Stop only for IN1=IN2=LOW and PWM HIGH. "
-            "LOW/LOW/LOW is UNSPECIFIED by the datasheet. Do not call it proven coast."
+            "P0 FAIL: Motor_Stop() does not command Toshiba-defined LOW/LOW/HIGH Hi-Z Stop."
         )
+    if not start_guard or not init_safe:
+        blockers.append("P0 FAIL: safe startup polarity or stop-to-drive preload guard not recognized.")
     if not active_brake:
         blockers.append("Short-brake source cannot be validated against both IN pins HIGH.")
     if not preload or not brake_release or not reverse_gap:
@@ -131,7 +135,7 @@ def inspect_driver(root: Path = ROOT):
     if pin_comment_disagrees:
         blockers.append("Right motor pinout comment conflicts with compiled pin macros (PB14/PB15 reversed).")
     blockers += [
-        "CCR write is shadowed until next TIM2 update; direction GPIO is immediate, so physical commutation timing requires oscilloscope validation.",
+        "Transient switching while PWM preload updates requires oscilloscope validation; LOW/LOW/PWM-low is not characterized.",
         "STBY is fixed HIGH on this board: host STOP or MCU GPIO cannot independently disable power stage.",
         "At VCC=5.0V, VIH(min)=3.5V but STM32 GPIO nominal HIGH=3.3V; actual noise margin not guaranteed.",
         "No measured motor current, thermal rise, PWM pin waveform or bridge OUT1/OUT2 states. Active brake/reverse not powered-tested.",
@@ -144,7 +148,9 @@ def audit_result(root: Path = ROOT):
     return {
         "status": "REVIEW" if checks["software_coast_defined"] and
                   checks["active_brake_implemented"] and
-                  checks["brake_release_neutral_guard"] else "BLOCKED",
+                  checks["brake_release_neutral_guard"] and
+                  checks["stop_drive_preload_guard"] and
+                  checks["init_coast_and_active_high"] else "BLOCKED",
         "software_stop_mode": checks["software_stop_truth_table_mode"],
         "software_brake_mode": checks["active_brake_truth_table_mode"],
         "checks": checks, "blockers": blockers,
@@ -165,12 +171,14 @@ def self_test():
             for pwm in (0,1):
                 assert mode(in1,in2,pwm,stby=0) == "STANDBY_HIZ"
     audit = audit_result()
-    assert audit["status"] == "BLOCKED", audit
-    assert audit["software_stop_mode"] == "UNSPECIFIED_BY_DATASHEET"
+    assert audit["status"] == "REVIEW", audit
+    assert audit["software_stop_mode"] == "STOP_HIZ"
+    assert audit["checks"]["stop_drive_preload_guard"]
+    assert audit["checks"]["init_coast_and_active_high"]
     assert audit["checks"]["active_brake_truth_table_mode"] == "SHORT_BRAKE"
     assert audit["checks"]["preload_enabled"]
     assert audit["checks"]["brake_release_neutral_guard"]
-    print("PASS: datasheet truth table + real source audit; unsupported STOP correctly BLOCKED.")
+    print("PASS: datasheet STOP_HIZ, initialization and preload guard; physical measurement still required.")
 
 
 def main():
