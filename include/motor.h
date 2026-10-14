@@ -19,7 +19,7 @@ void Motor_SetSlewRates(uint16_t rise_permille_per_ms, uint16_t fall_permille_pe
 void Motor_Update1ms(void);
 void Motor_GetAppliedPairPermille(int16_t *left, int16_t *right);
 
-void Motor_Stop(void);   /* software neutral: IN1=IN2=0, CCR=0; electrical Hi-Z NOT verified */
+void Motor_Stop(void);   /* settled TB6612 Stop: IN1=IN2=0, CCR=ARR+1; physical Hi-Z NOT measured */
 void Motor_Brake(void);  /* short-brake command per IN truth table; live electrical effects NOT verified */
 void Motor_StopWithMode(MotorStopMode_t mode);
 
