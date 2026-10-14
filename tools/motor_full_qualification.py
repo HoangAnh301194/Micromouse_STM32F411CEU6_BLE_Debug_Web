@@ -134,7 +134,7 @@ def build_report(reference, evidence_file, latest=None):
     stop_source_ok = (
         checks["software_coast_defined"] and checks["active_brake_implemented"]
         and checks["preload_enabled"] and checks["brake_release_neutral_guard"]
-        and checks["reverse_gap_30ms"]
+        and checks["reverse_gap_30ms"] and checks["stop_drive_preload_guard"] and checks["init_coast_and_active_high"]
     )
     gates=[
         gate("P0-STOP","STOP/COAST/BRAKE and CCR preload",
@@ -264,8 +264,8 @@ def main():
     if a.self_test:
         audit=build_report(a.reference,None)
         assert audit["statuses"]["P0-ELECTRICAL"]=="BLOCKED"
-        assert audit["statuses"]["P0-STOP"]=="BLOCKED"
-        assert audit["gates"][0]["evidence"]["checks"]["software_stop_truth_table_mode"]=="UNSPECIFIED_BY_DATASHEET"
+        assert audit["statuses"]["P0-STOP"]=="REVIEW"
+        assert audit["gates"][0]["evidence"]["checks"]["software_stop_truth_table_mode"]=="STOP_HIZ"
         assert counter_delta({"sensor_first":{"missing":"9000","reused":"0","aged":"0"},
                               "sensor_last":{"missing":"9000","reused":"8","aged":"1"}},
                              "missing")==0
