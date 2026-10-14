@@ -150,6 +150,8 @@ def source_regression() -> None:
     assert "Motor_Stop(" not in record
     # Ensure the source never silently begins MotorTest during the read-only command.
     trace_command = bench.split('strcmp(line,"MOTOR TRACE")', 1)[1].split('strcmp(line,"MOTOR KEEP")', 1)[0]
+    # Strip explanatory C comments before checking executable actions.
+    trace_command = re.sub(r"/\\*.*?\\*/", "", trace_command, flags=re.DOTALL)
     assert "MotorTest_Start" not in trace_command and "Motor_SetPair" not in trace_command
 
 
