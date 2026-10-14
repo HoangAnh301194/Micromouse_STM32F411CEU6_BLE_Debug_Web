@@ -13,6 +13,7 @@ on:
       - 'tools/motor_full_qualification.py'
       - 'tools/motor_stop_truth_table_audit.py'
       - 'tools/motor_stop_transition_regression.py'
+      - 'tools/motor_p0_batch_pipeline.py'
       - 'docs/motor_driver/**'
   workflow_dispatch:
 
@@ -53,6 +54,16 @@ jobs:
         run: python tools/motor_stop_truth_table_audit.py
       - name: No-power STOP/drive/reverse/brake transition and preload regression
         run: python tools/motor_stop_transition_regression.py
+      - name: Multi-gate P0 batch + synthetic scope negative tests (no motors)
+        run: python tools/motor_p0_batch_pipeline.py --self-test
+      - name: P0 one-command report (hardware capture remains NOT_MEASURED)
+        run: python tools/motor_p0_batch_pipeline.py --run --output "$RUNNER_TEMP/motor-p0-batch"
+      - name: Archive source-only P0 qualification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: motor-p0-batch-no-hardware
+          path: ${{ runner.temp }}/motor-p0-batch/
+          if-no-files-found: error
       - name: Unified five-gate high-speed qualification self-test (never powers motors)
         run: python tools/motor_full_qualification.py --self-test
       - name: Unified full qualification offline audit (prior log can be absent on CI checkout)
@@ -78,6 +89,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+      - name: Python 3.14 P0 multi-gate host regression
+        run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: Python 3.14 STOP truth-table CLI self-test
         run: python tools/motor_stop_truth_table_audit.py --self-test
       - name: Python 3.14 no-power STOP transition regression
