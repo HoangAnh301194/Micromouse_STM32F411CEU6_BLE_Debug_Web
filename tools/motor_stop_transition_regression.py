@@ -116,10 +116,10 @@ def check_readonly_uart_lock_handshake() -> None:
     pipeline.configure_profile(high=False, sensors=False)
     profile = (
         "MOTOR_AUTO_PROFILE,version=14,steps=21,hard_cap_permille=200,"
-        "families=4,high_pulse_ms=0,high_post_ms=0,sensor=0,p0_locked=1\\n"
+        "families=4,high_pulse_ms=0,high_post_ms=0,sensor=0,p0_locked=1\n"
     ).encode("ascii")
     ready = (
-        "MOTOR_AUTO_READY,version=14,state=0,steps=21,sensor=0,p0_locked=1\\n"
+        "MOTOR_AUTO_READY,version=14,state=0,steps=21,sensor=0,p0_locked=1\n"
     ).encode("ascii")
 
     def handshake(records: list[bytes]) -> int:
@@ -139,7 +139,7 @@ def check_readonly_uart_lock_handshake() -> None:
 
             def write(self, data: bytes) -> None:
                 self.writes.append(data)
-                assert data == b"MOTOR PING\\n", "Read-only check must never send START"
+                assert data == b"MOTOR PING\n", "Read-only check must never send START"
 
             def readline(self) -> bytes:
                 return next(self.lines, b"")
@@ -150,7 +150,7 @@ def check_readonly_uart_lock_handshake() -> None:
         with patch.dict(sys.modules, {"serial": serial_stub}):
             with contextlib.redirect_stdout(io.StringIO()):
                 result = pipeline.check_link(args)
-        assert all(w == b"MOTOR PING\\n" for w in test_port.writes)
+        assert all(w == b"MOTOR PING\n" for w in test_port.writes)
         return result
 
     assert handshake([profile, ready]) == 0
