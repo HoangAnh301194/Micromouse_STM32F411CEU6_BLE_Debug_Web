@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Single-command, no-power P0 STOP/Coast/Brake qualification.
 
-Executes all existing source/host model regressions, optionally validates a
-bundle of *measured* GPIO/PWM CSV traces, and writes JSON plus a text summary.
-NEVER flashes, opens UART, sends START, or powers a motor.
+Executes all source/host model regressions and optional UART-register capture.
+External GPIO/PWM CSV waveforms are OPTIONAL, not required for a no-scope bench.
+NEVER flashes, sends START, brakes, or powers a motor. Read-only UART is
+used only if --uart-port was explicitly requested with VM disconnected.
 
 GPIO/PWM captures establish pin-level sequences only. They cannot qualify
 TB6612 OUT pins, short-brake current, temperature, or loaded reverse behavior.
@@ -20,6 +21,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from motor_functional_trace_pipeline import (
+    TraceError as FunctionalTraceError, analyze_text as analyze_functional_trace,
+    capture_device as capture_functional_trace,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 CASES = (
@@ -37,6 +42,7 @@ SUITE = (
     ("v17_63_integrated", ("tools/motor_auto_pipeline.py", "--self-test", "--sensor-integration")),
     ("v18_87_integrated", ("tools/motor_auto_pipeline.py", "--self-test", "--sensor-integration", "--high-pwm")),
     ("qualification_gate", ("tools/motor_full_qualification.py", "--self-test")),
+    ("functional_trace_regression", ("tools/motor_functional_trace_pipeline.py", "--self-test")),
 )
 
 
@@ -238,7 +244,8 @@ def report_text(report: dict) -> str:
         "MICROMOUSE P0 STOP/COAST/BRAKE — MULTI-GATE PIPELINE",
         f"UTC: {report['utc']}",
         f"Source/model qualification: {report['source_model_status']}",
-        f"Pin captures: {report['pin_capture']['status']} ({report['pin_capture']['coverage']})",
+        f"Pin captures (optional): {report['pin_capture']['status']} ({report['pin_capture']['coverage']})",
+        f"USART1 1kHz register trace: {report['uart_trace']['status']}",
         "TB6612 physical OUT/current/thermal: BLOCKED — no independent instrumentation evidence",
         "Previously flashed v7 board: not changed; UART START interlock belongs to new firmware",
         "",
@@ -248,12 +255,18 @@ def report_text(report: dict) -> str:
         lines.append(f"  {item['id']}: {item['status']}")
         if item["status"] != "PASS_OFFLINE":
             lines.append("    " + str(item.get("stderr", item.get("error", "")))[:500])
-    lines.extend(["", "PIN-LEVEL OSCILLOSCOPE CSV:"])
-    for filename in REQUIRED:
-        entry = report["pin_capture"]["traces"].get(filename, {})
-        lines.append(f"  {filename}: {entry.get('status','NOT_MEASURED')}")
-        if entry.get("issues"):
-            lines.append("    " + "; ".join(entry["issues"])[:500])
+    lines.extend(["", "UART REGISTER TRACE (no scope required):"])
+    if report["uart_trace"].get("reason"):
+        lines.append("  " + report["uart_trace"]["reason"][:500])
+    else:
+        lines.append("  " + report["uart_trace"].get("qualified_scope", "no UART trace supplied"))
+    if report["pin_capture"]["status"] != "NOT_MEASURED":
+        lines.extend(["", "OPTIONAL EXTERNAL PIN CAPTURES:"])
+        for filename in REQUIRED:
+            entry = report["pin_capture"]["traces"].get(filename, {})
+            lines.append(f"  {filename}: {entry.get('status','NOT_MEASURED')}")
+            if entry.get("issues"):
+                lines.append("    " + "; ".join(entry["issues"])[:500])
     lines.extend([
         "", "FINAL: " + report["overall"],
         "PASS_OFFLINE is NOT motor electrical approval. No MCU flashed, no UART START sent.",
@@ -261,20 +274,32 @@ def report_text(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def run_batch(evidence: Path | None) -> dict:
+def run_batch(evidence: Path | None, uart_data: str | None = None,
+              uart_error: str | None = None) -> dict:
     offline = run_suite()
     source_ok = all(x["status"] == "PASS_OFFLINE" for x in offline)
     scope = capture_bundle(evidence)
+    uart = {"status": "NOT_MEASURED"}
+    if uart_error:
+        uart = {"status": "FAIL_CAPTURE", "reason": uart_error}
+    elif uart_data is not None:
+        try:
+            uart = analyze_functional_trace(uart_data)
+        except FunctionalTraceError as exc:
+            uart = {"status": "FAIL_CAPTURE", "reason": str(exc)}
     overall = ("BLOCKED_SOURCE" if not source_ok else
+               "FAIL_UART_TRACE" if uart["status"] == "FAIL_CAPTURE" else
                "FAIL_PIN_CAPTURE" if scope["status"] == "INCOMPLETE_OR_FAIL" else
                "REVIEW_PIN_LEVEL_ONLY" if scope["status"] == "PIN_SEQUENCE_REVIEW" else
-               "REVIEW_AWAITING_PIN_CAPTURE")
+               "REVIEW_IDLE_REGISTER_TRACE_ONLY" if uart["status"] == "PASS_IDLE_REGISTERS" else
+               "REVIEW_TIM11_JITTER" if uart["status"] == "REVIEW_TIM11_JITTER" else
+               "REVIEW_AWAITING_FUNCTIONAL_EVIDENCE")
     return {
         "schema_version": 1, "utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "branch": "feature/motor-driver-optimization",
         "execution_mode": "NO_FLASH_NO_UART_NO_MOTOR",
         "source_model_status": "PASS_OFFLINE" if source_ok else "FAIL",
-        "offline": offline, "pin_capture": scope, "overall": overall,
+        "offline": offline, "pin_capture": scope, "uart_trace": uart, "overall": overall,
         "p0_source_qualified": source_ok,
         "p0_electrical_status": "BLOCKED",
         "safety": {
@@ -290,7 +315,7 @@ def self_test() -> None:
     assert report["source_model_status"] == "PASS_OFFLINE", [
         (x["id"], x.get("stderr", "")) for x in report["offline"] if x["status"] != "PASS_OFFLINE"
     ]
-    assert report["overall"] == "REVIEW_AWAITING_PIN_CAPTURE"
+    assert report["overall"] == "REVIEW_AWAITING_FUNCTIONAL_EVIDENCE"
     # Synthesized CSV serves only to exercise the host parser. It is NOT
     # written to the user's measurement folder or used as hardware evidence.
     with TemporaryDirectory(prefix="motor_p0_synthetic_") as temp:
@@ -362,7 +387,7 @@ def self_test() -> None:
             pass
         else:
             raise AssertionError("Invalid logic levels were accepted")
-    print("PASS: eight offline P0 gates, waveform CSV guards and missing-evidence gate.")
+    print("PASS: nine offline P0 gates, waveform CSV guards and missing-evidence gate.")
     print("SYNTHETIC WAVEFORMS ARE NOT HARDWARE EVIDENCE. No flash, START or serial access.")
 
 
