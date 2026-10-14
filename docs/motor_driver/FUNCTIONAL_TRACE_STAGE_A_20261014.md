@@ -59,9 +59,14 @@ and keep it disconnected throughout the experiment**. Build and upload the
 already P0-locked firmware using the project's normal ST-Link connection:
 
 ```powershell
-python -m platformio run -e motor_auto_sensor_96m_trim25
-python -m platformio run -e motor_auto_sensor_96m_trim25 -t upload
+python -m platformio run -e motor_auto_pipeline_96m_trim25
+python -m platformio run -e motor_auto_pipeline_96m_trim25 -t upload
 ```
+
+This **motor-only v14** diagnostic deliberately skips MPU/IR calibration to
+isolate Motor Driver timing and keep the first on-device test minimal.
+The integrated v17 profile is also supported later if TIM11/MPU/IR load
+interactions need characterization.
 
 No UART START or motor enable is needed. This firmware stays locked:
 `MOTOR START` and `MOTOR START HIGH 600` are rejected by STM32.
