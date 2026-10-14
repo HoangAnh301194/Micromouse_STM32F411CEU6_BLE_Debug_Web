@@ -8,6 +8,7 @@
 #include "encoder.h"
 #include "motor.h"
 #include "motor_test.h"
+#include "motor_functional_trace.h"
 #include "pinout.h"
 #include "system_timer.h"
 #include "uart.h"
@@ -361,6 +362,14 @@ static void ReceiveLine(const char *line, uint32_t now)
 {
     if (strcmp(line,"MOTOR PING") == 0) {
         ReplyReady();
+    } else if (strcmp(line,"MOTOR TRACE") == 0) {
+        /* Read-only 512-ms software-register/encoder capture.
+         * No StartStep(), no Motor_SetPair, no brake or reverse. */
+        if (state == AUTO_WAIT && MotorFunctionalTrace_Begin()) {
+            UART_Printf("MFD_ARMED,n=512,motor_start=0\\r\\n");
+        } else {
+            UART_Printf("MFD_REJECT,reason=BUSY_OR_NOT_IDLE\\r\\n");
+        }
     } else if (strcmp(line,"MOTOR KEEP") == 0) {
         if (state >= AUTO_SETTLE && state <= AUTO_GAP) {
             last_host_ms = now;
@@ -451,6 +460,7 @@ int MotorAutoBench_Main(void)
     Control_Init(0);
 #endif
     Control_SetDiagnosticOnly(1U);
+    MotorFunctionalTrace_Init();
     Control_Start();
 
     UART_Printf("[BOOT] Motor auto baseline: neutral, USART1 host ARM required\r\n");
@@ -486,6 +496,7 @@ int MotorAutoBench_Main(void)
         }
 #endif
         PollHost(now);
+        MotorFunctionalTrace_Poll(now);
         Control_GetTiming(&t);
         /* Independent main-loop check: TIM11's own tick watchdog will not
          * progress if TIM11 stalls. SysTick/main may still force neutral. */
