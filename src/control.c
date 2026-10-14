@@ -9,6 +9,9 @@
 #include "motion.h"
 #include "motor_test.h"
 #include "motor_trace.h"
+#if defined(MOTOR_AUTO_BENCH)
+#include "motor_functional_trace.h"
+#endif
 #include "motor.h"
 #include "stm32f4xx.h"
 #include "system_timer.h"
@@ -304,7 +307,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     IR_Data_t sample;
     uint32_t start_cycles;
     uint32_t entry_us;
-    uint32_t interval_us;
+    uint32_t interval_us = 0U;
 
     if ((TIM11->SR & TIM_SR_UIF) == 0U) return;
 
@@ -396,6 +399,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     Encoder_Update(CONTROL_DT_S);
     Motor_Update1ms();
     MotorTest_Tick1ms();
+#if defined(MOTOR_AUTO_BENCH)
+    MotorFunctionalTrace_Record1ms(entry_us, interval_us);
+#endif
     Control_TimingFinish(start_cycles);
     return;
 #endif
