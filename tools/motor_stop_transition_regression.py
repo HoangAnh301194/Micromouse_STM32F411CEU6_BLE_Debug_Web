@@ -30,6 +30,18 @@ def require_order(source: str, *parts: str) -> None:
 
 def check_source_order() -> None:
     driver = (ROOT / "src/motor.c").read_text(encoding="utf-8")
+    pinout = (ROOT / "include/pinout.h").read_text(encoding="utf-8")
+    assert "#define MOTOR_PWM_FREQUENCY     30000U" in pinout
+    assert "#define MOTOR_PWM_PERIOD" not in pinout, (
+        "TIM2 ARR must be derived from runtime APB timer clock, not stale pinout constant")
+    assert "#define MOTOR_PWM_PRESCALER" not in pinout
+    init_check = body(driver, "Motor_Init")
+    require_order(init_check,
+                  "Board_GetAPB1TimerClockHz()",
+                  "arr = timer_clock / MOTOR_PWM_FREQUENCY;",
+                  "pwm_period = arr - 1U;",
+                  "TIM2->PSC = 0;",
+                  "TIM2->ARR = pwm_period;")
     checks, _ = inspect_driver(ROOT)
     for key in ("software_coast_defined", "active_brake_implemented",
                 "preload_enabled", "stop_drive_preload_guard",
