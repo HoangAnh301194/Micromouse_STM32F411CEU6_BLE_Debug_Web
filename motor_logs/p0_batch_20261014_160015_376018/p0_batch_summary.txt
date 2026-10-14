@@ -1,0 +1,33 @@
+MICROMOUSE P0 STOP/COAST/BRAKE — MULTI-GATE PIPELINE
+UTC: 2026-10-14T09:00:31.018346+00:00
+Source/model qualification: PASS_OFFLINE
+Pin captures: NOT_MEASURED (0/12)
+TB6612 physical OUT/current/thermal: BLOCKED — no independent instrumentation evidence
+Previously flashed v7 board: not changed; UART START interlock belongs to new firmware
+
+OFFLINE BATCH:
+  truth_table: PASS_OFFLINE
+  source_audit: PASS_OFFLINE
+  state_transition: PASS_OFFLINE
+  v14_63: PASS_OFFLINE
+  v16_87: PASS_OFFLINE
+  v17_63_integrated: PASS_OFFLINE
+  v18_87_integrated: PASS_OFFLINE
+  qualification_gate: PASS_OFFLINE
+
+PIN-LEVEL OSCILLOSCOPE CSV:
+  drive_to_coast_left.csv: NOT_MEASURED
+  drive_to_coast_right.csv: NOT_MEASURED
+  coast_to_drive_left.csv: NOT_MEASURED
+  coast_to_drive_right.csv: NOT_MEASURED
+  drive_to_brake_left.csv: NOT_MEASURED
+  drive_to_brake_right.csv: NOT_MEASURED
+  brake_to_coast_left.csv: NOT_MEASURED
+  brake_to_coast_right.csv: NOT_MEASURED
+  forward_to_reverse_left.csv: NOT_MEASURED
+  forward_to_reverse_right.csv: NOT_MEASURED
+  reverse_to_forward_left.csv: NOT_MEASURED
+  reverse_to_forward_right.csv: NOT_MEASURED
+
+FINAL: REVIEW_AWAITING_PIN_CAPTURE
+PASS_OFFLINE is NOT motor electrical approval. No MCU flashed, no UART START sent.
