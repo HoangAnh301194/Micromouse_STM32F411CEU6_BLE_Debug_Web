@@ -32,6 +32,15 @@
 #endif
 #endif
 
+/* The host script alone cannot prohibit hand-written UART START commands.
+ * Keep all auto-bench firmware images DISARMED until the P0 electrical
+ * inspection, input-high margin, and commutation transients are qualified.
+ * Do not change this to 0 as a substitute for hardware qualification. */
+#define MOTOR_AUTO_P0_ARM_LOCKED 1U
+#if MOTOR_AUTO_P0_ARM_LOCKED != 1U
+#error "P0 electrical gate must remain locked until a reviewed release"
+#endif
+
 /* New source-level TB6612 STOP_HIZ semantics: new protocol IDs 14/16/17/18.
  * Versions 4/6/7/8 correspond to archived CCR=0 firmware only.
  * All new versions report CCR=ARR+1 for unpowered input-level Coast. */
@@ -277,7 +286,7 @@ static void ReplyReady(void)
                 "pwm_hz=%lu,rounds=%u,steps=%u,hard_cap_permille=%u,"
                 "pulse_ms=200,post_ms=400,boot_neutral=1,"
                 "both_cap_permille=160,families=%u,rx_mode=irq256,"
-                "high_pulse_ms=%u,high_post_ms=%u,sensor=%u\r\n",
+                "high_pulse_ms=%u,high_post_ms=%u,sensor=%u,p0_locked=1\r\n",
                 (unsigned)AUTO_VERSION,(unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz()/(TIM2->ARR+1U)),
                 (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,
@@ -324,7 +333,7 @@ static void ReplyReady(void)
     UART_Printf("MOTOR_AUTO_READY,version=%u,rounds=%u,steps=%u,"
                 "hard_cap_permille=%u,both_cap_permille=160,pulse_ms=200,post_ms=400,"
                 "families=%u,rx_mode=irq256,one_shot=1,boot_neutral=1,"
-                "rx=USART1_PA10,state=%u,sensor=%u\r\n",
+                "rx=USART1_PA10,state=%u,sensor=%u,p0_locked=1\r\n",
                 (unsigned)AUTO_VERSION,(unsigned)AUTO_ROUNDS,
                 (unsigned)AUTO_STEPS,(unsigned)AUTO_MAX_PERMILLE,
                 (unsigned)AUTO_FAMILIES,(unsigned)state,
@@ -336,6 +345,7 @@ static void ReplyReady(void)
                 );
 }
 
+#if !MOTOR_AUTO_P0_ARM_LOCKED
 static uint8_t CanArm(void)
 {
 #if defined(MOTOR_AUTO_SENSOR_INTEGRATION)
@@ -345,6 +355,8 @@ static uint8_t CanArm(void)
     return 1U;
 #endif
 }
+#endif /* !MOTOR_AUTO_P0_ARM_LOCKED */
+
 static void ReceiveLine(const char *line, uint32_t now)
 {
     if (strcmp(line,"MOTOR PING") == 0) {
@@ -356,6 +368,15 @@ static void ReceiveLine(const char *line, uint32_t now)
         }
     } else if (strcmp(line,"MOTOR STOP") == 0) {
         FailSafe("HOST_STOP");
+#if MOTOR_AUTO_P0_ARM_LOCKED
+    } else if (strcmp(line,"MOTOR START") == 0 ||
+               strcmp(line,"MOTOR START HIGH 600") == 0) {
+        /* Both protocol profiles are locked in the MCU itself. Neither
+         * UART command is allowed to reach AUTO_SETTLE / StartStep(). */
+        Motor_Stop();
+        ++bad_rx_commands;
+        UART_Printf("MOTOR_AUTO_ARM_BLOCKED,reason=P0_ELECTRICAL_UNQUALIFIED\r\n");
+#else
 #if defined(MOTOR_AUTO_HIGH_TEST)
     } else if (strcmp(line,"MOTOR START HIGH 600") == 0 && state == AUTO_WAIT && CanArm()) {
 #else
@@ -374,6 +395,7 @@ static void ReceiveLine(const char *line, uint32_t now)
                     "settle_ms=%u,boot_neutral=1\r\n",
                     (unsigned)AUTO_ROUNDS,(unsigned)AUTO_STEPS,
                     (unsigned)AUTO_SETTLE_MS);
+#endif /* MOTOR_AUTO_P0_ARM_LOCKED */
     } else {
         ++bad_rx_commands;
     }
