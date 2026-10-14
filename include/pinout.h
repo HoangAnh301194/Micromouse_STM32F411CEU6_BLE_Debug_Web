@@ -47,10 +47,10 @@
 #define MOTOR_L_IN2_PORT        GPIOB
 #define MOTOR_L_IN2_PIN         12          /* PB12 */
 
-/* PWM Configuration */
-#define MOTOR_PWM_FREQUENCY     30000
-#define MOTOR_PWM_PRESCALER     0
-#define MOTOR_PWM_PERIOD        4999
+/* PWM configuration: TIM2 PSC/ARR are initialized in Motor_Init() from
+ * Board_GetAPB1TimerClockHz(). Do not cache a fixed ARR in this pin map:
+ * the validated 96 MHz / 30 kHz bench uses ARR=3199, not legacy 4999. */
+#define MOTOR_PWM_FREQUENCY     30000U
 
 /* ============================================================================ */
 /* ENCODERS - N20 GA12 (Quadrature)                             */
