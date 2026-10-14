@@ -47,8 +47,7 @@ class CaptureError(ValueError):
 def read_capture(path: Path) -> list[tuple[float, int, int, int]]:
     with path.open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
-        assert reader.fieldnames is not None
-        if not {"t_us", "in1", "in2", "pwm"}.issubset(reader.fieldnames):
+        if reader.fieldnames is None or not {"t_us", "in1", "in2", "pwm"}.issubset(reader.fieldnames):
             raise CaptureError("Required CSV columns: t_us,in1,in2,pwm")
         out = []
         for number, row in enumerate(reader, start=2):
@@ -108,6 +107,22 @@ def inspect_capture(rows: list[tuple[float, int, int, int]], case: str) -> dict:
         issues.append(f"Initial 1-ms window is not >=98% {start}")
     if not end_ok:
         issues.append(f"Final 1-ms window is not >=98% {end}")
+    # Reject uncommanded brake and direction changes hidden inside a trace.
+    unexpected = {
+        "drive_to_coast": {"brake"},
+        "coast_to_drive": {"brake", "reverse"},
+        "drive_to_brake": set(),
+        "brake_to_coast": {"forward", "reverse"},
+        "forward_to_reverse": {"brake"},
+        "reverse_to_forward": {"brake"},
+    }[case]
+    for wrong in unexpected:
+        if wrong in states:
+            issues.append(f"Unexpected {wrong} direction/bridge command")
+    if case in ("drive_to_coast", "drive_to_brake"):
+        active_signs = {v for v in states if v in ("forward", "reverse")}
+        if len(active_signs) > 1:
+            issues.append("Uncommanded direction change during stop/brake")
     # A direction reversal must pass through a neutral interval. Assess
     # the pin command, never mistake a PWM-LOW drive subcycle for Coast.
     neutral_gap_us = None
@@ -126,9 +141,12 @@ def inspect_capture(rows: list[tuple[float, int, int, int]], case: str) -> dict:
                 neutral_gap_us = first_new - old_before[-1]
                 if neutral_gap_us < 30000:
                     issues.append(f"Measured reversal interval {neutral_gap_us:g} us < 30000 us")
-                if any(s == "brake" for row, s in zip(rows, states)
-                       if old_before[-1] < row[0] < first_new):
+                gap_states = [s for row, s in zip(rows, states)
+                              if old_before[-1] < row[0] < first_new]
+                if any(s == "brake" for s in gap_states):
                     issues.append("Unexpected active brake between reverse directions")
+                if not gap_states or gap_states.count("coast") / len(gap_states) < 0.90:
+                    issues.append("Reverse guard not predominantly LOW/LOW/PWM HIGH coast")
     # Coast requires PWM HIGH in the steady state. During a transition
     # LOW/LOW/PWM LOW can occur while timer preload is being committed;
     # report occurrences rather than labeling them electrically safe.
@@ -311,6 +329,14 @@ def self_test() -> None:
             if v["status"] != "PIN_SEQUENCE_REVIEW"
         ]
         assert measured["coverage"] == "12/12"
+        # A brief uncommanded brake pulse in DRIVE -> COAST must fail.
+        bad_brake = [(float(t), 1 if t < 3000 else 0,
+                      0, int(t % 34 < 8) if t < 3000 else 1)
+                     for t in range(0, 8000, 2)]
+        bad_brake[1400] = (2800.0, 1, 1, 1)
+        err = inspect_capture(bad_brake, "drive_to_coast")
+        assert err["status"] == "FAIL"
+        assert any("brake" in issue.lower() for issue in err["issues"])
         # A command reversal separated by just 4 ms must fail, even
         # when the beginning/end windows superficially look correct.
         bad_reverse = [
