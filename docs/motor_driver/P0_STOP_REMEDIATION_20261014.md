@@ -17,9 +17,16 @@ This is an **unpowered, source-level correction** after v7 PASS_BENCH. The histo
 4. `Motor_Brake()` is still a physical short-brake command without current qualification; no new brake/reverse experiment is authorised.
 5. `HardFault_Handler()` disables TIM2 channel outputs instead of relying on a delayed CCR write. On this board STBY is not an independent MCU-controlled emergency kill.
 
+## Additional no-power transition regression
+
+`tools/motor_stop_transition_regression.py` validates source operation order and an independent 1-ms wheel/preload model for coast-to-drive, immediate stop, 30-ms opposite-sign reversal, and brake release. GitHub Actions runs it on Python 3.11 and 3.14. This is a host simulation and cannot establish electrical safety or eliminate the unspecified LOW/LOW/PWM-low transient.
+
+Both the direct powered runner (`motor_auto_pipeline.py --run`) and the top-level powered coordinator (`motor_full_qualification.py --run-integrated`) now reject invocation before flashing or driving. Historical v7 PASS_BENCH remains valid ONLY for its older firmware/protocol, not the revised STOP_HIZ source.
+
 ## Safe checks
 ```powershell
 python tools/motor_stop_truth_table_audit.py --self-test
+python tools/motor_stop_transition_regression.py
 python tools/motor_stop_truth_table_audit.py
 python tools/motor_full_qualification.py --self-test
 python tools/motor_full_qualification.py --audit
@@ -28,7 +35,7 @@ python tools/motor_full_qualification.py --audit
 ## Qualification decision
 - P0-STOP **source contract: REVIEW** (settled input condition corrected; transitions and physical outputs not validated).
 - P0-ELECTRICAL **BLOCKED**.
-- P1-INTEGRATION **PASS_BENCH on historical v7 only**; no new powered test.
+- P1-INTEGRATION **PASS_BENCH on historical v7 only**; no new powered test. CI passing is source/build/simulation evidence, not measured transients.
 - No Motion, PID, IMU accuracy or IR calibration scope changes.
 
 Manufacturer: https://toshiba.semicon-storage.com/info/TB6612FNG_datasheet_en_20141001.pdf?did=10660&prodName=TB6612FNG
