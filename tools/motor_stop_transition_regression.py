@@ -182,7 +182,7 @@ def self_test() -> None:
     w.brake()
     assert w.direction_gpio == 2 and w.brake_latched
     w.timer_update()
-    w.command(100)
+    w.command(-100)  # same direction: isolate brake-release wait from reversal gap
     assert w.direction_gpio == 0 and w.brake_release_ticks == 2
     for remaining in (1, 0):
         w.tick_1ms()
@@ -192,7 +192,7 @@ def self_test() -> None:
     assert w.direction_gpio == 0 and w.ccr_shadow == 64
     w.timer_update()
     w.tick_1ms()
-    assert w.direction_gpio == 1 and w.ccr_active == 64
+    assert w.direction_gpio == -1 and w.ccr_active == 64
     print("PASS: source order + modeled STOP/DRIVE/reverse/brake-release guards.")
     print("UNQUALIFIED: physical transients, LOW/LOW/PWM-low, real brake current and levels.")
 
