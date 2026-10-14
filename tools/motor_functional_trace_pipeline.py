@@ -31,7 +31,7 @@ class TraceError(ValueError):
     pass
 
 
-def fields(record: str, prefix: str) -> dict[str, int]:
+def fields(record: str, prefix: str) -> dict[str, int | str]:
     if not record.startswith(prefix + ","):
         raise TraceError(f"Expected {prefix} line")
     data = {}
@@ -39,9 +39,14 @@ def fields(record: str, prefix: str) -> dict[str, int]:
         if "=" not in field:
             raise TraceError(f"Non-key/value entry in {prefix}")
         k, v = field.split("=", 1)
-        if k in data or not re.fullmatch(r"-?[0-9]+", v):
-            raise TraceError(f"Duplicate or invalid {k} in {prefix}")
-        data[k] = int(v)
+        if k in data:
+            raise TraceError(f"Duplicate {k} in {prefix}")
+        if re.fullmatch(r"-?[0-9]+", v):
+            data[k] = int(v)
+        elif k in ("rx_mode", "rx", "source") and re.fullmatch(r"[A-Za-z0-9_]+", v):
+            data[k] = v
+        else:
+            raise TraceError(f"Invalid {k} in {prefix}")
     return data
 
 
