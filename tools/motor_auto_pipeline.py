@@ -963,6 +963,13 @@ def main():
                           bool(meta.get("sensor_profile", False)))
         report=store(args.folder,raw_path.read_text(encoding="utf-8").splitlines(),meta)
         return 0 if report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL" else 1
+    if args.run:
+        p.error(
+            "P0 STOP_HIZ firmware changed neutral CCR to ARR+1. "
+            "Powered motor runs are locked until the UART v7/v8 neutral "
+            "telemetry protocol, analyzer, and waveform safety gate are "
+            "requalified. Offline --folder and --self-test remain available."
+        )
     if not args.port:
         p.error("--port is required for --run or --check-link")
     if args.timeout < 80:
