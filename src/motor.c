@@ -87,7 +87,10 @@ static uint32_t DutyFromCmd(int16_t applied, uint16_t deadband)
 {
     uint32_t mag = (uint32_t)(applied < 0 ? -applied : applied);
     uint32_t duty;
-    if (mag == 0U) return 0U;
+    /* Toshiba TB6612FNG: IN1=IN2=LOW requires PWM HIGH for Hi-Z Stop.
+     * PWM Mode 1, non-inverted: CCR=ARR+1 keeps PWM HIGH for the
+     * entire period. Zero duty / PWM LOW is NOT a proven Coast. */
+    if (mag == 0U) return pwm_period + 1U;
     /* deadband defaults to zero. No deadband value should be assumed
      * safe before a measured motor response. */
     duty = deadband + ((uint32_t)(1000U - deadband) * mag) / 1000U;
@@ -104,23 +107,29 @@ void Motor_Init(void)
     GPIO_Output(MOTOR_R_IN2_PORT, MOTOR_R_IN2_PIN);
     GPIO_Output(MOTOR_L_IN1_PORT, MOTOR_L_IN1_PIN);
     GPIO_Output(MOTOR_L_IN2_PORT, MOTOR_L_IN2_PIN);
-    GPIO_AF(MOTOR_R_PWM_PORT, MOTOR_R_PWM_PIN, MOTOR_R_PWM_AF);
-    GPIO_AF(MOTOR_L_PWM_PORT, MOTOR_L_PWM_PIN, MOTOR_L_PWM_AF);
+    /* Initialize timer and deterministic coast level before AF is driven. */
+    GPIOB->BSRR = (1UL << (MOTOR_L_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_L_IN2_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN2_PIN + 16U));
     arr = timer_clock / MOTOR_PWM_FREQUENCY;
     if (arr == 0U) arr = 1U;
     pwm_period = arr - 1U;
     TIM2->CR1 = 0;
     TIM2->PSC = 0;
     TIM2->ARR = pwm_period;
-    TIM2->CCR1 = 0;
-    TIM2->CCR2 = 0;
+    TIM2->CCR1 = pwm_period + 1U; /* HIGH, Hi-Z with IN1=IN2=LOW */
+    TIM2->CCR2 = pwm_period + 1U;
     TIM2->CCMR1 &= ~((7UL << 4) | (7UL << 12));
     TIM2->CCMR1 |= (6UL << 4) | TIM_CCMR1_OC1PE |
                    (6UL << 12) | TIM_CCMR1_OC2PE;
-    TIM2->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2E;
+    /* Reset CC1P/CC2P: PWM Mode 1 must be active-HIGH. */
+    TIM2->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;
     TIM2->CR1 |= TIM_CR1_ARPE;
     TIM2->EGR = TIM_EGR_UG;
     TIM2->SR = 0;
+    GPIO_AF(MOTOR_R_PWM_PORT, MOTOR_R_PWM_PIN, MOTOR_R_PWM_AF);
+    GPIO_AF(MOTOR_L_PWM_PORT, MOTOR_L_PWM_PIN, MOTOR_L_PWM_AF);
     TIM2->CR1 |= TIM_CR1_CEN;
     wheel_l.target = wheel_r.target = 0;
     wheel_l.applied = wheel_r.applied = 0;
@@ -135,9 +144,10 @@ void Motor_SetPairPermille(int16_t left, int16_t right)
     uint32_t x = LockIRQ();
     if (brake_latched) {
         uint32_t neutral = 0;
-        /* Brake duty was 100%. Clear preload and neutralize the bridge
-         * before any new direction can be enabled on the next 1 kHz tick. */
-        TIM2->CCR1 = TIM2->CCR2 = 0;
+        /* Keep PWM HIGH: LOW/LOW/HIGH is the datasheet Hi-Z Stop.
+         * The next PWM duty must be preloaded before asserting a drive
+         * direction; Motor_Update1ms inserts that full 1-ms guard. */
+        TIM2->CCR1 = TIM2->CCR2 = pwm_period + 1U;
         AddDirection(&neutral, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, 0);
         AddDirection(&neutral, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, 0);
         GPIOB->BSRR = neutral;
@@ -209,19 +219,29 @@ static void UpdateWheel(Wheel_t *w)
 void Motor_Update1ms(void)
 {
     uint32_t bsrr = 0;
+    uint8_t was_stopped_l, was_stopped_r;
     if (brake_latched) return;
     if (brake_release_ticks > 0U) {
         brake_release_ticks--;
         return;
     }
+    was_stopped_l = (wheel_l.applied == 0);
+    was_stopped_r = (wheel_r.applied == 0);
     UpdateWheel(&wheel_l);
     UpdateWheel(&wheel_r);
 
-    /* Direction GPIO is changed only on the 1 kHz update boundary.
-     * Reversal always traverses 0 PWM and a neutral gap >= 30 ms;
-     * the CCR preload takes effect at the following 30 kHz PWM update. */
-    AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, wheel_l.applied);
-    AddDirection(&bsrr, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, wheel_r.applied);
+    /* P0: CCR is preloaded (OCxPE) while GPIO BSRR is immediate.
+     * If we asserted direction directly after Coast (CCR=ARR+1), the
+     * motor would briefly see 100% PWM until the next TIM2 update.
+     * Hold IN1=IN2=LOW for one 1-ms tick while the first limited duty
+     * is transferred to the active CCR. This avoids a full-duty start
+     * pulse. The intermediate LOW/LOW/PWM LOW remains unqualified
+     * electrically and requires scope validation before live testing.
+     * Reverse direction still traverses a >=30-ms neutral gap. */
+    AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN,
+                 was_stopped_l ? 0 : wheel_l.applied);
+    AddDirection(&bsrr, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN,
+                 was_stopped_r ? 0 : wheel_r.applied);
     GPIOB->BSRR = bsrr;
     TIM2->CCR2 = DutyFromCmd(wheel_l.applied, wheel_l.deadband);
     TIM2->CCR1 = DutyFromCmd(wheel_r.applied, wheel_r.deadband);
@@ -237,9 +257,9 @@ void Motor_Stop(void)
 {
     uint32_t bsrr = 0, x = LockIRQ();
     /* Software-neutral command takes precedence over a pending ramp.
-     * At TB6612 VCC=5V, IN1=IN2=LOW + PWM=LOW is NOT a guaranteed
-     * Hi-Z coast entry in the manufacturer's input truth table.
-     * Do not energize brake/reverse tests until power-stage validation. */
+     * TB6612FNG datasheet Stop is LOW/LOW/HIGH (Hi-Z). This is the
+     * settled input command, not measured H-bridge terminal behavior.
+     * GPIO is made neutral immediately; CCR takes effect on TIM2 update. */
     if (wheel_l.applied != 0) {
         wheel_l.last_direction = Sign(wheel_l.applied);
         wheel_l.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;
@@ -254,8 +274,8 @@ void Motor_Stop(void)
     brake_release_ticks = 0;
     AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, 0);
     AddDirection(&bsrr, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, 0);
-    TIM2->CCR1 = TIM2->CCR2 = 0;
     GPIOB->BSRR = bsrr;
+    TIM2->CCR1 = TIM2->CCR2 = pwm_period + 1U;
     UnlockIRQ(x);
 }
 void Motor_Brake(void)
