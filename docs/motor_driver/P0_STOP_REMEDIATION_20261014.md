@@ -1,5 +1,9 @@
 # P0 STOP/Coast/Brake source remediation — 2026-10-14
 
+## Consolidated execution
+
+For current P0 offline debugging, run **one command**: `python tools/motor_p0_batch_pipeline.py --run`. This executes eight source/model/protocol checks and emits a consolidated JSON/TXT report; optionally `--waveforms <folder>` evaluates a complete 12-file GPIO/PWM oscilloscope bundle. See [P0_BATCH_PIPELINE.md](P0_BATCH_PIPELINE.md). It does not flash or energize the MCU/motor.
+
 ## Scope
 This is an **unpowered, source-level correction** after v7 PASS_BENCH. The historical v7 traces remain valid for their original LOW/LOW/CCR=0 firmware and **must not** be reinterpreted as proof of a physical high-impedance coast.
 
