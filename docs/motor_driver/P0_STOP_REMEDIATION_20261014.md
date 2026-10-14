@@ -34,6 +34,10 @@ This does **not** reflash a currently deployed board. Previously flashed firmwar
 4. `Motor_Brake()` is still a physical short-brake command without current qualification; no new brake/reverse experiment is authorised.
 5. `HardFault_Handler()` disables TIM2 channel outputs instead of relying on a delayed CCR write. On this board STBY is not an independent MCU-controlled emergency kill.
 
+## TIM2 PWM register-source consistency
+
+A stale `MOTOR_PWM_PERIOD=4999` (from an earlier configuration) was present in `include/pinout.h`. No current Motor Driver source references it. The obsolete period/prescaler macros have been removed to prevent future callers treating 4999 as the actual `ARR`: `Motor_Init()` owns `PSC=0` and derives `ARR=Board_GetAPB1TimerClockHz()/MOTOR_PWM_FREQUENCY - 1`. With the verified 96 MHz timer clock and 30 kHz PWM, `ARR=3199` and settled STOP is `CCR=3200`. An unpowered regression now checks that single-source-of-truth relationship.
+
 ## Additional no-power transition regression
 
 `tools/motor_stop_transition_regression.py` validates source operation order and an independent 1-ms wheel/preload model for coast-to-drive, immediate stop, 30-ms opposite-sign reversal, and brake release. GitHub Actions runs it on Python 3.11 and 3.14. This is a host simulation and cannot establish electrical safety or eliminate the unspecified LOW/LOW/PWM-low transient.
