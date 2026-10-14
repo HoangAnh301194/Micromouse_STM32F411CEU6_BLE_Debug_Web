@@ -22,6 +22,7 @@ import subprocess
 import sys
 import time
 
+ROOT = Path(__file__).resolve().parent.parent
 FIRMWARE_ENV = "motor_auto_pipeline_96m_trim25"
 PROFILE_VERSION = 14
 STOP_CCR = 3200 # Hi-Z settled PWM HIGH when both IN inputs LOW
