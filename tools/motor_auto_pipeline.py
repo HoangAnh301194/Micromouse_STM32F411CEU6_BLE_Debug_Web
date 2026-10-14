@@ -250,6 +250,8 @@ def analyze(lines, *, setup=None):
             errors.append("Firmware sensor mode mismatch")
         if p.get("rx_mode") != "irq256":
             errors.append("Firmware missing USART1 RX interrupt ring profile")
+        if PROFILE_VERSION >= 10 and intval(p, "p0_locked") != 1:
+            errors.append("P0 MCU arming interlock not advertised in firmware PROFILE")
         if HIGH_PROFILE and (intval(p,"high_pulse_ms") != HIGH_PULSE_MS or
                              intval(p,"high_post_ms") != HIGH_POST_MS):
             errors.append("High PWM pulse/settle protection profile mismatch")
@@ -257,6 +259,8 @@ def analyze(lines, *, setup=None):
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
     if ready and intval(ready[-1],"sensor", 0 if PROFILE_VERSION in (4, 6) else -999999) != int(SENSOR_PROFILE):
         errors.append("READY sensor integration profile mismatch")
+    if ready and PROFILE_VERSION >= 10 and intval(ready[-1],"p0_locked") != 1:
+        errors.append("P0 MCU arming interlock not advertised in READY")
     static_regs = by_kind.get("MOTOR_AUTO_STATIC", [])
     if SENSOR_PROFILE and not static_regs:
         errors.append("Missing read-only MCU STOP pin/CCR/preload snapshot")
@@ -614,8 +618,8 @@ def self_test():
     test_firmware_uart_profile_frame()
     synthetic = [
         "[BOOT] Motor auto baseline: neutral, USART1 host ARM required",
-        f"MOTOR_AUTO_PROFILE,version={PROFILE_VERSION},nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,high_pulse_ms={HIGH_PULSE_MS if HIGH_PROFILE else 0},high_post_ms={HIGH_POST_MS if HIGH_PROFILE else 0},pulse_ms=200,post_ms=400,boot_neutral=1,sensor={int(SENSOR_PROFILE)}",
-        f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1,sensor={int(SENSOR_PROFILE)}",
+        f"MOTOR_AUTO_PROFILE,version={PROFILE_VERSION},nominal_hz=96000000,pwm_hz=30000,rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,high_pulse_ms={HIGH_PULSE_MS if HIGH_PROFILE else 0},high_post_ms={HIGH_POST_MS if HIGH_PROFILE else 0},pulse_ms=200,post_ms=400,boot_neutral=1,sensor={int(SENSOR_PROFILE)},p0_locked=1",
+        f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1,sensor={int(SENSOR_PROFILE)},p0_locked=1",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
     synthetic.insert(2,f"MOTOR_AUTO_STATIC,ccr_l={STOP_CCR},ccr_r={STOP_CCR},in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199")
@@ -645,6 +649,11 @@ def self_test():
     synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l={STOP_CCR},ccr_r={STOP_CCR},tim11_gaps=0,tx_drop=0,keep_ok={EXPECTED},rx_ore=0,rx_ring_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
+    absent_interlock = [x.replace(",p0_locked=1", ",p0_locked=0")
+                        if x.startswith(("MOTOR_AUTO_PROFILE","MOTOR_AUTO_READY"))
+                        else x for x in synthetic]
+    negative, _ = analyze(absent_interlock)
+    assert negative["status"] == "INCOMPLETE", negative["errors"]
     wrong_stop = 0 if STOP_CCR == 3200 else 3200
     wrong_mode = [
         x.replace(f"ccr_l={STOP_CCR},ccr_r={STOP_CCR},in_l1",
