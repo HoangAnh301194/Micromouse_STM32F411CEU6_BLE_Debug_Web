@@ -984,16 +984,18 @@ def check_link(args):
                         ("high_pulse_ms",HIGH_PULSE_MS if HIGH_PROFILE else 0),
                         ("high_post_ms",HIGH_POST_MS if HIGH_PROFILE else 0),
                         ("sensor",int(SENSOR_PROFILE)))
-                    if any(intval(values,k)!=v for k,v in requirements):
-                        print("PROFILE mismatch; refusing to validate link.")
+                    if (any(intval(values,k)!=v for k,v in requirements)
+                        or intval(values,"p0_locked") != 1):
+                        print("PROFILE mismatch or MCU P0 lock absent; refusing to validate link.")
                         return 1
                     profile_ok = True
                 elif kind == "MOTOR_AUTO_READY":
                     if (not profile_ok or intval(values,"version") != PROFILE_VERSION
                         or intval(values,"state") != 0
                         or intval(values,"steps") != len(MATRIX)
-                        or intval(values,"sensor",0) != int(SENSOR_PROFILE)):
-                        print("READY without matching PROFILE/idle state; link not validated.")
+                        or intval(values,"sensor",0) != int(SENSOR_PROFILE)
+                        or intval(values,"p0_locked") != 1):
+                        print("READY without matching PROFILE, MCU P0 lock or idle state; link not validated.")
                         return 1
                     print("BIDIRECTIONAL UART PROFILE + READY PASS; no motor drive commands sent.")
                     return 0
