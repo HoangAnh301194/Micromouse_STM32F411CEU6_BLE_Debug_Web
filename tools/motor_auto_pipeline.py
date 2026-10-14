@@ -709,6 +709,18 @@ def self_test():
                 if x.startswith("MOTOR_AUTO_STATIC") else x for x in synthetic])
     incomplete([x.replace(f"ccr_l={STOP_CCR},ccr_r={STOP_CCR},tim11_late=0", f"ccr_l=384,ccr_r={STOP_CCR},tim11_late=0")
                 if "phase=post" in x else x for x in synthetic])
+    if SENSOR_PROFILE and not HIGH_PROFILE:
+        archived = ROOT / "motor_logs" / "auto_20261013_113713" / "raw_serial.log"
+        if archived.is_file():
+            old_raw = archived.read_text(encoding="utf-8").splitlines()
+            configure_from_saved_log(old_raw, high=False, sensors=True)
+            assert PROFILE_VERSION == 7 and STOP_CCR == 0
+            old_report, _ = analyze(old_raw)
+            assert old_report["status"] == "TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", old_report["errors"]
+            assert old_report["starts"] == 63 and old_report["ends"] == 63
+            configure_profile(False, True)
+            assert PROFILE_VERSION == 17 and STOP_CCR == 3200
+            print("PASS: archived v7 63-stage CCR=0 data remains valid; v17 STOP_HIZ is separate.")
     print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.")
     print("Host synthetic test only; not hardware validation.")
 
