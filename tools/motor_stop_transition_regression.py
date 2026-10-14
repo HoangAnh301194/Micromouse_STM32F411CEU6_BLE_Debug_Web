@@ -64,6 +64,29 @@ def check_source_order() -> None:
                   "TIM2->CCR1 = 0;", "GPIOB->BSRR =")
 
 
+
+def check_firmware_uart_interlock() -> None:
+    """Check the MCU build blocks BOTH UART START aliases, not just the host CLI."""
+    src = (ROOT / "src/motor_auto_bench.c").read_text(encoding="utf-8")
+    assert "#define MOTOR_AUTO_P0_ARM_LOCKED 1U" in src
+    assert '#error "P0 electrical gate must remain locked until a reviewed release"' in src
+    start = src.index("static void ReceiveLine(")
+    end = src.index("static void PollHost(", start)
+    receive = src[start:end]
+    assert "#if MOTOR_AUTO_P0_ARM_LOCKED" in receive
+    locked = receive.split("#if MOTOR_AUTO_P0_ARM_LOCKED", 1)[1].split("#else", 1)[0]
+    unlocked = receive.split("#else", 1)[1].split("#endif /* MOTOR_AUTO_P0_ARM_LOCKED */", 1)[0]
+    assert 'strcmp(line,"MOTOR START")' in locked
+    assert 'strcmp(line,"MOTOR START HIGH 600")' in locked
+    assert 'MOTOR_AUTO_ARM_BLOCKED,reason=P0_ELECTRICAL_UNQUALIFIED' in locked
+    assert "Motor_Stop();" in locked
+    assert "state = AUTO_SETTLE;" not in locked
+    assert "state = AUTO_SETTLE;" in unlocked
+    assert "StartStep(now);" in src
+    # Preprocessor-locked firmware must not compile the auto-drive arm branch.
+    assert "#if !MOTOR_AUTO_P0_ARM_LOCKED\nstatic uint8_t CanArm(void)" in src
+
+
 def sign(value: int) -> int:
     return (value > 0) - (value < 0)
 
@@ -146,6 +169,7 @@ class Wheel:
 
 def self_test() -> None:
     check_source_order()
+    check_firmware_uart_interlock()
     w = Wheel()
     assert (w.direction_gpio, w.ccr_active) == (0, PERIOD_COUNTS)
     assert mode(0, 0, 1) == "STOP_HIZ"
@@ -193,7 +217,7 @@ def self_test() -> None:
     w.timer_update()
     w.tick_1ms()
     assert w.direction_gpio == -1 and w.ccr_active == 64
-    print("PASS: source order + modeled STOP/DRIVE/reverse/brake-release guards.")
+    print("PASS: source order, locked MCU UART START, modeled STOP/DRIVE/reverse/brake guards.")
     print("UNQUALIFIED: physical transients, LOW/LOW/PWM-low, real brake current and levels.")
 
 
