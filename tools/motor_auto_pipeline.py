@@ -23,7 +23,8 @@ import sys
 import time
 
 FIRMWARE_ENV = "motor_auto_pipeline_96m_trim25"
-PROFILE_VERSION = 4
+PROFILE_VERSION = 14
+STOP_CCR = 3200 # Hi-Z settled PWM HIGH when both IN inputs LOW
 FAMILIES = 4
 HIGH_PROFILE = False
 SENSOR_PROFILE = False
@@ -55,10 +56,10 @@ CSV_FIELDS = ("round", "stage", "phase", "test", "rise", "ms", "elapsed",
               "ccr_r", "tim11_late", "tim11_max_cycles", "tim11_gaps", "tx_drop")
 
 
-def configure_profile(high=False, sensors=False):
+def configure_profile(high=False, sensors=False, *, legacy=False):
     """One strict mutually identified MCU firmware image per invocation."""
     global FIRMWARE_ENV, PROFILE_VERSION, FAMILIES, HIGH_PROFILE, SENSOR_PROFILE
-    global MATRIX, TESTS, RISE_RATES, MAX_CMD, MAX_CCR, EXPECTED
+    global MATRIX, TESTS, RISE_RATES, MAX_CMD, MAX_CCR, EXPECTED, STOP_CCR
     HIGH_PROFILE = bool(high)
     SENSOR_PROFILE = bool(sensors)
     FIRMWARE_ENV = (
@@ -67,7 +68,8 @@ def configure_profile(high=False, sensors=False):
         "motor_auto_high_96m_trim25" if high else
         "motor_auto_pipeline_96m_trim25"
     )
-    PROFILE_VERSION = (8 if high else 7) if sensors else (6 if high else 4)
+    PROFILE_VERSION = ((8 if high else 7) if sensors else (6 if high else 4)) + (0 if legacy else 10)
+    STOP_CCR = 0 if legacy else 3200
     FAMILIES = 5 if high else 4
     MATRIX = (
         ((80,0),(0,80),(90,0),(0,90),(100,0),(0,100),
@@ -237,7 +239,7 @@ def analyze(lines, *, setup=None):
         errors.append("Missing read-only MCU STOP pin/CCR/preload snapshot")
     for rec in static_regs:
         expected_static = {
-            "ccr_l":0,"ccr_r":0,
+            "ccr_l":STOP_CCR,"ccr_r":STOP_CCR,
             "in_l1":0,"in_l2":0,"in_r1":0,"in_r2":0,
             "oc1pe":1,"oc2pe":1,"arr":3199,
         }
@@ -329,10 +331,10 @@ def analyze(lines, *, setup=None):
         expected_ms = stage_pulse_ms(intval(end,"stage"))
         if intval(end, "reason") != 0 or intval(end, "elapsed") != expected_ms:
             errors.append(f"Pulse #{i} failed configured {expected_ms}ms timeout")
-        if intval(end, "ccr_l") != 0 or intval(end, "ccr_r") != 0:
-            errors.append(f"Pulse #{i} did not clear TIM2 CCR on stop")
+        if intval(end, "ccr_l") != STOP_CCR or intval(end, "ccr_r") != STOP_CCR:
+            errors.append(f"Pulse #{i} STOP CCR disagrees with protocol (expected {STOP_CCR})")
     for i, p in enumerate(posts):
-        if intval(p, "elapsed") != stage_post_ms(intval(p,"stage")) or intval(p, "ccr_l") != 0 or intval(p, "ccr_r") != 0:
+        if intval(p, "elapsed") != stage_post_ms(intval(p,"stage")) or intval(p, "ccr_l") != STOP_CCR or intval(p, "ccr_r") != STOP_CCR:
             errors.append(f"Post-stop observation #{i} invalid")
     for i, s in enumerate(samples):
         if s.get("phase") not in ("drive", "post"):
@@ -348,12 +350,19 @@ def analyze(lines, *, setup=None):
         for k in ("applied_l", "applied_r"):
             if abs(intval(s, k)) > MAX_CMD:
                 errors.append("Applied PWM exceeded hard cap")
-        for k in ("ccr_l", "ccr_r"):
-            if not (0 <= intval(s, k) <= MAX_CCR):
-                errors.append(f"Unexpected timer CCR beyond profile max {MAX_CMD} permille")
-        if s.get("phase") == "post" and any(intval(s, k) != 0 for k in
-                                             ("applied_l", "applied_r", "ccr_l", "ccr_r")):
-            errors.append("Nonneutral PWM detected during post-stop observation")
+        for wheel in ("l", "r"):
+            applied = intval(s, f"applied_{wheel}")
+            ccr = intval(s, f"ccr_{wheel}")
+            if applied == 0:
+                if ccr != STOP_CCR:
+                    errors.append(f"Zero-applied wheel {wheel} STOP CCR mismatch")
+            elif not (0 < ccr <= MAX_CCR):
+                errors.append(f"Active wheel {wheel} CCR outside capped drive duty")
+        if s.get("phase") == "post" and any(
+                intval(s, f"applied_{wheel}") != 0 or
+                intval(s, f"ccr_{wheel}") != STOP_CCR
+                for wheel in ("l", "r")):
+            errors.append("Nonneutral wheel state during post-stop observation")
 
     for r in range(NUM_ROUNDS):
         for stage, cmd in enumerate(MATRIX):
@@ -371,9 +380,9 @@ def analyze(lines, *, setup=None):
             if (len(drives) < (4 if stage >= BASE_STEPS else 6) or
                 len(after) < (30 if stage >= BASE_STEPS else 10)):
                 errors.append(f"Insufficient 20ms samples round={r} stage={stage} drive={len(drives)} post={len(after)}")
-            if any(intval(x, "ccr_l") != 0 for x in drives if cmd[0] == 0) or \
-               any(intval(x, "ccr_r") != 0 for x in drives if cmd[1] == 0):
-                errors.append(f"Noncommanded wheel CCR nonzero r={r} stage={stage}")
+            if any(intval(x, "ccr_l") != STOP_CCR for x in drives if cmd[0] == 0) or \
+               any(intval(x, "ccr_r") != STOP_CCR for x in drives if cmd[1] == 0):
+                errors.append(f"Noncommanded wheel STOP CCR mismatch r={r} stage={stage}")
             if drives and any(abs(intval(x,"applied_l")) > cmd[0] or
                               abs(intval(x,"applied_r")) > cmd[1] for x in drives):
                 errors.append(f"Requested PWM cap exceeded r={r} stage={stage}")
@@ -466,7 +475,7 @@ def analyze(lines, *, setup=None):
                 "post_last100ms_net_counts":[x["post_last100ms_net_counts"] for x in vals],
                 "first_five_counts_ms":[x["first_five_counts_ms"] for x in vals]
             })
-    if done and (intval(done[-1],"ccr_l") != 0 or intval(done[-1],"ccr_r") != 0 or
+    if done and (intval(done[-1],"ccr_l") != STOP_CCR or intval(done[-1],"ccr_r") != STOP_CCR or
                  intval(done[-1],"tim11_gaps") != 0 or intval(done[-1],"tx_drop") != 0 or
                  intval(done[-1],"rx_ore") != 0 or intval(done[-1],"rx_ring_drop") != 0):
         errors.append("Nonneutral/invalid final MCU status")
