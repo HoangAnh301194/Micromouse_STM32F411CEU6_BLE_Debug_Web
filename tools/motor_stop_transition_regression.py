@@ -99,6 +99,66 @@ def check_firmware_uart_interlock() -> None:
     assert "#if !MOTOR_AUTO_P0_ARM_LOCKED\nstatic uint8_t CanArm(void)" in src
 
 
+
+def check_readonly_uart_lock_handshake() -> None:
+    """Mock UART transport: link PASS must require P0 lock in BOTH messages.
+
+    skip_flash=True means this test cannot upload firmware or drive motors.
+    """
+    import contextlib
+    import io
+    import sys
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    import motor_auto_pipeline as pipeline
+
+    pipeline.configure_profile(high=False, sensors=False)
+    profile = (
+        "MOTOR_AUTO_PROFILE,version=14,steps=21,hard_cap_permille=200,"
+        "families=4,high_pulse_ms=0,high_post_ms=0,sensor=0,p0_locked=1\\n"
+    ).encode("ascii")
+    ready = (
+        "MOTOR_AUTO_READY,version=14,state=0,steps=21,sensor=0,p0_locked=1\\n"
+    ).encode("ascii")
+
+    def handshake(records: list[bytes]) -> int:
+        class DummySerial:
+            def __init__(self) -> None:
+                self.lines = iter(records)
+                self.writes = []
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def reset_input_buffer(self) -> None:
+                pass
+
+            def write(self, data: bytes) -> None:
+                self.writes.append(data)
+                assert data == b"MOTOR PING\\n", "Read-only check must never send START"
+
+            def readline(self) -> bytes:
+                return next(self.lines, b"")
+
+        test_port = DummySerial()
+        serial_stub = SimpleNamespace(Serial=lambda *_a, **_kw: test_port)
+        args = SimpleNamespace(skip_flash=True, port="MOCK-PORT")
+        with patch.dict(sys.modules, {"serial": serial_stub}):
+            with contextlib.redirect_stdout(io.StringIO()):
+                result = pipeline.check_link(args)
+        assert all(w == b"MOTOR PING\\n" for w in test_port.writes)
+        return result
+
+    assert handshake([profile, ready]) == 0
+    assert handshake([profile.replace(b"p0_locked=1", b"p0_locked=0"), ready]) == 1
+    assert handshake([profile, ready.replace(b"p0_locked=1", b"p0_locked=0")]) == 1
+    assert handshake([profile, ready.replace(b"state=0", b"state=1")]) == 1
+
+
 def sign(value: int) -> int:
     return (value > 0) - (value < 0)
 
@@ -182,6 +242,7 @@ class Wheel:
 def self_test() -> None:
     check_source_order()
     check_firmware_uart_interlock()
+    check_readonly_uart_lock_handshake()
     w = Wheel()
     assert (w.direction_gpio, w.ccr_active) == (0, PERIOD_COUNTS)
     assert mode(0, 0, 1) == "STOP_HIZ"
