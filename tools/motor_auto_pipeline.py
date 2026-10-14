@@ -595,7 +595,7 @@ def self_test():
         f"MOTOR_AUTO_READY,version={PROFILE_VERSION},rounds=3,steps={len(MATRIX)},hard_cap_permille={MAX_CMD},both_cap_permille=160,families={FAMILIES},rx_mode=irq256,pulse_ms=200,post_ms=400,one_shot=1,boot_neutral=1,sensor={int(SENSOR_PROFILE)}",
         f"MOTOR_AUTO_BEGIN,rounds=3,steps={len(MATRIX)},settle_ms=1000,boot_neutral=1"
     ]
-    synthetic.insert(2,"MOTOR_AUTO_STATIC,ccr_l=0,ccr_r=0,in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199")
+    synthetic.insert(2,f"MOTOR_AUTO_STATIC,ccr_l={STOP_CCR},ccr_r={STOP_CCR},in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199")
     if SENSOR_PROFILE:
         synthetic.append("MOTOR_AUTO_SENSOR_READY,good=9300,ir=100,bias_mdps=0")
     for r in range(NUM_ROUNDS):
@@ -605,23 +605,31 @@ def self_test():
             synthetic.append(f"MOTOR_AUTO_START,round={r},stage={i},l={left},r={right},test={test},rise={rise},pulse_ms={pulse}")
             for n in range(1,pulse//20+1):
                 t=n*20-1
-                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,test={test},rise={rise},ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10},ccr_r={right*32//10},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
+                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=drive,test={test},rise={rise},ms={t},elapsed={t},applied_l={left},applied_r={right},enc_l={int(left>0)*n*5},enc_r={int(right>0)*n*5},ccr_l={left*32//10 if left else STOP_CCR},ccr_r={right*32//10 if right else STOP_CCR},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             if SENSOR_PROFILE:
                 n = r*len(MATRIX)+i
                 synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=drive,good={9300+n*50},fresh={9250+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={100+n*30},gyro_n=6,gyro_abs_avg=200,gyro_abs_peak=350")
-            synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed={pulse},reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
+            synthetic.append(f"MOTOR_AUTO_END,round={r},stage={i},elapsed={pulse},reason=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l={STOP_CCR},ccr_r={STOP_CCR}")
             for n in range(1,post//20+1):
                 t=n*20
-                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0,tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
+                synthetic.append(f"MOTOR_AUTO_SAMPLE,round={r},stage={i},phase=post,test={test},rise={rise},ms={t},elapsed={t},applied_l=0,applied_r=0,enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l={STOP_CCR},ccr_r={STOP_CCR},tim11_late=0,tim11_max_cycles=1000,tim11_gaps=0,tx_drop=0")
             if SENSOR_PROFILE:
                 n = r*len(MATRIX)+i
                 synthetic.append(f"MOTOR_AUTO_SENSORS,round={r},stage={i},phase=post,good={9350+n*50},fresh={9300+n*50},err=0,timeout=0,busy=2,reused=10,aged=2,missing=0,ir={120+n*30},gyro_n=20,gyro_abs_avg=100,gyro_abs_peak=220")
-            synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={post},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l=0,ccr_r=0")
+            synthetic.append(f"MOTOR_AUTO_POST_END,round={r},stage={i},elapsed={post},enc_l={int(left>0)*50},enc_r={int(right>0)*50},ccr_l={STOP_CCR},ccr_r={STOP_CCR}")
             synthetic.append(f"MOTOR_AUTO_LINK,round={r},stage={i},keep_ok={1+r*len(MATRIX)+i},host_age_ms=100,rx_bytes={50+r*len(MATRIX)+i},rx_ore=0,rx_fe=0,rx_noise=0,rx_ring_drop=0,bad_commands=0")
         synthetic.append(f"MOTOR_AUTO_ROUND_END,round={r+1},completed={(r+1)*len(MATRIX)}")
-    synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l=0,ccr_r=0,tim11_gaps=0,tx_drop=0,keep_ok={EXPECTED},rx_ore=0,rx_ring_drop=0")
+    synthetic.append(f"MOTOR_AUTO_DONE,rounds=3,pulses={EXPECTED},ccr_l={STOP_CCR},ccr_r={STOP_CCR},tim11_gaps=0,tx_drop=0,keep_ok={EXPECTED},rx_ore=0,rx_ring_drop=0")
     report,_ = analyze(synthetic)
     assert report["status"]=="TRACE_COMPLETE_NOT_ELECTRICAL_APPROVAL", report["errors"]
+    wrong_stop = 0 if STOP_CCR == 3200 else 3200
+    wrong_mode = [
+        x.replace(f"ccr_l={STOP_CCR},ccr_r={STOP_CCR},in_l1",
+                  f"ccr_l={wrong_stop},ccr_r={wrong_stop},in_l1")
+        if x.startswith("MOTOR_AUTO_STATIC") else x for x in synthetic
+    ]
+    wrong_report, _ = analyze(wrong_mode)
+    assert wrong_report["status"] == "INCOMPLETE"
     if SENSOR_PROFILE:
         assert report["sensor_integration"]["gyro_fresh_delta"]>0
         assert report["sensor_integration"]["ir_scans_delta"]>0
@@ -677,7 +685,7 @@ def self_test():
                if x["test"] == "slew_fast" and x["measurement_status"] == "NOT_TESTED")
     incomplete([x.replace("in_l1=0,in_l2=0","in_l1=1,in_l2=0")
                 if x.startswith("MOTOR_AUTO_STATIC") else x for x in synthetic])
-    incomplete([x.replace("ccr_l=0,ccr_r=0,tim11_late=0","ccr_l=384,ccr_r=0,tim11_late=0")
+    incomplete([x.replace(f"ccr_l={STOP_CCR},ccr_r={STOP_CCR},tim11_late=0", f"ccr_l=384,ccr_r={STOP_CCR},tim11_late=0")
                 if "phase=post" in x else x for x in synthetic])
     print(f"SELF-TEST PASSED: {NUM_ROUNDS}-round {EXPECTED}-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.")
     print("Host synthetic test only; not hardware validation.")
