@@ -44,6 +44,10 @@ A stale `MOTOR_PWM_PERIOD=4999` (from an earlier configuration) was present in `
 
 Both the direct powered runner (`motor_auto_pipeline.py --run`) and the top-level powered coordinator (`motor_full_qualification.py --run-integrated`) now reject invocation before flashing or driving. Historical v7 PASS_BENCH remains valid ONLY for its older firmware/protocol, not the revised STOP_HIZ source.
 
+## Non-powered on-device UART check
+
+`python tools/motor_auto_pipeline.py --check-link --sensor-integration --port COM6` is now a strictly read-only UART protocol check: it **does not build/upload firmware or send START**, even when `--skip-flash` is absent. With the motor supply VM physically disconnected, the test can check an **already-flashed** diagnostic image. A v17 firmware image must report `p0_locked=1` in BOTH `MOTOR_AUTO_PROFILE` and `MOTOR_AUTO_READY`, and `state=0` in READY. Missing lock, old v7 protocol, or an armed state is rejected; none of those failures justify enabling VM. The source-level regression mocks serial RX/TX, checks valid and invalid handshakes, and fails if `check_link()` attempts an upload. This does not itself flash the updated firmware to the board or validate drive/brake transitions.
+
 ## Safe checks
 ```powershell
 python tools/motor_stop_truth_table_audit.py --self-test
