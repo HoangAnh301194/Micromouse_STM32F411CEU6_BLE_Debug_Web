@@ -14,6 +14,7 @@ on:
       - 'tools/motor_stop_truth_table_audit.py'
       - 'tools/motor_stop_transition_regression.py'
       - 'tools/motor_p0_batch_pipeline.py'
+      - 'tools/motor_functional_trace_pipeline.py'
       - 'docs/motor_driver/**'
   workflow_dispatch:
 
@@ -54,6 +55,8 @@ jobs:
         run: python tools/motor_stop_truth_table_audit.py
       - name: No-power STOP/drive/reverse/brake transition and preload regression
         run: python tools/motor_stop_transition_regression.py
+      - name: 512-tick SRAM/UART idle functional trace parser and fail-closed source gates
+        run: python tools/motor_functional_trace_pipeline.py --self-test
       - name: Multi-gate P0 batch + synthetic scope negative tests (no motors)
         run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: P0 one-command report (hardware capture remains NOT_MEASURED)
@@ -89,6 +92,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+      - name: Python 3.14 no-drive 1kHz functional trace regression
+        run: python tools/motor_functional_trace_pipeline.py --self-test
       - name: Python 3.14 P0 multi-gate host regression
         run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: Python 3.14 STOP truth-table CLI self-test
