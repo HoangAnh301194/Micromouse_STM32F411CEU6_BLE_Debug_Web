@@ -246,7 +246,7 @@ def analyze(lines, *, setup=None):
         }.items():
             if intval(p, key) != value:
                 errors.append(f"Firmware profile mismatch: {key}")
-        if intval(p,"sensor",0) != int(SENSOR_PROFILE):
+        if intval(p,"sensor",0 if PROFILE_VERSION in (4, 6) else -999999) != int(SENSOR_PROFILE):
             errors.append("Firmware sensor mode mismatch")
         if p.get("rx_mode") != "irq256":
             errors.append("Firmware missing USART1 RX interrupt ring profile")
@@ -255,7 +255,7 @@ def analyze(lines, *, setup=None):
             errors.append("High PWM pulse/settle protection profile mismatch")
     if not ready:
         errors.append("Missing UART RX handshake: MOTOR_AUTO_READY")
-    if ready and intval(ready[-1],"sensor") != int(SENSOR_PROFILE):
+    if ready and intval(ready[-1],"sensor", 0 if PROFILE_VERSION in (4, 6) else -999999) != int(SENSOR_PROFILE):
         errors.append("READY sensor integration profile mismatch")
     static_regs = by_kind.get("MOTOR_AUTO_STATIC", [])
     if SENSOR_PROFILE and not static_regs:
