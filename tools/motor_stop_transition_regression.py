@@ -146,10 +146,13 @@ def check_readonly_uart_lock_handshake() -> None:
 
         test_port = DummySerial()
         serial_stub = SimpleNamespace(Serial=lambda *_a, **_kw: test_port)
-        args = SimpleNamespace(skip_flash=True, port="MOCK-PORT")
+        # Even without --skip-flash the read-only link action must not upload.
+        args = SimpleNamespace(skip_flash=False, port="MOCK-PORT")
         with patch.dict(sys.modules, {"serial": serial_stub}):
-            with contextlib.redirect_stdout(io.StringIO()):
-                result = pipeline.check_link(args)
+            with patch.object(pipeline.subprocess, "run",
+                              side_effect=AssertionError("READ-ONLY LINK ATTEMPTED UPLOAD")):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    result = pipeline.check_link(args)
         assert all(w == b"MOTOR PING\n" for w in test_port.writes)
         return result
 
