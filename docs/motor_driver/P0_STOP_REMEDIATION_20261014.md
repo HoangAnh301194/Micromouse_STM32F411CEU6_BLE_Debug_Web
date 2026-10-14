@@ -10,6 +10,17 @@ This is an **unpowered, source-level correction** after v7 PASS_BENCH. The histo
 - Source-only audit now checks STOP_HIZ, explicit timer polarity, initialization, brake, reverse gap and preload guard.
 - The existing host v7/v8 parser still expects zero CCR at STOP. Accordingly **new powered motor runs are blocked** at host entry; `--folder`, `--self-test` and offline qualification remain supported. These changes do not constitute an approved new motor bench protocol.
 
+## UART STOP/Coast compatibility (source-only, no powered run)
+
+The existing v4/v6/v7/v8 recorded runs are **archived** as zero-CCR neutral. New Motor Driver firmware uses **v14/v16/v17/v18** respectively, with a settled `CCR=ARR+1=3200` Hi-Z STOP input command (96 MHz TIM2, 30 kHz), not 3200 permille of drive. `MOTOR_AUTO_PROFILE.version` identifies these two different source contracts. The off-line `--folder` parser reads the saved wire version and rejects missing/mixed/unknown versions instead of silently reinterpreting old logs.
+
+Host validation now separates the register contract:
+- If `applied=0`, expect the version-specific **STOP CCR** (0 only in archived versions; 3200 in new versions).
+- If `applied!=0`, enforce the capped **drive CCR** (up to 640 for 20% base, 1920 for 60% high).
+- Static PING snapshot, drive samples with one uncommanded wheel, post-neutral samples, stage END/POST_END and final DONE all use the version-specific STOP CCR.
+- Self-tests include a stored 63-stage v7 log, and intentionally mismatched neutral snapshots must fail.
+- The standalone diagnostic tool and top-level coordinator still reject new powered motor runs. Firmware build and synthetic parser success do not qualify electrical terminals, current, brake, reverse or PWM preload timing.
+
 ## Known hazards / outstanding validation
 1. With GPIO BSRR taking effect immediately and CCR being preloaded, the brief LOW/LOW/PWM-low transient as drive output is neutralized is not specified by the cited Toshiba truth table. The new startup delay prevents an unintended full-duty PWM pulse before the first limited CCR transfer but is not a substitute for captured waveforms.
 2. The actual TB6612 output voltage, short-brake current, driver temperature, motor current and exact 3.3V-to-VCC HIGH-level margin remain unmeasured.
