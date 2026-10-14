@@ -21,6 +21,12 @@ Host validation now separates the register contract:
 - Self-tests include a stored 63-stage v7 log, and intentionally mismatched neutral snapshots must fail.
 - The standalone diagnostic tool and top-level coordinator still reject new powered motor runs. Firmware build and synthetic parser success do not qualify electrical terminals, current, brake, reverse or PWM preload timing.
 
+## MCU UART P0 arming interlock
+
+A host-side `--run` block cannot prevent somebody sending `MOTOR START` directly to USART1. The new diagnostic firmware therefore hard-locks the **firmware** command dispatcher with `MOTOR_AUTO_P0_ARM_LOCKED=1`: both `MOTOR START` and `MOTOR START HIGH 600` are rejected with `MOTOR_AUTO_ARM_BLOCKED,reason=P0_ELECTRICAL_UNQUALIFIED`. It calls `Motor_Stop()`, never enters `AUTO_SETTLE`, and does not reach `MotorTest_StartPermille()`. The unreachable arm code is behind a compile-time conditional and cannot be activated by a PlatformIO build flag. Host protocol v14/v16/v17/v18 advertises `p0_locked=1` in `PROFILE` and `READY`, which the parser must validate; archived v4/v6/v7/v8 logs remain exempt.
+
+This does **not** reflash a currently deployed board. Previously flashed firmware (including historical v7) can still accept START until replaced or power is disconnected. Nor does this interlock cover other independent firmware entrypoints such as the KEY-armed diagnostic or custom application builds. Maintain a physical VM disconnect. The interlock is not an electrical/thermal/current measurement or an MCU-independent emergency stop.
+
 ## Known hazards / outstanding validation
 1. With GPIO BSRR taking effect immediately and CCR being preloaded, the brief LOW/LOW/PWM-low transient as drive output is neutralized is not specified by the cited Toshiba truth table. The new startup delay prevents an unintended full-duty PWM pulse before the first limited CCR transfer but is not a substitute for captured waveforms.
 2. The actual TB6612 output voltage, short-brake current, driver temperature, motor current and exact 3.3V-to-VCC HIGH-level margin remain unmeasured.
