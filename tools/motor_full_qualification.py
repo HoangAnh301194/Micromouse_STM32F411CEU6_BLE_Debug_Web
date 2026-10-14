@@ -201,7 +201,7 @@ def build_report(reference, evidence_file, latest=None):
                     "REVIEW" if trace_ok else "INCOMPLETE")
             gates.append(gate("P1-INTEGRATION","Motor+MPU6050/I2C+IR+TIM11",
                               status,
-                              "Bench PASS requires MPU/IR progress, zero new missing/expired snapshots, no I2C faults or TIM11 gaps, and low reused/aged fraction. Counters accumulated before calibration are separate. Gyro-on/neutral cannot prove EMI.",
+                              "Historical v7 bench only (LOW/LOW/CCR=0 STOP firmware): concurrent motor/MPU/IR telemetry passed. New STOP_HIZ firmware has NOT been powered-tested. Counters before calibration are separate; gyro proxy does not prove EMI.",
                               {"source":str(latest),"report_status":merged.get("status"),
                                "sensor_integration":si,"timing":merged.get("timing_integrity"),
                                "motor_phase_quality":{"missing_delta":missing_delta,
@@ -219,7 +219,7 @@ def build_report(reference, evidence_file, latest=None):
     return {
         "schema_version":1,
         "created_utc":dt.datetime.now(dt.timezone.utc).isoformat(),
-        "source_revision_note":"Source checks are code-level only; numeric measurements are user supplied.",
+        "source_revision_note":"P0 STOP_HIZ is new unpowered source; P1 PASS_BENCH comes from historical v7 CCR=0 STOP logs only. Physical values were user supplied.",
         "statuses":{p["gate"]:p["status"] for p in gates},
         "gates":gates,
         "next_action":"External electrical instrumentation and source/pin STOP audit before stronger drive modes.",
@@ -286,6 +286,11 @@ def main():
         return 0
     if a.with_high and not a.run_integrated:
         p.error("--with-high requires --run-integrated")
+    if a.run_integrated:
+        p.error("P0 SAFETY GATE: --run-integrated is disabled for the revised "
+                "STOP_HIZ firmware. The v7/v8 CCR=0 neutral parser is legacy; "
+                "requalify the telemetry protocol and electrical transitions "
+                "before any new powered diagnostic.")
     latest_for_audit=(a.integrated_log if a.integrated_log is not None else
                       latest_integrated_session())
     audit=build_report(a.reference,a.electrical_evidence,latest_for_audit)
