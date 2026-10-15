@@ -31,6 +31,7 @@ uint8_t MotorTest_StartPermille(int16_t left, int16_t right,
         interval > MOTOR_TEST_MAX_LOG_MS) return 0;
 
     x = LockIRQ();
+    if (Motor_OutputsLocked()) { UnlockIRQ(x); return 0; }
     if (state != MOTOR_TEST_IDLE) { UnlockIRQ(x); return 0; }
     Encoder_Reset();
     elapsed_ms = 0;

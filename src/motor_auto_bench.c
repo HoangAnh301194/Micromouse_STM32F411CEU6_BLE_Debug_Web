@@ -279,6 +279,64 @@ static void StartStep(uint32_t now)
                 (unsigned)PulseMs());
 }
 
+static void ReplyDriver(void)
+{
+    Motor_Diagnostics_t snapshot;
+    Control_Timing_t timing;
+    uint32_t minimum = 0xFFFFFFFFUL;
+    uint32_t maximum = 0U;
+    uint32_t total = 0U;
+    uint32_t sample_index;
+    if (!Motor_OutputsLocked() || state != AUTO_WAIT || MotorTest_IsRunning()) {
+        UART_Printf("MOTOR_DRIVER_REJECTED,reason=NOT_LOCKED_IDLE\r\n");
+        return;
+    }
+    for (sample_index = 0U; sample_index < 256U; ++sample_index) {
+        uint32_t irq_state = __get_PRIMASK();
+        uint32_t started;
+        uint32_t elapsed;
+        __disable_irq();
+        started = DWT->CYCCNT;
+        Motor_Update1ms();
+        elapsed = DWT->CYCCNT - started;
+        if (!irq_state) __enable_irq();
+        if (elapsed < minimum) minimum = elapsed;
+        if (elapsed > maximum) maximum = elapsed;
+        total += elapsed;
+    }
+    Motor_GetDiagnostics(&snapshot);
+    Control_GetTiming(&timing);
+    UART_Printf("MOTOR_DRIVER,revision=%u,locked=%u,state=%u,core_hz=%lu,timer_hz=%lu,period=%lu,ticks=%lu\r\n",
+                (unsigned)MOTOR_DRIVER_REVISION, (unsigned)snapshot.outputs_locked,
+                (unsigned)state, (unsigned long)SystemCoreClock,
+                (unsigned long)snapshot.timer_clock_hz,
+                (unsigned long)snapshot.period_counts,
+                (unsigned long)Control_GetTickCount());
+    UART_Printf("MOTOR_DRIVER_REG,cr1=%lu,cr2=%lu,smcr=%lu,dier=%lu,ccmr1=%lu,ccer=%lu,ccr_l=%lu,ccr_r=%lu,odr=%lu\r\n",
+                (unsigned long)snapshot.control_register,
+                (unsigned long)snapshot.master_register,
+                (unsigned long)snapshot.slave_register,
+                (unsigned long)snapshot.interrupt_register,
+                (unsigned long)snapshot.compare_mode_register,
+                (unsigned long)snapshot.channel_register,
+                (unsigned long)snapshot.compare_left,
+                (unsigned long)snapshot.compare_right,
+                (unsigned long)snapshot.direction_register);
+    UART_Printf("MOTOR_DRIVER_STATE,target_l=%d,target_r=%d,ramped_l=%d,ramped_r=%d,deadband_l=%u,deadband_r=%u,rise=%u,fall=%u,brake=%u\r\n",
+                (int)snapshot.target_left, (int)snapshot.target_right,
+                (int)snapshot.ramped_left, (int)snapshot.ramped_right,
+                (unsigned)snapshot.deadband_left, (unsigned)snapshot.deadband_right,
+                (unsigned)snapshot.rise_rate, (unsigned)snapshot.fall_rate,
+                (unsigned)snapshot.brake_active);
+    UART_Printf("MOTOR_DRIVER_BENCH,samples=256,min_cycles=%lu,max_cycles=%lu,total_cycles=%lu,isr_max=%lu,late=%lu,gaps=%lu,tx_drop=%lu,encoder_l=%ld,encoder_r=%ld\r\n",
+                (unsigned long)minimum, (unsigned long)maximum, (unsigned long)total,
+                (unsigned long)timing.exec_max_cycles,
+                (unsigned long)timing.late_over_50us,
+                (unsigned long)timing.gap_over_1500us,
+                (unsigned long)UART_GetDroppedMessages(),
+                (long)Encoder_GetLeftCount(), (long)Encoder_GetRightCount());
+}
+
 static void ReplyReady(void)
 {
     /* Repeat complete profile with each PING: host may connect after MCU
@@ -370,6 +428,8 @@ static void ReceiveLine(const char *line, uint32_t now)
         } else {
             UART_Printf("MFD_REJECT,reason=BUSY_OR_NOT_IDLE\r\n");
         }
+    } else if (strcmp(line,"MOTOR DRIVER") == 0) {
+        ReplyDriver();
     } else if (strcmp(line,"MOTOR KEEP") == 0) {
         if (state >= AUTO_SETTLE && state <= AUTO_GAP) {
             last_host_ms = now;
@@ -440,6 +500,7 @@ int MotorAutoBench_Main(void)
     }
 
     Motor_Init();
+    Motor_LockOutputs();
     Motor_Stop();
     Encoder_Init();
 #if defined(MOTOR_AUTO_SENSOR_INTEGRATION)

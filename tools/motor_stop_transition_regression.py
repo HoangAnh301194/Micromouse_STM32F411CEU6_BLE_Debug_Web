@@ -49,6 +49,10 @@ def check_source_order() -> None:
                 "reverse_gap_30ms"):
         assert checks[key], f"P0 source regression: {key}"
     init = body(driver, "Motor_Init")
+    require_order(init, "GPIOB->BSRR =", "GPIO_Output(MOTOR_R_IN1_PORT")
+    for register in ("CR1", "CR2", "SMCR", "DIER", "CCER", "CNT"):
+        assert f"TIM2->{register} = 0;" in init, f"Stale TIM2 {register} at init"
+    assert "TIM2->CCMR1 = (6UL << 4)" in init
     require_order(init, "GPIOB->BSRR =", "TIM2->CCR1 = pwm_period + 1U;",
                   "TIM2->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;",
                   "TIM2->EGR = TIM_EGR_UG;", "GPIO_AF(MOTOR_R_PWM_PORT",
@@ -80,6 +84,16 @@ def check_source_order() -> None:
 def check_firmware_uart_interlock() -> None:
     """Check the MCU build blocks BOTH UART START aliases, not just the host CLI."""
     src = (ROOT / "src/motor_auto_bench.c").read_text(encoding="utf-8")
+    key = (ROOT / "src/motor_pwm_diag.c").read_text(encoding="utf-8")
+    driver = (ROOT / "src/motor.c").read_text(encoding="utf-8")
+    test = (ROOT / "src/motor_test.c").read_text(encoding="utf-8")
+    assert "Motor_LockOutputs();" in src and "Motor_LockOutputs();" in key
+    assert "fault_latched || Motor_OutputsLocked()" in key
+    start_test = test.split("uint8_t MotorTest_StartPermille(", 1)[1].split("uint8_t MotorTest_Start(", 1)[0]
+    assert "Motor_OutputsLocked()" in start_test
+    assert "if (outputs_locked)" in body(driver, "Motor_SetPairPermille")
+    assert "if (outputs_locked)" in body(driver, "Motor_Brake")
+    assert "outputs_locked = 0" not in body(driver, "Motor_Init")
     assert "#define MOTOR_AUTO_P0_ARM_LOCKED 1U" in src
     assert '#error "P0 electrical gate must remain locked until a reviewed release"' in src
     start = src.index("static void ReceiveLine(")

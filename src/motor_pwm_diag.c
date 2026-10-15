@@ -77,6 +77,7 @@ int MotorPwmDiag_Main(void)
     /* Motor init starts TIM2 at 0 duty and neutral direction;
      * it cannot establish current limiting without external hardware. */
     Motor_Init();
+    Motor_LockOutputs();
     Motor_Stop();
     Motor_SetDeadband(0U, 0U);
     Motor_SetSlewRates(10U, 20U);
@@ -89,12 +90,12 @@ int MotorPwmDiag_Main(void)
     Control_Start();
 
     UART_Printf("\r\n[BOOT] KEY-armed motor PWM bench; MOTOR OFF\r\n");
-    UART_Printf("MOTOR_PROFILE,version=2,nominal_hz=%lu,pwm_hz=%lu,hard_cap_permille=120,"
-                "pulse_ms=200,key_arm_ms=1500,one_shot=1,motor_off_at_boot=1\r\n",
+    UART_Printf("MOTOR_PROFILE,version=3,nominal_hz=%lu,pwm_hz=%lu,hard_cap_permille=120,"
+                "pulse_ms=200,key_arm_ms=1500,one_shot=1,motor_off_at_boot=1,p0_locked=1\r\n",
                 (unsigned long)SystemCoreClock,
                 (unsigned long)(Board_GetAPB1TimerClockHz() / (TIM2->ARR + 1U)));
     UART_Printf("MOTOR_WARNING,5V_TB6612_logic_from_3p3V_GPIO_not_guaranteed_no_current_measurement\r\n");
-    UART_Printf("MOTOR_HELP,hold_KEY_1p5s_then_release_to_arm;press_and_hold_for_one_short_pulse;release_stops\r\n");
+    UART_Printf("MOTOR_HELP,driver_locked=1,key_arming_disabled\r\n");
 
     while (1) {
         uint32_t now = millis();
@@ -138,7 +139,7 @@ int MotorPwmDiag_Main(void)
             UART_Printf("MOTOR_DISARMED,next_stage=%u\r\n", (unsigned)stage);
         }
 
-        if (fault_latched) {
+        if (fault_latched || Motor_OutputsLocked()) {
             Motor_Stop();
         } else if (!seen_release) {
             if (!key) seen_release = 1U;

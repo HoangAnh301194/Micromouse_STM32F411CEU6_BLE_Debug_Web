@@ -21,6 +21,8 @@ static volatile uint16_t rise_rate = 20U;
 static volatile uint16_t fall_rate = 30U;
 static volatile uint8_t brake_latched = 0;
 static volatile uint8_t brake_release_ticks = 0;
+static volatile uint8_t outputs_locked = 0;
+static uint32_t pwm_timer_clock = 0;
 
 static uint32_t LockIRQ(void)
 {
@@ -99,30 +101,38 @@ static uint32_t DutyFromCmd(int16_t applied, uint16_t deadband)
 
 void Motor_Init(void)
 {
+    uint32_t irq_state = LockIRQ();
     uint32_t timer_clock = Board_GetAPB1TimerClockHz();
     uint32_t arr;
+    pwm_timer_clock = timer_clock;
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN;
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    (void)RCC->AHB1ENR;
+    (void)RCC->APB1ENR;
+    GPIOB->BSRR = (1UL << (MOTOR_L_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_L_IN2_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN1_PIN + 16U)) |
+                  (1UL << (MOTOR_R_IN2_PIN + 16U));
+    TIM2->CR1 = 0;
+    TIM2->CR2 = 0;
+    TIM2->SMCR = 0;
+    TIM2->DIER = 0;
+    TIM2->CCER = 0;
     GPIO_Output(MOTOR_R_IN1_PORT, MOTOR_R_IN1_PIN);
     GPIO_Output(MOTOR_R_IN2_PORT, MOTOR_R_IN2_PIN);
     GPIO_Output(MOTOR_L_IN1_PORT, MOTOR_L_IN1_PIN);
     GPIO_Output(MOTOR_L_IN2_PORT, MOTOR_L_IN2_PIN);
     /* Initialize timer and deterministic coast level before AF is driven. */
-    GPIOB->BSRR = (1UL << (MOTOR_L_IN1_PIN + 16U)) |
-                  (1UL << (MOTOR_L_IN2_PIN + 16U)) |
-                  (1UL << (MOTOR_R_IN1_PIN + 16U)) |
-                  (1UL << (MOTOR_R_IN2_PIN + 16U));
     arr = timer_clock / MOTOR_PWM_FREQUENCY;
     if (arr == 0U) arr = 1U;
     pwm_period = arr - 1U;
-    TIM2->CR1 = 0;
     TIM2->PSC = 0;
     TIM2->ARR = pwm_period;
+    TIM2->CNT = 0;
     TIM2->CCR1 = pwm_period + 1U; /* HIGH, Hi-Z with IN1=IN2=LOW */
     TIM2->CCR2 = pwm_period + 1U;
-    TIM2->CCMR1 &= ~((7UL << 4) | (7UL << 12));
-    TIM2->CCMR1 |= (6UL << 4) | TIM_CCMR1_OC1PE |
-                   (6UL << 12) | TIM_CCMR1_OC2PE;
+    TIM2->CCMR1 = (6UL << 4) | TIM_CCMR1_OC1PE |
+                  (6UL << 12) | TIM_CCMR1_OC2PE;
     /* Reset CC1P/CC2P: PWM Mode 1 must be active-HIGH. */
     TIM2->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;
     TIM2->CR1 |= TIM_CR1_ARPE;
@@ -136,12 +146,63 @@ void Motor_Init(void)
     wheel_l.last_direction = wheel_r.last_direction = 0;
     wheel_l.reverse_gap_ms = wheel_r.reverse_gap_ms = 0;
     wheel_l.deadband = wheel_r.deadband = 0;
+    rise_rate = 20U;
+    fall_rate = 30U;
     Motor_Stop();
+    UnlockIRQ(irq_state);
+}
+
+void Motor_LockOutputs(void)
+{
+    uint32_t irq_state = LockIRQ();
+    outputs_locked = 1U;
+    Motor_Stop();
+    UnlockIRQ(irq_state);
+}
+
+uint8_t Motor_OutputsLocked(void)
+{
+    return outputs_locked;
+}
+
+void Motor_GetDiagnostics(Motor_Diagnostics_t *snapshot)
+{
+    uint32_t irq_state;
+    if (!snapshot) return;
+    irq_state = LockIRQ();
+    snapshot->timer_clock_hz = pwm_timer_clock;
+    snapshot->period_counts = pwm_period + 1U;
+    snapshot->control_register = TIM2->CR1;
+    snapshot->master_register = TIM2->CR2;
+    snapshot->slave_register = TIM2->SMCR;
+    snapshot->interrupt_register = TIM2->DIER;
+    snapshot->compare_mode_register = TIM2->CCMR1;
+    snapshot->channel_register = TIM2->CCER;
+    snapshot->compare_left = TIM2->CCR2;
+    snapshot->compare_right = TIM2->CCR1;
+    snapshot->direction_register = GPIOB->ODR;
+    snapshot->target_left = wheel_l.target;
+    snapshot->target_right = wheel_r.target;
+    snapshot->ramped_left = wheel_l.applied;
+    snapshot->ramped_right = wheel_r.applied;
+    snapshot->deadband_left = wheel_l.deadband;
+    snapshot->deadband_right = wheel_r.deadband;
+    snapshot->rise_rate = rise_rate;
+    snapshot->fall_rate = fall_rate;
+    snapshot->reverse_wait_left = wheel_l.reverse_gap_ms;
+    snapshot->reverse_wait_right = wheel_r.reverse_gap_ms;
+    snapshot->outputs_locked = outputs_locked;
+    snapshot->brake_active = brake_latched;
+    UnlockIRQ(irq_state);
 }
 
 void Motor_SetPairPermille(int16_t left, int16_t right)
 {
     uint32_t x = LockIRQ();
+    if (outputs_locked) {
+        UnlockIRQ(x);
+        return;
+    }
     if (brake_latched) {
         uint32_t neutral = 0;
         /* Keep PWM HIGH: LOW/LOW/HIGH is the datasheet Hi-Z Stop.
@@ -183,12 +244,15 @@ static void UpdateWheel(Wheel_t *w)
 {
     int16_t desired = w->target;
     int16_t current = w->applied;
-    int8_t current_sign = Sign(current);
-    int8_t desired_sign = Sign(desired);
+    int8_t current_sign;
+    int8_t desired_sign;
     uint16_t rate;
     int32_t delta;
 
     if (w->reverse_gap_ms > 0U) w->reverse_gap_ms--;
+    if (desired == current) return;
+    current_sign = Sign(current);
+    desired_sign = Sign(desired);
 
     /* If running and command reverses, decelerate to zero first. */
     if (current_sign != 0 && desired_sign != 0 && desired_sign != current_sign)
@@ -229,6 +293,8 @@ void Motor_Update1ms(void)
     was_stopped_r = (wheel_r.applied == 0);
     UpdateWheel(&wheel_l);
     UpdateWheel(&wheel_r);
+    if (was_stopped_l && was_stopped_r &&
+        wheel_l.applied == 0 && wheel_r.applied == 0) return;
 
     /* P0: CCR is preloaded (OCxPE) while GPIO BSRR is immediate.
      * If we asserted direction directly after Coast (CCR=ARR+1), the
@@ -281,6 +347,11 @@ void Motor_Stop(void)
 void Motor_Brake(void)
 {
     uint32_t bsrr = 0, x = LockIRQ();
+    if (outputs_locked) {
+        Motor_Stop();
+        UnlockIRQ(x);
+        return;
+    }
     wheel_l.target = wheel_r.target = 0;
     wheel_l.applied = wheel_r.applied = 0;
     wheel_l.reverse_gap_ms = wheel_r.reverse_gap_ms = MOTOR_REVERSE_GAP_MS;

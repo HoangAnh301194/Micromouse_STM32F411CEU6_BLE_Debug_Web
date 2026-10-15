@@ -1,0 +1,602 @@
+{
+  "status": "PASS_LOCKED_IDLE",
+  "utc": "2026-10-14T17:02:30.650278+00:00",
+  "port": "COM6",
+  "vm_reported_volts": 7.7,
+  "vm_measured_by_mcu": false,
+  "source_sha256": "06604ccfe3158fd183cf0560144defce46022564da542210686aecbb497ed5b5",
+  "tx_commands": [
+    "MOTOR PING",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER",
+    "MOTOR DRIVER"
+  ],
+  "snapshots": [
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 2958
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 3500
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 4042
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 4584
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 5126
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27657,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 5667
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 108,
+        "total_cycles": 27648,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 6208
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 6750
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27657,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 7292
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 7834
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27657,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 8375
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27654,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    },
+    {
+      "MOTOR_DRIVER": {
+        "revision": 2,
+        "locked": 1,
+        "state": 0,
+        "core_hz": 96000000,
+        "timer_hz": 96000000,
+        "period": 3200,
+        "ticks": 8917
+      },
+      "MOTOR_DRIVER_REG": {
+        "cr1": 129,
+        "cr2": 0,
+        "smcr": 0,
+        "dier": 0,
+        "ccmr1": 26728,
+        "ccer": 17,
+        "ccr_l": 3200,
+        "ccr_r": 3200,
+        "odr": 0
+      },
+      "MOTOR_DRIVER_STATE": {
+        "target_l": 0,
+        "target_r": 0,
+        "ramped_l": 0,
+        "ramped_r": 0,
+        "deadband_l": 0,
+        "deadband_r": 0,
+        "rise": 20,
+        "fall": 30,
+        "brake": 0
+      },
+      "MOTOR_DRIVER_BENCH": {
+        "samples": 256,
+        "min_cycles": 108,
+        "max_cycles": 114,
+        "total_cycles": 27657,
+        "isr_max": 863,
+        "late": 0,
+        "gaps": 0,
+        "tx_drop": 0,
+        "encoder_l": 0,
+        "encoder_r": 0
+      }
+    }
+  ],
+  "limits": "Locked neutral microbenchmark, not drive/current/thermal qualification",
+  "profile": {
+    "version": 14,
+    "nominal_hz": 96000000,
+    "pwm_hz": 30000,
+    "rounds": 3,
+    "steps": 21,
+    "hard_cap_permille": 200,
+    "pulse_ms": 200,
+    "post_ms": 400,
+    "boot_neutral": 1,
+    "both_cap_permille": 160,
+    "families": 4,
+    "rx_mode": "irq256",
+    "high_pulse_ms": 0,
+    "high_post_ms": 0,
+    "sensor": 0,
+    "p0_locked": 1
+  },
+  "ready": {
+    "version": 14,
+    "rounds": 3,
+    "steps": 21,
+    "hard_cap_permille": 200,
+    "both_cap_permille": 160,
+    "pulse_ms": 200,
+    "post_ms": 400,
+    "families": 4,
+    "rx_mode": "irq256",
+    "one_shot": 1,
+    "boot_neutral": 1,
+    "rx": "USART1_PA10",
+    "state": 0,
+    "sensor": 0,
+    "p0_locked": 1
+  },
+  "mean_cycles": 108.025390625
+}

@@ -1,0 +1,12 @@
+MOTOR_AUTO_PROFILE,version=7,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps=21,hard_cap_permille=200,pulse_ms=200,post_ms=400,boot_neutral=1,both_cap_permille=160,families=4,rx_mode=irq256,high_pulse_ms=0,high_post_ms=0,sensor=1
+MOTOR_AUTO_STATIC,ccr_l=0,ccr_r=0,in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199
+MOTOR_AUTO_SENSOR_READY,good=1966003,ir=2747312,bias_mdps=-1460
+MOTOR_AUTO_READY,version=7,rounds=3,steps=21,hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=400,families=4,rx_mode=irq256,one_shot=1,boot_neutral=1,rx=USART1_PA10,state=0,sensor=1
+MOTOR_AUTO_PROFILE,version=7,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps=21,hard_cap_permille=200,pulse_ms=200,post_ms=400,boot_neutral=1,both_cap_permille=160,families=4,rx_mode=irq256,high_pulse_ms=0,high_post_ms=0,sensor=1
+MOTOR_AUTO_STATIC,ccr_l=0,ccr_r=0,in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199
+MOTOR_AUTO_SENSOR_READY,good=1967036,ir=2748754,bias_mdps=-1460
+MOTOR_AUTO_READY,version=7,rounds=3,steps=21,hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=400,families=4,rx_mode=irq256,one_shot=1,boot_neutral=1,rx=USART1_PA10,state=0,sensor=1
+MOTOR_AUTO_PROFILE,version=7,nominal_hz=96000000,pwm_hz=30000,rounds=3,steps=21,hard_cap_permille=200,pulse_ms=200,post_ms=400,boot_neutral=1,both_cap_permille=160,families=4,rx_mode=irq256,high_pulse_ms=0,high_post_ms=0,sensor=1
+MOTOR_AUTO_STATIC,ccr_l=0,ccr_r=0,in_l1=0,in_l2=0,in_r1=0,in_r2=0,oc1pe=1,oc2pe=1,arr=3199
+MOTOR_AUTO_SENSOR_READY,good=1968062,ir=2750189,bias_mdps=-1460
+MOTOR_AUTO_READY,version=7,rounds=3,steps=21,hard_cap_permille=200,both_cap_permille=160,pulse_ms=200,post_ms=400,families=4,rx_mode=irq256,one_shot=1,boot_neutral=1,rx=USART1_PA10,state=0,sensor=1
