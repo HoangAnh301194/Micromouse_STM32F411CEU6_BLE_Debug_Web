@@ -1,0 +1,2 @@
+PASS: 512-tick idle trace, UART/CCR/GPIO/timing integrity and 8 fail-closed cases.
+SOURCE REGRESSION PASS; synthetic signals are NOT real motor measurements.

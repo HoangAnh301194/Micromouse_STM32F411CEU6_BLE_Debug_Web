@@ -8,6 +8,9 @@
 #include "ir_sensor.h"
 #include "motion.h"
 #include "motor_test.h"
+#if defined(MOTOR_STARTUP_BENCH)
+#include "motor_startup.h"
+#endif
 #include "motor_trace.h"
 #if defined(MOTOR_AUTO_BENCH)
 #include "motor_functional_trace.h"
@@ -392,13 +395,16 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         }
     }
 #endif
-#if defined(MOTOR_PWM_DIAG) || defined(MOTOR_AUTO_BENCH)
+#if defined(MOTOR_PWM_DIAG) || defined(MOTOR_AUTO_BENCH) || defined(MOTOR_STARTUP_BENCH)
     /* Opt-in physical driver bench: ONLY encoder + PWM + test watchdog.
      * Unlike Control_SetDiagnosticOnly(1), this path MUST service
      * Motor_Update1ms and MotorTest_Tick1ms, but never IR, IMU or Motion. */
     Encoder_Update(CONTROL_DT_S);
     Motor_Update1ms();
     MotorTest_Tick1ms();
+#if defined(MOTOR_STARTUP_BENCH)
+    MotorStartup_Tick1ms();
+#endif
 #if defined(MOTOR_AUTO_BENCH)
     MotorFunctionalTrace_Record1ms(entry_us, interval_us);
 #endif

@@ -27,6 +27,12 @@ def main() -> int:
         ]
         subprocess.run(command, cwd=ROOT, check=True, timeout=60)
         subprocess.run([str(executable)], cwd=ROOT, check=True, timeout=30)
+        startup_executable = Path(directory) / ("startup_test.exe" if os.name == "nt" else "startup_test")
+        startup_command = command[:-3] + [str(ROOT / "src/motor_startup.c"),
+            str(ROOT / "tests/motor_driver/test_motor_startup.c"), "-o", str(startup_executable)]
+        subprocess.run(startup_command, cwd=ROOT, check=True, timeout=60)
+        for scenario in ("normal", "budget", "link", "wrong_wheel", "reverse", "session", "stop"):
+            subprocess.run([str(startup_executable), scenario], cwd=ROOT, check=True, timeout=30)
     return 0
 
 

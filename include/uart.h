@@ -6,7 +6,7 @@
 #define UART_BAUDRATE 115200U
 
 void UART_Init(void);
-#if defined(MOTOR_AUTO_BENCH)
+#if defined(MOTOR_AUTO_BENCH) || defined(MOTOR_STARTUP_BENCH)
 /* USART1 PA10 RX interrupt/ring used by explicit motor bench only. */
 uint8_t UART_TryReadByte(uint8_t *out);
 uint32_t UART_GetRxByteCount(void);

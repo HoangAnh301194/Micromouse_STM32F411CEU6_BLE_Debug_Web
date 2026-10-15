@@ -1,0 +1,78 @@
+Processing genericSTM32F411CE (platform: ststm32; board: genericSTM32F411CE; framework: cmsis)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F411CE.html
+PLATFORM: ST STM32 (19.2.0) > STM32F411CE (128k RAM. 512k Flash)
+HARDWARE: STM32F411CEU6 100MHz, 128KB RAM, 512KB Flash
+DEBUG: Current (blackmagic) External (blackmagic, jlink, stlink)
+PACKAGES: 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - framework-cmsis-stm32f4 @ 2.6.11 
+ - tool-ldscripts-ststm32 @ 0.2.0 
+ - toolchain-gccarmnoneeabi @ 1.70201.0 (7.2.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 0 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Checking size .pio\build\genericSTM32F411CE\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]  11.0% (used 14444 bytes from 131072 bytes)
+Flash: [          ]   4.6% (used 24168 bytes from 524288 bytes)
+========================= [SUCCESS] Took 2.16 seconds =========================
+
+Processing mpu_phase_tick_96m_trim25 (platform: ststm32; board: genericSTM32F411CE; framework: cmsis)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F411CE.html
+PLATFORM: ST STM32 (19.2.0) > STM32F411CE (128k RAM. 512k Flash)
+HARDWARE: STM32F411CEU6 100MHz, 128KB RAM, 512KB Flash
+DEBUG: Current (blackmagic) External (blackmagic, jlink, stlink)
+PACKAGES: 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - framework-cmsis-stm32f4 @ 2.6.11 
+ - tool-ldscripts-ststm32 @ 0.2.0 
+ - toolchain-gccarmnoneeabi @ 1.70201.0 (7.2.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 0 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Checking size .pio\build\mpu_phase_tick_96m_trim25\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]  11.2% (used 14644 bytes from 131072 bytes)
+Flash: [          ]   4.4% (used 23272 bytes from 524288 bytes)
+========================= [SUCCESS] Took 2.07 seconds =========================
+
+Processing motor_auto_pipeline_96m_trim25 (platform: ststm32; board: genericSTM32F411CE; framework: cmsis)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F411CE.html
+PLATFORM: ST STM32 (19.2.0) > STM32F411CE (128k RAM. 512k Flash)
+HARDWARE: STM32F411CEU6 100MHz, 128KB RAM, 512KB Flash
+DEBUG: Current (blackmagic) External (blackmagic, jlink, stlink)
+PACKAGES: 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - framework-cmsis-stm32f4 @ 2.6.11 
+ - tool-ldscripts-ststm32 @ 0.2.0 
+ - toolchain-gccarmnoneeabi @ 1.70201.0 (7.2.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 0 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Checking size .pio\build\motor_auto_pipeline_96m_trim25\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  17.2% (used 22568 bytes from 131072 bytes)
+Flash: [          ]   3.2% (used 16916 bytes from 524288 bytes)
+========================= [SUCCESS] Took 1.95 seconds =========================
+
+Environment                     Status    Duration
+------------------------------  --------  ------------
+genericSTM32F411CE              SUCCESS   00:00:02.160
+mpu_phase_tick_96m_trim25       SUCCESS   00:00:02.074
+motor_auto_pipeline_96m_trim25  SUCCESS   00:00:01.950
+========================= 3 succeeded in 00:00:06.183 =========================

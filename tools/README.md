@@ -10,6 +10,19 @@ python tools/motor_driver_debug_pipeline.py --run --build --port COM6
 
 Hướng dẫn, dữ liệu và giới hạn kết luận: `docs/motor_driver/DEBUG_PIPELINE.md`.
 
+## Startup Encoder Bench
+
+Đo PWM khởi động từng bánh, không tải; không sửa Motion/PID hoặc tự áp dụng deadband.
+Giới hạn 20% PWM, xung 250 ms, nghỉ tối thiểu 750 ms, watchdog phần cứng.
+Chỉ chạy khi người vận hành đã xác nhận bánh nâng khỏi mặt đất, VM không quá 8,4 V.
+
+```powershell
+python tools/motor_startup_pipeline.py --self-test
+python tools/motor_startup_pipeline.py --run --upload --port COM6 --vm-volts 8.4 --confirm-wheels-elevated
+```
+
+Chi tiết: `docs/motor_driver/STARTUP_ENCODER_BENCH.md`.
+
 ## BLE Debug Console
 
 <p align="center">

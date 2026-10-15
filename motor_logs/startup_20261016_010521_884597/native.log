@@ -1,0 +1,10 @@
+PASS: actual motor_test.c timeout, 1500ms heartbeat expiry/renewal, explicit STOP, brake pulse and calibration reset (register mocks only).
+PASS: compiled motor.c; 6000 signed duty cases, 10000 command changes, init, idle, slew, reverse, brake, IRQ and lock.
+Register mocks do not reproduce timer preload, physical PWM, current or temperature.
+PASS: bounded startup normal (actual C, register mocks only).
+PASS: bounded startup budget (actual C, register mocks only).
+PASS: bounded startup link (actual C, register mocks only).
+PASS: bounded startup wrong_wheel (actual C, register mocks only).
+PASS: bounded startup reverse (actual C, register mocks only).
+PASS: bounded startup session (actual C, register mocks only).
+PASS: bounded startup stop (actual C, register mocks only).

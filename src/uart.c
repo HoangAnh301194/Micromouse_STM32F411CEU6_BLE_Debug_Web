@@ -33,7 +33,7 @@ static volatile uint32_t dma_te_errors;
 static volatile uint32_t dma_dme_errors;
 static volatile uint32_t dma_complete_count;
 
-#if defined(MOTOR_AUTO_BENCH)
+#if defined(MOTOR_AUTO_BENCH) || defined(MOTOR_STARTUP_BENCH)
 /* Only auto-motor profile enables this USART1 RXNE IRQ ring.
  * 256 bytes is ample for repeated 11-byte heartbeat frames.
  * ISR writer / main reader, single producer-consumer, no interrupt locks. */
@@ -109,7 +109,7 @@ void UART_Init(void)
     USART1->CR3 = 0;
     USART1->BRR = (Board_GetAPB2ClockHz() + UART_BAUDRATE / 2U) / UART_BAUDRATE;
     USART1->CR1 = USART_CR1_TE | USART_CR1_UE;
-#if defined(MOTOR_AUTO_BENCH)
+#if defined(MOTOR_AUTO_BENCH) || defined(MOTOR_STARTUP_BENCH)
     /* USART1 RXNE IRQ, scoped only to the explicit motor bench.
      * A polled RX can overrun while main formats telemetry for TX DMA. */
     rx_head = rx_tail = 0U;
@@ -251,7 +251,7 @@ void DMA2_Stream7_IRQHandler(void)
     }
 }
 
-#if defined(MOTOR_AUTO_BENCH)
+#if defined(MOTOR_AUTO_BENCH) || defined(MOTOR_STARTUP_BENCH)
 /* Independent of UART TX DMA and main-context printf execution. */
 void USART1_IRQHandler(void)
 {

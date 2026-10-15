@@ -353,7 +353,10 @@ int main(void)
 
 #endif /* old motor diagnostic harness */
 
-#if defined(MOTOR_AUTO_BENCH)
+#if defined(MOTOR_STARTUP_BENCH)
+int MotorStartupBench_Main(void);
+int main(void) { return MotorStartupBench_Main(); }
+#elif defined(MOTOR_AUTO_BENCH)
 /* Serial-host-armed repeatable 3-round motor PWM characterization. */
 int MotorAutoBench_Main(void);
 int main(void) { return MotorAutoBench_Main(); }
