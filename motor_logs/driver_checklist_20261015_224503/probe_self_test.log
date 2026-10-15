@@ -1,0 +1,1 @@
+PASS: locked-idle UART validation, register checks, cycle checks and command allowlist.

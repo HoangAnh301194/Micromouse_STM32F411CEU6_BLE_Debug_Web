@@ -17,6 +17,8 @@ on:
       - 'tools/motor_functional_trace_pipeline.py'
       - 'tools/motor_driver_native_test.py'
       - 'tools/motor_driver_probe.py'
+      - 'tools/motor_driver_debug_pipeline.py'
+      - 'tools/motor_driver_metrics.py'
       - 'tests/motor_driver/**'
       - 'docs/motor_driver/**'
   workflow_dispatch:
@@ -38,6 +40,8 @@ jobs:
         run: python tools/motor_driver_native_test.py
       - name: Locked neutral driver UART probe self-test
         run: python tools/motor_driver_probe.py --self-test
+      - name: Unified Motor Driver checklist, metrics and hardware-access guards
+        run: python tools/motor_driver_debug_pipeline.py --self-test
       - name: Compile explicit KEY-armed motor bench
         run: python -m platformio run -e motor_pwm_key_bench_96m_trim25
       - name: Three-round serial host pipeline parser self-test
@@ -68,6 +72,14 @@ jobs:
         run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: P0 one-command report (hardware capture remains NOT_MEASURED)
         run: python tools/motor_p0_batch_pipeline.py --run --output "$RUNNER_TEMP/motor-p0-batch"
+      - name: Unified Motor Driver debug report (no hardware)
+        run: python tools/motor_driver_debug_pipeline.py --run --output "$RUNNER_TEMP/motor-driver-debug"
+      - name: Archive unified Motor Driver checklist report
+        uses: actions/upload-artifact@v4
+        with:
+          name: motor-driver-debug-no-hardware
+          path: ${{ runner.temp }}/motor-driver-debug/
+          if-no-files-found: error
       - name: Archive source-only P0 qualification report
         uses: actions/upload-artifact@v4
         with:
@@ -101,6 +113,8 @@ jobs:
           python-version: '3.14'
       - name: Python 3.14 no-drive 1kHz functional trace regression
         run: python tools/motor_functional_trace_pipeline.py --self-test
+      - name: Python 3.14 unified Motor Driver debug pipeline regression
+        run: python tools/motor_driver_debug_pipeline.py --self-test
       - name: Python 3.14 P0 multi-gate host regression
         run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: Python 3.14 STOP truth-table CLI self-test

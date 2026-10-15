@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "utc": "2026-10-15T16:31:21.130864+00:00",
+  "branch": "feature/motor-driver-optimization",
+  "execution_mode": "NO_FLASH_NO_UART_NO_MOTOR",
+  "source_model_status": "PASS_OFFLINE",
+  "offline": [
+    {
+      "id": "truth_table",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "PASS: datasheet STOP_HIZ, initialization and preload guard; physical measurement still required.",
+      "stderr": ""
+    },
+    {
+      "id": "source_audit",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "TB6612FNG P0 STATIC AUDIT: REVIEW\nMotor_Stop software state: STOP_HIZ\nMotor_Brake software state: SHORT_BRAKE\n - Transient switching while PWM preload updates requires oscilloscope validation; LOW/LOW/PWM-low is not characterized.\n - STBY is fixed HIGH on this board: host STOP or MCU GPIO cannot independently disable power stage.\n - At VCC=5.0V, VIH(min)=3.5V but STM32 GPIO nominal HIGH=3.3V; actual noise margin not guaranteed.\n - No measured motor current, thermal rise, PWM pin waveform or bridge OUT1/OUT2 states. Active brake/reverse not powered-tested.\nNo firmware flashed or motors powered.",
+      "stderr": ""
+    },
+    {
+      "id": "state_transition",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "PASS: source order, locked MCU UART START, modeled STOP/DRIVE/reverse/brake guards.\nUNQUALIFIED: physical transients, LOW/LOW/PWM-low, real brake current and levels.",
+      "stderr": ""
+    },
+    {
+      "id": "v14_63",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "UART framing guard: v14 PROFILE 244/255 bytes; CRLF intact.\nSELF-TEST PASSED: 3-round 63-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.\nHost synthetic test only; not hardware validation.",
+      "stderr": ""
+    },
+    {
+      "id": "v16_87",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "UART framing guard: v16 PROFILE 248/255 bytes; CRLF intact.\nPASS: archived v6 87-stage CCR=0 data remains valid; v16 STOP_HIZ is separate.\nSELF-TEST PASSED: 3-round 87-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.\nHost synthetic test only; not hardware validation.",
+      "stderr": ""
+    },
+    {
+      "id": "v17_63_integrated",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "UART framing guard: v17 PROFILE 244/255 bytes; CRLF intact.\nPASS: archived v7 63-stage CCR=0 data remains valid; v17 STOP_HIZ is separate.\nSELF-TEST PASSED: 3-round 63-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.\nHost synthetic test only; not hardware validation.",
+      "stderr": ""
+    },
+    {
+      "id": "v18_87_integrated",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "UART framing guard: v18 PROFILE 248/255 bytes; CRLF intact.\nSELF-TEST PASSED: 3-round 87-pulse four-phase capture; RX fault and incomplete stage measurements are correctly classified.\nHost synthetic test only; not hardware validation.",
+      "stderr": ""
+    },
+    {
+      "id": "qualification_gate",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "PASS: offline P0 hardware block, STOP audit, P1 pending, P2 80-100 block.",
+      "stderr": ""
+    },
+    {
+      "id": "functional_trace_regression",
+      "status": "PASS_OFFLINE",
+      "exit_code": 0,
+      "stdout": "PASS: 512-tick idle trace, UART/CCR/GPIO/timing integrity and 8 fail-closed cases.\nSOURCE REGRESSION PASS; synthetic signals are NOT real motor measurements.",
+      "stderr": ""
+    }
+  ],
+  "pin_capture": {
+    "status": "NOT_MEASURED",
+    "expected_files": [
+      "drive_to_coast_left.csv",
+      "drive_to_coast_right.csv",
+      "coast_to_drive_left.csv",
+      "coast_to_drive_right.csv",
+      "drive_to_brake_left.csv",
+      "drive_to_brake_right.csv",
+      "brake_to_coast_left.csv",
+      "brake_to_coast_right.csv",
+      "forward_to_reverse_left.csv",
+      "forward_to_reverse_right.csv",
+      "reverse_to_forward_left.csv",
+      "reverse_to_forward_right.csv"
+    ],
+    "coverage": "0/12",
+    "traces": {}
+  },
+  "uart_trace": {
+    "status": "NOT_MEASURED"
+  },
+  "overall": "REVIEW_AWAITING_FUNCTIONAL_EVIDENCE",
+  "p0_source_qualified": true,
+  "p0_electrical_status": "BLOCKED",
+  "safety": {
+    "no_automatic_brake_reverse_or_pwm_drive": true,
+    "firmware_upload_performed": false,
+    "physical_waveform_or_current_measurement_performed_by_script": false
+  }
+}

@@ -1,0 +1,2 @@
+PASS: compiled motor.c; 6000 signed duty cases, 10000 command changes, init, idle, slew, reverse, brake, IRQ and lock.
+Register mocks do not reproduce timer preload, physical PWM, current or temperature.

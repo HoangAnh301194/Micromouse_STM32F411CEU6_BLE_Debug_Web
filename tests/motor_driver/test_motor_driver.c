@@ -1,4 +1,5 @@
 #include "motor.h"
+#include "motor_test.h"
 #include "pinout.h"
 #include "stm32f4xx.h"
 
@@ -11,11 +12,16 @@ TIM_TypeDef test_timer;
 RCC_TypeDef test_rcc;
 static uint32_t irq_mask;
 static uint32_t timer_clock_hz = 96000000U;
+static uint32_t encoder_resets;
+static float encoder_speed_left, encoder_speed_right;
 
 uint32_t __get_PRIMASK(void) { return irq_mask; }
 void __disable_irq(void) { irq_mask = 1U; }
 void __enable_irq(void) { irq_mask = 0U; }
 uint32_t Board_GetAPB1TimerClockHz(void) { return timer_clock_hz; }
+void Encoder_Reset(void) { encoder_resets++; }
+float Encoder_GetLeftSpeedPPS(void) { return encoder_speed_left; }
+float Encoder_GetRightSpeedPPS(void) { return encoder_speed_right; }
 
 static Motor_Diagnostics_t Snapshot(void)
 {
@@ -238,13 +244,101 @@ static void TestChangingCommands(void)
     }
 }
 
+static void BenchTick(uint32_t count)
+{
+    uint32_t tick_index;
+    for (tick_index = 0U; tick_index < count; ++tick_index) {
+        Motor_Update1ms();
+        MotorTest_Tick1ms();
+    }
+}
+
+static MotorTest_Snapshot_t BenchSnapshot(void)
+{
+    MotorTest_Snapshot_t snapshot;
+    MotorTest_GetSnapshot(&snapshot);
+    return snapshot;
+}
+
+static void AssertBenchStopped(MotorTest_EndReason_t reason)
+{
+    assert(BenchSnapshot().state == MOTOR_TEST_ENDED);
+    assert(BenchSnapshot().reason == reason);
+    assert(Snapshot().target_left == 0 && Snapshot().target_right == 0);
+    assert(Snapshot().ramped_left == 0 && Snapshot().ramped_right == 0);
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+    MotorTest_AcknowledgeEnd();
+    assert(BenchSnapshot().state == MOTOR_TEST_IDLE);
+}
+
+static void TestBenchWatchdog(void)
+{
+    uint32_t initial_resets;
+    ResetDriver();
+    initial_resets = encoder_resets;
+    assert(!MotorTest_StartPermille(0, 0, 25U, 100U));
+    assert(!MotorTest_StartPermille(1001, 0, 25U, 100U));
+    assert(!MotorTest_StartPermille(100, 0, 25U, 99U));
+    assert(encoder_resets == initial_resets);
+    assert(MotorTest_StartPermille(100, -100, 25U, 100U));
+    assert(encoder_resets == initial_resets + 1U);
+    assert(!MotorTest_StartPermille(100, 0, 25U, 100U));
+    BenchTick(24U);
+    assert(MotorTest_IsRunning());
+    BenchTick(1U);
+    assert(BenchSnapshot().elapsed_ms == 25U);
+    AssertBenchStopped(MOTOR_TEST_END_TIMEOUT);
+
+    assert(MotorTest_StartPermille(100, 0, 0U, 100U));
+    BenchTick(MOTOR_TEST_HEARTBEAT_TIMEOUT_MS - 1U);
+    assert(MotorTest_IsRunning());
+    BenchTick(1U);
+    assert(BenchSnapshot().elapsed_ms == MOTOR_TEST_HEARTBEAT_TIMEOUT_MS);
+    AssertBenchStopped(MOTOR_TEST_END_HEARTBEAT);
+
+    assert(MotorTest_StartPermille(0, 100, 0U, 100U));
+    BenchTick(1000U);
+    MotorTest_Heartbeat();
+    BenchTick(MOTOR_TEST_HEARTBEAT_TIMEOUT_MS - 1U);
+    assert(MotorTest_IsRunning());
+    BenchTick(1U);
+    assert(BenchSnapshot().elapsed_ms == 1000U + MOTOR_TEST_HEARTBEAT_TIMEOUT_MS);
+    AssertBenchStopped(MOTOR_TEST_END_HEARTBEAT);
+
+    assert(MotorTest_StartPermille(100, 0, 0U, 100U));
+    BenchTick(10U);
+    assert(MotorTest_SetPermille(120, 0));
+    Motor_SetDeadband(100U, 100U);
+    MotorTest_Stop();
+    AssertBenchStopped(MOTOR_TEST_END_STOP);
+    assert(Snapshot().deadband_left == 0U && Snapshot().deadband_right == 0U);
+    assert(Snapshot().rise_rate == 20U && Snapshot().fall_rate == 30U);
+
+    assert(MotorTest_StartPermille(100, 0, 0U, 100U));
+    BenchTick(10U);
+    encoder_speed_left = 2000.0f;
+    assert(!MotorTest_BrakePulse());
+    encoder_speed_left = 0.0f;
+    assert(MotorTest_BrakePulse());
+    BenchTick(MOTOR_TEST_BRAKE_PULSE_MS - 1U);
+    assert(BenchSnapshot().state == MOTOR_TEST_BRAKING);
+    BenchTick(1U);
+    AssertBenchStopped(MOTOR_TEST_END_BRAKE);
+    assert(irq_mask == 0U);
+    puts("PASS: actual motor_test.c timeout, 1500ms heartbeat expiry/renewal, explicit STOP, brake pulse and calibration reset (register mocks only).");
+}
+
 static void TestStickyLock(void)
 {
+    uint32_t initial_resets;
     ResetDriver();
     Motor_SetPairPermille(100, -100);
     Tick(6U);
     Motor_LockOutputs();
     assert(Motor_OutputsLocked());
+    initial_resets = encoder_resets;
+    assert(!MotorTest_StartPermille(100, 100, 200U, 100U));
+    assert(encoder_resets == initial_resets);
     Motor_SetPairPermille(1000, -1000);
     Motor_SetPair(100, -100);
     Motor_Brake();
@@ -271,6 +365,7 @@ int main(void)
     TestCleanReinitialization();
     TestIdleAndReverseCountdown();
     TestChangingCommands();
+    TestBenchWatchdog();
     TestStickyLock();
     puts("PASS: compiled motor.c; 6000 signed duty cases, 10000 command changes, init, idle, slew, reverse, brake, IRQ and lock.");
     puts("Register mocks do not reproduce timer preload, physical PWM, current or temperature.");

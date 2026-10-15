@@ -1,5 +1,15 @@
 # Host Tools
 
+## Motor Driver Debug Pipeline
+
+Pipeline hợp nhất: native driver/watchdog, 9 gate offline, build các motor bench, UART neutral, trace TIM11 và phân tích log CV/plateau/slew/STOP. Dấu encoder đã được chủ dự án xác nhận; không thêm gate mức logic 5 V/3,3 V. Không upload/START/mở khóa P0.
+
+```powershell
+python tools/motor_driver_debug_pipeline.py --run --build --port COM6
+```
+
+Hướng dẫn, dữ liệu và giới hạn kết luận: `docs/motor_driver/DEBUG_PIPELINE.md`.
+
 ## BLE Debug Console
 
 <p align="center">

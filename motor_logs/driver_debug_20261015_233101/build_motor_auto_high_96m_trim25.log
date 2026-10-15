@@ -1,0 +1,51 @@
+Processing motor_auto_high_96m_trim25 (platform: ststm32; board: genericSTM32F411CE; framework: cmsis)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F411CE.html
+PLATFORM: ST STM32 (19.2.0) > STM32F411CE (128k RAM. 512k Flash)
+HARDWARE: STM32F411CEU6 100MHz, 128KB RAM, 512KB Flash
+DEBUG: Current (blackmagic) External (blackmagic, jlink, stlink)
+PACKAGES: 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - framework-cmsis-stm32f4 @ 2.6.11 
+ - tool-ldscripts-ststm32 @ 0.2.0 
+ - toolchain-gccarmnoneeabi @ 1.70201.0 (7.2.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 0 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Compiling .pio\build\motor_auto_high_96m_trim25\FrameworkCMSIS\gcc\startup_stm32f411xe.o
+Compiling .pio\build\motor_auto_high_96m_trim25\FrameworkCMSIS\system_stm32f4xx.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\board.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\bt_debug.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\control.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\encoder.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\i2c.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\ir_sensor.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\main.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motion.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motor.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motor_auto_bench.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motor_functional_trace.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motor_pwm_diag.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motor_test.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\motor_trace.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\mpu6050.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\mpu_integration_bench.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\pid.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\system_timer.o
+Compiling .pio\build\motor_auto_high_96m_trim25\src\uart.o
+Linking .pio\build\motor_auto_high_96m_trim25\firmware.elf
+Checking size .pio\build\motor_auto_high_96m_trim25\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  17.2% (used 22580 bytes from 131072 bytes)
+Flash: [          ]   3.3% (used 17412 bytes from 524288 bytes)
+Building .pio\build\motor_auto_high_96m_trim25\firmware.bin
+========================= [SUCCESS] Took 4.59 seconds =========================
+
+Environment                 Status    Duration
+--------------------------  --------  ------------
+motor_auto_high_96m_trim25  SUCCESS   00:00:04.591
+========================= 1 succeeded in 00:00:04.591 =========================

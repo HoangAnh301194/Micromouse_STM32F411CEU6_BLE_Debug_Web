@@ -21,7 +21,8 @@ def main() -> int:
             compiler, "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror",
             "-I", str(ROOT / "tests/motor_driver/stubs"),
             "-I", str(ROOT / "include"),
-            str(ROOT / "src/motor.c"), str(ROOT / "tests/motor_driver/test_motor_driver.c"),
+            str(ROOT / "src/motor.c"), str(ROOT / "src/motor_test.c"),
+            str(ROOT / "tests/motor_driver/test_motor_driver.c"),
             "-o", str(executable),
         ]
         subprocess.run(command, cwd=ROOT, check=True, timeout=60)
