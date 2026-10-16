@@ -24,7 +24,7 @@ void Sweep_Heartbeat(uint32_t now_ms); /* USART1 PING updates 750ms lease in liv
 uint8_t Sweep_SelectMode(uint8_t motor_on); /* Only while DISARMED; 0=shadow,1=live */
 
 uint8_t Sweep_Arm(uint32_t now_ms, const MPU6050_Handle_t *mpu,
-                  uint8_t button_held);
+                  uint8_t host_authorized);
 void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu);
 void Sweep_Abort(uint8_t reason);
 void Sweep_ImuFaultFromISR(void);
