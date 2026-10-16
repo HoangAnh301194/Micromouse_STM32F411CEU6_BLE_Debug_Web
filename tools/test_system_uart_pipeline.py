@@ -41,8 +41,9 @@ for mode in ("OFF","ON"):
                   "state":3 if i==32 else 1,
                   "mode":code,"dt":coast_ms,"vL":0,"vR":0,"dl":0,"dr":0})
     s.extend([
-        {"type":"SYS_T","gap":0,"late":0,"maxcy":8000,"stale":0},
-        {"type":"SYS_M","locked":1,"i2cerr":0,"to":0,"wd":0},
+        {"type":"SYS_T","gap":0,"late":0,"maxcy":8000,"stale":0,
+         "ticks":160000,"motticks":160000,"ir":160000,"valid":148000},
+        {"type":"SYS_M","locked":1,"i2cerr":0,"to":0,"wd":0,"age":990},
         {"type":"SYS_U","trim":25,"clkfault":0,"iclk":400000,
          "rx_err":0,"rx_ov":0,"tx_drop":0,"dma_err":0}])
     good=mod.evaluate(s,mode)
