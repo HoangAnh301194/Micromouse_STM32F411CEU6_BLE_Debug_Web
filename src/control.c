@@ -7,6 +7,9 @@
 #include "motor.h"
 #include "stm32f4xx.h"
 #include "system_timer.h"
+#if defined(INTEGRATION_DIAG)
+#include "integration_sweep.h"
+#endif
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
@@ -25,6 +28,9 @@ void Control_GetDebugStats(Control_DebugStats_t *out)
     out->late_gt50us = di_stats.late_gt50us;
     out->gaps_gt1500us = di_stats.gaps_gt1500us;
     out->max_irq_cycles = di_stats.max_irq_cycles;
+    out->max_encoder_cycles = di_stats.max_encoder_cycles;
+    out->max_motor_service_cycles = di_stats.max_motor_service_cycles;
+    out->motor_service_ticks = di_stats.motor_service_ticks;
     out->gyro_valid_ticks = di_stats.gyro_valid_ticks;
     out->gyro_invalid_after_first_valid = di_stats.gyro_invalid_after_first_valid;
     out->ir_scan_count = di_stats.ir_scan_count;
@@ -110,7 +116,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     IR_Data_t sample;
 #if defined(INTEGRATION_DIAG)
-    uint32_t entry_us, start_cycles, period;
+    uint32_t entry_us, start_cycles, period, section_cycles;
 #endif
 
     if ((TIM11->SR & TIM_SR_UIF) == 0U) {
@@ -142,11 +148,30 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * 4. Consume a completed IR scan and immediately schedule the next scan.
      * 5. Execute the motion controller using one coherent sensor snapshot.
      */
+#if defined(INTEGRATION_DIAG)
+    section_cycles = DWT->CYCCNT;
+#endif
     Encoder_Update(CONTROL_DT_S);
+#if defined(INTEGRATION_DIAG)
+    {
+        uint32_t cycles = DWT->CYCCNT - section_cycles;
+        if (cycles > di_stats.max_encoder_cycles)
+            di_stats.max_encoder_cycles = cycles;
+    }
+    section_cycles = DWT->CYCCNT;
+#endif
     /* Motor RC: service every TIM11 1ms tick even if MPU/IR data is stale.
      * The fresh Motion_SetPair on valid feedback renews the 300-tick lease.
      * Do NOT use Motor_KeepAlive here; a stalled Motion must time out. */
     Motor_Update1ms();
+#if defined(INTEGRATION_DIAG)
+    {
+        uint32_t cycles = DWT->CYCCNT - section_cycles;
+        if (cycles > di_stats.max_motor_service_cycles)
+            di_stats.max_motor_service_cycles = cycles;
+        di_stats.motor_service_ticks++;
+    }
+#endif
     /* Policy B: only notify tick here; never run I2C in TIM11. */
 #if defined(MPU_TIM11_TICK_SCHED)
     MPU6050_NotifyControlTick(control_mpu, micros());
@@ -179,6 +204,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         } else {
 #if defined(INTEGRATION_DIAG)
             if (di_seen_valid) di_stats.gyro_invalid_after_first_valid++;
+#if defined(INTEGRATION_DIAG_MOTOR_ON)
+            Sweep_ImuFaultFromISR();
+#endif
 #endif
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
         }
