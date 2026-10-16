@@ -14,6 +14,7 @@ on:
       - 'tools/system_uart_pipeline.py'
       - 'tools/test_system_uart_pipeline.py'
       - 'tools/system_sweep_native_test.py'
+      - 'docs/system_debug/**'
       - 'include/encoder.h'
   pull_request:
     branches: [giomuadongbac]
