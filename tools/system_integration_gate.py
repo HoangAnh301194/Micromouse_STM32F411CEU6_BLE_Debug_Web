@@ -42,7 +42,7 @@ def audit(files=None):
         raise AuditError("Encoder positive-forward sign not normalized")
     if "SWEEP_HARD_LIMIT_MS 180000U" not in motor:
         raise AuditError("Missing endurance hard limit")
-        control=get("src/control.c")
+    control=get("src/control.c")
     if control.count("Motor_Update1ms();") != 1 or "DWT->CYCCNT" not in control:
         raise AuditError("TIM11 motor and cycle diagnostics mismatch")
     if "Sweep_ImuFaultFromISR()" not in control:
