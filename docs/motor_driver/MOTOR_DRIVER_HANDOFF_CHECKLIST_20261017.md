@@ -89,3 +89,23 @@ later modifications, even only to `Motor_Init`, UART diagnostic
 or Control's TIM11 path, invalidate the matching release code
 baseline and require re-review. Physical MCU idle check is accepted.
 The module remains **NOT QUALIFIED FOR POWERED/LOADED OPERATION**.
+
+## E. Reproducible, read-only release evidence gate
+
+The frozen-source SHA-1 Git blob allowlist and actual MCU v4 UART trace are
+replayed offline by [motor_release_gate.py](../../tools/motor_release_gate.py):
+
+```powershell
+python tools/motor_release_gate.py --self-test
+python tools/motor_release_gate.py --audit
+```
+
+This checks the pinned 18 source/config files without requiring a particular
+documentation-only commit HEAD; source drift is a hard failure. The evidence
+replay independently checks exact raw UART SHA-256, one PING command, v4
+PROFILE, one validated neutral STATUS, six idle samples over 200 ms,
+monotonic TIM11, error counters and the user-recorded VM-disconnect assertion.
+Host-side negative tests reject altered evidence, an extra ARM, forged
+electrical approval, or a changed checker. GitHub Actions runs this gate
+for Python 3.11 and 3.14. It does **not** measure the electrical outputs
+or independently confirm the VM disconnect.
