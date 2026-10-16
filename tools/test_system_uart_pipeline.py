@@ -6,6 +6,17 @@ root=Path(__file__).resolve().parent
 spec=importlib.util.spec_from_file_location("system_uart_pipeline",root/"system_uart_pipeline.py")
 mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
 
+import subprocess
+import sys
+
+# Parse --help in a fresh Python process to catch argparse percent escaping
+# and Python 3.14 help formatter compatibility without a COM port or MCU.
+cli = subprocess.run(
+    [sys.executable, str(root/"system_uart_pipeline.py"), "--help"],
+    capture_output=True, text=True, check=True, timeout=10
+)
+assert "--motor-on" in cli.stdout and "100% motor-on" in cli.stdout
+
 assert mod.parse_line("SYS_STEP,ms=120,state=1,mode=0,id=0,duty=0,dl=0,dr=0") == {
     "type":"SYS_STEP","ms":120,"state":1,"mode":0,"id":0,
     "duty":0,"dl":0,"dr":0}
@@ -27,4 +38,4 @@ for mode in ("OFF","ON"):
     assert not mod.evaluate(bad,mode)["checks"]["33_unique_pwm_stages"]
     faulty=s+[{"type":"SYS_STEP","state":4,"mode":code,"fault":9}]
     assert not mod.evaluate(faulty,mode)["checks"]["no_sweep_fault"]
-print("PASS host log parser and positive/negative OFF/ON stage evaluation; no hardware tested")
+print("PASS argparse CLI bootstrap + host log parser and OFF/ON analysis; no hardware tested")
