@@ -106,12 +106,19 @@ int main(void)
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());
         }
-        /* Same bounded F/L/R/S/Z command vocabulary as USART2 BLE;
-         * all motion requests must pass the fresh-gyro safety guard. */
+        /* USB-UART debug is READ-ONLY by default: '?' requests status,
+         * 'S' allows software STOP. Never arm motion via noisy/accidental
+         * PA10 terminal input; motion commands remain on USART2 BLE. */
         {
             uint8_t ch, budget = 16U;
             while (budget-- && UART_ReadByte(&ch)) {
-                HandleBleCommand((char)ch);
+                if (ch == 'S' || ch == 's') Motion_Stop();
+                if (ch == '?') {
+                    UART_Printf("DBG,rx_overflow=%lu,rx_error=%lu,tx_drop=%lu\r\n",
+                        (unsigned long)UART_GetRxOverflow(),
+                        (unsigned long)UART_GetRxErrors(),
+                        (unsigned long)UART_GetDroppedMessages());
+                }
             }
         }
 
