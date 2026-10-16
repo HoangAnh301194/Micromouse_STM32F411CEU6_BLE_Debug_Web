@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import re
 from pathlib import Path
 import sys
 import tempfile
@@ -198,6 +199,27 @@ class HighSpeedTests(unittest.TestCase):
             startup.validate_row(row, high_speed=True)
 
 class StartupFirmwareTests(unittest.TestCase):
+    def test_high_speed_v4_profile_fits_uart_printf_staging(self):
+        """Regression for real MCU fault=7, tx=2 from twice-dropped PROFILE."""
+        uart = (startup.ROOT / "src/uart.c").read_text(encoding="utf-8")
+        bench = (startup.ROOT / "src/motor_startup_bench.c").read_text(encoding="utf-8")
+        self.assertRegex(
+            uart,
+            r"#if defined\(MOTOR_STARTUP_HIGH_SPEED\)\s*#define UART_PRINTF_BUFFER_SIZE 320U",
+        )
+        self.assertIn("char buffer[UART_PRINTF_BUFFER_SIZE];", uart)
+        profile_match = re.search(
+            r'UART_Printf\("(STARTUP_PROFILE,version=4,[^"]+)"', bench,
+        )
+        self.assertIsNotNone(profile_match)
+        worst_case = (profile_match.group(1)
+                      .replace("%lu", "4294967295")
+                      .replace("%s", "Oct 16 2026", 1)
+                      .replace("%s", "23:59:59", 1))
+        self.assertNotIn("%", worst_case)
+        self.assertGreaterEqual(len(worst_case) + 1, 256)  # root cause
+        self.assertLess(len(worst_case) + 1, 320)  # fix including NUL
+
     def test_status_registers_and_state_are_sampled_before_irq_restore(self):
         source = (startup.ROOT / "src/motor_startup_bench.c").read_text(encoding="utf-8")
         function = source.split("static void Status(", 1)[1].split("static void Command(", 1)[0]

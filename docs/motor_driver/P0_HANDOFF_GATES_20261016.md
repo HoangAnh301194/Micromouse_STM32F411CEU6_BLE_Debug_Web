@@ -70,3 +70,29 @@ The report is saved to a new `motor_logs/startup_readonly_*/report.json` plus UA
 
 Testing a normal-runtime command timeout **on a live MCU** additionally requires a purpose-built motor-off diagnostic; this UART profile cannot prove that particular runtime fault path. Until such a test exists, keep that gate labeled `PASS_NATIVE_ONLY`.
 
+
+## 2026-10-17 UART PROFILE overflow fixed after first real v4 MCU inspection
+
+The first real read-only run `startup_readonly_20261017_005104_056967` failed safely:
+`STARTUP_STATUS state=4,fault=7,tx=2,rx=0,late=0,gaps=0,cl=3200,cr=3200,odr=0`.
+
+**Confirmed source root cause:** `STARTUP_PROFILE` grew from v3 to v4 by adding
+`experimental=1,qualified=0`. The fully formatted line is about 261 bytes.
+`UART_Printf()` used a 256-byte temporary buffer and intentionally dropped
+an overlong record. Two PROFILE attempts (boot + PING) produced exactly the
+two TX drops in the MCU log and latched `MOTOR_STARTUP_UART`.
+
+**Fix:** Startup high-speed diagnostic uses a 320-byte `UART_Printf` staging
+buffer. Ordinary firmware and other profiles keep 256 bytes. The 1024-byte
+USART1 TX DMA ring, DMA semantics and **drop=>FAULT** safety policy are not
+changed. Regression calculates the worst-case formatted line and ensures it
+fits including its NUL terminator. No evidence of an electrically unsafe PWM
+state in the captured UART register snapshot; physical bridge outputs remain
+unmeasured.
+
+**Verification on MCU:** disconnect TB6612 VM physically; do not connect it
+during the check. Update the branch, rebuild and upload
+`motor_speed_96m_trim25`, then rerun
+`python tools/motor_startup_readonly_check.py --run --port COM6 --confirm-vm-disconnected`.
+The previously flashed binary necessarily still has the defect until reflashed.
+Do not reinterpret the failed historical capture as a PASS.

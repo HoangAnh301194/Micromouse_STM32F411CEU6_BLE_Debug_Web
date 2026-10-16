@@ -12,6 +12,16 @@
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
 #define UART_TX_BUFFER_SIZE 1024U
+/* Startup high-speed v4 PROFILE gained two safety-attestation fields.
+ * Full PROFILE can exceed the previous 256-byte printf staging buffer.
+ * Keep the larger stack buffer isolated to the explicit startup high-speed
+ * diagnostic image; runtime/default profiles preserve their original size.
+ * UART_SendString_DMA still drops whole records if the TX ring is full. */
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+#define UART_PRINTF_BUFFER_SIZE 320U
+#else
+#define UART_PRINTF_BUFFER_SIZE 256U
+#endif
 /* DMA2 HISR/HIFCR flags for Stream7 (STM32F411 RM0383). */
 #define UART_DMA7_TCIF  (1UL << 27)
 #define UART_DMA7_TEIF  (1UL << 25)
@@ -183,7 +193,7 @@ void UART_SendString(const char *str)
 
 void UART_Printf(const char *format, ...)
 {
-    char buffer[256];
+    char buffer[UART_PRINTF_BUFFER_SIZE];
     va_list args;
     int formatted_len;
 
