@@ -56,8 +56,16 @@ def audit_sources(files: dict[str,bytes]) -> dict:
     # Count only actual call statements, not declarations or comments.
     if len(re.findall(r"(?m)^\s*Motor_Update1ms\(\);",control)) != 1:
         raise IntegrationError("Driver must be serviced exactly once in TIM11 path")
-    if control.index("Motor_Update1ms();") > control.index("MPU6050_Update(control_mpu);"):
-        raise IntegrationError("TIM11 must service driver before potentially blocking MPU")
+    # MPU RC2 moves I2C acquisition to main: TIM11 only stamps a sample
+    # opportunity. Preserve driver service before MPU tick notification.
+    if "MPU6050_Update(control_mpu);" in control:
+        if control.index("Motor_Update1ms();") > control.index("MPU6050_Update(control_mpu);"):
+            raise IntegrationError("TIM11 must service driver before MPU")
+    elif "MPU6050_NotifyControlTick(control_mpu, micros());" in control:
+        if control.index("Motor_Update1ms();") > control.index("MPU6050_NotifyControlTick(control_mpu, micros());"):
+            raise IntegrationError("TIM11 must service driver before MPU tick notify")
+    else:
+        raise IntegrationError("Missing MPU scheduling handoff: unsafe integration")
     if control.index("Encoder_Update(CONTROL_DT_S);") > control.index("Motor_Update1ms();"):
         raise IntegrationError("Encoder update must precede Motor service")
     stop=control.split("void Control_Stop(void)",1)[-1].split("uint8_t Control_IsRunning(void)",1)[0]
