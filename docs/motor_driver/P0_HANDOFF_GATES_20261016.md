@@ -46,3 +46,27 @@ No 100% PWM test is needed merely for code freeze. Bench v4 has not been physica
 3. Historical physical logs retain original version and stated test constraints.
 4. Electrical/loaded/thermal evidence and independent hard power cutoff are explicitly NOT_MEASURED/NOT_QUALIFIED, not silently waived.
 5. Recheck integration on the physical robot with suitable safe power constraints before claiming continuous high-speed motion.
+
+## Inspection-only physical MCU gate (no motor VM)
+
+A separate opt-in check reads an already-flashed high-speed firmware v4 **without** arming motor outputs. The host transmits only `STARTUP PING`; it does not flash, send experimental ACK, ARM, KEEP, PULSE, STOP or WATCHDOG. It fails closed on unknown firmware, active state, non-neutral CCR/direction, encoder movement, unexpected reset, TIM11 timestamp divergence or UART errors.
+
+1. **Physically disconnect TB6612 VM motor supply** before powering the MCU/UART. Keeping the USB ST-Link and logic 3.3V powered does **not** imply VM is disconnected; verify wiring. Do not connect or reconnect VM during these checks.
+2. Build the experimental firmware and, **only with VM still disconnected**, intentionally upload the new v4 image via ST-Link:
+
+```powershell
+python -m platformio run -e motor_speed_96m_trim25
+python -m platformio run -e motor_speed_96m_trim25 -t upload
+```
+
+3. Keep VM disconnected and run the inspection-only host:
+
+```powershell
+python tools/motor_startup_readonly_check.py --self-test
+python tools/motor_startup_readonly_check.py --run --port COM6 --confirm-vm-disconnected
+```
+
+The report is saved to a new `motor_logs/startup_readonly_*/report.json` plus UART command/raw captures. Expected status: `PASS_INSPECTION_ONLY_IDLE_V4`. This proves only the protocol and commanded neutral registers, not physical TB6612 output states, motor current, waveform quality or safe running. A report of FAIL/unknown firmware must **not** be bypassed by issuing ARM manually.
+
+Testing a normal-runtime command timeout **on a live MCU** additionally requires a purpose-built motor-off diagnostic; this UART profile cannot prove that particular runtime fault path. Until such a test exists, keep that gate labeled `PASS_NATIVE_ONLY`.
+
