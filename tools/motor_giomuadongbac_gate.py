@@ -56,8 +56,19 @@ def audit_sources(files: dict[str,bytes]) -> dict:
     # Count only actual call statements, not declarations or comments.
     if len(re.findall(r"(?m)^\s*Motor_Update1ms\(\);",control)) != 1:
         raise IntegrationError("Driver must be serviced exactly once in TIM11 path")
-    if control.index("Motor_Update1ms();") > control.index("MPU6050_Update(control_mpu);"):
-        raise IntegrationError("TIM11 must service driver before potentially blocking MPU")
+    # The original integration used MPU6050_Update in TIM11. RC2 moves all
+    # I2C to main and consumes only a published gyro snapshot in TIM11.
+    # In both layouts the Driver's 1ms service must come first.
+    if "MPU6050_Update(control_mpu);" in control:
+        if control.index("Motor_Update1ms();") > control.index("MPU6050_Update(control_mpu);"):
+            raise IntegrationError("TIM11 must service driver before potentially blocking MPU")
+    elif "MPU6050_GetSnapshot(control_mpu, &imu)" in control:
+        if control.index("Motor_Update1ms();") > control.index("MPU6050_GetSnapshot(control_mpu, &imu)"):
+            raise IntegrationError("TIM11 must service Motor before RC2 snapshot consumer")
+        if "MPU6050_Update(control_mpu)" in control:
+            raise IntegrationError("MPU I2C must not run in TIM11 for RC2")
+    else:
+        raise IntegrationError("TIM11 missing MPU consumer after Motor service")
     if control.index("Encoder_Update(CONTROL_DT_S);") > control.index("Motor_Update1ms();"):
         raise IntegrationError("Encoder update must precede Motor service")
     stop=control.split("void Control_Stop(void)",1)[-1].split("uint8_t Control_IsRunning(void)",1)[0]
