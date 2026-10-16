@@ -8,6 +8,7 @@
 #include "motor.h"
 #include "mpu6050.h"
 #include "system_timer.h"
+#include "uart.h"
 
 #include "stm32f4xx.h"
 
@@ -17,22 +18,25 @@ static MPU6050_Handle_t mpu;
 
 static void HandleBleCommand(char c)
 {
-    float yaw = MPU6050_GetYaw(&mpu);
+    MPU6050_Snapshot_t snap;
+    uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) &&
+                    (uint32_t)(micros() - snap.completed_us) <= 3000U;
+    float yaw = ready ? snap.yaw_deg : 0.0f;
 
     switch (c) {
     case 'f':
     case 'F':
-        if (Motion_IsDone()) Motion_CommandStraight(180.0f, yaw);
+        if (ready && Motion_IsDone()) Motion_CommandStraight(180.0f, yaw);
         break;
 
     case 'l':
     case 'L':
-        if (Motion_IsDone()) Motion_CommandTurn(90.0f, yaw);
+        if (ready && Motion_IsDone()) Motion_CommandTurn(90.0f, yaw);
         break;
 
     case 'r':
     case 'R':
-        if (Motion_IsDone()) Motion_CommandTurn(-90.0f, yaw);
+        if (ready && Motion_IsDone()) Motion_CommandTurn(-90.0f, yaw);
         break;
 
     case 's':
@@ -42,7 +46,7 @@ static void HandleBleCommand(char c)
 
     case 'z':
     case 'Z':
-        if (Motion_IsDone()) MPU6050_ResetYaw(&mpu);
+        if (ready && Motion_IsDone()) MPU6050_ResetYaw(&mpu);
         break;
 
     default:
@@ -61,15 +65,14 @@ int main(void)
     Motor_Init();
     Encoder_Init();
 
-    I2C_Init(I2C_1, 1);
-    I2C_DMA_Init(I2C_1);
-
+    /* MPU6050_Init owns RC2 I2C bus probing and initialization. */
     BT_Init();
+    UART_Init(); /* USART1 PA9 TX DMA; PA10 RX is not implemented. */
     IR_Init();
 
     mpu_status = MPU6050_Init(&mpu);
     if (mpu_status == MPU6050_OK) {
-        mpu_status = MPU6050_Calibrate(&mpu);
+        mpu_status = MPU6050_Calibrate(&mpu); /* Starts async calibration. */
     }
 
     Motion_Init();
@@ -92,11 +95,13 @@ int main(void)
     Control_Init(&mpu);
     Control_Start();
 
-    BT_SendString("\r\n[BOOT] Minimal core ready\r\n");
+    BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
+    UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
     BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw\r\n");
 
     while (1) {
         uint32_t now = millis();
+        MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
 
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());
@@ -139,6 +144,9 @@ int main(void)
                       gyro,
                       distance,
                       angle_error);
+            UART_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f dropped=%lu\r\n",
+                        (unsigned long)now,(unsigned int)state,(long)left_count,
+                        (long)right_count,yaw,gyro,(unsigned long)UART_GetDroppedMessages());
         }
     }
 }
