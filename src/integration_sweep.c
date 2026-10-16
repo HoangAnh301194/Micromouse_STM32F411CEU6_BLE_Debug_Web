@@ -122,7 +122,10 @@ void Sweep_Heartbeat(uint32_t now_ms)
 }
 void Sweep_Abort(uint8_t reason)
 {
-    if (Sweep_IsActive()) LockDone(SWEEP_FAULT, reason);
+    /* STOP is an irreversible session kill even before START.
+     * Reject future MODE/START requests until an explicit hardware reset. */
+    if (state.state != SWEEP_FAULT && state.state != SWEEP_DONE)
+        LockDone(SWEEP_FAULT, reason);
 }
 void Sweep_ImuFaultFromISR(void)
 {
