@@ -96,6 +96,82 @@ def inspect_encoder_drive(logs, mode):
             "encoder_direction_observations": pairs,
             "qualified": len(points) == 33 and not suspicious}
 
+
+def planned_stage_times_ms(stage):
+    pwm_step = stage % 11
+    drive = (750 if pwm_step == 10 else
+             1000 if pwm_step == 9 else
+             3500 if pwm_step in (3, 6, 8) else 2000)
+    coast = 3000 if pwm_step >= 9 else 2000
+    return drive, coast
+
+
+def inspect_extended_schedule(logs, mode):
+    """Validate drive/coast timing and capture residual inertia 500ms traces.
+
+    SYS_STEP state=2 is the END of the current DRIVE interval.
+    SYS_STEP state=1 for id>0 is the END of the PREVIOUS COAST.
+    SYS_STEP state=3 is the end of stage 32's final COAST.
+    """
+    mode_num = 1 if mode == "ON" else 0
+    steps = [r for r in logs if r.get("type") == "SYS_STEP"
+             and r.get("mode") == mode_num]
+    problems, summary = [], []
+    coasts = [r for r in logs if r.get("type") == "SYS_COAST"]
+    for stage in range(33):
+        drive = next((r for r in steps if r.get("id") == stage
+                      and r.get("state") == 2), None)
+        coast = next((r for r in steps
+                      if r.get("id") == stage + 1
+                      and r.get("state") == (3 if stage == 32 else 1)), None)
+        planned_drive, planned_coast = planned_stage_times_ms(stage)
+        if not drive or not coast:
+            problems.append({"stage": stage, "reason": "missing_interval"})
+            continue
+        observed_drive, observed_coast = drive.get("dt"), coast.get("dt")
+        if not isinstance(observed_drive, int) or not isinstance(observed_coast, int):
+            problems.append({"stage": stage, "reason": "missing_interval_timestamps"})
+        else:
+            if abs(observed_drive - planned_drive) > 250:
+                problems.append({"stage": stage, "reason": "drive_timing",
+                                 "planned": planned_drive, "observed": observed_drive})
+            if abs(observed_coast - planned_coast) > 250:
+                problems.append({"stage": stage, "reason": "coast_timing",
+                                 "planned": planned_coast, "observed": observed_coast})
+        series = [r for r in coasts if r.get("id") == stage
+                  and isinstance(r.get("dt"), int)]
+        if len(series) < 3:
+            problems.append({"stage": stage, "reason": "missing_500ms_coast_samples",
+                             "samples": len(series)})
+        summary.append({
+            "stage": stage, "wheel_group": stage // 11,
+            "pwm_percent": (stage % 11) * 10,
+            "drive_ms": observed_drive, "coast_ms": observed_coast,
+            "drive_left_counts": drive.get("dl"),
+            "drive_right_counts": drive.get("dr"),
+            "coast_left_counts": coast.get("dl"),
+            "coast_right_counts": coast.get("dr"),
+            "coast_end_left_pps": coast.get("vL"),
+            "coast_end_right_pps": coast.get("vR"),
+            "coast_trace": [{"dt_ms": r.get("dt"),
+                             "left_pps": r.get("ppsL"), "right_pps": r.get("ppsR"),
+                             "left_counts": r.get("dl"), "right_counts": r.get("dr")}
+                            for r in series],
+        })
+    # Positive forward encoder sign applies to the NEW integrated firmware only.
+    if mode == "ON":
+        for group, axis in ((0,"dl"),(1,"dr"),(2,"dl"),(2,"dr")):
+            for step in (6,7):
+                stage = group * 11 + step
+                candidate = next((x for x in summary if x["stage"] == stage),None)
+                if candidate and candidate.get("drive_"+("left" if axis=="dl" else "right")+"_counts",0) < 0:
+                    problems.append({"stage": stage, "reason": "forward_encoder_sign_negative",
+                                     "wheel": axis})
+    return {"endurance_pass": len(problems) == 0, "problems": problems,
+            "stages": summary,
+            "coast_intervals": len(coasts)}
+
+
 def evaluate(logs, mode):
     steps = sorted(set(int(x["id"]) for x in logs
                        if x.get("type") == "SYS_STEP" and x.get("state") == 1
@@ -107,6 +183,7 @@ def evaluate(logs, mode):
     profile = last("CLOCK_PROFILE")
     faults = [x for x in logs if x.get("type") == "SYS_STEP" and x.get("state") == 4]
     encoder_review = inspect_encoder_drive(logs, mode)
+    extended = inspect_extended_schedule(logs, mode)
     checks = {
         "33_unique_pwm_stages": steps == list(range(33)),
         "finished_and_locked": completed and mpu.get("locked") == 1,
@@ -122,12 +199,14 @@ def evaluate(logs, mode):
         "no_sweep_fault": not faults,
         "encoder_drive_response_consistent": encoder_review["qualified"] if mode == "ON"
             else encoder_review["drive_windows"] == 33,
+        "extended_drive_coast_inertia": extended["endurance_pass"],
     }
     return {
         "mode": mode, "checks": checks,
         "software_pass": all(checks.values()),
         "stages": len(steps), "timer": timer, "mpu": mpu, "uart": uart,
         "clock_profile": profile, "faults": faults, "encoder_review": encoder_review,
+        "extended": extended,
         "limits": "RCC nominal frequency only; no oscilloscope or current measurement",
     }
 
