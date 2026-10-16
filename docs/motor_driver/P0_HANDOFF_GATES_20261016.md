@@ -124,3 +124,21 @@ git pull --ff-only origin feature/motor-driver-optimization
 python tools/motor_startup_readonly_check.py --self-test
 python tools/motor_startup_readonly_check.py --run --port COM6 --confirm-vm-disconnected
 ```
+
+## 2026-10-17 final read-only MCU PASS and software RC handoff
+
+The subsequent physical MCU inspection passed, archived in
+`motor_logs/startup_readonly_20261017_010627_618666` at
+commit `a5b67de451702f2ce92613affdf28bd6ea348eaa`.
+Firmware v4; one neutral `STARTUP_STATUS`, 6 idle samples/200 ms;
+TIM11 ticks 444800..445000; `late=gaps=tx=rx=0`;
+`state=fault=0`; `al=ar=odr=0`; `cl=cr=3200`.
+The operator confirmed physically disconnected motor VM.
+The final PC read-only self-test passed 11/11. This validates
+physical MCU **idle UART/clock/command registers only**, not powered
+output safety, the physical 300ms lease, or electrical transients.
+
+Handoff artifacts:
+[MOTOR_DRIVER_RC_MANIFEST_20261017.md](MOTOR_DRIVER_RC_MANIFEST_20261017.md),
+[MOTOR_DRIVER_API_CONTRACT.md](MOTOR_DRIVER_API_CONTRACT.md),
+[MOTOR_DRIVER_HANDOFF_CHECKLIST_20261017.md](MOTOR_DRIVER_HANDOFF_CHECKLIST_20261017.md).
