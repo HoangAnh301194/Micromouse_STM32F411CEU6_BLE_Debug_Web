@@ -10,6 +10,9 @@
 #include "system_timer.h"
 #include "uart.h"
 #include "integration_sweep.h"
+#if defined(INTEGRATION_DIAG)
+#include "integration_serial.h"
+#endif
 
 #include "stm32f4xx.h"
 
@@ -155,33 +158,23 @@ int main(void)
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());
         }
-        /* USB-UART debug is READ-ONLY by default: '?' requests status,
-         * 'S' allows software STOP. Never arm motion via noisy/accidental
-         * PA10 terminal input; motion commands remain on USART2 BLE. */
+#if defined(INTEGRATION_DIAG)
+        /* RX IRQ only queues bytes; command parsing is budgeted in main. */
+        IntegrationSerial_Poll(&mpu, now);
+#else
+        /* Production UART diagnostic remains STOP/status only. */
         {
             uint8_t ch, budget = 16U;
             while (budget-- && UART_ReadByte(&ch)) {
-                if (ch == 'S' || ch == 's') {
-#if defined(INTEGRATION_DIAG)
-                    Sweep_Abort(SWEEP_STOP_REQUEST);
-#endif
-                    Motion_Stop();
-                }
-#if defined(INTEGRATION_DIAG)
-                if (ch == 'A') {
-                    UART_Printf("SWEEP_ARM,accepted=%u,ms=%lu\r\n",
-                                (unsigned)Sweep_Arm(now, &mpu, Board_ButtonPressed()),
-                                (unsigned long)now);
-                }
-#endif
-                if (ch == '?') {
+                if (ch == 'S' || ch == 's') Motion_Stop();
+                if (ch == '?')
                     UART_Printf("DBG,rx_overflow=%lu,rx_error=%lu,tx_drop=%lu\r\n",
-                        (unsigned long)UART_GetRxOverflow(),
-                        (unsigned long)UART_GetRxErrors(),
-                        (unsigned long)UART_GetDroppedMessages());
-                }
+                                (unsigned long)UART_GetRxOverflow(),
+                                (unsigned long)UART_GetRxErrors(),
+                                (unsigned long)UART_GetDroppedMessages());
             }
         }
+#endif
 
 #if defined(INTEGRATION_DIAG)
         /* One diagnostic bundle per second. UART prints only in main, never
