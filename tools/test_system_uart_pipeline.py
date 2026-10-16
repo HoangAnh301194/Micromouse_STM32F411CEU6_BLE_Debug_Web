@@ -25,6 +25,14 @@ assert mod.parse_line("CLOCK_PROFILE,nominal_hz=96000000,trim=25")["trim"] == 25
 for mode in ("OFF","ON"):
     code=1 if mode=="ON" else 0
     s=[{"type":"SYS_STEP","id":i,"state":1,"mode":code} for i in range(33)]
+    for i in range(33):
+        g, step = divmod(i, 11)
+        dl = dr = 0
+        if mode == "ON" and step > 0:
+            if g in (0, 2): dl = -(40 * step)
+            if g in (1, 2): dr = -(40 * step)
+        s.append({"type":"SYS_STEP","id":i,"state":2,"mode":code,
+                  "group":g,"step":step,"dl":dl,"dr":dr})
     s.append({"type":"SYS_STEP","id":33,"state":3,"mode":code})
     s.extend([
         {"type":"SYS_T","gap":0,"late":0,"maxcy":8000,"stale":0},
@@ -38,4 +46,12 @@ for mode in ("OFF","ON"):
     assert not mod.evaluate(bad,mode)["checks"]["33_unique_pwm_stages"]
     faulty=s+[{"type":"SYS_STEP","state":4,"mode":code,"fault":9}]
     assert not mod.evaluate(faulty,mode)["checks"]["no_sweep_fault"]
-print("PASS argparse CLI bootstrap + host log parser and OFF/ON analysis; no hardware tested")
+    if mode == "ON":
+        flat=[dict(x) for x in s]
+        for x in flat:
+            if x.get("type") == "SYS_STEP" and x.get("state") == 2 and x.get("group") == 2 and x.get("step") in (8,9,10):
+                x["dl"] = x["dr"] = -2
+        outcome = mod.evaluate(flat, mode)
+        assert not outcome["checks"]["encoder_drive_response_consistent"]
+        assert len(outcome["encoder_review"]["high_pwm_anomalies"]) == 6
+print("PASS CLI boot + synthetic UART data + high-duty encoder flatline regression; no hardware tested")
