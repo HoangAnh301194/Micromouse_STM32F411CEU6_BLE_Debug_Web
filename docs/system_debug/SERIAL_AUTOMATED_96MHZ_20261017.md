@@ -1,6 +1,6 @@
 # STM32F411 96MHz combined-system UART diagnostic — KEY not required
 
-Firmware branch: `integration/system-debug-96m-20261017`; source baseline: `giomuadongbac` at `fcab7519d01fe1a0760a947aa41e82b8babed0de`. No changes to the frozen Motor Driver Rev3 source.
+Firmware branch: **`giomuadongbac`** (direct integration). Former short-tests remain in `integration/system-debug-96m-20261017`. Frozen Motor Driver Rev3 unchanged; positive-forward encoder signs corrected once in `include/encoder.h`.
 
 ## Serial connection
 
@@ -12,8 +12,8 @@ Run from the repository root:
 
 ```powershell
 git fetch origin
-git switch integration/system-debug-96m-20261017
-git pull --ff-only origin integration/system-debug-96m-20261017
+git switch giomuadongbac
+git pull --ff-only origin giomuadongbac
 
 python -m pip install platformio pyserial
 
@@ -37,7 +37,20 @@ Replace COM6 with the actual Windows COM port. `--flash` requires a connected ST
 | `integration_diag_motor_off_96m` | Hard-locked at boot | HSI trim25 | Fully instrumented |
 | `integration_diag_motor_on_96m` | 0..100% when explicitly started via UART | HSI trim25 | Same instrumentation |
 
-OFF and ON follow the same 33 commanded stages: LEFT 0..100%, RIGHT 0..100%, BOTH 0..100% in 10% steps; each stage drives 250ms and coasts 150ms. OFF shadows the exact timing without motor demand. No high-level PID runs in the diagnostic (Motion remains idle). UART logs contain TIM11 tick and timing counters, gyro freshness, I2C errors, Motor lock/watchdog, IR scans, encoder count deltas, RX/TX errors.
+OFF and ON follow the **same extended 33-stage schedule**: LEFT 0..100%, RIGHT 0..100%, BOTH 0..100% in 10% steps.
+
+| PWM setpoint | Drive | Coast |
+|---|---:|---:|
+| 0, 10, 20, 40, 50, 70% | 2000 ms | 2000 ms |
+| 30, 60, 80% | 3500 ms | 2000 ms |
+| 90% | 1000 ms | 3000 ms |
+| 100% | 750 ms | 3000 ms |
+
+Each phase is about **144.75 seconds**, before calibration and final health snapshot. Firmware hard limit: 180 seconds; PC run deadline: 175 seconds.
+
+OFF hard-locks outputs, ON runs motors on the same schedule. `SYS_STEP` logs actual interval duration, count deltas, filtered speed PPS and applied PWM. `SYS_COAST` samples residual encoder count/velocity every 500 ms. `SYS_E` records absolute encoder and motor state every second. `SYS_T/M/U` record TIM11 timing, Motor/Encoder ISR cost, IR scan progression, MPU I2C, UART and clock. The host checks all 33 drive/coast intervals, high-duty motor response, encoder sign and stale/fault conditions.
+
+100% is a command, not an independently measured electrical PWM level. Motor current, battery voltage sag, MOSFET/driver temperature and external clock metrology are not provided by this instrumentation. Never treat software PASS as power-side certification.
 
 ## UART command protocol (ASCII newline terminated)
 
@@ -51,4 +64,4 @@ The host sends `PING` every 150ms during the live sweep. If PING stops for >750m
 
 TIM2 generates hardware PWM, TIM3/TIM4 count quadrature encoder edges in hardware. ISR stress is measured as the TIM11 `Motor_Update1ms`, `Encoder_Update` and full control ISR cycle usage rather than imaginary PWM/encoder interrupts.
 
-GitHub Actions builds all three profiles and runs static, negative-mutation and native Motor Driver regression tests. **CI cannot activate the real motor, measure current or validate live EMI.** Do not merge hardware-qualification claims into the main branch without real captured UART logs.
+GitHub Actions builds all three profiles and runs static tests, negative-mutation tests, synthetic log review, native Motor Driver regression and native C 33-stage long OFF/ON tests with fault injections. **CI cannot activate the real motor, measure current or validate live EMI.** Do not merge hardware-qualification claims into the main branch without real captured UART logs.
