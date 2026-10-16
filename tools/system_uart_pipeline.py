@@ -19,7 +19,7 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 MOTOR_OFF_ENV = "integration_diag_motor_off_96m"
 MOTOR_ON_ENV = "integration_diag_motor_on_96m"
-PHASE_SECONDS = 18.0
+PHASE_SECONDS = 175.0   # firmware expected ~145s; host deadline <180s MCU hard limit
 CAL_TIMEOUT = 50.0
 
 
@@ -206,7 +206,7 @@ class PhaseSession:
                     while time.monotonic() < extra_until:
                         self.poll()
                     return
-        raise TimeoutError(f"{self.name} exceeded host 18s test deadline")
+        raise TimeoutError(f"{self.name} exceeded host {PHASE_SECONDS:.0f}s test deadline")
 
     def close(self, emergency=False):
         if emergency:
@@ -232,6 +232,7 @@ def write_output(outdir, results, rows):
     fields = ("type", "host_elapsed_s", "ms", "ticks", "late", "gap",
               "maxcy", "encmaxcy", "motmaxcy", "motticks", "valid", "stale",
               "ir", "cal", "seq", "age", "i2cok", "i2cerr", "to", "busy",
+              "dt", "vL", "vR", "appL", "appR", "ppsL", "ppsR",
               "mode", "state", "id", "group", "step", "duty", "dl", "dr")
     with (outdir/"measurements.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=("phase",)+fields, extrasaction="ignore")
@@ -248,7 +249,8 @@ def review_saved_measurements(csv_file):
     numeric = {"ms","ticks","late","gap","maxcy","encmaxcy","motmaxcy",
                "motticks","valid","stale","ir","cal","seq","age",
                "i2cok","i2cerr","to","busy","state","id","group",
-               "step","duty","dl","dr","locked","wd","rx_err","rx_ov",
+               "step","duty","dl","dr","locked","wd","dt","vL","vR",
+               "appL","appR","ppsL","ppsR","rx_err","rx_ov",
                "tx_drop","dma_err","trim","clkfault","iclk","mode"}
     with csv_file.open(newline="", encoding="utf-8-sig") as file:
         for row in csv.DictReader(file):
