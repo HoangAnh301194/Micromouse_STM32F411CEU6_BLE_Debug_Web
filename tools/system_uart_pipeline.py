@@ -262,19 +262,27 @@ def review_saved_measurements(csv_file):
                     except ValueError: data[key] = value
                 else: data[key] = value
             rows[phase].append(data)
-    results = [evaluate(rows[p],p) for p in ("OFF","ON") if rows[p]]
+    results = [{"mode": phase,
+                "encoder_review": inspect_encoder_drive(rows[phase], phase),
+                "timer_last": next((r for r in reversed(rows[phase])
+                                    if r.get("type") == "SYS_T"), {}),
+                "mpu_last": next((r for r in reversed(rows[phase])
+                                  if r.get("type") == "SYS_M"), {})}
+               for phase in ("OFF", "ON") if rows[phase]]
     report = {"source": str(csv_file), "results": results,
-              "note": "Retrospective UART-only review; high PWM flatline flagged; no physical qualification"}
+              "note": "Offline CSV omits UART/motor lock counters. Interpret encoder and TIM11 fields only; no physical qualification."}
     output = csv_file.parent / "encoder_review_v2.json"
-    output.write_text(json.dumps(report, indent=2),encoding="utf-8")
+    output.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    needs_review = False
     for result in results:
-        anomalies = result["encoder_review"]["high_pwm_anomalies"]
-        print(result["mode"], "PASS" if result["software_pass"] else "NEEDS_REVIEW",
-              "drive_windows", result["encoder_review"]["drive_windows"],
-              "high_pwm_anomalies", len(anomalies))
-        for issue in anomalies: print("  ",issue)
-    print("Saved",output)
-    return 0 if all(r["software_pass"] for r in results) else 2
+        review = result["encoder_review"]
+        if not review["qualified"]: needs_review = True
+        print(result["mode"], "ENCODER_REVIEW_OK" if review["qualified"] else "ENCODER_NEEDS_REVIEW",
+              "drive_windows", review["drive_windows"],
+              "high_pwm_anomalies", len(review["high_pwm_anomalies"]))
+        for issue in review["high_pwm_anomalies"]: print("  ", issue)
+    print("Saved", output)
+    return 2 if needs_review else 0
 
 
 def main():
