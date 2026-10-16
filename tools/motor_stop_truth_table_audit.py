@@ -99,7 +99,13 @@ def inspect_driver(root: Path = ROOT):
     pin_comment_disagrees = ("IN1=PB14, IN2=PB15" in header and
                              pins["right_in1_pb"] == 15 and
                              pins["right_in2_pb"] == 14)
-    start_guard = all(x in update for x in ("was_stopped_l = (wheel_l.applied == 0);", "was_stopped_r = (wheel_r.applied == 0);", "was_stopped_l ? 0 : wheel_l.applied", "was_stopped_r ? 0 : wheel_r.applied"))
+    direct_snapshot = all(marker in update for marker in (
+        "was_stopped_l = (wheel_l.applied == 0);", "was_stopped_r = (wheel_r.applied == 0);"))
+    cached_snapshot = all(marker in update for marker in (
+        "previous_left = wheel_l.applied;", "previous_right = wheel_r.applied;",
+        "was_stopped_l = (previous_left == 0);", "was_stopped_r = (previous_right == 0);"))
+    start_guard = (direct_snapshot or cached_snapshot) and all(marker in update for marker in (
+        "was_stopped_l ? 0 : wheel_l.applied", "was_stopped_r ? 0 : wheel_r.applied"))
     init_safe = all(x in init for x in ("TIM2->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;", "TIM2->CCR1 = pwm_period + 1U;", "TIM2->CCR2 = pwm_period + 1U;"))
     checks = {
         "stop_high_ccr": stop_ccr_high,

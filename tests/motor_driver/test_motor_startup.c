@@ -61,14 +61,51 @@ int main(int argc, char **argv)
     Tick(1U, 0U);
     assert(MotorStartup_Arm());
     assert(!MotorStartup_Arm());
-    assert(!MotorStartup_Pulse(1U, 2U, 100U));
-    assert(!MotorStartup_Pulse(1U, 0U, 1000U));
+    assert(!MotorStartup_Pulse(1U, MOTOR_STARTUP_MAX_WHEEL + 1U, 100U));
+    assert(!MotorStartup_Pulse(1U, 0U, MOTOR_STARTUP_MAX_PERMILLE + 5U));
     assert(!MotorStartup_Pulse(1U, 0U, 201U));
     assert(!MotorStartup_Pulse(1U, 0U, 0U));
     assert(!MotorStartup_Pulse(1U, 0U, 7U));
     assert(!MotorStartup_Pulse(2U, 0U, 100U));
     assert(MotorStartup_Pulse(1U, 0U, 100U));
     assert(!MotorStartup_Pulse(1U, 0U, 100U));
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+    if (strcmp(argv[1], "high_stall") == 0) {
+        Tick(100U, 1U);
+        CheckFault(MOTOR_STARTUP_NO_PROGRESS);
+    } else if (strcmp(argv[1], "high_both") == 0) {
+        uint32_t index;
+        for (index = 0U; index < MOTOR_STARTUP_PULSE_MS; index++) {
+            count_left++;
+            Tick(1U, 1U);
+        }
+        assert(Snapshot().state == MOTOR_STARTUP_REST);
+        Tick(MOTOR_STARTUP_REST_MS, 1U);
+        assert(MotorStartup_Pulse(2U, 2U, 1000U));
+        for (index = 0U; index < MOTOR_STARTUP_PULSE_MS; index++) {
+            count_left++;
+            count_right++;
+            Tick(1U, 1U);
+            MotorStartup_RecordCycles(120U);
+        }
+        assert(Snapshot().state == MOTOR_STARTUP_REST);
+        assert(Snapshot().end_left == MOTOR_STARTUP_PULSE_MS);
+        assert(Snapshot().end_right == MOTOR_STARTUP_PULSE_MS);
+        assert(Snapshot().cycle_calls > 400U);
+        assert(Snapshot().cycle_total == Snapshot().cycle_calls * 120U);
+        assert(Snapshot().cycle_max == 120U);
+        assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+    } else if (strcmp(argv[1], "high_link") == 0) {
+        uint32_t index;
+        for (index = 0U; index < MOTOR_STARTUP_LINK_MS; index++) {
+            count_left++;
+            Tick(1U, 0U);
+        }
+        CheckFault(MOTOR_STARTUP_LINK_LOST);
+    } else {
+        assert(0);
+    }
+#else
     if (strcmp(argv[1], "normal") == 0) {
         Tick(249U, 1U);
         assert(Snapshot().state == MOTOR_STARTUP_DRIVE);
@@ -122,6 +159,7 @@ int main(int argc, char **argv)
     } else {
         assert(0);
     }
+#endif
     assert(irq_mask == 0U);
     printf("PASS: bounded startup %s (actual C, register mocks only).\n", argv[1]);
     return 0;

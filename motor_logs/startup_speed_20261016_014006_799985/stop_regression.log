@@ -1,0 +1,2 @@
+PASS: source order, locked MCU UART START, modeled STOP/DRIVE/reverse/brake guards.
+UNQUALIFIED: physical transients, LOW/LOW/PWM-low, real brake current and levels.

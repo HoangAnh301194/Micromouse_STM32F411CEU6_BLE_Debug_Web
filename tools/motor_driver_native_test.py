@@ -33,6 +33,10 @@ def main() -> int:
         subprocess.run(startup_command, cwd=ROOT, check=True, timeout=60)
         for scenario in ("normal", "budget", "link", "wrong_wheel", "reverse", "session", "stop"):
             subprocess.run([str(startup_executable), scenario], cwd=ROOT, check=True, timeout=30)
+        speed_command = startup_command[:1] + ["-DMOTOR_STARTUP_HIGH_SPEED=1"] + startup_command[1:]
+        subprocess.run(speed_command, cwd=ROOT, check=True, timeout=60)
+        for scenario in ("high_stall", "high_both", "high_link"):
+            subprocess.run([str(startup_executable), scenario], cwd=ROOT, check=True, timeout=30)
     return 0
 
 

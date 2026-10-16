@@ -1,0 +1,7 @@
+id,wheel,phase,duty_permille,counts,first_motion,sustained_start,positive_intervals,last_100ms_counts,first_five_counts_observed_ms
+1,l,high_speed,200,872,True,True,16,,
+2,r,high_speed,200,829,True,True,16,,
+3,b,high_speed,400,3632,True,True,16,,
+4,b,high_speed,800,7280,True,True,16,,
+5,b,high_speed,1000,9170,True,True,16,,
+6,b,high_speed,1000,9162,True,True,16,,

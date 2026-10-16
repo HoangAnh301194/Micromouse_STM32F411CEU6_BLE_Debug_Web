@@ -1,0 +1,31 @@
+test_acceleration_is_not_stationary (test_debug_pipeline.DriverMetricsTests.test_acceleration_is_not_stationary) ... ok
+test_complete_legacy_log_and_repeats (test_debug_pipeline.DriverMetricsTests.test_complete_legacy_log_and_repeats) ... ok
+test_constant_speed_plateau (test_debug_pipeline.DriverMetricsTests.test_constant_speed_plateau) ... ok
+test_corrupt_motor_logs_do_not_produce_measurements (test_debug_pipeline.DriverMetricsTests.test_corrupt_motor_logs_do_not_produce_measurements) ... ok
+test_disjoint_windows_cannot_be_combined (test_debug_pipeline.DriverMetricsTests.test_disjoint_windows_cannot_be_combined) ... ok
+test_distribution_and_zero_mean (test_debug_pipeline.DriverMetricsTests.test_distribution_and_zero_mean) ... ok
+test_duplicate_capture_is_not_an_independent_trial (test_debug_pipeline.DriverMetricsTests.test_duplicate_capture_is_not_an_independent_trial) ... ok
+test_elapsed_disagreement_rejected (test_debug_pipeline.DriverMetricsTests.test_elapsed_disagreement_rejected) ... ok
+test_low_resolution_not_reported_as_steady_cv (test_debug_pipeline.DriverMetricsTests.test_low_resolution_not_reported_as_steady_cv) ... ok
+test_missing_trace_rows_rejected (test_debug_pipeline.DriverMetricsTests.test_missing_trace_rows_rejected) ... ok
+test_non_finite_rejected (test_debug_pipeline.DriverMetricsTests.test_non_finite_rejected) ... ok
+test_percentile (test_debug_pipeline.DriverMetricsTests.test_percentile) ... ok
+test_short_pulse_never_becomes_steady_speed (test_debug_pipeline.DriverMetricsTests.test_short_pulse_never_becomes_steady_speed) ... ok
+test_timestamp_duplicate_rejected (test_debug_pipeline.DriverMetricsTests.test_timestamp_duplicate_rejected) ... ok
+test_timestamp_wrap (test_debug_pipeline.DriverMetricsTests.test_timestamp_wrap) ... ok
+test_trace_quantiles (test_debug_pipeline.DriverMetricsTests.test_trace_quantiles) ... ok
+test_command_timeout_is_recorded (test_debug_pipeline.PipelineSafetyTests.test_command_timeout_is_recorded) ... ok
+test_existing_evidence_is_not_overwritten (test_debug_pipeline.PipelineSafetyTests.test_existing_evidence_is_not_overwritten) ... ok
+test_failed_command_is_recorded (test_debug_pipeline.PipelineSafetyTests.test_failed_command_is_recorded) ... ok
+test_failed_source_gates_prevent_all_serial_access (test_debug_pipeline.PipelineSafetyTests.test_failed_source_gates_prevent_all_serial_access) ... ok
+test_invalid_drift_rejected (test_debug_pipeline.PipelineSafetyTests.test_invalid_drift_rejected) ... ok
+test_missing_evidence_is_review_not_pass (test_debug_pipeline.PipelineSafetyTests.test_missing_evidence_is_review_not_pass) ... ok
+test_no_motor_data_is_not_zero_motion_measurement (test_debug_pipeline.PipelineSafetyTests.test_no_motor_data_is_not_zero_motion_measurement) ... ok
+test_saved_logs_cannot_certify_current_firmware (test_debug_pipeline.PipelineSafetyTests.test_saved_logs_cannot_certify_current_firmware) ... ok
+test_self_test_never_accepts_hardware_arguments (test_debug_pipeline.PipelineSafetyTests.test_self_test_never_accepts_hardware_arguments) ... ok
+test_trace_requires_physical_confirmation_before_execution (test_debug_pipeline.PipelineSafetyTests.test_trace_requires_physical_confirmation_before_execution) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 1.861s
+
+OK

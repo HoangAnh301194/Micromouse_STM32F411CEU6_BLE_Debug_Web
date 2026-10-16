@@ -45,8 +45,8 @@ jobs:
         run: python tools/motor_driver_debug_pipeline.py --self-test
       - name: Bounded startup encoder pipeline regression
         run: python tools/motor_startup_pipeline.py --self-test
-      - name: Compile isolated bounded startup bench
-        run: python -m platformio run -e motor_startup_96m_trim25
+      - name: Compile bounded startup and opt-in high-speed benches
+        run: python -m platformio run -e motor_startup_96m_trim25 -e motor_speed_96m_trim25
       - name: Compile explicit KEY-armed motor bench
         run: python -m platformio run -e motor_pwm_key_bench_96m_trim25
       - name: Three-round serial host pipeline parser self-test

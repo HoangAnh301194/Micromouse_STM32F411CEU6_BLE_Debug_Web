@@ -23,6 +23,14 @@ python tools/motor_startup_pipeline.py --run --upload --port COM6 --vm-volts 8.4
 
 Chi tiết: `docs/motor_driver/STARTUP_ENCODER_BENCH.md`.
 
+Chế độ tốc độ cao opt-in, có IMU/IR/USART2 TX và watchdog, thử không tải tới 100% PWM:
+
+```powershell
+python tools/motor_startup_pipeline.py --run --upload --high-speed --port COM6 --vm-volts 8.4 --confirm-wheels-elevated
+```
+
+Checklist, số đo trước–sau, giới hạn tích hợp: `docs/motor_driver/HIGH_SPEED_CHECKLIST.md`.
+
 ## BLE Debug Console
 
 <p align="center">

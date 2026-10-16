@@ -163,7 +163,7 @@ def run(args: argparse.Namespace) -> tuple[dict, int]:
     if args.port and source_ok:
         try:
             probe = driver_probe.capture(argparse.Namespace(port=args.port, samples=args.samples,
-                output=output / "uart", vm_volts=None, expect_revision=2))
+                output=output / "uart", vm_volts=None, expect_revision=3))
             good = probe["status"] == "PASS_LOCKED_IDLE"
             late = [row["MOTOR_DRIVER_BENCH"].get("late", 0) for row in probe["snapshots"]]
             if late and late[-1] != late[0]:

@@ -22,6 +22,7 @@ static volatile uint16_t fall_rate = 30U;
 static volatile uint8_t brake_latched = 0;
 static volatile uint8_t brake_release_ticks = 0;
 static volatile uint8_t outputs_locked = 0;
+static volatile uint8_t output_refresh_required = 0U;
 static uint32_t pwm_timer_clock = 0;
 
 static uint32_t LockIRQ(void)
@@ -229,8 +230,13 @@ void Motor_SetPair(int16_t l, int16_t r)
 void Motor_SetDeadband(uint16_t left, uint16_t right)
 {
     uint32_t x = LockIRQ();
-    wheel_l.deadband = left > 500U ? 500U : left;
-    wheel_r.deadband = right > 500U ? 500U : right;
+    uint16_t next_left = left > 500U ? 500U : left;
+    uint16_t next_right = right > 500U ? 500U : right;
+    if (wheel_l.deadband != next_left || wheel_r.deadband != next_right) {
+        wheel_l.deadband = next_left;
+        wheel_r.deadband = next_right;
+        output_refresh_required = 1U;
+    }
     UnlockIRQ(x);
 }
 void Motor_SetSlewRates(uint16_t rise, uint16_t fall)
@@ -283,18 +289,26 @@ static void UpdateWheel(Wheel_t *w)
 void Motor_Update1ms(void)
 {
     uint32_t bsrr = 0;
+    int16_t previous_left, previous_right;
     uint8_t was_stopped_l, was_stopped_r;
     if (brake_latched) return;
     if (brake_release_ticks > 0U) {
         brake_release_ticks--;
         return;
     }
-    was_stopped_l = (wheel_l.applied == 0);
-    was_stopped_r = (wheel_r.applied == 0);
+    previous_left = wheel_l.applied;
+    previous_right = wheel_r.applied;
+    was_stopped_l = (previous_left == 0);
+    was_stopped_r = (previous_right == 0);
     UpdateWheel(&wheel_l);
     UpdateWheel(&wheel_r);
     if (was_stopped_l && was_stopped_r &&
-        wheel_l.applied == 0 && wheel_r.applied == 0) return;
+        wheel_l.applied == 0 && wheel_r.applied == 0) {
+        output_refresh_required = 0U;
+        return;
+    }
+    if (!output_refresh_required && previous_left == wheel_l.applied &&
+        previous_right == wheel_r.applied) return;
 
     /* P0: CCR is preloaded (OCxPE) while GPIO BSRR is immediate.
      * If we asserted direction directly after Coast (CCR=ARR+1), the
@@ -311,6 +325,8 @@ void Motor_Update1ms(void)
     GPIOB->BSRR = bsrr;
     TIM2->CCR2 = DutyFromCmd(wheel_l.applied, wheel_l.deadband);
     TIM2->CCR1 = DutyFromCmd(wheel_r.applied, wheel_r.deadband);
+    output_refresh_required = (was_stopped_l && wheel_l.applied != 0) ||
+                              (was_stopped_r && wheel_r.applied != 0);
 }
 void Motor_GetAppliedPairPermille(int16_t *l, int16_t *r)
 {
@@ -342,6 +358,7 @@ void Motor_Stop(void)
     AddDirection(&bsrr, MOTOR_R_IN1_PIN, MOTOR_R_IN2_PIN, 0);
     GPIOB->BSRR = bsrr;
     TIM2->CCR1 = TIM2->CCR2 = pwm_period + 1U;
+    output_refresh_required = 0U;
     UnlockIRQ(x);
 }
 void Motor_Brake(void)
@@ -363,6 +380,7 @@ void Motor_Brake(void)
     GPIOB->BSRR = bsrr;
     TIM2->CCR1 = pwm_period + 1U;
     TIM2->CCR2 = pwm_period + 1U;
+    output_refresh_required = 0U;
     UnlockIRQ(x);
 }
 void Motor_StopWithMode(MotorStopMode_t mode)

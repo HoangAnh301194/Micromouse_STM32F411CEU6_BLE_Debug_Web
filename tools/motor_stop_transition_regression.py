@@ -65,7 +65,13 @@ def check_source_order() -> None:
                   "TIM2->CCR1 = pwm_period + 1U;",
                   "TIM2->CCR2 = pwm_period + 1U;")
     update = body(driver, "Motor_Update1ms")
-    require_order(update, "was_stopped_l = (wheel_l.applied == 0);",
+    if "previous_left = wheel_l.applied;" in update:
+        require_order(update, "previous_left = wheel_l.applied;", "previous_right = wheel_r.applied;",
+                      "was_stopped_l = (previous_left == 0);", "was_stopped_r = (previous_right == 0);",
+                      "UpdateWheel(&wheel_l);")
+    else:
+        require_order(update, "was_stopped_l = (wheel_l.applied == 0);", "UpdateWheel(&wheel_l);")
+    require_order(update,
                   "UpdateWheel(&wheel_l);",
                   "was_stopped_l ? 0 : wheel_l.applied",
                   "GPIOB->BSRR = bsrr;",

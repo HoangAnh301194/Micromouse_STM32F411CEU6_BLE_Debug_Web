@@ -1,0 +1,35 @@
+test_first_tick_preload_guard_not_false_fault (test_startup_pipeline.HighSpeedTests.test_first_tick_preload_guard_not_false_fault) ... ok
+test_full_pwm_both_register_contract (test_startup_pipeline.HighSpeedTests.test_full_pwm_both_register_contract) ... ok
+test_high_speed_allowlist_stays_bounded (test_startup_pipeline.HighSpeedTests.test_high_speed_allowlist_stays_bounded) ... ok
+test_high_speed_requires_matching_profile (test_startup_pipeline.HighSpeedTests.test_high_speed_requires_matching_profile) ... ok
+test_safety_fault_stop_can_confirm_neutral (test_startup_pipeline.HighSpeedTests.test_safety_fault_stop_can_confirm_neutral) ... ok
+test_sensor_error_fails_before_further_pulses (test_startup_pipeline.HighSpeedTests.test_sensor_error_fails_before_further_pulses) ... ok
+test_speed_missing_reverse_and_zero_counts_fail (test_startup_pipeline.HighSpeedTests.test_speed_missing_reverse_and_zero_counts_fail) ... ok
+test_speed_plateau_both_wheels (test_startup_pipeline.HighSpeedTests.test_speed_plateau_both_wheels) ... ok
+test_watchdog_probe_clears_sticky_reset_flags (test_startup_pipeline.StartupFirmwareTests.test_watchdog_probe_clears_sticky_reset_flags) ... ok
+test_watchdog_start_precedes_register_update_wait (test_startup_pipeline.StartupFirmwareTests.test_watchdog_start_precedes_register_update_wait) ... ok
+test_direction_register_contract (test_startup_pipeline.StartupMetricsTests.test_direction_register_contract) ... ok
+test_duplicate_uart_fields_rejected (test_startup_pipeline.StartupMetricsTests.test_duplicate_uart_fields_rejected) ... ok
+test_early_twitch_not_sustained_rotation (test_startup_pipeline.StartupMetricsTests.test_early_twitch_not_sustained_rotation) ... ok
+test_fault_state_consistency (test_startup_pipeline.StartupMetricsTests.test_fault_state_consistency) ... ok
+test_missing_or_duplicate_sample_rejected (test_startup_pipeline.StartupMetricsTests.test_missing_or_duplicate_sample_rejected) ... ok
+test_neutral_and_host_stop (test_startup_pipeline.StartupMetricsTests.test_neutral_and_host_stop) ... ok
+test_no_counts_not_start (test_startup_pipeline.StartupMetricsTests.test_no_counts_not_start) ... ok
+test_profile_requires_exact_limits (test_startup_pipeline.StartupMetricsTests.test_profile_requires_exact_limits) ... ok
+test_register_error_and_over_duty_rejected (test_startup_pipeline.StartupMetricsTests.test_register_error_and_over_duty_rejected) ... ok
+test_reverse_and_passive_counts_rejected (test_startup_pipeline.StartupMetricsTests.test_reverse_and_passive_counts_rejected) ... ok
+test_single_jump_not_sustained_rotation (test_startup_pipeline.StartupMetricsTests.test_single_jump_not_sustained_rotation) ... ok
+test_sustained_rotation (test_startup_pipeline.StartupMetricsTests.test_sustained_rotation) ... ok
+test_timestamp_wrap (test_startup_pipeline.StartupMetricsTests.test_timestamp_wrap) ... ok
+test_allowlist_refuses_full_pwm_and_reversal (test_startup_pipeline.StartupSafetyTests.test_allowlist_refuses_full_pwm_and_reversal) ... ok
+test_device_rejection_preserves_raw_and_fails (test_startup_pipeline.StartupSafetyTests.test_device_rejection_preserves_raw_and_fails) ... ok
+test_intentional_idle_reset_resynchronizes_partial_frame (test_startup_pipeline.StartupSafetyTests.test_intentional_idle_reset_resynchronizes_partial_frame) ... ok
+test_reset_after_arming_fails (test_startup_pipeline.StartupSafetyTests.test_reset_after_arming_fails) ... ok
+test_run_requires_physical_confirmation (test_startup_pipeline.StartupSafetyTests.test_run_requires_physical_confirmation) ... ok
+test_self_test_rejects_hardware_flags (test_startup_pipeline.StartupSafetyTests.test_self_test_rejects_hardware_flags) ... ok
+test_watchdog_needs_ack_and_reset_flag (test_startup_pipeline.StartupSafetyTests.test_watchdog_needs_ack_and_reset_flag) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.023s
+
+OK

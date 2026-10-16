@@ -328,6 +328,41 @@ static void TestBenchWatchdog(void)
     puts("PASS: actual motor_test.c timeout, 1500ms heartbeat expiry/renewal, explicit STOP, brake pulse and calibration reset (register mocks only).");
 }
 
+static void TestSteadyOutputRefresh(void)
+{
+    ResetDriver();
+    Motor_SetPairPermille(10, 0);
+    Tick(1U);
+    assert((GPIOB->BSRR & 0xF000U) == 0U);
+    assert(TIM2->CCR2 == 32U);
+    Tick(1U);
+    assert((GPIOB->BSRR & (1UL << MOTOR_L_IN1_PIN)) != 0U);
+    GPIOB->BSRR = 0xA5A5A5A5U;
+    Tick(20U);
+    assert(GPIOB->BSRR == 0xA5A5A5A5U && TIM2->CCR2 == 32U);
+    Motor_SetDeadband(100U, 0U);
+    Tick(1U);
+    assert(TIM2->CCR2 == 348U);
+    assert((GPIOB->BSRR & (1UL << MOTOR_L_IN1_PIN)) != 0U);
+    Motor_SetDeadband(100U, 0U);
+    GPIOB->BSRR = 0xA5A5A5A5U;
+    Tick(1U);
+    assert(GPIOB->BSRR == 0xA5A5A5A5U);
+    Motor_SetPairPermille(1000, 1000);
+    Tick(50U);
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+    GPIOB->BSRR = 0xA5A5A5A5U;
+    Tick(50U);
+    assert(GPIOB->BSRR == 0xA5A5A5A5U);
+    Motor_Stop();
+    assert((GPIOB->BSRR & 0xF000U) == 0U);
+    Motor_SetPairPermille(10, 0);
+    Tick(1U);
+    assert((GPIOB->BSRR & 0xF000U) == 0U);
+    Tick(1U);
+    assert((GPIOB->BSRR & (1UL << MOTOR_L_IN1_PIN)) != 0U);
+}
+
 static void TestStickyLock(void)
 {
     uint32_t initial_resets;
@@ -366,6 +401,7 @@ int main(void)
     TestIdleAndReverseCountdown();
     TestChangingCommands();
     TestBenchWatchdog();
+    TestSteadyOutputRefresh();
     TestStickyLock();
     puts("PASS: compiled motor.c; 6000 signed duty cases, 10000 command changes, init, idle, slew, reverse, brake, IRQ and lock.");
     puts("Register mocks do not reproduce timer preload, physical PWM, current or temperature.");

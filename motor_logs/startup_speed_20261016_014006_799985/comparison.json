@@ -1,0 +1,105 @@
+{
+  "condition": "two wheels forward, 100% PWM, elevated, 600ms pulses; API cycles sampled after first 100ms",
+  "baseline": "motor_logs\\startup_speed_20261016_013358_380418",
+  "optimized": "motor_logs\\startup_speed_20261016_014006_799985",
+  "cycles_before": 259.018,
+  "cycles_after": 141.014,
+  "cycle_reduction_pct": 45.558223752789374,
+  "saved_us_per_tick_at_nominal_96mhz": 1.229208333333333,
+  "overall_cpu_percentage_points_saved_at_1khz": 0.1229208333333333,
+  "speed_before": {
+    "l": {
+      "duty_permille": 1000,
+      "speed_statistics_pps": {
+        "n": 2,
+        "mean": 8894.289108187135,
+        "sample_std": 19.370487298951463,
+        "cv_pct": 0.2177856719444959
+      },
+      "plateau_cv_pct_max": 0.16368425931750374,
+      "plateau_drift_pct_max": 0.07408230544134606,
+      "steady_confirmations": 2,
+      "attempts": 2,
+      "first_motion_observed_permille": 200,
+      "lowest_sustained_observed_permille": 200
+    },
+    "r": {
+      "duty_permille": 1000,
+      "speed_statistics_pps": {
+        "n": 2,
+        "mean": 9380.500730994152,
+        "sample_std": 43.62559381004779,
+        "cv_pct": 0.4650667918601006
+      },
+      "plateau_cv_pct_max": 0.8402400579560773,
+      "plateau_drift_pct_max": 1.1685916242680814,
+      "steady_confirmations": 2,
+      "attempts": 2,
+      "first_motion_observed_permille": 200,
+      "lowest_sustained_observed_permille": 200
+    }
+  },
+  "speed_after": {
+    "l": {
+      "duty_permille": 1000,
+      "speed_statistics_pps": {
+        "n": 2,
+        "mean": 8856.076388888889,
+        "sample_std": 11.539589831864369,
+        "cv_pct": 0.1303013809404614
+      },
+      "plateau_cv_pct_max": 0.1791869355803616,
+      "plateau_drift_pct_max": 0.14623891783201412,
+      "steady_confirmations": 2,
+      "attempts": 2,
+      "first_motion_observed_permille": 200,
+      "lowest_sustained_observed_permille": 200
+    },
+    "r": {
+      "duty_permille": 1000,
+      "speed_statistics_pps": {
+        "n": 2,
+        "mean": 9385.416666666668,
+        "sample_std": 3.4373246307680825,
+        "cv_pct": 0.036624102614177124
+      },
+      "plateau_cv_pct_max": 0.8717398133903174,
+      "plateau_drift_pct_max": 0.7890421767701066,
+      "steady_confirmations": 2,
+      "attempts": 2,
+      "first_motion_observed_permille": 200,
+      "lowest_sustained_observed_permille": 200
+    }
+  },
+  "sensor_health_last": {
+    "ready": 1,
+    "good": 18843,
+    "fresh": 18843,
+    "err": 0,
+    "timeout": 0,
+    "ir": 25717,
+    "age_max": 1998,
+    "isr": 1885,
+    "adc_div": 4
+  },
+  "timing_and_uart_max": {
+    "late": 0,
+    "gaps": 0,
+    "tx": 0,
+    "rx": 0
+  },
+  "stop_confirmed": true,
+  "current_sources_and_raw_hashes_verified": true,
+  "current_high_speed_elf_sha256": "c83f9330d00eee6dd0f0a853f36698aff7b4fd5451a6eefee036b3a7eb7bb2d5",
+  "bin_hash_note": "ST-Link upload builds/flashes ELF directly; firmware.bin was not produced by the upload-only target.",
+  "driver_header_sha256": "dd1264d957d7fe8dc4792b9dd93abb57aaeaa2cdc46791558823060f820769aa",
+  "limitations": "Bounded elevated-wheel pulses only; not continuous/full-load approval or current/thermal/energy-efficiency qualification. BLE radio link and Motion/PID workload not tested. ADC /4 is bench-local; production IR clock still needs separate review.",
+  "not_claimed": [
+    "motor speed improvement",
+    "electrical efficiency",
+    "thermal/current qualification",
+    "full Motion/PID integration",
+    "BLE radio link qualification"
+  ],
+  "intermediate_failed_run": "startup_speed_20261016_013716_629478: asynchronous telemetry snapshot; stopped safely; snapshot made atomic before final confirmation"
+}

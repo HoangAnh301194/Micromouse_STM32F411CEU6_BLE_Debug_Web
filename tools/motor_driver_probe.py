@@ -52,7 +52,7 @@ def validate_handshake(profile: dict, ready: dict) -> None:
 def validate_snapshot(records: dict) -> None:
     require(all(name in records for name in RECORDS), "Incomplete driver response")
     identity, registers, state, bench = (records[name] for name in RECORDS)
-    require(identity.get("revision") in (1, 2), "Unknown driver revision")
+    require(identity.get("revision") in (1, 2, 3), "Unknown driver revision")
     require(isinstance(identity.get("ticks"), int) and identity["ticks"] >= 0, "Invalid scheduler counter")
     require(isinstance(identity.get("core_hz"), int) and 0 < identity["core_hz"] <= 100000000, "Invalid core clock")
     require(identity.get("locked") == 1 and identity.get("state") == 0, "Driver not locked idle")
@@ -172,6 +172,9 @@ def self_test() -> None:
     revision_two["MOTOR_DRIVER"]["revision"] = 2
     revision_two["MOTOR_DRIVER_REG"]["cr2"] = 0
     validate_snapshot(revision_two)
+    revision_three = copy.deepcopy(revision_two)
+    revision_three["MOTOR_DRIVER"]["revision"] = 3
+    validate_snapshot(revision_three)
     revision_two["MOTOR_DRIVER_REG"]["cr2"] = 1
     try:
         validate_snapshot(revision_two)
@@ -180,6 +183,7 @@ def self_test() -> None:
     else:
         raise AssertionError("Accepted stale TIM2 CR2")
     for record, field, bad_value in (
+        ("MOTOR_DRIVER", "revision", 4),
         ("MOTOR_DRIVER", "locked", 0), ("MOTOR_DRIVER", "state", 1),
         ("MOTOR_DRIVER", "period", 3199), ("MOTOR_DRIVER_REG", "ccr_l", 0),
         ("MOTOR_DRIVER_REG", "odr", 0x1000), ("MOTOR_DRIVER_REG", "dier", 1),

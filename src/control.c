@@ -400,7 +400,15 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * Unlike Control_SetDiagnosticOnly(1), this path MUST service
      * Motor_Update1ms and MotorTest_Tick1ms, but never IR, IMU or Motion. */
     Encoder_Update(CONTROL_DT_S);
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+    {
+        uint32_t motor_cycle_start = DWT->CYCCNT;
+        Motor_Update1ms();
+        MotorStartup_RecordCycles(DWT->CYCCNT - motor_cycle_start);
+    }
+#else
     Motor_Update1ms();
+#endif
     MotorTest_Tick1ms();
 #if defined(MOTOR_STARTUP_BENCH)
     MotorStartup_Tick1ms();

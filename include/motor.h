@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define MOTOR_DRIVER_REVISION 2U
+#define MOTOR_DRIVER_REVISION 3U
 
 typedef struct {
     uint32_t timer_clock_hz;
