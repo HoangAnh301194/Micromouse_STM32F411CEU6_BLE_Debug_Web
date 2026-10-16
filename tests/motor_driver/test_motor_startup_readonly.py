@@ -41,11 +41,16 @@ class ReadonlyAuditTests(unittest.TestCase):
         mixed.insert(1, ("STARTUP_PROFILE", {**startup.HIGH_PROFILE, "build": "other", "reset_flags": 0}))
         cases.append(mixed)
         reset_after = fixture()
-        reset_after.append(("STARTUP_PROFILE", {**startup.HIGH_PROFILE, "build": "test_firmware", "reset_flags": 0}))
+        reset_after.append(("STARTUP_PROFILE", {**startup.HIGH_PROFILE, "build": "test_firmware", "reset_flags": 1}))
         cases.append(reset_after)
         for case in cases:
             with self.subTest(case=case[:1]), self.assertRaises(ValueError):
                 checker.audit_frames(case)
+
+    def test_late_solicted_profile_is_allowed(self):
+        case = fixture()
+        case.insert(3, ("STARTUP_PROFILE", {**startup.HIGH_PROFILE, "build": "test_firmware", "reset_flags": 0}))
+        self.assertEqual(checker.audit_frames(case)["status"], "PASS_INSPECTION_ONLY_IDLE_V4")
 
     def test_never_accept_active_output_or_fault(self):
         for field, value in (("state", 1), ("id", 1), ("duty", 20),
