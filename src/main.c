@@ -72,6 +72,7 @@ int main(void)
     uint32_t last_sweep_stage = 0xFFFFFFFFUL;
     uint8_t last_sweep_state = 0xFFU;
     int32_t last_sweep_enc_l = 0, last_sweep_enc_r = 0;
+    uint32_t last_sweep_log_ms = 0U;
 #endif
     MPU6050_Status mpu_status;
 
@@ -187,17 +188,29 @@ int main(void)
                 (sw.stage_id != last_sweep_stage || sw.state != last_sweep_state)) {
                 int32_t left = Encoder_GetLeftCount();
                 int32_t right = Encoder_GetRightCount();
-                UART_Printf("SYS_STEP,ms=%lu,state=%u,fault=%u,mode=%u,id=%lu,group=%u,step=%u,duty=%u,dl=%ld,dr=%ld\r\n",
+                int16_t applied_l = 0, applied_r = 0;
+                uint32_t dt_ms = last_sweep_log_ms ?
+                    (uint32_t)(now - last_sweep_log_ms) : 0U;
+                Motor_GetAppliedPairPermille(&applied_l, &applied_r);
+                /* state=2 denotes END OF DRIVE; state=1 with id>0
+                 * denotes END OF PREVIOUS STAGE'S COAST. Both dl/dr
+                 * and elapsed dt_ms refer to the preceding interval. */
+                UART_Printf("SYS_STEP,ms=%lu,state=%u,fault=%u,mode=%u,id=%lu,group=%u,step=%u,duty=%u,dt=%lu,dl=%ld,dr=%ld,vL=%ld,vR=%ld,appL=%d,appR=%d\r\n",
                             (unsigned long)now, (unsigned)sw.state,
                             (unsigned)sw.fault, (unsigned)sw.motor_enabled,
                             (unsigned long)sw.stage_id, (unsigned)sw.group,
                             (unsigned)sw.step, (unsigned)sw.duty_permille,
+                            (unsigned long)dt_ms,
                             (long)(left - last_sweep_enc_l),
-                            (long)(right - last_sweep_enc_r));
+                            (long)(right - last_sweep_enc_r),
+                            (long)Encoder_GetLeftSpeedPPS(),
+                            (long)Encoder_GetRightSpeedPPS(),
+                            (int)applied_l, (int)applied_r);
                 last_sweep_stage = sw.stage_id;
                 last_sweep_state = sw.state;
                 last_sweep_enc_l = left;
                 last_sweep_enc_r = right;
+                last_sweep_log_ms = now;
             }
         }
         if ((uint32_t)(now - last_system_diag_ms) >= 1000U) {
@@ -244,6 +257,17 @@ int main(void)
                         (unsigned long)Board_GetHsiTrim(),
                         (unsigned long)Board_GetClockFault(),
                         (unsigned long)I2C_GetConfiguredSclHz());
+            {
+                int16_t app_l = 0, app_r = 0;
+                Motor_GetAppliedPairPermille(&app_l, &app_r);
+                UART_Printf("SYS_E,ms=%lu,encL=%ld,encR=%ld,ppsL=%ld,ppsR=%ld,appL=%d,appR=%d\r\n",
+                            (unsigned long)now,
+                            (long)Encoder_GetLeftCount(),
+                            (long)Encoder_GetRightCount(),
+                            (long)Encoder_GetLeftSpeedPPS(),
+                            (long)Encoder_GetRightSpeedPPS(),
+                            (int)app_l, (int)app_r);
+            }
             if (mpu.cal_state != last_cal_state) {
                 UART_Printf("SYS_CAL,ms=%lu,state=%u,retries=%u,reason=%u\r\n",
                             (unsigned long)now,
