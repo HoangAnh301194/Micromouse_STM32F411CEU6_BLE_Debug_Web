@@ -67,7 +67,7 @@ int main(void)
 
     /* MPU6050_Init owns RC2 I2C bus probing and initialization. */
     BT_Init();
-    UART_Init(); /* USART1 PA9 TX DMA; PA10 RX is not implemented. */
+    UART_Init(); /* USART1 PA9 DMA TX and PA10 IRQ RX. */
     IR_Init();
 
     mpu_status = MPU6050_Init(&mpu);
@@ -105,6 +105,14 @@ int main(void)
 
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());
+        }
+        /* Same bounded F/L/R/S/Z command vocabulary as USART2 BLE;
+         * all motion requests must pass the fresh-gyro safety guard. */
+        {
+            uint8_t ch, budget = 16U;
+            while (budget-- && UART_ReadByte(&ch)) {
+                HandleBleCommand((char)ch);
+            }
         }
 
         if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
