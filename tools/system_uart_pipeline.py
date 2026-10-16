@@ -186,7 +186,7 @@ def main():
     p.add_argument("--flash", action="store_true",
                    help="Automatically upload each diagnostic firmware via ST-Link")
     p.add_argument("--motor-on", action="store_true",
-                   help="EXPLICIT consent to physical 0..100% motor-on phase")
+                   help="EXPLICIT consent to physical 0..100%% motor-on phase")
     p.add_argument("--mode", choices=["off", "on"], default="off",
                    help="Used when --flash is omitted; selected firmware must already be on MCU")
     p.add_argument("--outdir", type=Path)
