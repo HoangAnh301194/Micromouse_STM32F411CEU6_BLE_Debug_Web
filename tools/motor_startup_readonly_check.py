@@ -34,9 +34,9 @@ def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> di
         validate_profile(profile, high_speed=True)
     if len({(p.get("build"), p.get("reset_flags")) for p in profiles}) != 1:
         raise ValueError("Mixed or resetting firmware profiles")
-    first_sample_index = next(i for i, (name, _) in enumerate(frames) if name == "STARTUP_SAMPLE")
-    if any(name == "STARTUP_PROFILE" for name, _ in frames[first_sample_index + 1:]):
-        raise ValueError("Unexpected profile after idle telemetry: possible MCU reset")
+    # UART samples are asynchronous: a solicited PING PROFILE can arrive after
+    # an idle sample. Detect resets by firmware identity and monotonic ticks,
+    # rather than incorrectly treating a valid late PING as a reboot.
     for sample in samples:
         validate_row(sample, high_speed=True)
         if sample["state"] != 0 or sample["fault"] or sample["id"] or sample["duty"]:
