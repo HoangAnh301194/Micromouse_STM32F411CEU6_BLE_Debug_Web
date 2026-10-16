@@ -24,16 +24,22 @@ assert mod.parse_line("CMD_MODE,requested=ON,accepted=1")["accepted"] == 1
 assert mod.parse_line("CLOCK_PROFILE,nominal_hz=96000000,trim=25")["trim"] == 25
 for mode in ("OFF","ON"):
     code=1 if mode=="ON" else 0
-    s=[{"type":"SYS_STEP","id":i,"state":1,"mode":code} for i in range(33)]
+    s=[{"type":"SYS_STEP","id":0,"state":1,"mode":code,"dt":0}]
     for i in range(33):
         g, step = divmod(i, 11)
+        drive_ms, coast_ms = mod.planned_stage_times_ms(i)
         dl = dr = 0
         if mode == "ON" and step > 0:
-            if g in (0, 2): dl = -(40 * step)
-            if g in (1, 2): dr = -(40 * step)
+            if g in (0, 2): dl = 40 * step
+            if g in (1, 2): dr = 40 * step
         s.append({"type":"SYS_STEP","id":i,"state":2,"mode":code,
-                  "group":g,"step":step,"dl":dl,"dr":dr})
-    s.append({"type":"SYS_STEP","id":33,"state":3,"mode":code})
+                  "group":g,"step":step,"dl":dl,"dr":dr,"dt":drive_ms})
+        for ms in range(500,coast_ms,500):
+            s.append({"type":"SYS_COAST","id":i,"mode":code,"dt":ms,
+                      "ppsL":0,"ppsR":0,"dl":0,"dr":0})
+        s.append({"type":"SYS_STEP","id":i+1,
+                  "state":3 if i==32 else 1,
+                  "mode":code,"dt":coast_ms,"vL":0,"vR":0,"dl":0,"dr":0})
     s.extend([
         {"type":"SYS_T","gap":0,"late":0,"maxcy":8000,"stale":0},
         {"type":"SYS_M","locked":1,"i2cerr":0,"to":0,"wd":0},
@@ -54,4 +60,13 @@ for mode in ("OFF","ON"):
         outcome = mod.evaluate(flat, mode)
         assert not outcome["checks"]["encoder_drive_response_consistent"]
         assert len(outcome["encoder_review"]["high_pwm_anomalies"]) == 6
+        wrong=[dict(x) for x in s]
+        for x in wrong:
+            if x.get("type") == "SYS_STEP" and x.get("state") == 2 and x.get("group") == 2 and x.get("step") in (6,7):
+                x["dl"] = x["dr"] = -300
+        assert not mod.evaluate(wrong,"ON")["checks"]["extended_drive_coast_inertia"]
+        assert any(x.get("reason") == "forward_encoder_sign_negative"
+                   for x in mod.evaluate(wrong,"ON")["extended"]["problems"])
+        truncated=[x for x in s if not(x.get("type")=="SYS_COAST" and x.get("id")==3)]
+        assert not mod.evaluate(truncated,"ON")["checks"]["extended_drive_coast_inertia"]
 print("PASS CLI boot + synthetic UART data + high-duty encoder flatline regression; no hardware tested")
