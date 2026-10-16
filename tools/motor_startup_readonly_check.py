@@ -14,7 +14,9 @@ from motor_startup_pipeline import Capture, HIGH_PROFILE
 
 ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_COMMAND = "STARTUP PING"
-ALLOWED_FRAMES = frozenset(("STARTUP_PROFILE", "STARTUP_SAMPLE", "STARTUP_HEALTH"))
+# PING emits BOTH a PROFILE and a STATUS in the MCU Command() handler.
+# STATUS is allowed exactly once and must obey the same neutral invariants.
+ALLOWED_FRAMES = frozenset(("STARTUP_PROFILE", "STARTUP_STATUS", "STARTUP_SAMPLE", "STARTUP_HEALTH"))
 
 
 def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> dict:
@@ -23,11 +25,20 @@ def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> di
         raise ValueError("At least two idle samples are required")
     profiles = [row for name, row in frames if name == "STARTUP_PROFILE"]
     samples = [row for name, row in frames if name == "STARTUP_SAMPLE"]
+    statuses = [row for name, row in frames if name == "STARTUP_STATUS"]
     health = [row for name, row in frames if name == "STARTUP_HEALTH"]
     if not profiles or not samples or len(samples) < minimum_samples:
         raise ValueError("Missing v4 profile or adequate idle samples")
     if any(name not in ALLOWED_FRAMES for name, _ in frames):
         raise ValueError("Unexpected test/ARM/FAULT frame during inspection-only check")
+    # The checker sends only one PING. More than one STATUS implies a
+    # separate command source or an unintended response: fail closed.
+    if len(statuses) > 1:
+        raise ValueError("More STARTUP_STATUS frames than a single PING can produce")
+    if any(name == "STARTUP_STATUS" and not any(
+        earlier == "STARTUP_PROFILE" for earlier, _ in frames[:i]
+    ) for i, (name, _) in enumerate(frames)):
+        raise ValueError("STARTUP_STATUS before verified PROFILE")
     # Firmware may print PROFILE at boot and in response to PING, before the sample stream.
     from motor_startup_pipeline import validate_profile, validate_row
     for profile in profiles:
@@ -37,7 +48,9 @@ def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> di
     # UART samples are asynchronous: a solicited PING PROFILE can arrive after
     # an idle sample. Detect resets by firmware identity and monotonic ticks,
     # rather than incorrectly treating a valid late PING as a reboot.
-    for sample in samples:
+    # Validate the PING acknowledgement as strictly as each periodic sample.
+    # In particular, a STATUS from a FAULT/READY/DRIVE state is never benign.
+    for sample in samples + statuses:
         validate_row(sample, high_speed=True)
         if sample["state"] != 0 or sample["fault"] or sample["id"] or sample["duty"]:
             raise ValueError("MCU is not disarmed and without prior pulses")
@@ -45,6 +58,8 @@ def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> di
             raise ValueError("Non-neutral MCU outputs")
         if sample["late"] or sample["gaps"] or sample["tx"] or sample["rx"]:
             raise ValueError("TIM11/UART health counter not zero")
+    if statuses and (statuses[0]["l"], statuses[0]["r"]) != (samples[0]["l"], samples[0]["r"]):
+        raise ValueError("Encoder counters differ between PING and idle telemetry")
     for prev, curr in zip(samples, samples[1:]):
         dt_ms = (curr["ms"] - prev["ms"]) & 0xFFFFFFFF
         ticks = (curr["ticks"] - prev["ticks"]) & 0xFFFFFFFF
@@ -63,6 +78,7 @@ def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> di
         "experimental": True,
         "electrical_qualified": False,
         "idle_samples": len(samples),
+        "ping_status_frames": len(statuses),
         "elapsed_ms": (samples[-1]["ms"] - samples[0]["ms"]) & 0xFFFFFFFF,
         "first_tick": samples[0]["ticks"],
         "last_tick": samples[-1]["ticks"],
