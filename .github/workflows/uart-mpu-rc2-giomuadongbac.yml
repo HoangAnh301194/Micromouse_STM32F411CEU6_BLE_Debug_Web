@@ -19,6 +19,7 @@ on:
       - 'src/control.c'
       - 'platformio.ini'
       - 'tools/uart_mpu_rc2_integration_gate.py'
+      - 'tools/motor_giomuadongbac_gate.py'
   pull_request:
     branches: [giomuadongbac]
   workflow_dispatch:
