@@ -95,7 +95,7 @@ uint32_t Board_GetAPB2TimerClockHz(void) { return Board_GetAPBTimerClockHz(1); }
 
 /* STM32F411 maximum HCLK is 100MHz, PCLK1<=50MHz, PCLK2<=100MHz.
  * Selected build: HSI -> PLLM=16, PLLN=192, PLLP=2 -> 96MHz nominal.
- * PLLQ=5 gives 40MHz: USB FS 48MHz is NOT available in this profile.
+ * PLLQ=5 gives 38.4MHz at 96MHz SYSCLK, not USB FS 48MHz.
  * Intended for regulated 3.3V Micromouse board, VDD >= 2.7V.
  * Uses bounded readiness waits and retains HSI 16MHz on PLL failure.
  */
