@@ -1,0 +1,10 @@
+11455.434690	s=444760,late=0,gaps=0,tx=0,rx=0
+11455.457008	STARTUP_PROFILE,version=4,experimental=1,qualified=0,cap=1000,pulse_ms=600,rest_ms=900,quiet_ms=300,link_ms=400,max_pulses=32,session_ms=90000,rise=20,fall=30,deadband=0,wdg_ms=500,core_hz=96000000,pwm_hz=30000,reset_flags=503316482,build=Oct 17 2026 00:50:55
+11455.470777	STARTUP_STATUS,id=0,state=0,fault=0,ms=444927,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=444774,late=0,gaps=0,tx=0,rx=0
+11455.483607	STARTUP_SAMPLE,id=0,state=0,fault=0,ms=444954,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=444800,late=0,gaps=0,tx=0,rx=0
+11455.512914	STARTUP_SAMPLE,id=0,state=0,fault=0,ms=444994,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=444840,late=0,gaps=0,tx=0,rx=0
+11455.522747	STARTUP_HEALTH,ready=1,good=444771,fresh=444771,err=0,timeout=0,ir=606556,age_max=2024,isr=1055,adc_div=4
+11455.553868	STARTUP_SAMPLE,id=0,state=0,fault=0,ms=445034,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=444880,late=0,gaps=0,tx=0,rx=0
+11455.593907	STARTUP_SAMPLE,id=0,state=0,fault=0,ms=445074,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=444920,late=0,gaps=0,tx=0,rx=0
+11455.633815	STARTUP_SAMPLE,id=0,state=0,fault=0,ms=445114,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=444960,late=0,gaps=0,tx=0,rx=0
+11455.673853	STARTUP_SAMPLE,id=0,state=0,fault=0,ms=445154,t=0,rest=0,q=300,wheel=0,duty=0,l=0,r=0,al=0,ar=0,cl=3200,cr=3200,odr=0,ticks=445000,late=0,gaps=0,tx=0,rx=0

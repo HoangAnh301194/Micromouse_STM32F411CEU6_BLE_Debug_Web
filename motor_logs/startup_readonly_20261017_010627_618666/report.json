@@ -1,0 +1,23 @@
+{
+  "status": "PASS_INSPECTION_ONLY_IDLE_V4",
+  "utc": "2026-10-16T18:06:27.647627+00:00",
+  "port": "COM6",
+  "allowed_host_commands": [
+    "STARTUP PING"
+  ],
+  "flash_attempted": false,
+  "motor_arm_attempted": false,
+  "motor_vm": "USER_CONFIRMED_PHYSICALLY_DISCONNECTED",
+  "electrical_qualification": "NOT_MEASURED",
+  "firmware_version": 4,
+  "experimental": true,
+  "electrical_qualified": false,
+  "idle_samples": 6,
+  "ping_status_frames": 1,
+  "elapsed_ms": 200,
+  "first_tick": 444800,
+  "last_tick": 445000,
+  "raw_qualification": "NOT_MEASURED",
+  "raw_uart_sha256": "c3608449a62ec264827d7a5792dc67dba785ffb77655a57b3280ee3e395ebde1",
+  "source_sha256": "2f964288fedea7fccd23cb8150e25a45aee11146d5255f8c002412d9784924c2"
+}
