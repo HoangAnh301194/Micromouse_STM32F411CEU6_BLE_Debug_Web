@@ -73,6 +73,8 @@ int main(void)
     uint8_t last_sweep_state = 0xFFU;
     int32_t last_sweep_enc_l = 0, last_sweep_enc_r = 0;
     uint32_t last_sweep_log_ms = 0U;
+    uint32_t coast_start_ms = 0U, coast_last_ms = 0U;
+    int32_t coast_start_l = 0, coast_start_r = 0;
 #endif
     MPU6050_Status mpu_status;
 
@@ -211,6 +213,26 @@ int main(void)
                 last_sweep_enc_l = left;
                 last_sweep_enc_r = right;
                 last_sweep_log_ms = now;
+                if (sw.state == SWEEP_COAST) {
+                    coast_start_ms = coast_last_ms = now;
+                    coast_start_l = left;
+                    coast_start_r = right;
+                }
+            }
+            /* 500-ms samples during each 2–3s coast interval. These
+             * capture transient encoder movement and the filtered speed
+             * approaching zero without doing I/O in TIM11. */
+            if (sw.state == SWEEP_COAST &&
+                (uint32_t)(now - coast_last_ms) >= 500U) {
+                coast_last_ms = now;
+                UART_Printf("SYS_COAST,ms=%lu,id=%lu,dt=%lu,dl=%ld,dr=%ld,ppsL=%ld,ppsR=%ld\r\n",
+                            (unsigned long)now,
+                            (unsigned long)sw.stage_id,
+                            (unsigned long)(now - coast_start_ms),
+                            (long)(Encoder_GetLeftCount() - coast_start_l),
+                            (long)(Encoder_GetRightCount() - coast_start_r),
+                            (long)Encoder_GetLeftSpeedPPS(),
+                            (long)Encoder_GetRightSpeedPPS());
             }
         }
         if ((uint32_t)(now - last_system_diag_ms) >= 1000U) {
