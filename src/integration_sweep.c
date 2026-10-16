@@ -24,11 +24,12 @@
 #define SWEEP_STEP_TOTAL 33U
 #define SWEEP_COMMAND_RENEW_MS 40U
 #define SWEEP_HARD_LIMIT_MS 18000U
+#define SWEEP_LINK_TIMEOUT_MS 750U
 #define SWEEP_GYRO_MAX_AGE_US 3000U
 #define SWEEP_TIM11_MAX_CYCLES 96000U
 
 static volatile SweepSnapshot state;
-static uint32_t since_ms, last_cmd_ms, session_ms;
+static uint32_t since_ms, last_cmd_ms, session_ms, last_heartbeat_ms;
 static uint32_t baseline_gap, baseline_timeout;
 
 static void LockDone(uint8_t newstate, uint8_t reason)
@@ -40,7 +41,7 @@ static void LockDone(uint8_t newstate, uint8_t reason)
 void Sweep_Init(void)
 {
     state = (SweepSnapshot){0};
-    since_ms = last_cmd_ms = session_ms = 0U;
+    since_ms = last_cmd_ms = session_ms = last_heartbeat_ms = 0U;
     baseline_gap = baseline_timeout = 0U;
     /* Default is always OFF shadow. Motor output is not enabled until
      * exact UART command MODE ON, then START with physical KEY pressed. */
@@ -109,11 +110,15 @@ uint8_t Sweep_Arm(uint32_t now_ms, const MPU6050_Handle_t *mpu,
     state.step = 0U;
     state.duty_permille = 0U;
     state.state = SWEEP_DRIVE;
-    since_ms = last_cmd_ms = session_ms = now_ms;
+    since_ms = last_cmd_ms = session_ms = last_heartbeat_ms = now_ms;
     baseline_gap = stats.gaps_gt1500us;
     baseline_timeout = mpu->timeout_reads;
     Command(0U);
     return 1U;
+}
+void Sweep_Heartbeat(uint32_t now_ms)
+{
+    if (Sweep_IsActive()) last_heartbeat_ms = now_ms;
 }
 void Sweep_Abort(uint8_t reason)
 {
@@ -130,6 +135,10 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
     uint32_t age;
     if (!Sweep_IsActive()) return;
     age = (uint32_t)(now_ms - session_ms);
+    if (state.motor_enabled &&
+        (uint32_t)(now_ms - last_heartbeat_ms) > SWEEP_LINK_TIMEOUT_MS) {
+        Sweep_Abort(SWEEP_UART_LINK_LOST); return;
+    }
     if (age > SWEEP_HARD_LIMIT_MS) {
         Sweep_Abort(SWEEP_SESSION_TIMEOUT); return;
     }
