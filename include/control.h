@@ -11,5 +11,17 @@ void Control_Init(MPU6050_Handle_t *mpu_handle);
 void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
+#if defined(INTEGRATION_DIAG)
+typedef struct {
+    uint32_t ticks;
+    uint32_t late_gt50us;
+    uint32_t gaps_gt1500us;
+    uint32_t max_irq_cycles;
+    uint32_t gyro_valid_ticks;
+    uint32_t gyro_invalid_after_first_valid;
+    uint32_t ir_scan_count;
+} Control_DebugStats_t;
+void Control_GetDebugStats(Control_DebugStats_t *out);
+#endif
 
 #endif
