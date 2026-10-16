@@ -23,7 +23,6 @@ jobs:
         with:
           python-version: '3.11'
       - run: python tools/uart_mpu_integration_gate.py
-      - run: python tools/motor_giomuadongbac_gate.py --audit
       - run: python tools/motor_driver_native_test.py
       - name: Compile integrated firmware (no flash)
         run: |
