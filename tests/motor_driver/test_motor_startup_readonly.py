@@ -20,7 +20,9 @@ def fixture():
                     l=0, r=0, al=0, ar=0, cl=3200, cr=3200, odr=0,
                     ticks=900 + i * 40, late=0, gaps=0, tx=0, rx=0)
                for i in range(6)]
-    return [("STARTUP_PROFILE", profile)] + [("STARTUP_SAMPLE", row) for row in samples]
+    # Actual firmware replies to one PING with PROFILE followed by STATUS.
+    return ([("STARTUP_PROFILE", profile), ("STARTUP_STATUS", dict(samples[0]))]
+            + [("STARTUP_SAMPLE", row) for row in samples])
 
 
 class ReadonlyAuditTests(unittest.TestCase):
@@ -29,6 +31,7 @@ class ReadonlyAuditTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS_INSPECTION_ONLY_IDLE_V4")
         self.assertEqual(result["elapsed_ms"], 200)
         self.assertEqual(result["idle_samples"], 6)
+        self.assertEqual(result["ping_status_frames"], 1)
         self.assertFalse(result["electrical_qualified"])
 
     def test_missing_old_or_mixed_profile_fail(self):
@@ -45,6 +48,30 @@ class ReadonlyAuditTests(unittest.TestCase):
         cases.append(reset_after)
         for case in cases:
             with self.subTest(case=case[:1]), self.assertRaises(ValueError):
+                checker.audit_frames(case)
+
+    def test_ping_status_missing_duplicate_and_order_fail(self):
+        baseline = fixture()
+        cases = [
+            [item for item in baseline if item[0] != "STARTUP_STATUS"],
+            baseline[:2] + [("STARTUP_STATUS", dict(baseline[1][1]))] + baseline[2:],
+            [baseline[1], baseline[0]] + baseline[2:],
+        ]
+        for index, case in enumerate(cases):
+            with self.subTest(case=index), self.assertRaises(ValueError):
+                checker.audit_frames(case)
+
+    def test_ping_status_fault_and_non_neutral_fail(self):
+        for mutation in (
+            {"state": 4, "fault": 7, "tx": 2},
+            {"state": 1},
+            {"al": 20, "cl": 64, "odr": 0x2000},
+            {"late": 1},
+            {"l": 100},
+        ):
+            case = fixture()
+            case[1] = ("STARTUP_STATUS", {**case[1][1], **mutation})
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 checker.audit_frames(case)
 
     def test_late_solicted_profile_is_allowed(self):
@@ -81,7 +108,7 @@ class ReadonlyAuditTests(unittest.TestCase):
                 checker.audit_frames(case)
 
     def test_unsolicited_arm_or_fault_frame_fails(self):
-        for name in ("STARTUP_BEGIN", "STARTUP_STATUS", "STARTUP_FAULT", "STARTUP_EXPERIMENT_ACK"):
+        for name in ("STARTUP_BEGIN", "STARTUP_FAULT", "STARTUP_EXPERIMENT_ACK"):
             case = fixture()
             case.insert(2, (name, {}))
             with self.subTest(frame=name), self.assertRaises(ValueError):
@@ -91,6 +118,14 @@ class ReadonlyAuditTests(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as exc:
             checker.main(["--run", "--port", "COM6"])
         self.assertEqual(exc.exception.code, 2)
+
+    def test_ping_firmware_contract_in_source(self):
+        source = (ROOT / "src/motor_startup_bench.c").read_text(encoding="utf-8")
+        command = source.split("static void Command(const char *line)", 1)[1].split(
+            "int MotorStartupBench_Main", 1)[0]
+        self.assertIn('if (strcmp(line, "STARTUP PING") == 0) Profile();', command)
+        self.assertIn('Status("STARTUP_STATUS", &snapshot);', command)
+        self.assertIn('if (strcmp(line, "STARTUP KEEP") != 0)', command)
 
     def test_readonly_allowlist_is_only_ping(self):
         self.assertEqual(checker.ALLOWED_COMMAND, "STARTUP PING")
