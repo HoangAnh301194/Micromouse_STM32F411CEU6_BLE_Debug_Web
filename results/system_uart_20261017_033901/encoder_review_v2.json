@@ -1,0 +1,107 @@
+{
+  "source": "results\\system_uart_20261017_033901\\measurements.csv",
+  "results": [
+    {
+      "mode": "OFF",
+      "encoder_review": {
+        "drive_windows": 33,
+        "high_pwm_anomalies": [],
+        "encoder_direction_observations": [],
+        "qualified": true
+      },
+      "timer_last": {
+        "type": "SYS_T",
+        "phase": "OFF",
+        "host_elapsed_s": "22.8027",
+        "ms": 23000,
+        "ticks": 22846,
+        "late": 0,
+        "gap": 0,
+        "maxcy": 939,
+        "encmaxcy": 454,
+        "motmaxcy": 42,
+        "motticks": 22846,
+        "valid": 13847,
+        "stale": 0,
+        "ir": 22846
+      },
+      "mpu_last": {
+        "type": "SYS_M",
+        "phase": "OFF",
+        "host_elapsed_s": "22.8111",
+        "ms": 23000,
+        "cal": 3,
+        "seq": 13846,
+        "age": 993,
+        "i2cok": 22844,
+        "i2cerr": 0,
+        "to": 0,
+        "busy": 0
+      }
+    },
+    {
+      "mode": "ON",
+      "encoder_review": {
+        "drive_windows": 33,
+        "high_pwm_anomalies": [],
+        "encoder_direction_observations": [
+          {
+            "group": 0,
+            "wheel": "L",
+            "sign_60pct": -1,
+            "sign_70pct": -1
+          },
+          {
+            "group": 1,
+            "wheel": "R",
+            "sign_60pct": -1,
+            "sign_70pct": -1
+          },
+          {
+            "group": 2,
+            "wheel": "L",
+            "sign_60pct": -1,
+            "sign_70pct": -1
+          },
+          {
+            "group": 2,
+            "wheel": "R",
+            "sign_60pct": -1,
+            "sign_70pct": -1
+          }
+        ],
+        "qualified": true
+      },
+      "timer_last": {
+        "type": "SYS_T",
+        "phase": "ON",
+        "host_elapsed_s": "22.832",
+        "ms": 23000,
+        "ticks": 22846,
+        "late": 0,
+        "gap": 0,
+        "maxcy": 1803,
+        "encmaxcy": 966,
+        "motmaxcy": 438,
+        "motticks": 22846,
+        "valid": 13847,
+        "stale": 0,
+        "ir": 22846
+      },
+      "mpu_last": {
+        "type": "SYS_M",
+        "phase": "ON",
+        "host_elapsed_s": "22.8403",
+        "ms": 23000,
+        "cal": 3,
+        "seq": 13847,
+        "age": 991,
+        "i2cok": 22845,
+        "i2cerr": 0,
+        "to": 0,
+        "busy": 0
+      }
+    }
+  ],
+  "note": "Offline CSV omits UART/motor lock counters. Interpret encoder and TIM11 fields only; no physical qualification."
+}
