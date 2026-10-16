@@ -27,5 +27,7 @@ assert "-DMPU_TIM11_TICK_SCHED=1" in ini and "-DMPU_SAMPLING_POLICY_B=1" in ini
 assert "DMA2_Stream7" in u and "USART1->BRR" in u
 assert "USART1_IRQHandler(void)" in u and "USART_CR1_RE" in u
 assert "UART_ReadByte(&ch)" in m
+assert "if (ch == 'S' || ch == 's') Motion_Stop();" in m
+assert "HandleBleCommand((char)ch)" not in m
 assert "if (ready && Motion_IsDone()) Motion_CommandStraight" in m
 print("PASS: MPU RC2 IRQ acquisition outside TIM11, fail-closed Motion; USART1 TX DMA + bounded IRQ RX")
