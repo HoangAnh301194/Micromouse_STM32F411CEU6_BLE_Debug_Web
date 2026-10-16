@@ -19,11 +19,37 @@
 #if !defined(INTEGRATION_DIAG_MOTOR_OFF) && !defined(INTEGRATION_DIAG_MOTOR_ON)
 #error "INTEGRATION_DIAG needs an explicit MOTOR_OFF or MOTOR_ON mode"
 #endif
-#define SWEEP_STEP_DRIVE_MS 250U
-#define SWEEP_STEP_COAST_MS 150U
+/* Endurance schedule: target ~145 seconds per OFF/ON phase.
+ * 0..80%: 2.0 seconds, but 30/60/80% sustain for 3.5 seconds.
+ * 90%: 1.0 seconds and 100%: 0.75 seconds to bound high-load exposure.
+ * Coast: 2.0 seconds, increasing to 3.0 seconds after 90/100%.
+ * All 33 steps use identical timing in OFF and ON profiles.
+ * The long coast intervals measure residual wheel inertia; firmware logs
+ * encoder speed at each transition. No current, voltage or temperature
+ * measurement is available: never infer electrical/thermal qualification. */
 #define SWEEP_STEP_TOTAL 33U
 #define SWEEP_COMMAND_RENEW_MS 40U
-#define SWEEP_HARD_LIMIT_MS 18000U
+#define SWEEP_HARD_LIMIT_MS 180000U
+#define SWEEP_DRIVE_DEFAULT_MS 2000U
+#define SWEEP_DRIVE_SUSTAIN_MS 3500U
+#define SWEEP_DRIVE_90_MS 1000U
+#define SWEEP_DRIVE_100_MS 750U
+#define SWEEP_COAST_DEFAULT_MS 2000U
+#define SWEEP_COAST_HIGH_MS 3000U
+static uint32_t DriveDurationMs(uint32_t stage)
+{
+    uint32_t p = stage % 11U;
+    if (p == 10U) return SWEEP_DRIVE_100_MS;
+    if (p == 9U) return SWEEP_DRIVE_90_MS;
+    if (p == 3U || p == 6U || p == 8U)
+        return SWEEP_DRIVE_SUSTAIN_MS;
+    return SWEEP_DRIVE_DEFAULT_MS;
+}
+static uint32_t CoastDurationMs(uint32_t stage)
+{
+    return stage % 11U >= 9U ? SWEEP_COAST_HIGH_MS :
+           SWEEP_COAST_DEFAULT_MS;
+}
 #define SWEEP_LINK_TIMEOUT_MS 750U
 #define SWEEP_GYRO_MAX_AGE_US 3000U
 #define SWEEP_TIM11_MAX_CYCLES 96000U
@@ -162,7 +188,7 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
     }
     state.elapsed_ms = age;
     if (state.state == SWEEP_DRIVE) {
-        if ((uint32_t)(now_ms - since_ms) >= SWEEP_STEP_DRIVE_MS) {
+        if ((uint32_t)(now_ms - since_ms) >= DriveDurationMs(state.stage_id)) {
             Motor_Stop();
             state.state = SWEEP_COAST;
             since_ms = now_ms;
@@ -170,7 +196,7 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
             last_cmd_ms = now_ms;
             Command((uint8_t)state.stage_id); /* real command renews lease */
         }
-    } else if ((uint32_t)(now_ms - since_ms) >= SWEEP_STEP_COAST_MS) {
+    } else if ((uint32_t)(now_ms - since_ms) >= CoastDurationMs(state.stage_id)) {
         if (++state.stage_id >= SWEEP_STEP_TOTAL) {
             LockDone(SWEEP_DONE, SWEEP_OK);
             return;
