@@ -405,7 +405,7 @@ static void TestPreloadStopBoundaries(void)
     assert((GPIOB->BSRR & 0xF000U) == 0U);
     Tick(1U);
     assert((GPIOB->BSRR & (1UL << MOTOR_L_IN1_PIN)) != 0U);
-    assert((GPIOB->BSRR & (1UL << MOTOR_R_IN2_PIN)) != 0U);
+    assert((GPIOB->BSRR & (1UL << MOTOR_R_IN1_PIN)) != 0U);
     Motor_Stop();
     assert(Snapshot().command_age_ms == 0U);
 }
