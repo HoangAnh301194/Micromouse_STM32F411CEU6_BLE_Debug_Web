@@ -5,6 +5,10 @@
 #include <stdint.h>
 
 void Board_Init(void);
+/* RCC/PLL startup diagnostic, not an independent clock measurement. */
+uint32_t Board_GetClockFault(void);
+uint32_t Board_GetHsiTrim(void);
+uint32_t Board_GetHsiCal(void);
 uint8_t Board_ButtonPressed(void);
 void Board_StatusLed(uint8_t on);
 

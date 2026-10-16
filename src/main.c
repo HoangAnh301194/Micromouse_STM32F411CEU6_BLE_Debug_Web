@@ -61,13 +61,34 @@ int main(void)
 
     Board_Init();
     SystemTimer_Init();
+    UART_Init(); /* USART1 PA9 DMA TX and PA10 IRQ RX. */
+
+    /* Fail closed BEFORE Motor_Init on HSI/PLL readiness or clock-profile
+     * failure. Peripheral baud/timer setup below depends on the selected
+     * 96MHz profile having been initialized successfully. */
+    if (Board_GetClockFault() != 0U) {
+        Board_StatusLed(1U);
+        UART_Printf("BOOT_FAIL,CLOCK,fault=%lu,sysclk_nominal=%lu,trim=%lu\r\n",
+                    (unsigned long)Board_GetClockFault(),
+                    (unsigned long)SystemCoreClock,
+                    (unsigned long)Board_GetHsiTrim());
+        while (1) { __WFI(); } /* Motors NEVER initialized/enabled. */
+    }
+
+    UART_Printf("CLOCK_PROFILE,nominal_hz=%lu,trim=%lu,hsical=%lu,pclk1=%lu,pclk2=%lu,tim2clk=%lu,tim11clk=%lu\r\n",
+                (unsigned long)SystemCoreClock,
+                (unsigned long)Board_GetHsiTrim(),
+                (unsigned long)Board_GetHsiCal(),
+                (unsigned long)Board_GetAPB1ClockHz(),
+                (unsigned long)Board_GetAPB2ClockHz(),
+                (unsigned long)Board_GetAPB1TimerClockHz(),
+                (unsigned long)Board_GetAPB2TimerClockHz());
 
     Motor_Init();
     Encoder_Init();
 
     /* MPU6050_Init owns RC2 I2C bus probing and initialization. */
     BT_Init();
-    UART_Init(); /* USART1 PA9 DMA TX and PA10 IRQ RX. */
     IR_Init();
 
     mpu_status = MPU6050_Init(&mpu);
