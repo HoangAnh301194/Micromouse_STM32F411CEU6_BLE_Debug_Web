@@ -241,9 +241,47 @@ def write_output(outdir, results, rows):
                 w.writerow({"phase": mode, **item})
 
 
+
+def review_saved_measurements(csv_file):
+    """Analyze existing motor logs safely, without opening serial or flashing."""
+    rows = {"OFF": [], "ON": []}
+    numeric = {"ms","ticks","late","gap","maxcy","encmaxcy","motmaxcy",
+               "motticks","valid","stale","ir","cal","seq","age",
+               "i2cok","i2cerr","to","busy","state","id","group",
+               "step","duty","dl","dr","locked","wd","rx_err","rx_ov",
+               "tx_drop","dma_err","trim","clkfault","iclk","mode"}
+    with csv_file.open(newline="", encoding="utf-8-sig") as file:
+        for row in csv.DictReader(file):
+            phase = row.get("phase")
+            if phase not in rows: continue
+            data = {"type": row.get("type", "")}
+            for key,value in row.items():
+                if not value: continue
+                if key in numeric:
+                    try: data[key] = int(value)
+                    except ValueError: data[key] = value
+                else: data[key] = value
+            rows[phase].append(data)
+    results = [evaluate(rows[p],p) for p in ("OFF","ON") if rows[p]]
+    report = {"source": str(csv_file), "results": results,
+              "note": "Retrospective UART-only review; high PWM flatline flagged; no physical qualification"}
+    output = csv_file.parent / "encoder_review_v2.json"
+    output.write_text(json.dumps(report, indent=2),encoding="utf-8")
+    for result in results:
+        anomalies = result["encoder_review"]["high_pwm_anomalies"]
+        print(result["mode"], "PASS" if result["software_pass"] else "NEEDS_REVIEW",
+              "drive_windows", result["encoder_review"]["drive_windows"],
+              "high_pwm_anomalies", len(anomalies))
+        for issue in anomalies: print("  ",issue)
+    print("Saved",output)
+    return 0 if all(r["software_pass"] for r in results) else 2
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--port", required=True, help="STM32 USART1 adapter, e.g. COM6")
+    p.add_argument("--port", help="STM32 USART1 adapter, e.g. COM6")
+    p.add_argument("--review-csv", type=Path,
+                   help="Re-evaluate saved measurements.csv; no flashing, UART, or motor actions")
     p.add_argument("--baud", type=int, default=115200)
     p.add_argument("--flash", action="store_true",
                    help="Automatically upload each diagnostic firmware via ST-Link")
@@ -253,6 +291,10 @@ def main():
                    help="Used when --flash is omitted; selected firmware must already be on MCU")
     p.add_argument("--outdir", type=Path)
     args=p.parse_args()
+    if args.review_csv is not None:
+        return review_saved_measurements(args.review_csv)
+    if not args.port:
+        p.error("--port is required unless --review-csv is supplied")
     if args.mode == "on" and not args.motor_on:
         p.error("--mode on requires --motor-on")
     if args.motor_on:
