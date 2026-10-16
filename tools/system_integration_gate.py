@@ -28,12 +28,21 @@ def audit(files=None):
         raise AuditError("Production firmware must NOT auto-run motor diagnostic")
     motor=get("src/integration_sweep.c")
     if not all(s in motor for s in
-            ("SWEEP_STEP_DRIVE_MS 250U","SWEEP_STEP_COAST_MS 150U",
-             "SWEEP_STEP_TOTAL 33U","SWEEP_HARD_LIMIT_MS 18000U",
+            ("SWEEP_DRIVE_DEFAULT_MS 2000U","SWEEP_DRIVE_SUSTAIN_MS 3500U",
+             "SWEEP_DRIVE_90_MS 1000U","SWEEP_DRIVE_100_MS 750U",
+             "SWEEP_COAST_DEFAULT_MS 2000U","SWEEP_COAST_HIGH_MS 3000U",
+             "SWEEP_STEP_TOTAL 33U","SWEEP_HARD_LIMIT_MS 180000U",
+             "DriveDurationMs(state.stage_id)","CoastDurationMs(state.stage_id)",
              "SWEEP_LINK_TIMEOUT_MS 750U","Motor_LockOutputs();",
              "SWEEP_GYRO_MAX_AGE_US 3000U","Command(0U)")):
         raise AuditError("Sweep timing or fault-latch contract lost")
-    control=get("src/control.c")
+    enc=get("include/encoder.h")
+    if "#define ENCODER_LEFT_DIRECTION  -1" not in enc or (
+            "#define ENCODER_RIGHT_DIRECTION -1" not in enc):
+        raise AuditError("Encoder positive-forward sign not normalized")
+    if "SWEEP_HARD_LIMIT_MS 180000U" not in motor:
+        raise AuditError("Missing endurance hard limit")
+        control=get("src/control.c")
     if control.count("Motor_Update1ms();") != 1 or "DWT->CYCCNT" not in control:
         raise AuditError("TIM11 motor and cycle diagnostics mismatch")
     if "Sweep_ImuFaultFromISR()" not in control:
@@ -43,7 +52,7 @@ def audit(files=None):
         raise AuditError("Serial and motor timing loop not integrated")
     if "Motor_LockOutputs();" not in main:
         raise AuditError("Motor-off compile-time lock missing")
-    serial=get("src/integration_serial.c")
+    serial=get("src/integration_serial.c","include/encoder.h")
     for token in ('"MODE OFF"','"MODE ON"','"START"','"PING"','"STOP"',
                   'UART_ReadByte(&value)','UART_RX_BUDGET'):
         if token not in serial:raise AuditError("Serial protocol token absent: "+token)
@@ -72,7 +81,8 @@ def main():
                 ("src/integration_sweep.c","SWEEP_LINK_TIMEOUT_MS 750U","SWEEP_LINK_TIMEOUT_MS 9999U"),
                 ("src/control.c","Motor_Update1ms();","/* removed */"),
                 ("src/main.c","IntegrationSerial_Poll(&mpu, now)","/* removed */"),
-                ("src/integration_serial.c","UART_ReadByte(&value)","0")
+                ("src/integration_serial.c","UART_ReadByte(&value)","0"),
+                ("include/encoder.h","ENCODER_LEFT_DIRECTION  -1","ENCODER_LEFT_DIRECTION   1")
             ]
             for name,old,new in mutations:
                 if old not in files[name]: raise AuditError("fixture missing "+old)
