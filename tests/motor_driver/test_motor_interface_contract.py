@@ -48,8 +48,8 @@ class MotorInterfaceContractTests(unittest.TestCase):
                   "TIM2->CCR1 = 1;", "bypasses")
 
     def test_wrong_pin_mapping_rejected(self):
-        self.case("include/pinout.h", "#define MOTOR_R_IN2_PIN        14",
-                  "#define MOTOR_R_IN2_PIN        13", "pin mapping drifted")
+        self.case("include/pinout.h", "#define MOTOR_R_IN2_PIN         14",
+                  "#define MOTOR_R_IN2_PIN         13", "pin mapping drifted")
 
     def test_wrong_watchdog_contract_rejected(self):
         self.case("include/motor.h", "#define MOTOR_COMMAND_TIMEOUT_MS 300U",
