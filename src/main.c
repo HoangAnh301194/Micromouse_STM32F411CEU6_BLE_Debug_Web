@@ -158,6 +158,62 @@ int main(void)
             }
         }
 
+#if defined(INTEGRATION_DIAG)
+        /* One diagnostic bundle per second. UART prints only in main, never
+         * from TIM11/I2C/TIM10 interrupts. Host must analyze *deltas* of
+         * monotonic counters; clock values remain RCC-derived nominal. */
+        if ((uint32_t)(now - last_system_diag_ms) >= 1000U) {
+            Control_DebugStats_t sd;
+            Motor_Diagnostics_t md;
+            MPU6050_Snapshot_t snap;
+            uint8_t valid = MPU6050_GetSnapshot(&mpu, &snap);
+            uint32_t age = valid ?
+                (uint32_t)(micros() - snap.completed_us) : 0U;
+            last_system_diag_ms = now;
+            Control_GetDebugStats(&sd);
+            Motor_GetDiagnostics(&md);
+
+            UART_Printf("SYS_T,ms=%lu,ticks=%lu,late=%lu,gap=%lu,maxcy=%lu,valid=%lu,stale=%lu,ir=%lu\r\n",
+                        (unsigned long)now, (unsigned long)sd.ticks,
+                        (unsigned long)sd.late_gt50us,
+                        (unsigned long)sd.gaps_gt1500us,
+                        (unsigned long)sd.max_irq_cycles,
+                        (unsigned long)sd.gyro_valid_ticks,
+                        (unsigned long)sd.gyro_invalid_after_first_valid,
+                        (unsigned long)sd.ir_scan_count);
+            UART_Printf("SYS_M,ms=%lu,cal=%u,n=%u,seq=%lu,age=%lu,i2cok=%lu,i2cerr=%lu,to=%lu,nr=%lu,busy=%lu,locked=%u,wd=%u\r\n",
+                        (unsigned long)now,
+                        (unsigned)mpu.cal_state,
+                        (unsigned)mpu.calibration_count,
+                        (unsigned long)snap.sequence,
+                        (unsigned long)age,
+                        (unsigned long)mpu.fresh_gyro_reads,
+                        (unsigned long)mpu.error_reads,
+                        (unsigned long)mpu.timeout_reads,
+                        (unsigned long)mpu.status_not_ready_reads,
+                        (unsigned long)mpu.busy_retries,
+                        (unsigned)md.outputs_locked,
+                        (unsigned)md.command_timeout_latched);
+            UART_Printf("SYS_U,ms=%lu,tx_drop=%lu,dma_err=%lu,rx_err=%lu,rx_ov=%lu,trim=%lu,clkfault=%lu,iclk=%lu\r\n",
+                        (unsigned long)now,
+                        (unsigned long)UART_GetDroppedMessages(),
+                        (unsigned long)UART_GetDmaErrors(),
+                        (unsigned long)UART_GetRxErrors(),
+                        (unsigned long)UART_GetRxOverflow(),
+                        (unsigned long)Board_GetHsiTrim(),
+                        (unsigned long)Board_GetClockFault(),
+                        (unsigned long)I2C_GetConfiguredSclHz());
+            if (mpu.cal_state != last_cal_state) {
+                UART_Printf("SYS_CAL,ms=%lu,state=%u,retries=%u,reason=%u\r\n",
+                            (unsigned long)now,
+                            (unsigned)mpu.cal_state,
+                            (unsigned)mpu.cal_retries,
+                            (unsigned)mpu.cal_failure_reason);
+                last_cal_state = mpu.cal_state;
+            }
+        }
+#endif
+
         if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
             int32_t left_count;
             int32_t right_count;
