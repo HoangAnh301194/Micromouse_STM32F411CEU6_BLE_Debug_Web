@@ -13,6 +13,8 @@ on:
       - 'tools/system_integration_gate.py'
       - 'tools/system_uart_pipeline.py'
       - 'tools/test_system_uart_pipeline.py'
+      - 'tools/system_sweep_native_test.py'
+      - 'include/encoder.h'
   pull_request:
     branches: [giomuadongbac]
   workflow_dispatch:
@@ -29,8 +31,10 @@ jobs:
         run: python tools/system_integration_gate.py --audit
       - name: Run negative mutation integration guards
         run: python tools/system_integration_gate.py --self-test
-      - name: Native sweep transition tests on actual C source
+      - name: Native Motor Driver regression
         run: python tools/system_integration_gate.py --native-test
+      - name: Native 145s motor OFF and ON C state machine fault injections
+        run: python tools/system_sweep_native_test.py
       - name: Host serial parser synthetic regression
         run: python tools/test_system_uart_pipeline.py
       - name: Regression clock and RC2 UART MPU
