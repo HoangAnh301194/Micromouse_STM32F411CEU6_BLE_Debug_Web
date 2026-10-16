@@ -1,0 +1,15 @@
+{
+  "status": "FAIL",
+  "utc": "2026-10-16T17:51:04.065468+00:00",
+  "port": "COM6",
+  "allowed_host_commands": [
+    "STARTUP PING"
+  ],
+  "flash_attempted": false,
+  "motor_arm_attempted": false,
+  "motor_vm": "USER_CONFIRMED_PHYSICALLY_DISCONNECTED",
+  "electrical_qualification": "NOT_MEASURED",
+  "error": "Timing gap or UART error",
+  "raw_uart_sha256": "5c51c9e350283f7d91ecc15cfd20ab5a0c7036c7d1821362916f0b9571f51681",
+  "source_sha256": "9f0c5adad3dfc1bd70157a169f906736b0cc4769d75b025c18396ff6b1a83e8f"
+}
