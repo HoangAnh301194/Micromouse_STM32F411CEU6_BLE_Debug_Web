@@ -11,6 +11,26 @@
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile IR_Data_t ir_latest;
+#if defined(INTEGRATION_DIAG)
+static volatile Control_DebugStats_t di_stats;
+static volatile uint32_t di_prev_irq_us;
+static volatile uint8_t di_seen_valid;
+void Control_GetDebugStats(Control_DebugStats_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->ticks = di_stats.ticks;
+    out->late_gt50us = di_stats.late_gt50us;
+    out->gaps_gt1500us = di_stats.gaps_gt1500us;
+    out->max_irq_cycles = di_stats.max_irq_cycles;
+    out->gyro_valid_ticks = di_stats.gyro_valid_ticks;
+    out->gyro_invalid_after_first_valid = di_stats.gyro_invalid_after_first_valid;
+    out->ir_scan_count = di_stats.ir_scan_count;
+    if (!primask) __enable_irq();
+}
+#endif
 
 void Control_Init(MPU6050_Handle_t *mpu_handle)
 {
@@ -20,6 +40,15 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     control_mpu = mpu_handle;
     control_running = 0;
+#if defined(INTEGRATION_DIAG)
+    di_stats = (Control_DebugStats_t){0};
+    di_prev_irq_us = 0U;
+    di_seen_valid = 0U;
+    SystemCoreClockUpdate();
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0U;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+#endif
 
     timer_clock = Board_GetAPB2TimerClockHz();
 
@@ -80,6 +109,9 @@ uint8_t Control_IsRunning(void)
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     IR_Data_t sample;
+#if defined(INTEGRATION_DIAG)
+    uint32_t entry_us, start_cycles, period;
+#endif
 
     if ((TIM11->SR & TIM_SR_UIF) == 0U) {
         return;
@@ -91,6 +123,17 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         return;
     }
 
+#if defined(INTEGRATION_DIAG)
+    start_cycles = DWT->CYCCNT;
+    entry_us = micros();
+    di_stats.ticks++;
+    if (di_prev_irq_us) {
+        period = entry_us - di_prev_irq_us;
+        if (period < 950U || period > 1050U) di_stats.late_gt50us++;
+        if (period > 1500U) di_stats.gaps_gt1500us++;
+    }
+    di_prev_irq_us = entry_us;
+#endif
     /*
      * Hard real-time path:
      * 1. Update encoder snapshot.
@@ -116,6 +159,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             ir_latest.value[i] = sample.value[i];
         }
         ir_latest.scan_count = sample.scan_count;
+#if defined(INTEGRATION_DIAG)
+        di_stats.ir_scan_count = sample.scan_count;
+#endif
 
         IR_StartScan();
     }
@@ -124,10 +170,23 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         MPU6050_Snapshot_t gyro;
         if (MPU6050_GetSnapshot(control_mpu, &gyro) &&
             (uint32_t)(micros() - gyro.completed_us) <= 3000U) {
+#if defined(INTEGRATION_DIAG)
+            di_seen_valid = 1U;
+            di_stats.gyro_valid_ticks++;
+#endif
             Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
                           Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
         } else {
+#if defined(INTEGRATION_DIAG)
+            if (di_seen_valid) di_stats.gyro_invalid_after_first_valid++;
+#endif
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
         }
     }
+#if defined(INTEGRATION_DIAG)
+    {
+        uint32_t cycles = DWT->CYCCNT - start_cycles;
+        if (cycles > di_stats.max_irq_cycles) di_stats.max_irq_cycles = cycles;
+    }
+#endif
 }
