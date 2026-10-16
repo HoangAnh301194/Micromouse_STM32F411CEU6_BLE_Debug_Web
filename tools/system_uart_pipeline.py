@@ -194,7 +194,13 @@ def evaluate(logs, mode):
         "uart_dma_no_error": uart.get("dma_err", 0) == 0,
         "mpu_no_i2c_error": mpu.get("i2cerr", 0) == 0 and mpu.get("to", 0) == 0,
         "no_tim11_gaps": timer.get("gap", 0) == 0,
+        "tim11_irq_jitter_under_50us": timer.get("late", 1) == 0,
         "no_tim11_excess_duration": timer.get("maxcy", 96001) < 96000,
+        "motor_service_every_tick": timer.get("motticks", -1) == timer.get("ticks", 0),
+        "ir_scans_progress": timer.get("ir", 0) >= int(timer.get("ticks", 0) * .95),
+        "gyro_fresh_after_calibration": mpu.get("age", 99999) <= 3000
+                                      and timer.get("stale", 1) == 0
+                                      and timer.get("valid", 0) > 10000,
         "no_motor_watchdog": mpu.get("wd", 1) == 0,
         "no_sweep_fault": not faults,
         "encoder_drive_response_consistent": encoder_review["qualified"] if mode == "ON"
