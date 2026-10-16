@@ -11,7 +11,8 @@ on:
       - 'src/**'
       - 'tests/integration/**'
       - 'tools/system_integration_gate.py'
-      - 'tools/system_integration_report.py'
+      - 'tools/system_uart_pipeline.py'
+      - 'tools/test_system_uart_pipeline.py'
   pull_request:
     branches: [giomuadongbac]
   workflow_dispatch:
