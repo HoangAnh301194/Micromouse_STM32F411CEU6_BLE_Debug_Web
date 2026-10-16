@@ -1,0 +1,53 @@
+name: Motor Driver RC Integration giomuadongbac
+on:
+  push:
+    branches:
+      - giomuadongbac
+      - integration/motor-driver-rc-giomuadongbac
+    paths:
+      - '.github/workflows/motor-driver-giomuadongbac.yml'
+      - 'src/motor.c'
+      - 'src/motor_test.c'
+      - 'src/motor_startup.c'
+      - 'src/control.c'
+      - 'src/board.c'
+      - 'src/motion.c'
+      - 'include/motor.h'
+      - 'include/motor_test.h'
+      - 'include/motor_startup.h'
+      - 'include/control.h'
+      - 'include/pinout.h'
+      - 'tests/motor_driver/**'
+      - 'tools/motor_driver_native_test.py'
+      - 'tools/motor_giomuadongbac_gate.py'
+      - 'docs/motor_driver/**'
+  pull_request:
+    branches: [giomuadongbac]
+  workflow_dispatch:
+
+jobs:
+  motor-driver-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify donor source hashes and firmware scheduler/API
+        run: |
+          python tools/motor_giomuadongbac_gate.py --self-test
+          python tools/motor_giomuadongbac_gate.py --audit
+      - name: Test actual compiled driver in native C mocks, including watchdog
+        run: python tools/motor_driver_native_test.py
+      - name: Compile giomuadongbac default STM32F411 firmware (NO FLASH)
+        run: |
+          python -m pip install --disable-pip-version-check platformio
+          python -m platformio run -e genericSTM32F411CE
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Python 3.14 contract verification
+        run: |
+          python tools/motor_giomuadongbac_gate.py --self-test
+          python tools/motor_giomuadongbac_gate.py --audit

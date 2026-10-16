@@ -4,6 +4,7 @@
 #include "encoder.h"
 #include "ir_sensor.h"
 #include "motion.h"
+#include "motor.h"
 #include "stm32f4xx.h"
 
 static MPU6050_Handle_t *control_mpu = 0;
@@ -92,11 +93,16 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     /*
      * Hard real-time path:
      * 1. Update encoder snapshot.
-     * 2. Advance MPU6050 DMA/update state.
-     * 3. Consume a completed IR scan and immediately schedule the next scan.
-     * 4. Execute the motion controller using one coherent sensor snapshot.
+     * 2. Service the Motor Driver's 300-tick command lease and PWM ramp.
+     * 3. Advance MPU6050 DMA/update state.
+     * 4. Consume a completed IR scan and immediately schedule the next scan.
+     * 5. Execute the motion controller using one coherent sensor snapshot.
      */
     Encoder_Update(CONTROL_DT_S);
+    /* Motor RC: service every TIM11 1ms tick even if MPU/IR data is stale.
+     * The fresh Motion_SetPair on valid feedback renews the 300-tick lease.
+     * Do NOT use Motor_KeepAlive here; a stalled Motion must time out. */
+    Motor_Update1ms();
     MPU6050_Update(control_mpu);
 
     if (IR_GetLatest(&sample)) {
