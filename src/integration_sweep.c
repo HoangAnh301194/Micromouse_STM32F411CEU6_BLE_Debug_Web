@@ -1,6 +1,6 @@
 /* Deliberately opt-in 96MHz combined-system motor and shadow-off sweep.
  * Default production firmware has no command path into these functions.
- * PA10 'MODE OFF/ON' then 'START'; physical KEY required for ON.
+ * PA10 'MODE OFF/ON' then explicit 'START'; no physical KEY input.
  * All profiles run the SAME 3x11 stage schedule and UART telemetry;
  * motor-off compiles output writes away and locks Motor Driver at boot.
  * This is a motor-on diagnostic only: NOT electrical safety qualification.
@@ -44,7 +44,7 @@ void Sweep_Init(void)
     since_ms = last_cmd_ms = session_ms = last_heartbeat_ms = 0U;
     baseline_gap = baseline_timeout = 0U;
     /* Default is always OFF shadow. Motor output is not enabled until
-     * exact UART command MODE ON, then START with physical KEY pressed. */
+     * exact UART command MODE ON, then START issued by the host. */
     state.motor_enabled = 0U;
 }
 uint8_t Sweep_SelectMode(uint8_t motor_on)
@@ -89,14 +89,14 @@ static void Command(uint8_t idx)
 #endif
 }
 uint8_t Sweep_Arm(uint32_t now_ms, const MPU6050_Handle_t *mpu,
-                  uint8_t button_held)
+                  uint8_t host_authorized)
 {
     Control_DebugStats_t stats;
     if (state.armed_once || state.state != SWEEP_DISARMED ||
         !SensorFresh(mpu) || Board_GetClockFault() != 0U)
         return 0U;
-    /* UART alone never starts energized outputs. */
-    if (state.motor_enabled && !button_held) return 0U;
+    /* START is an explicit, host-originated authorization, not a KEY press. */
+    if (state.motor_enabled && !host_authorized) return 0U;
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
     if (!Motor_OutputsLocked() || state.motor_enabled) return 0U;
 #else
