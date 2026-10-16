@@ -20,6 +20,7 @@ on:
       - 'tools/motor_driver_debug_pipeline.py'
       - 'tools/motor_driver_metrics.py'
       - 'tools/motor_startup_pipeline.py'
+      - 'tools/motor_startup_readonly_check.py'
       - 'tests/motor_driver/**'
       - 'docs/motor_driver/**'
   workflow_dispatch:
@@ -45,6 +46,8 @@ jobs:
         run: python tools/motor_driver_debug_pipeline.py --self-test
       - name: Bounded startup encoder pipeline regression
         run: python tools/motor_startup_pipeline.py --self-test
+      - name: VM-disconnected v4 UART inspection gate (offline synthetic tests)
+        run: python tools/motor_startup_readonly_check.py --self-test
       - name: Compile bounded startup and opt-in high-speed benches
         run: python -m platformio run -e motor_startup_96m_trim25 -e motor_speed_96m_trim25
       - name: Compile explicit KEY-armed motor bench
@@ -122,6 +125,8 @@ jobs:
         run: python tools/motor_driver_debug_pipeline.py --self-test
       - name: Python 3.14 bounded startup encoder pipeline regression
         run: python tools/motor_startup_pipeline.py --self-test
+      - name: Python 3.14 inspection-only v4 UART regression
+        run: python tools/motor_startup_readonly_check.py --self-test
       - name: Python 3.14 P0 multi-gate host regression
         run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: Python 3.14 STOP truth-table CLI self-test
