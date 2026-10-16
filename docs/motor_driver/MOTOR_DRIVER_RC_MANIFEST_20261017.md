@@ -127,3 +127,13 @@ approval.
 
 See [API contract](MOTOR_DRIVER_API_CONTRACT.md) and
 [handoff checklist](MOTOR_DRIVER_HANDOFF_CHECKLIST_20261017.md).
+
+## Battery-independent final acceptance
+
+The RC handoff deliberately does NOT require an absolute encoder pulse count,
+PWM-to-RPM curve, or a repeated battery-dependent speed measurement. Native C
+test `--handoff-matrix` covers long-lived command refresh, normal STOP idle,
+exact 299/300-tick command timeout and no-rearm. Integration contract checks
+Motion ownership and TIM11 sequencing via source and negative mutation tests.
+These prove software invariants, not output voltage/current or a physical
+300ms watchdog measurement. They are included in the GitHub CI workflow.

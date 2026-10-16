@@ -435,8 +435,74 @@ static void TestCommandWatchdog(void)
     assert(Snapshot().outputs_locked && Snapshot().command_timeout_latched);
 }
 
+
+/* Handoff regression: command freshness is timed by TIM11 ticks, not by
+ * encoder count, battery voltage, RPM or host UART wall-clock delay. */
+static void TestHandoffCommandMatrix(void)
+{
+    uint32_t i;
+    Motor_Diagnostics_t s;
+    ResetDriver();
+
+    /* Multi-second stream of valid signed two-wheel commands, refreshed
+     * every 200 ticks (<300 tick lease). No false timeout is allowed. */
+    for (i = 0U; i < 40U; ++i) {
+        int16_t left = (i & 1U) ? -120 : 120;
+        int16_t right = (i & 1U) ? 140 : -140;
+        Motor_SetPairPermille(left, right);
+        Tick(200U);
+        s = Snapshot();
+        assert(!s.outputs_locked && !s.command_timeout_latched);
+        assert(s.command_age_ms == 200U);
+        assert(s.target_left == left && s.target_right == right);
+    }
+
+    /* A normal STOP cancels active command and must not itself time out,
+     * even while the control tick keeps running with zero commands. */
+    Motor_Stop();
+    Tick(3U * MOTOR_COMMAND_TIMEOUT_MS);
+    s = Snapshot();
+    assert(!s.outputs_locked && !s.command_timeout_latched);
+    assert(s.command_age_ms == 0U);
+    assert(s.target_left == 0 && s.target_right == 0);
+    assert(s.ramped_left == 0 && s.ramped_right == 0);
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+
+    /* Resume after a normal STOP. At 299 ticks the driver still permits
+     * motion; at tick 300 it must latch neutral, independently of speed. */
+    Motor_SetPairPermille(200, -200);
+    Tick(MOTOR_COMMAND_TIMEOUT_MS - 1U);
+    s = Snapshot();
+    assert(!s.outputs_locked && !s.command_timeout_latched);
+    assert(s.command_age_ms == MOTOR_COMMAND_TIMEOUT_MS - 1U);
+    Tick(1U);
+    s = Snapshot();
+    assert(s.outputs_locked && s.command_timeout_latched);
+    assert(s.target_left == 0 && s.target_right == 0);
+    assert(s.ramped_left == 0 && s.ramped_right == 0);
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+
+    /* Neither stale-command writes nor an attempted keepalive nor Init
+     * may silently re-enable a latched driver. */
+    Motor_SetPairPermille(1000, -1000);
+    Motor_KeepAlive();
+    Tick(400U);
+    s = Snapshot();
+    assert(s.outputs_locked && s.command_timeout_latched);
+    assert(s.target_left == 0 && s.target_right == 0);
+    Motor_Init();
+    s = Snapshot();
+    assert(s.outputs_locked && s.command_timeout_latched);
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+    puts("PASS: 8 s periodic two-wheel commands; normal STOP; 299/300ms expiry; latched no-rearm (native register mocks).");
+}
+
 int main(int argc, char **argv)
 {
+    if (argc == 2 && strcmp(argv[1], "--handoff-matrix") == 0) {
+        TestHandoffCommandMatrix();
+        return 0;
+    }
     if (argc == 2 && strcmp(argv[1], "--watchdog") == 0) {
         TestCommandWatchdog();
         puts("PASS: normal command watchdog expires closed; restart rejected.");

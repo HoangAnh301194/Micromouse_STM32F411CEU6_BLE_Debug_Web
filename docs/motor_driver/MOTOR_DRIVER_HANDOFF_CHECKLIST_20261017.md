@@ -109,3 +109,39 @@ Host-side negative tests reject altered evidence, an extra ARM, forged
 electrical approval, or a changed checker. GitHub Actions runs this gate
 for Python 3.11 and 3.14. It does **not** measure the electrical outputs
 or independently confirm the VM disconnect.
+
+## F. 2026-10-17 battery-independent final control acceptance
+
+Do not use absolute encoder counts, wheel RPM, inferred battery state or
+PWM-to-speed gain as Motor Driver release requirements. These conflate
+powertrain/mechanical properties with PWM driver command correctness.
+Any later motor identification dataset must record per-trial VM under load
+and be owned by the Speed Control team.
+
+Additional **unpowered actual-C native** test case
+`--handoff-matrix`, executed via the existing
+`python tools/motor_driver_native_test.py`:
+
+- 40 successive mixed-sign two-wheel commands with a fresh command every
+  200 TIM11 ticks (8,000 virtual 1ms ticks): no false expiration.
+- `Motor_Stop()` then 900 TIM11 ticks idle: no spurious latch; PWM neutral.
+- Re-arm normal command, verify no latch at 299 ticks; latch and STOP
+  **exactly** at tick 300 after host command stops arriving.
+- Verify `Motor_KeepAlive()`, SetPair and `Motor_Init()` do not clear
+  the sticky lock. All checks execute the actual `src/motor.c` on
+  emulated register structures, not live hardware.
+
+Additional no-hardware static negative tests:
+`python tools/motor_interface_contract.py --self-test` and
+`--audit`. They verify Motion cannot directly modify TIM2/GPIO direction
+or renew the lease with unconditional `Motor_KeepAlive`; that Control
+neutralizes Motion/MotorTest **before** halting TIM11; that 1 kHz
+scheduler calls Motor then MotorTest then Motion; and that the pin/API
+mapping remains stable. Mutant-source tests fail if any condition is broken.
+This integration test does not establish real hardware interrupt timing.
+
+**Software module handoff criterion:** all native/host/contract/immutable
+baseline CI tests PASS. Electrical/load safety is kept separate and
+`NOT_QUALIFIED`. Motor Driver optimization is frozen; integration of
+speed PID/kinematics should start in another branch and may not bypass
+the driver API.

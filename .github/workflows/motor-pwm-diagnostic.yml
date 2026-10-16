@@ -22,6 +22,7 @@ on:
       - 'tools/motor_startup_pipeline.py'
       - 'tools/motor_startup_readonly_check.py'
       - 'tools/motor_release_gate.py'
+      - 'tools/motor_interface_contract.py'
       - 'tests/motor_driver/**'
       - 'docs/motor_driver/**'
   workflow_dispatch:
@@ -53,6 +54,10 @@ jobs:
         run: |
           python tools/motor_release_gate.py --self-test
           python tools/motor_release_gate.py --audit
+      - name: Battery-independent Motor Motion scheduler interface contract (Python 3.11)
+        run: |
+          python tools/motor_interface_contract.py --self-test
+          python tools/motor_interface_contract.py --audit
       - name: Compile bounded startup and opt-in high-speed benches
         run: python -m platformio run -e motor_startup_96m_trim25 -e motor_speed_96m_trim25
       - name: Compile explicit KEY-armed motor bench
@@ -136,6 +141,10 @@ jobs:
         run: |
           python tools/motor_release_gate.py --self-test
           python tools/motor_release_gate.py --audit
+      - name: Python 3.14 battery-independent interface contract
+        run: |
+          python tools/motor_interface_contract.py --self-test
+          python tools/motor_interface_contract.py --audit
       - name: Python 3.14 P0 multi-gate host regression
         run: python tools/motor_p0_batch_pipeline.py --self-test
       - name: Python 3.14 STOP truth-table CLI self-test
