@@ -33,8 +33,8 @@ def audit_frames(frames: list[tuple[str, dict]], minimum_samples: int = 5) -> di
         raise ValueError("Unexpected test/ARM/FAULT frame during inspection-only check")
     # The checker sends only one PING. More than one STATUS implies a
     # separate command source or an unintended response: fail closed.
-    if len(statuses) > 1:
-        raise ValueError("More STARTUP_STATUS frames than a single PING can produce")
+    if len(statuses) != 1:
+        raise ValueError("Expected exactly one STARTUP_STATUS acknowledgement for a single PING")
     if any(name == "STARTUP_STATUS" and not any(
         earlier == "STARTUP_PROFILE" for earlier, _ in frames[:i]
     ) for i, (name, _) in enumerate(frames)):
@@ -115,7 +115,8 @@ def run(port_name: str, output: Path, duration: float) -> int:
                 if name not in ALLOWED_FRAMES:
                     raise ValueError(f"Unexpected frame: {name}")
                 frames.append((name, row))
-                if sum(n == "STARTUP_SAMPLE" for n, _ in frames) >= 6:
+                if (sum(n == "STARTUP_SAMPLE" for n, _ in frames) >= 6 and
+                        any(n == "STARTUP_STATUS" for n, _ in frames)):
                     break
             report.update(audit_frames(frames))
     except Exception as exc:
