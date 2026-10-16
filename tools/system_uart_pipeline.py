@@ -37,6 +37,65 @@ def parse_line(s: str):
     return out
 
 
+
+def inspect_encoder_drive(logs, mode):
+    """Response consistency on the 250ms DRIVE portion only (state=COAST).
+    
+    SYS_STEP state=2 is emitted at the end of the 250ms DRIVE interval.
+    Logs at state=1 refer to the preceding COAST and must NOT be interpreted
+    as response to the new stage. Thresholds are relative diagnostic flags,
+    not electrical/current or actual PWM measurement.
+    """
+    points = {}
+    for rec in logs:
+        if rec.get("type") != "SYS_STEP" or rec.get("state") != 2:
+            continue
+        if rec.get("mode") != (1 if mode == "ON" else 0):
+            continue
+        group = rec.get("group")
+        step = rec.get("step")
+        if group not in (0, 1, 2) or not isinstance(step, int) or not 0 <= step <= 10:
+            continue
+        if not isinstance(rec.get("dl"), int) or not isinstance(rec.get("dr"), int):
+            continue
+        points[(group, step)] = (rec["dl"], rec["dr"])
+    suspicious = []
+    pairs = []
+    if mode == "ON":
+        for group, axis in ((0, 0), (1, 1), (2, 0), (2, 1)):
+            baseline = [abs(points[(group, i)][axis]) for i in (6, 7)
+                        if (group, i) in points]
+            if len(baseline) != 2 or min(baseline) < 20:
+                suspicious.append({"group": group, "wheel": "L" if axis == 0 else "R",
+                                   "reason": "baseline_at_60_70pct_unreliable"})
+                continue
+            threshold = max(5.0, 0.15 * (sum(baseline) / 2.0))
+            for step in (8, 9, 10):
+                pair = points.get((group, step))
+                if pair is None:
+                    suspicious.append({"group": group, "step": step,
+                                       "wheel": "L" if axis == 0 else "R",
+                                       "reason": "missing_drive_window"})
+                elif abs(pair[axis]) < threshold:
+                    suspicious.append({"group": group, "step": step,
+                                       "duty_pct": step * 10,
+                                       "wheel": "L" if axis == 0 else "R",
+                                       "delta_counts": pair[axis],
+                                       "threshold_counts": round(threshold, 1),
+                                       "reason": "high_pwm_encoder_flatline"})
+        # Direction of encoder counts is a separate calibration concern; do
+        # not reverse signs automatically without checking wheel geometry.
+        for group, axis in ((0, 0), (1, 1), (2, 0), (2, 1)):
+            x = points.get((group, 6))
+            y = points.get((group, 7))
+            if x and y:
+                pairs.append({"group": group, "wheel": "L" if axis == 0 else "R",
+                              "sign_60pct": -1 if x[axis] < 0 else 1,
+                              "sign_70pct": -1 if y[axis] < 0 else 1})
+    return {"drive_windows": len(points), "high_pwm_anomalies": suspicious,
+            "encoder_direction_observations": pairs,
+            "qualified": len(points) == 33 and not suspicious}
+
 def evaluate(logs, mode):
     steps = sorted(set(int(x["id"]) for x in logs
                        if x.get("type") == "SYS_STEP" and x.get("state") == 1
@@ -47,6 +106,7 @@ def evaluate(logs, mode):
     timer, mpu, uart = last("SYS_T"), last("SYS_M"), last("SYS_U")
     profile = last("CLOCK_PROFILE")
     faults = [x for x in logs if x.get("type") == "SYS_STEP" and x.get("state") == 4]
+    encoder_review = inspect_encoder_drive(logs, mode)
     checks = {
         "33_unique_pwm_stages": steps == list(range(33)),
         "finished_and_locked": completed and mpu.get("locked") == 1,
@@ -60,12 +120,14 @@ def evaluate(logs, mode):
         "no_tim11_excess_duration": timer.get("maxcy", 96001) < 96000,
         "no_motor_watchdog": mpu.get("wd", 1) == 0,
         "no_sweep_fault": not faults,
+        "encoder_drive_response_consistent": encoder_review["qualified"] if mode == "ON"
+            else encoder_review["drive_windows"] == 33,
     }
     return {
         "mode": mode, "checks": checks,
         "software_pass": all(checks.values()),
         "stages": len(steps), "timer": timer, "mpu": mpu, "uart": uart,
-        "clock_profile": profile, "faults": faults,
+        "clock_profile": profile, "faults": faults, "encoder_review": encoder_review,
         "limits": "RCC nominal frequency only; no oscilloscope or current measurement",
     }
 
