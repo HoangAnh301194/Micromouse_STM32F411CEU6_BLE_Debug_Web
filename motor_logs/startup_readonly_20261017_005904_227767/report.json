@@ -1,0 +1,15 @@
+{
+  "status": "FAIL",
+  "utc": "2026-10-16T17:59:04.239643+00:00",
+  "port": "COM6",
+  "allowed_host_commands": [
+    "STARTUP PING"
+  ],
+  "flash_attempted": false,
+  "motor_arm_attempted": false,
+  "motor_vm": "USER_CONFIRMED_PHYSICALLY_DISCONNECTED",
+  "electrical_qualification": "NOT_MEASURED",
+  "error": "Unexpected frame: STARTUP_STATUS",
+  "raw_uart_sha256": "a4711b21102dd6c56275e4502ef0a2cf64c8af99c1e38c5464551634940e7ae5",
+  "source_sha256": "9f0c5adad3dfc1bd70157a169f906736b0cc4769d75b025c18396ff6b1a83e8f"
+}
