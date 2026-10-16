@@ -78,7 +78,7 @@ static void one_complete_run(void)
     assert(Sweep_SelectMode(0U)==1U);
 #endif
     assert(Sweep_Arm(1000U,&imu,1U)==1U);
-    for(t=1001U;t<14500U;t++) {
+    for(t=1001U;t<190000U;t++) {
         fake_us=t*1000U;
         if(t%100U==0U)Sweep_Heartbeat(t);
         Sweep_Update(t,&imu);
