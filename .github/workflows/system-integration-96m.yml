@@ -1,0 +1,53 @@
+name: System 96MHz Motor ON OFF integration debug
+on:
+  push:
+    branches:
+      - integration/system-debug-96m-20261017
+      - giomuadongbac
+    paths:
+      - '.github/workflows/system-integration-96m.yml'
+      - 'platformio.ini'
+      - 'include/**'
+      - 'src/**'
+      - 'tests/integration/**'
+      - 'tools/system_integration_gate.py'
+      - 'tools/system_uart_pipeline.py'
+      - 'tools/test_system_uart_pipeline.py'
+  pull_request:
+    branches: [giomuadongbac]
+  workflow_dispatch:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Audit mutually exclusive ON OFF gates and 33 steps
+        run: python tools/system_integration_gate.py --audit
+      - name: Run negative mutation integration guards
+        run: python tools/system_integration_gate.py --self-test
+      - name: Native sweep transition tests on actual C source
+        run: python tools/system_integration_gate.py --native-test
+      - name: Host serial parser synthetic regression
+        run: python tools/test_system_uart_pipeline.py
+      - name: Regression clock and RC2 UART MPU
+        run: |
+          python tools/clock96_integration_gate.py --self-test
+          python tools/clock96_integration_gate.py --audit
+          python tools/uart_mpu_integration_gate.py
+      - name: Regression frozen Motor Driver and TIM11 contract
+        run: |
+          python tools/motor_giomuadongbac_gate.py --self-test
+          python tools/motor_giomuadongbac_gate.py --audit
+          python tools/motor_driver_native_test.py
+      - name: Build default production firmware (NO FLASH)
+        run: |
+          python -m pip install --disable-pip-version-check platformio
+          python -m platformio run -e genericSTM32F411CE
+      - name: Build motor OFF shadow integration firmware (NO FLASH)
+        run: python -m platformio run -e integration_diag_motor_off_96m
+      - name: Build motor ON 0-100 percent integration firmware (NO FLASH)
+        run: python -m platformio run -e integration_diag_motor_on_96m
