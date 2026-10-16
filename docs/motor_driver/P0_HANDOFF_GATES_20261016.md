@@ -96,3 +96,31 @@ during the check. Update the branch, rebuild and upload
 `python tools/motor_startup_readonly_check.py --run --port COM6 --confirm-vm-disconnected`.
 The previously flashed binary necessarily still has the defect until reflashed.
 Do not reinterpret the failed historical capture as a PASS.
+
+## 2026-10-17 second physical UART run: safe firmware, strict host checker mismatch
+
+Evidence: `motor_logs/startup_readonly_20261017_005904_227767`, committed as
+`3aa45a575c7b`. UART shows a complete firmware v4 PROFILE and a
+`STARTUP_STATUS,id=0,state=0,fault=0,al=0,ar=0,cl=3200,cr=3200,odr=0,late=0,gaps=0,tx=0,rx=0`.
+The earlier UART `tx=2` formatting defect is fixed.
+
+The inspection-only checker rejected `STARTUP_STATUS` as an unknown
+frame, despite the firmware's `Command()` contract deliberately replying
+to `STARTUP PING` with `Profile()` **and** `Status("STARTUP_STATUS")`.
+This was a host-parser false FAIL, not a new firmware fault. The PC checker
+now requires and validates exactly one neutral `STARTUP_STATUS`, plus at
+least 5 fresh, monotonic neutral `STARTUP_SAMPLE` records; missing,
+duplicate, armed or faulted STATUS fails closed. Firmware, UART DMA,
+watchdog, motion driver, PWM and safety interlocks were NOT modified.
+
+The captured run ended after the first STATUS due to the old checker; it
+is NOT full duration/tick attestation. The owner should keep VM physically
+disconnected and re-run **only** the updated Python read-only checker on
+COM6 (no MCU rebuild/reflash):
+
+```powershell
+git fetch origin
+git pull --ff-only origin feature/motor-driver-optimization
+python tools/motor_startup_readonly_check.py --self-test
+python tools/motor_startup_readonly_check.py --run --port COM6 --confirm-vm-disconnected
+```
