@@ -52,7 +52,7 @@ def audit(files=None):
         raise AuditError("Serial and motor timing loop not integrated")
     if "Motor_LockOutputs();" not in main:
         raise AuditError("Motor-off compile-time lock missing")
-    serial=get("src/integration_serial.c","include/encoder.h")
+    serial=get("src/integration_serial.c")
     for token in ('"MODE OFF"','"MODE ON"','"START"','"PING"','"STOP"',
                   'UART_ReadByte(&value)','UART_RX_BUDGET'):
         if token not in serial:raise AuditError("Serial protocol token absent: "+token)
@@ -73,7 +73,7 @@ def main():
         elif args.self_test:
             import json
             names=("platformio.ini","src/integration_sweep.c","src/control.c","src/main.c",
-                   "src/integration_serial.c")
+                   "src/integration_serial.c","include/encoder.h")
             files={name:(ROOT/name).read_text(encoding="utf-8") for name in names}
             audit(files)
             mutations=[
@@ -90,7 +90,7 @@ def main():
                 try:audit(copy)
                 except AuditError:pass
                 else:raise AuditError("unsafe mutation accepted: "+name)
-            print("PASS 5 negative mutations rejected")
+            print("PASS 6 negative mutations rejected")
         else:print(audit())
     except (AuditError,Exception) as e:
         print("FAIL",e,file=sys.stderr);return 1
