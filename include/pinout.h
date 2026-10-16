@@ -48,9 +48,9 @@
 #define MOTOR_L_IN2_PIN         12          /* PB12 */
 
 /* PWM Configuration */
-#define MOTOR_PWM_FREQUENCY     20000
-#define MOTOR_PWM_PRESCALER     0
-#define MOTOR_PWM_PERIOD        4999
+/* Motor RC: TIM2 period is computed at runtime from the board timer
+ * clock. Never reuse the legacy fixed 20kHz/ARR=4999 constants. */
+#define MOTOR_PWM_FREQUENCY     30000U
 
 /* ============================================================================ */
 /* ENCODERS - N20 GA12 (Quadrature)                             */
