@@ -6,6 +6,7 @@
 #include "motion.h"
 #include "motor.h"
 #include "stm32f4xx.h"
+#include "system_timer.h"
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
@@ -103,7 +104,10 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * The fresh Motion_SetPair on valid feedback renews the 300-tick lease.
      * Do NOT use Motor_KeepAlive here; a stalled Motion must time out. */
     Motor_Update1ms();
-    MPU6050_Update(control_mpu);
+    /* Policy B: only notify tick here; never run I2C in TIM11. */
+#if defined(MPU_TIM11_TICK_SCHED)
+    MPU6050_NotifyControlTick(control_mpu, micros());
+#endif
 
     if (IR_GetLatest(&sample)) {
         uint8_t i;
@@ -116,9 +120,14 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         IR_StartScan();
     }
 
-    Motion_Update(CONTROL_DT_S,
-                  Encoder_GetLeftCount(),
-                  Encoder_GetRightCount(),
-                  MPU6050_GetYaw(control_mpu),
-                  MPU6050_GetGyroZ(control_mpu));
+    {
+        MPU6050_Snapshot_t gyro;
+        if (MPU6050_GetSnapshot(control_mpu, &gyro) &&
+            (uint32_t)(micros() - gyro.completed_us) <= 3000U) {
+            Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
+                          Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
+        } else {
+            Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
+        }
+    }
 }
