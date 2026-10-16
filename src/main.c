@@ -18,6 +18,10 @@ static MPU6050_Handle_t mpu;
 
 static void HandleBleCommand(char c)
 {
+#if defined(INTEGRATION_DIAG_MOTOR_OFF)
+    /* Sensor-only diagnostic: never arm motion or change calibration yaw. */
+    if (c != 's' && c != 'S') return;
+#endif
     MPU6050_Snapshot_t snap;
     uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) &&
                     (uint32_t)(micros() - snap.completed_us) <= 3000U;
@@ -57,6 +61,10 @@ static void HandleBleCommand(char c)
 int main(void)
 {
     uint32_t last_debug_ms = 0;
+#if defined(INTEGRATION_DIAG)
+    uint32_t last_system_diag_ms = 0U;
+    uint8_t last_cal_state = 0U;
+#endif
     MPU6050_Status mpu_status;
 
     Board_Init();
@@ -85,6 +93,10 @@ int main(void)
                 (unsigned long)Board_GetAPB2TimerClockHz());
 
     Motor_Init();
+#if defined(INTEGRATION_DIAG_MOTOR_OFF)
+    /* Hard latch for motor-OFF sensor/clock smoke test: no rearm until reset. */
+    Motor_LockOutputs();
+#endif
     Encoder_Init();
 
     /* MPU6050_Init owns RC2 I2C bus probing and initialization. */
@@ -119,6 +131,9 @@ int main(void)
     BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
     UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
     BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw\r\n");
+#if defined(INTEGRATION_DIAG_MOTOR_OFF)
+    UART_SendString("INTEGRATION_DIAG,MOTOR_OUTPUTS_LOCKED,SAFE_SMOKE_TEST_ONLY\r\n");
+#endif
 
     while (1) {
         uint32_t now = millis();
