@@ -110,7 +110,19 @@ def audit_evidence(evidence: Path = ROOT / EVIDENCE,
     digest = hashlib.sha256(raw).hexdigest()
     if digest != EXPECTED_UART_SHA256 or report.get("raw_uart_sha256") != digest:
         raise GateError("Archived UART trace SHA-256 does not match signed-off evidence")
-    if not checker.is_file() or hashlib.sha256(checker.read_bytes()).hexdigest() != report.get("source_sha256"):
+    if not checker.is_file():
+        raise GateError("Read-only checker used for MCU evidence is missing")
+    # The live report was generated on Windows; Git can check out text with
+    # CRLF while CI/Linux keeps LF. Verify both encodings of *identical*
+    # content, never arbitrary changes. verify_sources() separately pins
+    # the Git blob of this checker against the immutable RC baseline.
+    checker_bytes = checker.read_bytes()
+    canonical = checker_bytes.replace(b"\r\n", b"\n")
+    equivalent_hashes = {
+        hashlib.sha256(data).hexdigest()
+        for data in (checker_bytes, canonical, canonical.replace(b"\n", b"\r\n"))
+    }
+    if report.get("source_sha256") not in equivalent_hashes:
         raise GateError("Read-only checker differs from the source used for MCU evidence")
     if report.get("status") != EXPECTED_STATUS or report.get("firmware_version") != 4:
         raise GateError("Archived report does not certify expected idle protocol")
