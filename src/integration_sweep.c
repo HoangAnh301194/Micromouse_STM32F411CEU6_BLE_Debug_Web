@@ -1,6 +1,6 @@
 /* Deliberately opt-in 96MHz combined-system motor and shadow-off sweep.
  * Default production firmware has no command path into these functions.
- * PA10 'A' plus pressed physical KEY arms once after MPU calibration.
+ * PA10 'MODE OFF/ON' then 'START'; physical KEY required for ON.
  * All profiles run the SAME 3x11 stage schedule and UART telemetry;
  * motor-off compiles output writes away and locks Motor Driver at boot.
  * This is a motor-on diagnostic only: NOT electrical safety qualification.
@@ -42,11 +42,20 @@ void Sweep_Init(void)
     state = (SweepSnapshot){0};
     since_ms = last_cmd_ms = session_ms = 0U;
     baseline_gap = baseline_timeout = 0U;
-#if defined(INTEGRATION_DIAG_MOTOR_ON)
-    state.motor_enabled = 1U;
-#else
+    /* Default is always OFF shadow. Motor output is not enabled until
+     * exact UART command MODE ON, then START with physical KEY pressed. */
     state.motor_enabled = 0U;
+}
+uint8_t Sweep_SelectMode(uint8_t motor_on)
+{
+    if (state.state != SWEEP_DISARMED || state.armed_once || motor_on > 1U)
+        return 0U;
+#if defined(INTEGRATION_DIAG_MOTOR_OFF)
+    if (motor_on) return 0U; /* compile-time motor-locked env */
 #endif
+    if (motor_on && Motor_OutputsLocked()) return 0U;
+    state.motor_enabled = motor_on;
+    return 1U;
 }
 uint8_t Sweep_IsActive(void)
 {
@@ -62,16 +71,20 @@ static uint8_t SensorFresh(const MPU6050_Handle_t *mpu)
 static void Command(uint8_t idx)
 {
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
-    /* 0,10,...100% on LEFT then RIGHT then BOTH.
-     * No reverse, brake, PID or automatic closed-loop compensation. */
-    uint16_t duty = (uint16_t)((idx % 11U) * 100U);
-    switch (idx / 11U) {
-    case 0U: Motor_SetPairPermille((int16_t)duty, 0); break;
-    case 1U: Motor_SetPairPermille(0, (int16_t)duty); break;
-    default: Motor_SetPairPermille((int16_t)duty, (int16_t)duty); break;
+    if (state.motor_enabled) {
+        /* 0,10,...100% on LEFT then RIGHT then BOTH.
+         * No reverse, brake, PID or closed-loop compensation. */
+        uint16_t duty = (uint16_t)((idx % 11U) * 100U);
+        switch (idx / 11U) {
+        case 0U: Motor_SetPairPermille((int16_t)duty, 0); break;
+        case 1U: Motor_SetPairPermille(0, (int16_t)duty); break;
+        default: Motor_SetPairPermille((int16_t)duty, (int16_t)duty); break;
+        }
+    } else {
+        Motor_Stop(); /* No PWM demand in shadow; peripherals stay busy. */
     }
 #else
-    (void)idx; /* Shadow workload with motor outputs locked. */
+    (void)idx; /* Motor outputs are locked in the safe shadow firmware. */
 #endif
 }
 uint8_t Sweep_Arm(uint32_t now_ms, const MPU6050_Handle_t *mpu,
@@ -79,12 +92,14 @@ uint8_t Sweep_Arm(uint32_t now_ms, const MPU6050_Handle_t *mpu,
 {
     Control_DebugStats_t stats;
     if (state.armed_once || state.state != SWEEP_DISARMED ||
-        !button_held || !SensorFresh(mpu) || Board_GetClockFault() != 0U)
+        !SensorFresh(mpu) || Board_GetClockFault() != 0U)
         return 0U;
-#if defined(INTEGRATION_DIAG_MOTOR_ON)
-    if (Motor_OutputsLocked()) return 0U;
+    /* UART alone never starts energized outputs. */
+    if (state.motor_enabled && !button_held) return 0U;
+#if defined(INTEGRATION_DIAG_MOTOR_OFF)
+    if (!Motor_OutputsLocked() || state.motor_enabled) return 0U;
 #else
-    if (!Motor_OutputsLocked()) return 0U;
+    if (Motor_OutputsLocked()) return 0U;
 #endif
     Control_GetDebugStats(&stats);
     state.armed_once = 1U; /* One shot, even if terminated early. */
