@@ -20,6 +20,8 @@ typedef struct {
     uint32_t elapsed_ms, stage_id, deadline_ms;
 } SweepSnapshot;
 void Sweep_Init(void);
+uint8_t Sweep_SelectMode(uint8_t motor_on); /* Only while DISARMED; 0=shadow,1=live */
+
 uint8_t Sweep_Arm(uint32_t now_ms, const MPU6050_Handle_t *mpu,
                   uint8_t button_held);
 void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu);
