@@ -12,6 +12,7 @@
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
 #define UART_TX_BUFFER_SIZE 1024U
+#define UART_RX_BUFFER_SIZE 256U
 /* DMA2 HISR/HIFCR flags for Stream7 (STM32F411 RM0383). */
 #define UART_DMA7_TCIF  (1UL << 27)
 #define UART_DMA7_TEIF  (1UL << 25)
@@ -22,6 +23,9 @@
 #define UART_DMA7_FLAGS 0x0F400000UL
 
 static uint8_t tx_buffer[UART_TX_BUFFER_SIZE];
+static volatile uint8_t rx_buffer[UART_RX_BUFFER_SIZE];
+static volatile uint16_t rx_head, rx_tail;
+static volatile uint32_t rx_overflow, rx_errors;
 static volatile uint16_t tx_head;  /* Next byte to commit (main context). */
 static volatile uint16_t tx_tail;  /* Oldest uncompleted byte (DMA ISR). */
 static volatile uint16_t dma_length;
@@ -97,7 +101,11 @@ void UART_Init(void)
     USART1->CR2 = 0;
     USART1->CR3 = 0;
     USART1->BRR = (Board_GetAPB2ClockHz() + UART_BAUDRATE / 2U) / UART_BAUDRATE;
-    USART1->CR1 = USART_CR1_TE | USART_CR1_UE;
+    USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE | USART_CR1_UE;
+    rx_head = rx_tail = 0U;
+    rx_overflow = rx_errors = 0U;
+    NVIC_SetPriority(USART1_IRQn, 8U);
+    NVIC_EnableIRQ(USART1_IRQn);
 
     DMA2_Stream7->CR &= ~DMA_SxCR_EN;
     while (DMA2_Stream7->CR & DMA_SxCR_EN) {
@@ -221,3 +229,34 @@ void DMA2_Stream7_IRQHandler(void)
         UART_DMA_StartNext();
     }
 }
+
+/* PA10 USART1 RXNE interrupt, never processes commands in ISR. */
+void USART1_IRQHandler(void)
+{
+    uint32_t sr = USART1->SR;
+    if (sr & (USART_SR_RXNE | USART_SR_ORE | USART_SR_FE | USART_SR_NE)) {
+        uint8_t value = (uint8_t)USART1->DR; /* read clears RXNE/error */
+        if (sr & (USART_SR_ORE | USART_SR_FE | USART_SR_NE)) {
+            rx_errors++;
+        } else if (sr & USART_SR_RXNE) {
+            uint16_t next = (uint16_t)((rx_head + 1U) % UART_RX_BUFFER_SIZE);
+            if (next == rx_tail) {
+                rx_overflow++;
+            } else {
+                rx_buffer[rx_head] = value;
+                rx_head = next;
+            }
+        }
+    }
+}
+
+/* Single consumer, main only. ISR owns rx_head. */
+uint8_t UART_ReadByte(uint8_t *out)
+{
+    if (!out || rx_head == rx_tail) return 0U;
+    *out = rx_buffer[rx_tail];
+    rx_tail = (uint16_t)((rx_tail + 1U) % UART_RX_BUFFER_SIZE);
+    return 1U;
+}
+uint32_t UART_GetRxOverflow(void) { return rx_overflow; }
+uint32_t UART_GetRxErrors(void) { return rx_errors; }
