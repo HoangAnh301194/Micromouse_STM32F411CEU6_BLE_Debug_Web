@@ -3,7 +3,8 @@
  *   HELP, STATUS, MODE OFF, MODE ON, START, PING, STOP
  * '!' is an asynchronous byte STOP, even without a line ending.
  * MODE ON permitted only for explicit motor-on firmware profile.
- * START in MODE ON requires physical KEY pressed AND calibrated MPU snapshot.
+ * START in MODE ON requires explicit host command, ready calibrated MPU,
+ * UART lease heartbeat, and independent external VM cutoff (no KEY button).
  * Single run per reset; DONE, STOP or fault latches motor outputs off.
  */
 #include "integration_serial.h"
@@ -44,7 +45,7 @@ static void PrintStatus(const MPU6050_Handle_t *mpu, uint32_t now)
 static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
 {
     if (strcmp(cmd,"HELP")==0) {
-        UART_SendString("CMD_HELP,HELP|STATUS|MODE OFF|MODE ON|START|PING|STOP|!; CRLF/LF; MODE ON requires live build; START ON requires KEY; one shot per reset\r\n");
+        UART_SendString("CMD_HELP,HELP|STATUS|MODE OFF|MODE ON|START|PING|STOP|!; CRLF/LF; MODE ON requires live build; START ON uses serial-only authorization; one shot per reset\r\n");
     } else if (strcmp(cmd,"STATUS")==0 || strcmp(cmd,"?")==0) {
         PrintStatus(mpu,now);
     } else if (strcmp(cmd,"MODE OFF")==0) {
@@ -54,7 +55,7 @@ static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
         uint8_t ok = Sweep_SelectMode(1U);
         UART_Printf("CMD_MODE,requested=ON,accepted=%u\r\n",(unsigned)ok);
     } else if (strcmp(cmd,"START")==0) {
-        uint8_t ok = Sweep_Arm(now,mpu,Board_ButtonPressed());
+        uint8_t ok = Sweep_Arm(now,mpu,1U); /* Explicit START over UART is the host authorization. */
         UART_Printf("CMD_START,accepted=%u\r\n",(unsigned)ok);
     } else if (strcmp(cmd,"PING")==0) {
         Sweep_Heartbeat(now);
