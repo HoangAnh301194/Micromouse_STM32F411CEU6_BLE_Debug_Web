@@ -30,6 +30,8 @@ jobs:
         run: python tools/system_integration_gate.py --self-test
       - name: Native sweep transition tests on actual C source
         run: python tools/system_integration_gate.py --native-test
+      - name: Host serial parser synthetic regression
+        run: python tools/test_system_uart_pipeline.py
       - name: Regression clock and RC2 UART MPU
         run: |
           python tools/clock96_integration_gate.py --self-test
