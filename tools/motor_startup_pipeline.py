@@ -20,7 +20,7 @@ PROFILE = dict(version=2, cap=200, pulse_ms=250, rest_ms=750, quiet_ms=300,
                link_ms=400, max_pulses=128, session_ms=180000, rise=20, fall=30,
                deadband=0, wdg_ms=500, core_hz=96000000, pwm_hz=30000)
 HIGH_ENVIRONMENT = "motor_speed_96m_trim25"
-HIGH_PROFILE = {**PROFILE, "version": 3, "cap": 1000, "pulse_ms": 600,
+HIGH_PROFILE = {**PROFILE, "version": 4, "experimental": 1, "qualified": 0, "cap": 1000, "pulse_ms": 600,
                 "rest_ms": 900, "max_pulses": 32, "session_ms": 90000}
 
 
@@ -148,13 +148,23 @@ class Capture:
         self.baseline_late = None
         self.watchdog_pending = self.watchdog_ack = self.watchdog_observed = False
         self.high_speed = high_speed
+        self.experimental_ack_pending = self.experimental_ack_accepted = False
         self.limits = HIGH_PROFILE if high_speed else PROFILE
         self.health = None
         self.health_records = []
         self.first_frame = True
 
     def send(self, command: str) -> None:
-        if command not in ("STARTUP PING", "STARTUP ARM", "STARTUP KEEP", "STARTUP STOP", "STARTUP WATCHDOG"):
+        if command == "STARTUP ARM" and self.high_speed and not self.experimental_ack_accepted:
+            raise ValueError("High-speed firmware experimental ACK required before ARM")
+        if command == "STARTUP ACK EXPERIMENT":
+            if not self.high_speed or self.profile is None or self.armed or self.experimental_ack_pending:
+                raise ValueError("Experimental ACK allowed once per verified disarmed high-speed profile")
+            self.experimental_ack_pending = True
+        allowed = ("STARTUP PING", "STARTUP ARM", "STARTUP KEEP", "STARTUP STOP", "STARTUP WATCHDOG")
+        if self.high_speed:
+            allowed += ("STARTUP ACK EXPERIMENT",)
+        if command not in allowed:
             parts = command.split()
             wheels = ("l", "r", "b") if self.high_speed else ("l", "r")
             if (len(parts) != 5 or parts[:2] != ["STARTUP", "PULSE"] or parts[3] not in wheels or
@@ -204,6 +214,10 @@ class Capture:
                 self.health = None
         elif name == "STARTUP_WATCHDOG" and self.watchdog_pending and row == {"requested": 1}:
             self.watchdog_ack = True
+        elif name == "STARTUP_EXPERIMENT_ACK" and self.high_speed:
+            if not self.experimental_ack_pending or self.experimental_ack_accepted or row != {"accepted": 1}:
+                raise ValueError("Unexpected/invalid experimental acknowledgement")
+            self.experimental_ack_accepted = True
         elif name in ("STARTUP_SAMPLE", "STARTUP_STATUS", "STARTUP_BEGIN", "STARTUP_END", "STARTUP_FAULT"):
             validate_row(row, self.stopping, self.high_speed)
             if self.armed and self.baseline_late is not None and row["late"] != self.baseline_late:
@@ -285,10 +299,16 @@ def parse_args(arguments=None):
     parser.add_argument("--vm-volts", type=float)
     parser.add_argument("--confirm-wheels-elevated", action="store_true")
     parser.add_argument("--high-speed", action="store_true")
+    parser.add_argument("--ack-experimental-unqualified", action="store_true",
+                        help="Explicit research-only high-speed bench consent, NOT production qualification")
     parser.add_argument("--confirm-only", action="store_true")
     parser.add_argument("--repeats", type=int)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(arguments)
+    if args.ack_experimental_unqualified and (not args.run or not args.high_speed):
+        parser.error("Experimental acknowledgement requires --run --high-speed")
+    if args.run and args.high_speed and not args.ack_experimental_unqualified:
+        parser.error("P0 EXPERIMENTAL GATE: high-speed bench requires --ack-experimental-unqualified")
     if args.confirm_only and (not args.run or not args.high_speed):
         parser.error("confirm-only requires a high-speed hardware run")
     if args.run and (not args.confirm_wheels_elevated or args.vm_volts is None or not 0 < args.vm_volts <= 8.4):
@@ -297,7 +317,7 @@ def parse_args(arguments=None):
         args.repeats = 2 if args.high_speed else 10
     if not ((2 <= args.repeats <= 5) if args.high_speed else (10 <= args.repeats <= 20)):
         parser.error("repeats must be 2..5 for high-speed, otherwise 10..20")
-    if args.self_test and (args.upload or args.high_speed or args.confirm_wheels_elevated or args.vm_volts is not None or args.output):
+    if args.self_test and (args.upload or args.high_speed or args.ack_experimental_unqualified or args.confirm_wheels_elevated or args.vm_volts is not None or args.output):
         parser.error("Self-test never builds, uploads or accesses hardware")
     if args.output and args.output.exists() and (not args.output.is_dir() or any(args.output.iterdir())):
         parser.error("Never overwrite existing evidence")
@@ -374,6 +394,8 @@ def run(args) -> int:
               "load": "wheels_elevated_user_confirmed", "current_temperature_supply_droop": "NOT_MEASURED",
               "encoder_polarity": "USER_CONFIRMED_NOT_RETESTED", "trials": [], "wheels": {},
               "upload_requested": args.upload, "stop_confirmed": False,
+              "qualification_status": "NOT_QUALIFIED_ELECTRICAL_OR_LOADED" if args.high_speed else "STARTUP_CHARACTERIZATION_ONLY",
+              "experiment_acknowledged_by_operator": args.ack_experimental_unqualified,
               "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()}
     sources = ("src/motor.c", "src/motor_test.c", "src/motor_startup.c", "src/motor_startup_bench.c",
                "include/motor_startup.h", "src/main.c", "src/control.c", "src/uart.c", "include/uart.h",
@@ -410,6 +432,10 @@ def run(args) -> int:
                 if args.high_speed:
                     client.wait(lambda: client.health is not None and client.health["ready"] == 1, 15.0)
                 client.baseline_late = client.latest["late"]
+                if args.high_speed:
+                    client.send("STARTUP ACK EXPERIMENT")
+                    client.wait(lambda: client.experimental_ack_accepted, 2.0)
+                    report["firmware_experiment_acknowledged"] = True
                 client.send("STARTUP ARM")
                 client.armed = True
                 client.wait(lambda: client.latest["state"] == 1)

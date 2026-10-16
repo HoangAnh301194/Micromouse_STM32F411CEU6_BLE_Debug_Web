@@ -130,6 +130,9 @@ void MotorTest_Tick1ms(void)
         Motor_Stop();
         reason = MOTOR_TEST_END_TIMEOUT;
         state = MOTOR_TEST_ENDED;
+    } else {
+        /* Preserve MotorTest's explicit host timeout for 600ms pulses. */
+        Motor_KeepAlive();
     }
 }
 uint8_t MotorTest_IsRunning(void) {

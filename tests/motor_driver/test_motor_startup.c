@@ -59,6 +59,10 @@ int main(int argc, char **argv)
     Tick(299U, 0U);
     assert(!MotorStartup_Arm());
     Tick(1U, 0U);
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+    assert(!MotorStartup_Arm()); /* direct API requires explicit experiment approval */
+    assert(MotorStartup_ApproveExperimental());
+#endif
     assert(MotorStartup_Arm());
     assert(!MotorStartup_Arm());
     assert(!MotorStartup_Pulse(1U, MOTOR_STARTUP_MAX_WHEEL + 1U, 100U));

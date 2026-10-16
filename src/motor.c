@@ -22,6 +22,8 @@ static volatile uint16_t fall_rate = 30U;
 static volatile uint8_t brake_latched = 0;
 static volatile uint8_t brake_release_ticks = 0;
 static volatile uint8_t outputs_locked = 0;
+static volatile uint16_t command_age_ms = 0U;
+static volatile uint8_t command_timeout_latched = 0U;
 static volatile uint8_t output_refresh_required = 0U;
 static uint32_t pwm_timer_clock = 0;
 
@@ -149,6 +151,8 @@ void Motor_Init(void)
     wheel_l.deadband = wheel_r.deadband = 0;
     rise_rate = 20U;
     fall_rate = 30U;
+    command_age_ms = 0U;
+    if (!outputs_locked) command_timeout_latched = 0U;
     Motor_Stop();
     UnlockIRQ(irq_state);
 }
@@ -194,6 +198,8 @@ void Motor_GetDiagnostics(Motor_Diagnostics_t *snapshot)
     snapshot->reverse_wait_right = wheel_r.reverse_gap_ms;
     snapshot->outputs_locked = outputs_locked;
     snapshot->brake_active = brake_latched;
+    snapshot->command_age_ms = command_age_ms;
+    snapshot->command_timeout_latched = command_timeout_latched;
     UnlockIRQ(irq_state);
 }
 
@@ -220,8 +226,16 @@ void Motor_SetPairPermille(int16_t left, int16_t right)
     brake_latched = 0;
     wheel_l.target = ClampCmd(left);
     wheel_r.target = ClampCmd(right);
+    command_age_ms = 0U;
     UnlockIRQ(x);
 }
+void Motor_KeepAlive(void)
+{
+    uint32_t x = LockIRQ();
+    if (!outputs_locked) command_age_ms = 0U;
+    UnlockIRQ(x);
+}
+
 void Motor_SetPair(int16_t l, int16_t r)
 {
     Motor_SetPairPermille(ClampCmd((int32_t)l * 10L),
@@ -291,6 +305,20 @@ void Motor_Update1ms(void)
     uint32_t bsrr = 0;
     int16_t previous_left, previous_right;
     uint8_t was_stopped_l, was_stopped_r;
+    if (outputs_locked) return;
+    /* A stale command with TIM11 still ticking must not keep driving.
+     * The independent MotorTest state machine renews the lease while RUNNING. */
+    if (wheel_l.target != 0 || wheel_r.target != 0 ||
+        wheel_l.applied != 0 || wheel_r.applied != 0) {
+        if (command_age_ms < MOTOR_COMMAND_TIMEOUT_MS) ++command_age_ms;
+        if (command_age_ms >= MOTOR_COMMAND_TIMEOUT_MS) {
+            command_timeout_latched = 1U;
+            Motor_LockOutputs();
+            return;
+        }
+    } else {
+        command_age_ms = 0U;
+    }
     if (brake_latched) return;
     if (brake_release_ticks > 0U) {
         brake_release_ticks--;
@@ -352,6 +380,7 @@ void Motor_Stop(void)
     }
     wheel_l.target = wheel_r.target = 0;
     wheel_l.applied = wheel_r.applied = 0;
+    command_age_ms = 0U;
     brake_latched = 0;
     brake_release_ticks = 0;
     AddDirection(&bsrr, MOTOR_L_IN1_PIN, MOTOR_L_IN2_PIN, 0);

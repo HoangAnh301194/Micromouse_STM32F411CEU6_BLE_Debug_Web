@@ -72,7 +72,7 @@ static uint8_t Watchdog_Init(void)
 static void Profile(void)
 {
 #if defined(MOTOR_STARTUP_HIGH_SPEED)
-    UART_Printf("STARTUP_PROFILE,version=3,cap=1000,pulse_ms=600,rest_ms=900,quiet_ms=300,link_ms=400,max_pulses=32,session_ms=90000,rise=20,fall=30,deadband=0,wdg_ms=500,core_hz=%lu,pwm_hz=%lu,reset_flags=%lu,build=%s %s\r\n",
+    UART_Printf("STARTUP_PROFILE,version=4,experimental=1,qualified=0,cap=1000,pulse_ms=600,rest_ms=900,quiet_ms=300,link_ms=400,max_pulses=32,session_ms=90000,rise=20,fall=30,deadband=0,wdg_ms=500,core_hz=%lu,pwm_hz=%lu,reset_flags=%lu,build=%s %s\r\n",
 #else
     UART_Printf("STARTUP_PROFILE,version=2,cap=200,pulse_ms=250,rest_ms=750,quiet_ms=300,link_ms=400,max_pulses=128,session_ms=180000,rise=20,fall=30,deadband=0,wdg_ms=500,core_hz=%lu,pwm_hz=%lu,reset_flags=%lu,build=%s %s\r\n",
 #endif
@@ -149,6 +149,16 @@ static void Command(const char *line)
     if (strcmp(line, "STARTUP PING") == 0) Profile();
     else if (strcmp(line, "STARTUP KEEP") == 0) MotorStartup_Heartbeat();
     else if (strcmp(line, "STARTUP STOP") == 0) MotorStartup_Abort(MOTOR_STARTUP_HOST_STOP);
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+    else if (strcmp(line, "STARTUP ACK EXPERIMENT") == 0) {
+        if (!sensors_ready || !MotorStartup_ApproveExperimental()) {
+            UART_SendString("STARTUP_REJECT,reason=experimental_ack\r\n");
+            return;
+        }
+        UART_SendString("STARTUP_EXPERIMENT_ACK,accepted=1\r\n");
+        return;
+    }
+#endif
     else if (strcmp(line, "STARTUP ARM") == 0) {
 #if defined(MOTOR_STARTUP_HIGH_SPEED)
         if (!sensors_ready) {

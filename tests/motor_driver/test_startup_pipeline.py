@@ -118,6 +118,8 @@ class HighSpeedTests(unittest.TestCase):
             startup.validate_profile(startup.HIGH_PROFILE)
         with self.assertRaises(ValueError):
             startup.validate_profile(startup.PROFILE, high_speed=True)
+        with self.assertRaises(ValueError):
+            startup.validate_profile({**startup.HIGH_PROFILE, "version": 3}, high_speed=True)
 
     def test_full_pwm_both_register_contract(self):
         row = {**sample(), "wheel": 2, "t": 400, "duty": 1000,
@@ -150,6 +152,22 @@ class HighSpeedTests(unittest.TestCase):
                         rows[:8] + [{**rows[8], "l": -1}] + rows[9:]):
             with self.assertRaises(ValueError):
                 startup.speed_metrics(corrupt, "l")
+
+    def test_high_speed_requires_firmware_ack_before_arm(self):
+        with tempfile.TemporaryDirectory() as directory:
+            port = FakePort([b"STARTUP_EXPERIMENT_ACK,accepted=1\r\n"])
+            capture = startup.Capture(port, Path(directory), high_speed=True)
+            try:
+                with self.assertRaises(ValueError):
+                    capture.send("STARTUP ARM")
+                capture.profile = startup.HIGH_PROFILE
+                capture.send("STARTUP ACK EXPERIMENT")
+                capture.read()
+                self.assertTrue(capture.experimental_ack_accepted)
+                capture.send("STARTUP ARM")
+                self.assertEqual(port.writes, [b"STARTUP ACK EXPERIMENT\n", b"STARTUP ARM\n"])
+            finally:
+                capture.close()
 
     def test_high_speed_allowlist_stays_bounded(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -212,6 +230,16 @@ class StartupSafetyTests(unittest.TestCase):
                      ["--run", "--vm-volts", "nan", "--confirm-wheels-elevated"]):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 startup.parse_args(args)
+
+    def test_p0_unqualified_experiment_gate(self):
+        for args in (["--run", "--high-speed", "--vm-volts", "8.0", "--confirm-wheels-elevated"],
+                     ["--self-test", "--ack-experimental-unqualified"],
+                     ["--run", "--ack-experimental-unqualified", "--vm-volts", "8.0", "--confirm-wheels-elevated"]):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                startup.parse_args(args)
+        args = startup.parse_args(["--run", "--high-speed", "--ack-experimental-unqualified",
+                                   "--vm-volts", "8.0", "--confirm-wheels-elevated"])
+        self.assertTrue(args.ack_experimental_unqualified)
 
     def test_self_test_rejects_hardware_flags(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):

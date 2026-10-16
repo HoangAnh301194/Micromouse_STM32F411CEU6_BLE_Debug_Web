@@ -1,0 +1,48 @@
+# P0 Motor Driver handoff gates — 2026-10-16
+
+Scope: isolated Motor Driver and motor benches; Motion/PID, encoder algorithm, IR and MPU remain unchanged.
+
+## P0-1: 300 ms actuator command lease
+
+- `Motor_SetPairPermille()`/`Motor_SetPair()` refresh a 300-TIM11-tick command lease.
+- If a requested or applied command is nonzero and no valid refresh arrives, `Motor_Update1ms()` records a timeout, latches `Motor_LockOutputs()` and commands software-neutral STOP. `Motor_Init()` does not clear an output lock.
+- `Motor_KeepAlive()` is reserved for the isolated MotorTest state machine, which retains its explicit duration/1500ms heartbeat timeout. Normal Motion should renew its lease through actual repeated SetPair commands, not by a timer that can hide a stalled controller.
+- This watchdog operates **only while TIM11 executes**. It is not a fail-safe against CPU hangs, faulty H-bridge silicon, physical shorts, or loss of MCU clock. STBY is not an independently controlled hardware cutoff.
+- Motor diagnostics expose `command_age_ms` and `command_timeout_latched`. No automatic software re-arm is permitted after expiry.
+- 300ms is a provisional software safety bound, not a measured physical stopping distance or a complete robot safety case. The integration owner must validate tighter latency if required.
+
+## P0-2: STOP/preload guard and unmeasured electrical states
+
+- Settled STOP command remains IN1=IN2=LOW, TIM2 PWM HIGH (CCR=ARR+1), aligned to Toshiba TB6612FNG's **input truth table**.
+- Regression checks interruption of the first-tick PWM preload with STOP, same-direction restart, preloaded-CCR direction guard, reverse neutral gap and command-age expiry on the actual driver with register mocks.
+- Physical LOW/LOW/PWM-LOW transient, external Hi-Z, brake current, switching waveform, overshoot, temperature and loaded stop distance remain `NOT_MEASURED` without instrumentation; software test PASS must never be used as electrical certification.
+
+## P0-3: experimental high-speed bench is not qualification
+
+- `motor_speed_96m_trim25` uses **high-speed UART protocol v4** with `experimental=1,qualified=0` (archived v3 raw captures remain unchanged).
+- Host rejects high-speed `--run` unless the operator explicitly supplies `--ack-experimental-unqualified` in addition to previously required raised-wheel and VM metadata.
+- MCU independently refuses `MotorStartup_Arm()` without prior `MotorStartup_ApproveExperimental()`; the bench command `STARTUP ACK EXPERIMENT` produces a strictly checked `STARTUP_EXPERIMENT_ACK,accepted=1`. This occurs only after read-only watchdog reset verification and sensor readiness.
+- Operator acknowledgement is deliberate selection of an unqualified, elevated-wheel research test; it is **not** evidence that high-current/thermal/waveform safety checks passed.
+- Reports record `qualification_status=NOT_QUALIFIED_ELECTRICAL_OR_LOADED`. A `MEASURED_HIGH_SPEED` result means measured encoder response under the specified bounded pulse conditions, NOT loaded/full-power qualification.
+- Older `motor_auto` P0 locks remain in place. Do not change `MOTOR_AUTO_P0_ARM_LOCKED` or classify host CI as an electrical PASS.
+
+## Software-only checks (no upload or motor movement)
+
+```powershell
+python tools/motor_driver_native_test.py
+python tools/motor_startup_pipeline.py --self-test
+python tools/motor_stop_transition_regression.py
+python tools/motor_driver_debug_pipeline.py --self-test
+python -m platformio run -e motor_startup_96m_trim25 -e motor_speed_96m_trim25
+python -m platformio run -e genericSTM32F411CE
+```
+
+No 100% PWM test is needed merely for code freeze. Bench v4 has not been physically validated by this software change; explicitly keep power, thermal and transition verification open. Operator reported a slight 2S battery voltage decrease during the last speed measurement, which is plausible as a contributing cause, but it is not a synchronized VM reading.
+
+### Handoff criteria
+
+1. CI, native driver state-machine and host parser tests PASS; default/bench compile PASS.
+2. Normal command timeout is independently tested; no stale re-arm after timeout. STOP/preload and experimental ACK negative tests pass.
+3. Historical physical logs retain original version and stated test constraints.
+4. Electrical/loaded/thermal evidence and independent hard power cutoff are explicitly NOT_MEASURED/NOT_QUALIFIED, not silently waived.
+5. Recheck integration on the physical robot with suitable safe power constraints before claiming continuous high-speed motion.

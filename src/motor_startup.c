@@ -6,6 +6,9 @@
 
 static volatile MotorStartup_Snapshot_t startup;
 static uint32_t link_age, session_age;
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+static volatile uint8_t experimental_approved;
+#endif
 static int32_t previous_left, previous_right;
 #if defined(MOTOR_STARTUP_HIGH_SPEED)
 static uint32_t motion_age_left, motion_age_right;
@@ -31,15 +34,37 @@ void MotorStartup_Init(void)
     previous_left = Encoder_GetLeftCount();
     previous_right = Encoder_GetRightCount();
     link_age = session_age = 0U;
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+    experimental_approved = 0U;
+#endif
     Unlock(mask);
 }
+
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+uint8_t MotorStartup_ApproveExperimental(void)
+{
+    uint8_t accepted = 0U;
+    uint32_t mask = Lock();
+    if (startup.state == MOTOR_STARTUP_DISARMED &&
+        startup.quiet_ms >= MOTOR_STARTUP_QUIET_MS && !Motor_OutputsLocked()) {
+        experimental_approved = 1U;
+        accepted = 1U;
+    }
+    Unlock(mask);
+    return accepted;
+}
+#endif
 
 uint8_t MotorStartup_Arm(void)
 {
     uint8_t accepted = 0U;
     uint32_t mask = Lock();
     if (startup.state == MOTOR_STARTUP_DISARMED &&
-        startup.quiet_ms >= MOTOR_STARTUP_QUIET_MS && !Motor_OutputsLocked()) {
+        startup.quiet_ms >= MOTOR_STARTUP_QUIET_MS && !Motor_OutputsLocked()
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+        && experimental_approved
+#endif
+        ) {
         startup.state = MOTOR_STARTUP_READY;
         link_age = session_age = 0U;
         accepted = 1U;
@@ -95,6 +120,9 @@ void MotorStartup_Abort(MotorStartup_Fault_t reason)
         Motor_LockOutputs();
         startup.fault = reason;
         startup.state = MOTOR_STARTUP_FAULT;
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+        experimental_approved = 0U;
+#endif
     }
     Unlock(mask);
 }

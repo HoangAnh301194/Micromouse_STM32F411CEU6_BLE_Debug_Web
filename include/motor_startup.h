@@ -45,6 +45,10 @@ typedef struct {
 } MotorStartup_Snapshot_t;
 
 void MotorStartup_Init(void);
+#if defined(MOTOR_STARTUP_HIGH_SPEED)
+/* Explicit experimental approval is not physical electrical qualification. */
+uint8_t MotorStartup_ApproveExperimental(void);
+#endif
 uint8_t MotorStartup_Arm(void);
 uint8_t MotorStartup_Pulse(uint32_t id, uint8_t wheel, uint16_t duty);
 void MotorStartup_Heartbeat(void);

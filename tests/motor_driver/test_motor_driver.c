@@ -390,8 +390,59 @@ static void TestStickyLock(void)
     assert(irq_mask == 0U);
 }
 
-int main(void)
+static void TestPreloadStopBoundaries(void)
 {
+    ResetDriver();
+    Motor_SetPairPermille(1, 1);
+    Tick(1U);
+    assert(TIM2->CCR1 == 3U && TIM2->CCR2 == 3U);
+    assert((GPIOB->BSRR & 0xF000U) == 0U);
+    Motor_Stop(); /* interrupt first-tick preload */
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+    assert((GPIOB->BSRR & 0xF000U) == 0U);
+    Motor_SetPairPermille(10, 10); /* same direction; reversal has its own 30ms gate */
+    Tick(1U);
+    assert((GPIOB->BSRR & 0xF000U) == 0U);
+    Tick(1U);
+    assert((GPIOB->BSRR & (1UL << MOTOR_L_IN1_PIN)) != 0U);
+    assert((GPIOB->BSRR & (1UL << MOTOR_R_IN2_PIN)) != 0U);
+    Motor_Stop();
+    assert(Snapshot().command_age_ms == 0U);
+}
+
+static void TestCommandWatchdog(void)
+{
+    Motor_Diagnostics_t s;
+    ResetDriver();
+    Motor_SetPairPermille(200, 0);
+    Tick(MOTOR_COMMAND_TIMEOUT_MS - 2U);
+    s = Snapshot();
+    assert(!s.outputs_locked && !s.command_timeout_latched);
+    assert(s.command_age_ms == MOTOR_COMMAND_TIMEOUT_MS - 2U);
+    Motor_SetPairPermille(200, 0);
+    Tick(MOTOR_COMMAND_TIMEOUT_MS - 1U);
+    assert(!Snapshot().outputs_locked);
+    Tick(1U);
+    s = Snapshot();
+    assert(s.outputs_locked && s.command_timeout_latched);
+    assert(s.target_left == 0 && s.ramped_left == 0);
+    assert(TIM2->CCR1 == 3200U && TIM2->CCR2 == 3200U);
+    Motor_SetPairPermille(1000, 1000);
+    Motor_KeepAlive();
+    Tick(10U);
+    assert(Snapshot().outputs_locked && Snapshot().ramped_left == 0);
+    Motor_Init();
+    assert(Snapshot().outputs_locked && Snapshot().command_timeout_latched);
+}
+
+int main(int argc, char **argv)
+{
+    if (argc == 2 && strcmp(argv[1], "--watchdog") == 0) {
+        TestCommandWatchdog();
+        puts("PASS: normal command watchdog expires closed; restart rejected.");
+        return 0;
+    }
+    assert(argc == 1);
     TestInitialization();
     TestStartAndClamp();
     TestReverseAndBrake();
@@ -402,6 +453,7 @@ int main(void)
     TestChangingCommands();
     TestBenchWatchdog();
     TestSteadyOutputRefresh();
+    TestPreloadStopBoundaries();
     TestStickyLock();
     puts("PASS: compiled motor.c; 6000 signed duty cases, 10000 command changes, init, idle, slew, reverse, brake, IRQ and lock.");
     puts("Register mocks do not reproduce timer preload, physical PWM, current or temperature.");

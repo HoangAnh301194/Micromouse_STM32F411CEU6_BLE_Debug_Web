@@ -42,7 +42,7 @@ CV tính từ delta encoder trên các khoảng telemetry 40 ms trong nửa cu�
 ## Quy trình tự động rút gọn
 
 ```powershell
-python tools/motor_startup_pipeline.py --run --upload --high-speed --port COM6 --vm-volts 8.4 --confirm-wheels-elevated
+python tools/motor_startup_pipeline.py --run --upload --high-speed --ack-experimental-unqualified --port COM6 --vm-volts 8.4 --confirm-wheels-elevated
 ```
 
 Một lệnh: native C + parser regression, build/upload một lần, kiểm tra profile/watchdog, chờ cảm biến sẵn sàng,
@@ -69,3 +69,11 @@ Watchdog phần cứng danh định 500 ms; không thay thế bảo vệ quá d�
 - Bản cuối: `motor_logs/startup_speed_20261016_014006_799985/` — 6 xung PASS, hai lần hai bánh 100%, STOP xác nhận.
 - Chạy lại: `motor_logs/startup_speed_20261016_080553_270935/` — 6 xung PASS, hai lần hai bánh 100%, STOP xác nhận; mã nguồn và raw UART khớp SHA-256 trong báo cáo.
 - So sánh máy đọc được: `motor_logs/startup_speed_20261016_014006_799985/comparison.json`.
+
+## Bổ sung P0 ngày 16/10/2026 (sau các log v3)
+
+- Phần mềm Driver có command lease 300 tick trong Motion runtime; các bench timed có watchdog riêng. Timeout khóa đầu ra, không tự rearm.
+- Bench high-speed mới dùng giao thức **v4**, trường `experimental=1,qualified=0`. Host buộc có `--ack-experimental-unqualified` và xác nhận `STARTUP_EXPERIMENT_ACK` từ MCU sau watchdog probe. Phiên v3 trong báo cáo phía trên là log lịch sử, không được coi là v4.
+- Kết quả **MEASURED_HIGH_SPEED** là thử nghiệm xung ngắn bánh nâng, không phải chứng nhận hoạt động liên tục/có tải, dòng/nhiệt hay switching transient.
+- Có thông tin người vận hành rằng pin 2S đã giảm điện áp trong lần đo 08:05, phù hợp xu hướng tốc độ thấp hơn. Đây là lời giải thích có cơ sở, **không phải đo điện áp VM đồng bộ** để kết luận nhân quả định lượng.
+- Chi tiết thay đổi, regression và giới hạn: [P0_HANDOFF_GATES_20261016.md](P0_HANDOFF_GATES_20261016.md).

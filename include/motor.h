@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 #define MOTOR_DRIVER_REVISION 3U
+/* Watchdog for normal actuator commands (300 ticks at 1kHz). */
+#define MOTOR_COMMAND_TIMEOUT_MS 300U
 
 typedef struct {
     uint32_t timer_clock_hz;
@@ -29,6 +31,8 @@ typedef struct {
     uint16_t reverse_wait_right;
     uint8_t outputs_locked;
     uint8_t brake_active;
+    uint16_t command_age_ms;
+    uint8_t command_timeout_latched;
 } Motor_Diagnostics_t;
 
 /* API command scale: -1000..+1000 (0.1% resolution).
@@ -43,6 +47,9 @@ void Motor_Init(void);
 void Motor_LockOutputs(void);
 uint8_t Motor_OutputsLocked(void);
 void Motor_GetDiagnostics(Motor_Diagnostics_t *snapshot);
+/* MotorTest can renew the lease while enforcing its own duration/heartbeat.
+ * Normal Motion renews via repeated SetPair. TIM11 stall is NOT protected. */
+void Motor_KeepAlive(void);
 void Motor_SetPair(int16_t left_percent, int16_t right_percent); /* legacy */
 void Motor_SetPairPermille(int16_t left, int16_t right);
 void Motor_SetDeadband(uint16_t left_permille, uint16_t right_permille);
