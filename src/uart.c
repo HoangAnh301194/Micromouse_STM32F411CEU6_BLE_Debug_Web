@@ -36,7 +36,7 @@ static volatile uint32_t dma_fe_errors;
 static volatile uint32_t dma_te_errors;
 static volatile uint32_t dma_dme_errors;
 static volatile uint32_t dma_complete_count;
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
 static volatile uint32_t p_accept_msgs, p_accept_bytes, p_rejected_bytes;
 static volatile uint32_t p_completed_bytes, p_queue_peak, p_rx_bytes;
 static volatile uint32_t p_printf_calls, p_printf_cycles, p_printf_max_cycles;
@@ -128,7 +128,7 @@ void UART_Init(void)
     tx_dropped_messages = dma_errors = 0U;
     dma_fe_errors = dma_te_errors = dma_dme_errors = 0U;
     dma_complete_count = 0U;
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     p_accept_msgs = p_accept_bytes = p_rejected_bytes = 0U;
     p_completed_bytes = p_queue_peak = p_rx_bytes = 0U;
     p_printf_calls = p_printf_cycles = p_printf_max_cycles = 0U;
@@ -160,7 +160,7 @@ void UART_SendString_DMA(const char *str)
     if (length > (size_t)(UART_TX_BUFFER_SIZE - 1U -
             ((head + UART_TX_BUFFER_SIZE - tail) % UART_TX_BUFFER_SIZE))) {
         tx_dropped_messages++;
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
         p_rejected_bytes += (uint32_t)length;
 #endif
         return;
@@ -176,7 +176,7 @@ void UART_SendString_DMA(const char *str)
     __DMB();
     primask = UART_LockIRQ();
     tx_head = next_head;
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     p_accept_msgs++;
     p_accept_bytes += (uint32_t)length;
     {
@@ -198,14 +198,14 @@ void UART_Printf(const char *format, ...)
 {
     char buffer[256];
     va_list args;
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     uint32_t start_cycles = DWT->CYCCNT;
 #endif
     va_start(args, format);
     (void)vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     UART_SendString_DMA(buffer);
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     {
         uint32_t elapsed = DWT->CYCCNT - start_cycles;
         p_printf_calls++;
@@ -232,7 +232,7 @@ uint32_t UART_GetDmaCompleteCount(void) { return dma_complete_count; }
 
 void DMA2_Stream7_IRQHandler(void)
 {
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     uint32_t irq_start = DWT->CYCCNT;
 #endif
     uint32_t flags = DMA2->HISR & UART_DMA7_FLAGS;
@@ -260,7 +260,7 @@ void DMA2_Stream7_IRQHandler(void)
         }
 
         /* DMA owns the source until completion or an explicit abort. */
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
         if (flags & UART_DMA7_TCIF) p_completed_bytes += dma_length;
 #endif
         tx_tail = (uint16_t)((tx_tail + dma_length) % UART_TX_BUFFER_SIZE);
@@ -270,7 +270,7 @@ void DMA2_Stream7_IRQHandler(void)
         /* Re-arm first; only then request data from USART1. */
         UART_DMA_StartNext();
     }
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - irq_start;
         p_dma_irq_cycles += cycles;
@@ -282,7 +282,7 @@ void DMA2_Stream7_IRQHandler(void)
 /* PA10 USART1 RXNE interrupt, never processes commands in ISR. */
 void USART1_IRQHandler(void)
 {
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     uint32_t irq_start = DWT->CYCCNT;
 #endif
     uint32_t sr = USART1->SR;
@@ -297,13 +297,13 @@ void USART1_IRQHandler(void)
             } else {
                 rx_buffer[rx_head] = value;
                 rx_head = next;
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
                 p_rx_bytes++;
 #endif
             }
         }
     }
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - irq_start;
         p_rx_irq_cycles += cycles;
@@ -324,7 +324,7 @@ uint32_t UART_GetRxOverflow(void) { return rx_overflow; }
 uint32_t UART_GetRxErrors(void) { return rx_errors; }
 
 
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
 /* Short interrupt-masked atomic counters snapshot, diagnostics only.
  * Keep out of the 1kHz TIM11 ISR. */
 void UART_GetProfileStats(UART_ProfileStats_t *out)
