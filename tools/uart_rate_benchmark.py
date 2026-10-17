@@ -178,6 +178,18 @@ class Console:
                     if p.get("cal")==3:return
                     if p.get("cal")==4:raise RuntimeError("MPU calibration failed")
         raise TimeoutError("MPU calibration not complete; no UART stress started")
+    def stop_bench_reliably(self):
+        """At overload the first ACK may be dropped by full TX queue.
+        Sending a fresh stop command after a short drain is safe/idempotent."""
+        for attempt in range(4):
+            self.send("TXBENCH 0")
+            try:
+                return self.until(
+                    lambda x:x.get("type")=="U_ACK" and x.get("hz")==0,
+                    1.1)
+            except TimeoutError:
+                pass
+        raise TimeoutError("UART did not confirm TXBENCH 0 after four attempts")
     def stop(self):
         try:
             self.send("TXBENCH 0")
@@ -204,8 +216,7 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
     try:
         con=Console(port,outdir)
         con.calibrate()
-        con.send("TXBENCH 0")
-        con.until(lambda x:x.get("type")=="U_ACK" and x.get("hz")==0,4)
+        con.stop_bench_reliably()
         start,sys_start=con.status()
         print(f"UART1: 115200 8N1, theoretical cap {BAUD//10} B/s; real TX DMA profiling",flush=True)
         for rate in rates:
@@ -228,8 +239,7 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
                     raise RuntimeError(f"MCU benchmark aborted at {rate}Hz: {x}")
             actual_duration=time.monotonic()-start_host
             live_rx_bytes=con.bytes-first_bytes
-            con.send("TXBENCH 0")
-            con.until(lambda x:x.get("type")=="U_ACK" and x.get("hz")==0,5)
+            con.stop_bench_reliably()
             # Wait for complete DMA queue drain before final counter snapshot;
             # no probing continues after stopping. This matters at overload.
             drain_until=time.monotonic()+1.3
