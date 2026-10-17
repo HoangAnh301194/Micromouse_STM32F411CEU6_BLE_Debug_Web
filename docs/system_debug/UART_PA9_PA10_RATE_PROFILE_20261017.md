@@ -72,3 +72,9 @@ A rate is marked PASS only when all these hold:
 **There is no single universal “max Hz”**; it depends on UART packet size, print formatting, existing load, clock accuracy, host buffering and concurrent motor activity. The benchmark is motor-OFF; verify the selected rate again in the motor-ON endurance pipeline before accepting it under real motion load. Host-side RTT includes Windows scheduler and USB-UART buffering, not just MCU ISR latency.
 
 If the model cannot measure actual PA9 waveform, USART BRR register values and clock are still *nominal*. Tests involving driver heating, battery sag, motor EMI and physical stop behavior are separate.
+
+## Integrated Motor OFF/ON UART diagnostic
+
+The `UART_ProfileStats_t` counters are also compiled into both `INTEGRATION_DIAG` Motor OFF/ON builds, without enabling a TX stress generator. During the longer motor sweeps, `SYS_UQ` emits once per second: queue depth/high-water, bytes accepted, DMA-completed bytes, UART Printf cycles, DMA and RX interrupt cycles, and successful PA10 RX bytes. The host stores this in `summary.json` under `uart_dma_cpu_profile` and `uart_cpu_fraction_of_nominal_sysclk`. These values let you compare log cost **with** motor-load ISR activity versus the motor-locked UART sweep. The production `genericSTM32F411CE` has no additional UART profiling work.
+
+The PC computes a conservative maximum **contiguous** passing tested rate, plus a lower tested rate with ~20% rate margin. Actual CPU budget counts only `UART_Printf` formatting/enqueue and DMA/USART interrupts; periodic parser/poll overhead is not included. A host PA10 PING RTT is end-to-end through Windows/USB-UART and not a pure STM32 IRQ latency measurement.
