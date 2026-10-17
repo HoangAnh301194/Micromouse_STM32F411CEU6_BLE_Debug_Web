@@ -12,6 +12,9 @@
 #include "integration_sweep.h"
 #if defined(INTEGRATION_DIAG)
 #include "integration_serial.h"
+#if defined(UART_PROFILE_DIAG)
+#include "uart_bench.h"
+#endif
 #endif
 
 #include "stm32f4xx.h"
@@ -122,6 +125,9 @@ int main(void)
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
     Sweep_Init();
+#if defined(UART_PROFILE_DIAG)
+    UART_Bench_Init();
+#endif
 #endif
 
     if (mpu_status != MPU6050_OK) {
@@ -164,6 +170,10 @@ int main(void)
 #if defined(INTEGRATION_DIAG)
         /* RX IRQ only queues bytes; command parsing is budgeted in main. */
         IntegrationSerial_Poll(&mpu, now);
+#if defined(UART_PROFILE_DIAG)
+        /* Main-only TX generator, never in TIM11 or USART ISR. */
+        UART_Bench_Poll(now, &mpu);
+#endif
 #else
         /* Production UART diagnostic remains STOP/status only. */
         {
