@@ -21,7 +21,7 @@ uint32_t UART_GetDmaTransferErrors(void);
 uint32_t UART_GetDmaDirectErrors(void);
 uint32_t UART_GetDmaCompleteCount(void);
 
-#if defined(UART_PROFILE_DIAG)
+#if defined(INTEGRATION_DIAG)
 /* Diagnostic-only snapshot. No cost in normal production builds.
  * DMA completed bytes means transferred from RAM into USART, NOT proof
  * of corresponding bytes captured correctly by a host serial adapter. */
