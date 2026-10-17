@@ -25,12 +25,14 @@ static uint32_t next_status_ms;
 static uint32_t sequence_num;
 static uint32_t skipped_deadlines;
 static uint32_t last_health_ms, initial_imu_errors, initial_imu_timeouts;
+static uint32_t base_tim11_gap, base_stale;
 
 void UART_Bench_Init(void)
 {
     current_hz = 0U;
     due_us = next_status_ms = sequence_num = skipped_deadlines = 0U;
     last_health_ms = initial_imu_errors = initial_imu_timeouts = 0U;
+    base_tim11_gap = base_stale = 0U;
 }
 
 uint8_t UART_Bench_SetRate(uint16_t hz, uint32_t now_ms,
@@ -52,6 +54,12 @@ uint8_t UART_Bench_SetRate(uint16_t hz, uint32_t now_ms,
     last_health_ms = now_ms;
     initial_imu_errors = mpu->error_reads;
     initial_imu_timeouts = mpu->timeout_reads;
+    {
+        Control_DebugStats_t init;
+        Control_GetDebugStats(&init);
+        base_tim11_gap = init.gaps_gt1500us;
+        base_stale = init.gyro_invalid_after_first_valid;
+    }
     UART_ResetProfileQueuePeak();
     return 1U;
 }
@@ -64,7 +72,7 @@ void UART_Bench_PrintStatus(uint32_t now_ms, const MPU6050_Handle_t *mpu)
     Control_GetDebugStats(&timing);
     /* Separating lines avoids UART_Printf's 256-byte stack buffer limit.
      * Counters are cumulative, host differentiates before/after snapshots. */
-    UART_Printf("U_TX,ms=%lu,hz=%u,seq=%lu,skip=%lu,accb=%lu,doneb=%lu,q=%lu,peak=%lu,drops=%lu,rejbytes=%lu,fmtcy=%lu,dmacy=%lu,rxcy=%lu\r\n",
+    UART_Printf("U_TX,ms=%lu,hz=%u,seq=%lu,skip=%lu,accb=%lu,doneb=%lu,q=%lu,peak=%lu,drops=%lu,rejbytes=%lu,fmtcy=%lu,dmacy=%lu,rxcy=%lu,dmaerr=%lu\r\n",
                 (unsigned long)now_ms, (unsigned)current_hz,
                 (unsigned long)sequence_num, (unsigned long)skipped_deadlines,
                 (unsigned long)uart.accepted_bytes,
@@ -75,8 +83,9 @@ void UART_Bench_PrintStatus(uint32_t now_ms, const MPU6050_Handle_t *mpu)
                 (unsigned long)uart.rejected_bytes,
                 (unsigned long)uart.printf_cycles,
                 (unsigned long)uart.tx_dma_isr_cycles,
-                (unsigned long)uart.rx_isr_cycles);
-    UART_Printf("U_SYS,ms=%lu,hz=%u,ticks=%lu,late=%lu,gap=%lu,stale=%lu,ir=%lu,i2cerr=%lu,to=%lu,rxerr=%lu,rxov=%lu,prnmax=%lu,dmaisrmax=%lu,rxisrmax=%lu\r\n",
+                (unsigned long)uart.rx_isr_cycles,
+                (unsigned long)uart.dma_error_count);
+    UART_Printf("U_SYS,ms=%lu,hz=%u,ticks=%lu,late=%lu,gap=%lu,stale=%lu,ir=%lu,i2cerr=%lu,to=%lu,rxb=%lu,rxerr=%lu,rxov=%lu,prnmax=%lu,dmaisrmax=%lu,rxisrmax=%lu\r\n",
                 (unsigned long)now_ms, (unsigned)current_hz,
                 (unsigned long)timing.ticks,
                 (unsigned long)timing.late_gt50us,
@@ -85,6 +94,7 @@ void UART_Bench_PrintStatus(uint32_t now_ms, const MPU6050_Handle_t *mpu)
                 (unsigned long)timing.ir_scan_count,
                 (unsigned long)(mpu ? mpu->error_reads : 0UL),
                 (unsigned long)(mpu ? mpu->timeout_reads : 0UL),
+                (unsigned long)uart.rx_bytes,
                 (unsigned long)uart.rx_errors,
                 (unsigned long)uart.rx_overflow,
                 (unsigned long)uart.printf_max_cycles,
@@ -110,7 +120,8 @@ void UART_Bench_Poll(uint32_t now_ms, const MPU6050_Handle_t *mpu)
             return;
         }
         Control_GetDebugStats(&stats);
-        if (stats.gaps_gt1500us || stats.gyro_invalid_after_first_valid) {
+        if (stats.gaps_gt1500us != base_tim11_gap ||
+            stats.gyro_invalid_after_first_valid != base_stale) {
             current_hz = 0U;
             UART_SendString("U_ABORT,reason=TIM11_OR_GYRO\r\n");
             return;
