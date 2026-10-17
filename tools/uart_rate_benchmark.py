@@ -46,7 +46,7 @@ def elapsed32(a,b):
 
 
 def assess(rate, produced, observed, start, end, system_start, system_end,
-           time_s, raw_bytes):
+           time_s, raw_bytes, ping_sent=0, ping_acked=0):
     """Conservative estimate, not an electrically verified maximum frequency."""
     delta=lambda key:elapsed32(start.get(key),end.get(key))
     sysdelta=lambda key:elapsed32(system_start.get(key),system_end.get(key))
@@ -66,6 +66,8 @@ def assess(rate, produced, observed, start, end, system_start, system_end,
     timeout=sysdelta("to")
     rxerror=sysdelta("rxerr")
     rxoverflow=sysdelta("rxov")
+    rxbytes=sysdelta("rxb")
+    dmaerrors=delta("dmaerr")
     skipped=end.get("skip",0)
     checks={
        "no_tx_drops":dropped==0,
@@ -78,6 +80,10 @@ def assess(rate, produced, observed, start, end, system_start, system_end,
        "no_control_deadline_slip":late==0 and gap==0,
        "no_gyro_i2c_fault":stale==0 and i2cerr==0 and timeout==0,
        "no_uart_rx_fault":rxerror==0 and rxoverflow==0,
+       "no_uart_dma_error":dmaerrors==0,
+       "pa10_rx_bytes_accounted":ping_sent==0 or
+                                (rxbytes is not None and rxbytes>=5*ping_sent),
+       "pa10_ping_acks_complete":ping_sent==0 or ping_acked==ping_sent,
     }
     return {
       "requested_hz":rate, "observed_probe_hz":measured,
@@ -103,6 +109,10 @@ def assess(rate, produced, observed, start, end, system_start, system_end,
       "i2c_timeout_increase":timeout,
       "rx_error_increase":rxerror,
       "rx_overflow_increase":rxoverflow,
+      "rx_accepted_bytes_increase":rxbytes,
+      "uart_dma_error_increase":dmaerrors,
+      "host_ping_commands_sent":ping_sent,
+      "mcu_ping_acks_received":ping_acked,
       "checks":checks,"stable":all(checks.values()),
     }
 
@@ -193,11 +203,18 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
             start_host=time.monotonic()
             first_packet_idx=len(con.entries)
             first_bytes=con.bytes
+            next_ping=time.monotonic()
+            ping_sent=0
             while time.monotonic()-start_host<duration:
+                if time.monotonic()>=next_ping:
+                    con.send("PING")  # PA10 RX load: 10 commands/s, ACK on PA9.
+                    ping_sent+=1
+                    next_ping+=0.1
                 x=con.read()
                 if x and x.get("type")=="U_ABORT":
                     raise RuntimeError(f"MCU benchmark aborted at {rate}Hz: {x}")
             actual_duration=time.monotonic()-start_host
+            live_rx_bytes=con.bytes-first_bytes
             con.send("TXBENCH 0")
             con.until(lambda x:x.get("type")=="U_ACK" and x.get("hz")==0,5)
             # Wait for complete DMA queue drain before final counter snapshot;
@@ -205,10 +222,12 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
             drain_until=time.monotonic()+1.3
             while time.monotonic()<drain_until:con.read()
             end,sys_end=con.status()
-            segment=[x for x in con.entries[first_packet_idx:]
-                     if x.get("type")=="U_PROBE"]
-            score=assess(rate,end.get("seq"),segment,start,end,
-                         sys_start,sys_end,actual_duration,con.bytes-first_bytes)
+            segment=con.entries[first_packet_idx:]
+            probes=[x for x in segment if x.get("type")=="U_PROBE"]
+            ping_acked=sum(1 for x in segment if x.get("type")=="CMD_PING")
+            score=assess(rate,end.get("seq"),probes,start,end,
+                         sys_start,sys_end,actual_duration,live_rx_bytes,
+                         ping_sent,ping_acked)
             rows.append(score)
             print(f"{rate:>3}Hz: delivered={score['host_verified_probes']}/{score['produced_probes']} "
                   f"rate={score['observed_probe_hz']}Hz "
