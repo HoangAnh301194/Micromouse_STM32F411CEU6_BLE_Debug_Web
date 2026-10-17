@@ -289,6 +289,22 @@ int main(void)
                         (unsigned long)Board_GetHsiTrim(),
                         (unsigned long)Board_GetClockFault(),
                         (unsigned long)I2C_GetConfiguredSclHz());
+            /* Optional UART profiling also runs in Motor OFF/ON diagnostics.
+             * The production image has no instrumentation or this log. */
+            {
+                UART_ProfileStats_t tx;
+                UART_GetProfileStats(&tx);
+                UART_Printf("SYS_UQ,ms=%lu,q=%lu,peak=%lu,accb=%lu,doneb=%lu,prncy=%lu,dmacy=%lu,rxcy=%lu,rxb=%lu\r\n",
+                            (unsigned long)now,
+                            (unsigned long)tx.queued_bytes,
+                            (unsigned long)tx.queue_peak,
+                            (unsigned long)tx.accepted_bytes,
+                            (unsigned long)tx.completed_bytes,
+                            (unsigned long)tx.printf_cycles,
+                            (unsigned long)tx.tx_dma_isr_cycles,
+                            (unsigned long)tx.rx_isr_cycles,
+                            (unsigned long)tx.rx_bytes);
+            }
             {
                 int16_t app_l = 0, app_r = 0;
                 Motor_GetAppliedPairPermille(&app_l, &app_r);
