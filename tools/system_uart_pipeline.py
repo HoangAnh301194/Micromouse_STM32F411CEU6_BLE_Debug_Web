@@ -385,11 +385,19 @@ def main():
     p.add_argument("--mode", choices=["off", "on"], default="off",
                    help="Used when --flash is omitted; selected firmware must already be on MCU")
     p.add_argument("--outdir", type=Path)
+    p.add_argument("--uart-only", action="store_true",
+                   help="Profile motor-locked PA9/PA10 throughput only, no PWM sweep")
+    p.add_argument("--with-uart", action="store_true",
+                   help="Add PA9/PA10 throughput profile BEFORE the motor OFF/ON tests; requires --flash")
     args=p.parse_args()
     if args.review_csv is not None:
         return review_saved_measurements(args.review_csv)
     if not args.port:
         p.error("--port is required unless --review-csv is supplied")
+    if args.uart_only and (args.motor_on or args.with_uart):
+        p.error("--uart-only is mutually exclusive with --motor-on/--with-uart")
+    if args.with_uart and not args.flash:
+        p.error("--with-uart needs --flash to switch diagnostic firmware profiles")
     if args.mode == "on" and not args.motor_on:
         p.error("--mode on requires --motor-on")
     if args.motor_on:
@@ -400,6 +408,20 @@ def main():
     stamp=dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     outdir=args.outdir or ROOT/"results"/("system_uart_"+stamp)
     outdir.mkdir(parents=True,exist_ok=True)
+    if args.uart_only or args.with_uart:
+        # Bench mode is always motor-output-locked; host explicitly flashes
+        # the separate diagnostic image before any motion-capable firmware.
+        from uart_rate_benchmark import run as run_uart_profile
+        uart_report = run_uart_profile(args.port, outdir / "uart",
+                                       upload=args.flash)
+        if args.uart_only:
+            print("Max tested stable UART rate:",
+                  uart_report["chosen_tested_sustainable_hz"], "Hz")
+            return 0 if uart_report["chosen_tested_sustainable_hz"] else 2
+        if not uart_report["chosen_tested_sustainable_hz"]:
+            print("UART throughput profile did not pass any tested rate; "
+                  "motor-on phase is not launched.")
+            return 2
     rows, results = {}, []
     try:
         for mode in run_modes:
