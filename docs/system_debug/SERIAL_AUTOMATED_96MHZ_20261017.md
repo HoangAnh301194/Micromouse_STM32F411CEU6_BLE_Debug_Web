@@ -65,3 +65,14 @@ The host sends `PING` every 150ms during the live sweep. If PING stops for >750m
 TIM2 generates hardware PWM, TIM3/TIM4 count quadrature encoder edges in hardware. ISR stress is measured as the TIM11 `Motor_Update1ms`, `Encoder_Update` and full control ISR cycle usage rather than imaginary PWM/encoder interrupts.
 
 GitHub Actions builds all three profiles and runs static tests, negative-mutation tests, synthetic log review, native Motor Driver regression and native C 33-stage long OFF/ON tests with fault injections. **CI cannot activate the real motor, measure current or validate live EMI.** Do not merge hardware-qualification claims into the main branch without real captured UART logs.
+
+## Optional UART throughput and CPU profile
+
+The same `giomuadongbac` pipeline now optionally profiles USART1 PA9/PA10 with a separately flashed, motor-locked UART image before the longer PWM tests. Commands:
+
+```powershell
+python tools/system_uart_pipeline.py --port COM6 --flash --uart-only
+python tools/system_uart_pipeline.py --port COM6 --flash --motor-on --with-uart
+```
+
+See [UART PA9/PA10 throughput analysis](UART_PA9_PA10_RATE_PROFILE_20261017.md). During the normal Motor OFF/ON 145-second test, `SYS_UQ` records UART ring occupancy, completed DMA bytes, printed-format cycles and ISR cycle costs once per second even without running the stress profiler. This makes Motor OFF-vs-ON UART costs comparable.
