@@ -15,6 +15,9 @@
 #include "board.h"
 #include "system_timer.h"
 #include <string.h>
+#if defined(UART_PROFILE_DIAG)
+#include "uart_bench.h"
+#endif
 
 #define UART_CMD_MAX_LENGTH 32U
 #define UART_RX_BUDGET 48U
@@ -44,10 +47,39 @@ static void PrintStatus(const MPU6050_Handle_t *mpu, uint32_t now)
 }
 static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
 {
+#if defined(UART_PROFILE_DIAG)
+    if (strncmp(cmd,"TXBENCH ",8)==0) {
+        uint32_t target = 0U;
+        const char *p = cmd+8;
+        uint8_t valid = (uint8_t)(*p != '\0');
+        for (; *p; ++p) {
+            if (*p < '0' || *p > '9') { valid = 0U; break; }
+            target = target * 10U + (uint32_t)(*p - '0');
+            if (target > 400U) { valid = 0U; break; }
+        }
+        {
+            uint8_t ok = (uint8_t)(valid &&
+                UART_Bench_SetRate((uint16_t)target,now,mpu));
+            UART_Printf("U_ACK,hz=%lu,ok=%u\r\n",
+                        (unsigned long)target, (unsigned)ok);
+        }
+    } else if (strcmp(cmd,"TXSTAT")==0) {
+        UART_Bench_PrintStatus(now,mpu);
+    } else
+#endif
     if (strcmp(cmd,"HELP")==0) {
+#if defined(UART_PROFILE_DIAG)
+        UART_SendString("U_HELP,TXBENCH 0|5..400|TXSTAT|STOP|!; START requires motor-disabled profile, no PWM output\r\n");
+#else
         UART_SendString("CMD_HELP,HELP|STATUS|MODE OFF|MODE ON|START|PING|STOP|!; CRLF/LF; MODE ON requires live build; START ON uses serial-only authorization; one shot per reset\r\n");
+#endif
     } else if (strcmp(cmd,"STATUS")==0 || strcmp(cmd,"?")==0) {
         PrintStatus(mpu,now);
+#if defined(UART_PROFILE_DIAG)
+    } else if (strcmp(cmd,"MODE OFF")==0 || strcmp(cmd,"MODE ON")==0 ||
+               strcmp(cmd,"START")==0) {
+        UART_SendString("U_REJECT,reason=BENCH_MODE_MOTOR_LOCKED\r\n");
+#else
     } else if (strcmp(cmd,"MODE OFF")==0) {
         uint8_t ok = Sweep_SelectMode(0U);
         UART_Printf("CMD_MODE,requested=OFF,accepted=%u\r\n",(unsigned)ok);
@@ -57,10 +89,14 @@ static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
     } else if (strcmp(cmd,"START")==0) {
         uint8_t ok = Sweep_Arm(now,mpu,1U); /* Explicit START over UART is the host authorization. */
         UART_Printf("CMD_START,accepted=%u\r\n",(unsigned)ok);
+#endif
     } else if (strcmp(cmd,"PING")==0) {
         Sweep_Heartbeat(now);
         UART_Printf("CMD_PING,ms=%lu\r\n",(unsigned long)now);
     } else if (strcmp(cmd,"STOP")==0 || strcmp(cmd,"S")==0) {
+#if defined(UART_PROFILE_DIAG)
+        (void)UART_Bench_SetRate(0U,now,mpu);
+#endif
         Sweep_Abort(SWEEP_STOP_REQUEST);
         Motor_Stop();
         UART_SendString("CMD_STOP,ack=1\r\n");
@@ -73,6 +109,9 @@ void IntegrationSerial_Poll(const MPU6050_Handle_t *mpu, uint32_t now_ms)
     uint8_t value, budget = UART_RX_BUDGET;
     while (budget-- && UART_ReadByte(&value)) {
         if (value=='!') {
+#if defined(UART_PROFILE_DIAG)
+            (void)UART_Bench_SetRate(0U,now_ms,mpu);
+#endif
             Sweep_Abort(SWEEP_STOP_REQUEST);
             Motor_Stop();
             cmd_len = cmd_overflow = suppress_next_lf = 0U;
