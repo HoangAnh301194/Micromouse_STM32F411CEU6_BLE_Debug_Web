@@ -23,7 +23,7 @@ BAUD=115200
 SYSCLK_NOMINAL=96_000_000
 TX_RING_BYTES=1024
 RATES=(5,10,20,40,60,80,100,120,140,160,180,200,240,300,400)
-PHASE_SEC=3.0
+PHASE_SEC=5.0
 MAX_PRN_CPU_PERCENT=3.0
 MAX_RING_PEAK=768
 
@@ -319,7 +319,7 @@ def main():
     p.add_argument("--flash",action="store_true",help="Flash motor-locked 96MHz UART profiling firmware first")
     p.add_argument("--output",type=Path,help="Output directory")
     p.add_argument("--duration",type=float,default=PHASE_SEC,
-                   help="Measurement seconds per requested Hz; default 3")
+                   help="Measurement seconds per requested Hz; default 5")
     p.add_argument("--rates",default=",".join(map(str,RATES)),
                    help="Comma-separated send frequencies in frames/second")
     args=p.parse_args()
