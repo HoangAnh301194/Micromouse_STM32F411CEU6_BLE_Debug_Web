@@ -15,7 +15,7 @@ def audit(files=None):
     cfg=configparser.ConfigParser(interpolation=None)
     cfg.read_string(get("platformio.ini"))
     for env in ("genericSTM32F411CE","integration_diag_motor_off_96m",
-                "integration_diag_motor_on_96m"):
+                "integration_diag_motor_on_96m","integration_diag_uart_96m"):
         flags=set(x.removeprefix("-D") for x in cfg.get(f"env:{env}","build_flags").split())
         if not REQUIRED.issubset(flags):raise AuditError(f"{env}: bad clock/MPU flags")
     off=cfg.get("env:integration_diag_motor_off_96m","build_flags")
@@ -24,8 +24,29 @@ def audit(files=None):
         raise AuditError("OFF profile missing flags")
     if not all(s in on for s in ("INTEGRATION_DIAG=1","INTEGRATION_DIAG_MOTOR_ON=1")):
         raise AuditError("ON profile missing flags")
-    if "INTEGRATION_DIAG" in cfg.get("env:genericSTM32F411CE","build_flags"):
-        raise AuditError("Production firmware must NOT auto-run motor diagnostic")
+    if "INTEGRATION_DIAG" in cfg.get("env:genericSTM32F411CE","build_flags") or (
+            "UART_PROFILE_DIAG" in cfg.get("env:genericSTM32F411CE","build_flags")):
+        raise AuditError("Production firmware must NOT auto-run motor/UART diagnostic")
+    uartprof=cfg.get("env:integration_diag_uart_96m","build_flags")
+    if not all(x in uartprof for x in ("INTEGRATION_DIAG=1",
+            "INTEGRATION_DIAG_MOTOR_OFF=1", "UART_PROFILE_DIAG=1")):
+        raise AuditError("UART profiling must be motor locked")
+    for env in ("integration_diag_motor_off_96m","integration_diag_motor_on_96m"):
+        if "UART_PROFILE_DIAG" in cfg.get(f"env:{env}","build_flags"):
+            raise AuditError("Do not run UART stress automatically in motor tests")
+    bench=get("src/uart_bench.c")
+    for token in ("UART_Bench_SetRate","UART_Bench_Poll","U_PROBE,seq=",
+                  "UART_ResetProfileQueuePeak","#error",
+                  "last_health_ms"):
+        if token and token not in bench:
+            raise AuditError("UART bench main-loop/no-PWM guard missing: "+token)
+    main_source=get("src/main.c")
+    if "UART_Bench_Poll(now, &mpu)" not in main_source:
+        raise AuditError("UART profiling poll not integrated in main")
+    serial_source=get("src/integration_serial.c")
+    if 'strncmp(cmd,"TXBENCH ",8)' not in serial_source or (
+            'strcmp(cmd,"TXSTAT")' not in serial_source):
+        raise AuditError("PA10 serial rate control protocol absent")
     motor=get("src/integration_sweep.c")
     if not all(s in motor for s in
             ("SWEEP_DRIVE_DEFAULT_MS 2000U","SWEEP_DRIVE_SUSTAIN_MS 3500U",
@@ -73,7 +94,7 @@ def main():
         elif args.self_test:
             import json
             names=("platformio.ini","src/integration_sweep.c","src/control.c","src/main.c",
-                   "src/integration_serial.c","include/encoder.h")
+                   "src/integration_serial.c","include/encoder.h","src/uart_bench.c")
             files={name:(ROOT/name).read_text(encoding="utf-8") for name in names}
             audit(files)
             mutations=[
@@ -82,7 +103,8 @@ def main():
                 ("src/control.c","Motor_Update1ms();","/* removed */"),
                 ("src/main.c","IntegrationSerial_Poll(&mpu, now)","/* removed */"),
                 ("src/integration_serial.c","UART_ReadByte(&value)","0"),
-                ("include/encoder.h","ENCODER_LEFT_DIRECTION  -1","ENCODER_LEFT_DIRECTION   1")
+                ("include/encoder.h","ENCODER_LEFT_DIRECTION  -1","ENCODER_LEFT_DIRECTION   1"),
+                ("src/uart_bench.c","UART_Bench_Poll","UART_ProbeRemoved")
             ]
             for name,old,new in mutations:
                 if old not in files[name]: raise AuditError("fixture missing "+old)
@@ -90,7 +112,7 @@ def main():
                 try:audit(copy)
                 except AuditError:pass
                 else:raise AuditError("unsafe mutation accepted: "+name)
-            print("PASS 6 negative mutations rejected")
+            print("PASS 7 negative mutations rejected")
         else:print(audit())
     except (AuditError,Exception) as e:
         print("FAIL",e,file=sys.stderr);return 1
