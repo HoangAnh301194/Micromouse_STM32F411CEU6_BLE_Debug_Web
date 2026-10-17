@@ -36,6 +36,13 @@ static volatile uint32_t dma_fe_errors;
 static volatile uint32_t dma_te_errors;
 static volatile uint32_t dma_dme_errors;
 static volatile uint32_t dma_complete_count;
+#if defined(UART_PROFILE_DIAG)
+static volatile uint32_t p_accept_msgs, p_accept_bytes, p_rejected_bytes;
+static volatile uint32_t p_completed_bytes, p_queue_peak, p_rx_bytes;
+static volatile uint32_t p_printf_calls, p_printf_cycles, p_printf_max_cycles;
+static volatile uint32_t p_dma_irq_cycles, p_dma_irq_max;
+static volatile uint32_t p_rx_irq_cycles, p_rx_irq_max;
+#endif
 
 static uint32_t UART_LockIRQ(void)
 {
@@ -121,6 +128,13 @@ void UART_Init(void)
     tx_dropped_messages = dma_errors = 0U;
     dma_fe_errors = dma_te_errors = dma_dme_errors = 0U;
     dma_complete_count = 0U;
+#if defined(UART_PROFILE_DIAG)
+    p_accept_msgs = p_accept_bytes = p_rejected_bytes = 0U;
+    p_completed_bytes = p_queue_peak = p_rx_bytes = 0U;
+    p_printf_calls = p_printf_cycles = p_printf_max_cycles = 0U;
+    p_dma_irq_cycles = p_dma_irq_max = 0U;
+    p_rx_irq_cycles = p_rx_irq_max = 0U;
+#endif
 
     /* DMAT stays disabled until UART_DMA_StartNext() arms the DMA stream. */
     NVIC_SetPriority(DMA2_Stream7_IRQn, 7U);
@@ -146,6 +160,9 @@ void UART_SendString_DMA(const char *str)
     if (length > (size_t)(UART_TX_BUFFER_SIZE - 1U -
             ((head + UART_TX_BUFFER_SIZE - tail) % UART_TX_BUFFER_SIZE))) {
         tx_dropped_messages++;
+#if defined(UART_PROFILE_DIAG)
+        p_rejected_bytes += (uint32_t)length;
+#endif
         return;
     }
 
@@ -159,6 +176,15 @@ void UART_SendString_DMA(const char *str)
     __DMB();
     primask = UART_LockIRQ();
     tx_head = next_head;
+#if defined(UART_PROFILE_DIAG)
+    p_accept_msgs++;
+    p_accept_bytes += (uint32_t)length;
+    {
+        uint16_t used = (uint16_t)((tx_head + UART_TX_BUFFER_SIZE - tx_tail)
+                                  % UART_TX_BUFFER_SIZE);
+        if (used > p_queue_peak) p_queue_peak = used;
+    }
+#endif
     UART_DMA_StartNext();
     UART_UnlockIRQ(primask);
 }
@@ -172,11 +198,21 @@ void UART_Printf(const char *format, ...)
 {
     char buffer[256];
     va_list args;
-
+#if defined(UART_PROFILE_DIAG)
+    uint32_t start_cycles = DWT->CYCCNT;
+#endif
     va_start(args, format);
     (void)vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     UART_SendString_DMA(buffer);
+#if defined(UART_PROFILE_DIAG)
+    {
+        uint32_t elapsed = DWT->CYCCNT - start_cycles;
+        p_printf_calls++;
+        p_printf_cycles += elapsed;
+        if (elapsed > p_printf_max_cycles) p_printf_max_cycles = elapsed;
+    }
+#endif
 }
 
 uint32_t UART_GetDroppedMessages(void)
@@ -196,6 +232,9 @@ uint32_t UART_GetDmaCompleteCount(void) { return dma_complete_count; }
 
 void DMA2_Stream7_IRQHandler(void)
 {
+#if defined(UART_PROFILE_DIAG)
+    uint32_t irq_start = DWT->CYCCNT;
+#endif
     uint32_t flags = DMA2->HISR & UART_DMA7_FLAGS;
     if (flags == 0U) return;
 
@@ -221,6 +260,9 @@ void DMA2_Stream7_IRQHandler(void)
         }
 
         /* DMA owns the source until completion or an explicit abort. */
+#if defined(UART_PROFILE_DIAG)
+        if (flags & UART_DMA7_TCIF) p_completed_bytes += dma_length;
+#endif
         tx_tail = (uint16_t)((tx_tail + dma_length) % UART_TX_BUFFER_SIZE);
         dma_length = 0U;
         dma_busy = 0U;
@@ -228,11 +270,21 @@ void DMA2_Stream7_IRQHandler(void)
         /* Re-arm first; only then request data from USART1. */
         UART_DMA_StartNext();
     }
+#if defined(UART_PROFILE_DIAG)
+    {
+        uint32_t cycles = DWT->CYCCNT - irq_start;
+        p_dma_irq_cycles += cycles;
+        if (cycles > p_dma_irq_max) p_dma_irq_max = cycles;
+    }
+#endif
 }
 
 /* PA10 USART1 RXNE interrupt, never processes commands in ISR. */
 void USART1_IRQHandler(void)
 {
+#if defined(UART_PROFILE_DIAG)
+    uint32_t irq_start = DWT->CYCCNT;
+#endif
     uint32_t sr = USART1->SR;
     if (sr & (USART_SR_RXNE | USART_SR_ORE | USART_SR_FE | USART_SR_NE)) {
         uint8_t value = (uint8_t)USART1->DR; /* read clears RXNE/error */
@@ -245,9 +297,19 @@ void USART1_IRQHandler(void)
             } else {
                 rx_buffer[rx_head] = value;
                 rx_head = next;
+#if defined(UART_PROFILE_DIAG)
+                p_rx_bytes++;
+#endif
             }
         }
     }
+#if defined(UART_PROFILE_DIAG)
+    {
+        uint32_t cycles = DWT->CYCCNT - irq_start;
+        p_rx_irq_cycles += cycles;
+        if (cycles > p_rx_irq_max) p_rx_irq_max = cycles;
+    }
+#endif
 }
 
 /* Single consumer, main only. ISR owns rx_head. */
@@ -260,3 +322,43 @@ uint8_t UART_ReadByte(uint8_t *out)
 }
 uint32_t UART_GetRxOverflow(void) { return rx_overflow; }
 uint32_t UART_GetRxErrors(void) { return rx_errors; }
+
+
+#if defined(UART_PROFILE_DIAG)
+/* Short interrupt-masked atomic counters snapshot, diagnostics only.
+ * Keep out of the 1kHz TIM11 ISR. */
+void UART_GetProfileStats(UART_ProfileStats_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = UART_LockIRQ();
+    out->accepted_msgs = p_accept_msgs;
+    out->accepted_bytes = p_accept_bytes;
+    out->rejected_bytes = p_rejected_bytes;
+    out->completed_bytes = p_completed_bytes;
+    out->dropped_msgs = tx_dropped_messages;
+    out->queued_bytes = (uint32_t)((tx_head + UART_TX_BUFFER_SIZE - tx_tail)
+                                    % UART_TX_BUFFER_SIZE);
+    out->queue_peak = p_queue_peak;
+    out->rx_bytes = p_rx_bytes;
+    out->rx_errors = rx_errors;
+    out->rx_overflow = rx_overflow;
+    out->printf_calls = p_printf_calls;
+    out->printf_cycles = p_printf_cycles;
+    out->printf_max_cycles = p_printf_max_cycles;
+    out->tx_dma_isr_cycles = p_dma_irq_cycles;
+    out->tx_dma_isr_max_cycles = p_dma_irq_max;
+    out->rx_isr_cycles = p_rx_irq_cycles;
+    out->rx_isr_max_cycles = p_rx_irq_max;
+    out->dma_error_count = dma_errors;
+    out->dma_completions = dma_complete_count;
+    UART_UnlockIRQ(primask);
+}
+void UART_ResetProfileQueuePeak(void)
+{
+    uint32_t primask = UART_LockIRQ();
+    p_queue_peak = (uint32_t)((tx_head + UART_TX_BUFFER_SIZE - tx_tail)
+                              % UART_TX_BUFFER_SIZE);
+    UART_UnlockIRQ(primask);
+}
+#endif
