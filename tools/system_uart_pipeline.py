@@ -180,6 +180,7 @@ def evaluate(logs, mode):
                     and x.get("mode") == (1 if mode == "ON" else 0) for x in logs)
     last = lambda kind: next((x for x in reversed(logs) if x.get("type") == kind), {})
     timer, mpu, uart = last("SYS_T"), last("SYS_M"), last("SYS_U")
+    uart_profile = last("SYS_UQ")
     profile = last("CLOCK_PROFILE")
     faults = [x for x in logs if x.get("type") == "SYS_STEP" and x.get("state") == 4]
     encoder_review = inspect_encoder_drive(logs, mode)
@@ -212,6 +213,12 @@ def evaluate(logs, mode):
         "software_pass": all(checks.values()),
         "stages": len(steps), "timer": timer, "mpu": mpu, "uart": uart,
         "clock_profile": profile, "faults": faults, "encoder_review": encoder_review,
+        "uart_dma_cpu_profile": uart_profile,
+        "uart_cpu_fraction_of_nominal_sysclk": (round(
+           100 * (uart_profile.get("prncy",0)+uart_profile.get("dmacy",0)+
+                  uart_profile.get("rxcy",0)) /
+           (96000 * max(1,uart_profile.get("ms",1))),3)
+           if uart_profile else None),
         "extended": extended,
         "limits": "RCC nominal frequency only; no oscilloscope or current measurement",
     }
@@ -318,6 +325,7 @@ def write_output(outdir, results, rows):
               "maxcy", "encmaxcy", "motmaxcy", "motticks", "valid", "stale",
               "ir", "cal", "seq", "age", "i2cok", "i2cerr", "to", "busy",
               "dt", "vL", "vR", "appL", "appR", "ppsL", "ppsR",
+              "q", "peak", "accb", "doneb", "prncy", "dmacy", "rxcy", "rxb",
               "mode", "state", "id", "group", "step", "duty", "dl", "dr")
     with (outdir/"measurements.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=("phase",)+fields, extrasaction="ignore")
@@ -335,7 +343,8 @@ def review_saved_measurements(csv_file):
                "motticks","valid","stale","ir","cal","seq","age",
                "i2cok","i2cerr","to","busy","state","id","group",
                "step","duty","dl","dr","locked","wd","dt","vL","vR",
-               "appL","appR","ppsL","ppsR","rx_err","rx_ov",
+               "appL","appR","ppsL","ppsR","q","peak","accb","doneb",
+               "prncy","dmacy","rxcy","rxb","rx_err","rx_ov",
                "tx_drop","dma_err","trim","clkfault","iclk","mode"}
     with csv_file.open(newline="", encoding="utf-8-sig") as file:
         for row in csv.DictReader(file):
