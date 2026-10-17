@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 from datetime import datetime
+from collections import deque
 import json
 from pathlib import Path
 import statistics
@@ -46,7 +47,7 @@ def elapsed32(a,b):
 
 
 def assess(rate, produced, observed, start, end, system_start, system_end,
-           time_s, raw_bytes, ping_sent=0, ping_acked=0):
+           time_s, raw_bytes, ping_sent=0, ping_acked=0, ping_rtt_ms=None):
     """Conservative estimate, not an electrically verified maximum frequency."""
     delta=lambda key:elapsed32(start.get(key),end.get(key))
     sysdelta=lambda key:elapsed32(system_start.get(key),system_end.get(key))
@@ -69,6 +70,9 @@ def assess(rate, produced, observed, start, end, system_start, system_end,
     rxbytes=sysdelta("rxb")
     dmaerrors=delta("dmaerr")
     skipped=end.get("skip",0)
+    times=sorted(ping_rtt_ms or [])
+    median_rtt=round(statistics.median(times),2) if times else None
+    p95_rtt=round(times[max(0, (95*len(times)+99)//100-1)],2) if times else None
     checks={
        "no_tx_drops":dropped==0,
        "no_frame_loss_on_host":gaps==0 and produced is not None,
@@ -113,6 +117,9 @@ def assess(rate, produced, observed, start, end, system_start, system_end,
       "uart_dma_error_increase":dmaerrors,
       "host_ping_commands_sent":ping_sent,
       "mcu_ping_acks_received":ping_acked,
+      "ping_host_rtt_p50_ms":median_rtt,
+      "ping_host_rtt_p95_ms":p95_rtt,
+      "ping_host_rtt_max_ms":round(times[-1],2) if times else None,
       "checks":checks,"stable":all(checks.values()),
     }
 
@@ -125,9 +132,12 @@ class Console:
         self.entries=[]
         self.bytes=0
         self.created=time.monotonic()
+        self.ping_pending=deque()
+        self.ping_rtt_ms=[]
     def send(self,cmd):
         self.ser.write((cmd+"\n").encode("ascii"))
         self.ser.flush()
+        if cmd=="PING":self.ping_pending.append(time.monotonic())
     def read(self):
         packet=self.ser.readline()
         if not packet:return None
@@ -139,6 +149,8 @@ class Console:
         if item:
             item["host_s"]=round(t,4)
             self.entries.append(item)
+            if item.get("type")=="CMD_PING" and self.ping_pending:
+                self.ping_rtt_ms.append((time.monotonic()-self.ping_pending.popleft())*1000)
         return item
     def until(self, pred, seconds=5):
         limit=time.monotonic()+seconds
@@ -203,6 +215,7 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
             start_host=time.monotonic()
             first_packet_idx=len(con.entries)
             first_bytes=con.bytes
+            first_latency_idx=len(con.ping_rtt_ms)
             next_ping=time.monotonic()
             ping_sent=0
             while time.monotonic()-start_host<duration:
@@ -227,7 +240,8 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
             ping_acked=sum(1 for x in segment if x.get("type")=="CMD_PING")
             score=assess(rate,end.get("seq"),probes,start,end,
                          sys_start,sys_end,actual_duration,live_rx_bytes,
-                         ping_sent,ping_acked)
+                         ping_sent,ping_acked,
+                         con.ping_rtt_ms[first_latency_idx:])
             rows.append(score)
             print(f"{rate:>3}Hz: delivered={score['host_verified_probes']}/{score['produced_probes']} "
                   f"rate={score['observed_probe_hz']}Hz "
@@ -237,14 +251,24 @@ def run(port,output=None,upload=False,rates=RATES,duration=PHASE_SEC):
                   f"{'PASS' if score['stable'] else 'LIMIT'}",flush=True)
             start,sys_start=end,sys_end
         passed=[x for x in rows if x["stable"]]
-        safe=max((x["requested_hz"] for x in passed),default=None)
-        # A tested rate, NOT a mathematical guarantee for all real motor loads.
+        # The last tested contiguous PASS, never an isolated high-rate outlier.
+        isolated=max((x["requested_hz"] for x in passed),default=None)
+        prefix=[]
+        for x in rows:
+            if not x["stable"]:break
+            prefix.append(x["requested_hz"])
+        safe=max(prefix,default=None)
+        recommended=(max((x for x in prefix if x<=0.8*safe),default=prefix[0])
+                     if safe and prefix else None)
+        # A tested rate, NOT a thermal or motor-on safety guarantee.
         report={"baud":BAUD,"framing":"8N1",
                 "theoretical_line_bytes_per_second":BAUD//10,
                 "profile_name":"96MHz_HSI_TRIM25_motor_off_all_sensors_active",
                 "candidate_rates_hz":list(rates),
                 "requested_sample_s":duration,
+                "highest_individual_pass_hz":isolated,
                 "chosen_tested_sustainable_hz":safe,
+                "recommended_log_rate_with_20pct_headroom_hz":recommended,
                 "admission_requirements":{
                     "tx_drops":0,"sequence_gaps":0,
                     "queue_peak_bytes_max":MAX_RING_PEAK,
