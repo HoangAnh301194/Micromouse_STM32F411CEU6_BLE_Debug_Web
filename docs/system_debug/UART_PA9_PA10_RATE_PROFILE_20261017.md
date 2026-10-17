@@ -52,7 +52,7 @@ python tools/system_uart_pipeline.py --port COM6 --flash --motor-on --with-uart
 
 `--flash` requires ST-Link. Replace COM6 with the correct USB-UART adapter. STM32 PA9→adapter RX, PA10←adapter TX, common GND; 3.3V TTL, NOT RS-232 voltage. The connected PC must remain present throughout the test; neither GitHub Actions nor the model has access to the Windows COM port.
 
-The default TX rate sequence is **5, 10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 240, 300, 400 Hz** (each 3 seconds, plus UART drain). This exceeds physical capacity on purpose to detect the queue-overflow knee. On-device commands: `TXBENCH 0` stops, `TXBENCH 40` starts 40Hz, `TXSTAT` requests an immediate snapshot; `STOP` or `!` aborts.
+The default TX rate sequence is **5, 10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 240, 300, 400 Hz** (each 5 seconds, plus UART drain). This exceeds physical capacity on purpose to detect the queue-overflow knee. On-device commands: `TXBENCH 0` stops, `TXBENCH 40` starts 40Hz, `TXSTAT` requests an immediate snapshot; `STOP` or `!` aborts.
 
 ## How to interpret
 
