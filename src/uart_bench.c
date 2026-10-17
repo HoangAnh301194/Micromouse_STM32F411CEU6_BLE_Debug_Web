@@ -24,11 +24,13 @@ static uint32_t due_us;
 static uint32_t next_status_ms;
 static uint32_t sequence_num;
 static uint32_t skipped_deadlines;
+static uint32_t last_health_ms, initial_imu_errors, initial_imu_timeouts;
 
 void UART_Bench_Init(void)
 {
     current_hz = 0U;
     due_us = next_status_ms = sequence_num = skipped_deadlines = 0U;
+    last_health_ms = initial_imu_errors = initial_imu_timeouts = 0U;
 }
 
 uint8_t UART_Bench_SetRate(uint16_t hz, uint32_t now_ms,
@@ -47,6 +49,9 @@ uint8_t UART_Bench_SetRate(uint16_t hz, uint32_t now_ms,
     skipped_deadlines = 0U;
     due_us = micros() + 1000000U / hz;
     next_status_ms = now_ms + 1000U;
+    last_health_ms = now_ms;
+    initial_imu_errors = mpu->error_reads;
+    initial_imu_timeouts = mpu->timeout_reads;
     UART_ResetProfileQueuePeak();
     return 1U;
 }
@@ -92,18 +97,24 @@ void UART_Bench_Poll(uint32_t now_ms, const MPU6050_Handle_t *mpu)
     uint32_t now_us, period;
     Control_DebugStats_t stats;
     if (!current_hz) return;
-    if (!Motor_OutputsLocked() || !Control_IsRunning() ||
-        !mpu || !mpu->calibrated || mpu->cal_state != 3U ||
-        mpu->timeout_reads || mpu->error_reads) {
-        current_hz = 0U;
-        UART_SendString("U_ABORT,reason=SYSTEM_FAULT\r\n");
-        return;
-    }
-    Control_GetDebugStats(&stats);
-    if (stats.gaps_gt1500us || stats.gyro_invalid_after_first_valid) {
-        current_hz = 0U;
-        UART_SendString("U_ABORT,reason=TIM11_OR_GYRO\r\n");
-        return;
+    /* A health snapshot masks interrupts briefly. Check every 20ms,
+     * never on every main-loop spin: measurement must not perturb TIM11. */
+    if ((uint32_t)(now_ms - last_health_ms) >= 20U) {
+        last_health_ms = now_ms;
+        if (!Motor_OutputsLocked() || !Control_IsRunning() ||
+            !mpu || !mpu->calibrated || mpu->cal_state != 3U ||
+            mpu->timeout_reads != initial_imu_timeouts ||
+            mpu->error_reads != initial_imu_errors) {
+            current_hz = 0U;
+            UART_SendString("U_ABORT,reason=SYSTEM_FAULT\r\n");
+            return;
+        }
+        Control_GetDebugStats(&stats);
+        if (stats.gaps_gt1500us || stats.gyro_invalid_after_first_valid) {
+            current_hz = 0U;
+            UART_SendString("U_ABORT,reason=TIM11_OR_GYRO\r\n");
+            return;
+        }
     }
     now_us = micros();
     period = 1000000U / current_hz;
