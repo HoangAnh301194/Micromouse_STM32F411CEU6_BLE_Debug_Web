@@ -83,7 +83,8 @@ def source_audit():
         "motor_off_flag": "-DINTEGRATION_DIAG_MOTOR_OFF=1" in cfg,
         "encoder_motor_off_profile": "integration_diag_encoder_motor_off_96m" in cfg and
             "-DENCODER_PROFILE_DIAG=1" in cfg,
-        "encoder_telemetry_locked": "Encoder high-rate diagnostic requires" in main,
+        "encoder_telemetry_diagnostic_guard": "Encoder telemetry requires an explicit integration diagnostic mode" in main,
+        "encoder_motor_on_profile": "integration_diag_encoder_motor_on_96m" in cfg,
         "motor_off_sticky_lock": "Motor_LockOutputs();" in main,
         "positive_forward_unchanged": "ENCODER_LEFT_DIRECTION  -1" in
             (ROOT/"include/encoder.h").read_text(encoding="utf-8"),
@@ -93,7 +94,7 @@ def source_audit():
                 "No explicit TIM3/TIM4 IC1F/IC2F hardware glitch filter configuration.",
                 "Raw PPS from one-millisecond delta: quantization 1000 counts/s.",
                 "EMA alpha 0.30 at 1 kHz is not equivalent to encoder electrical filtering.",
-                "1 Hz SYS_E cannot detect high-rate glitches or independently prove zero missed edges.",
+                "50 Hz SYS_EN during motor OFF/ON resolves short-term PPS trends but cannot prove zero missed edges.",
             ]}
 
 def run(command, label, directory, timeout=300):
@@ -475,9 +476,11 @@ def report(directory,data):
     lines.extend("- "+x for x in data["software"]["source"]["limits"])
     lines+=["","## Hardware / sweep",json.dumps(data.get("hardware"),indent=2,ensure_ascii=False),
             json.dumps(data.get("sweep"),indent=2,ensure_ascii=False),
+            "## Encoder OFF/ON high-rate telemetry",
+            json.dumps(data.get("encoder_motor_on"),indent=2,ensure_ascii=False),
             "","## Remaining limitations",
             "- Input capture filter IC1F/IC2F and 10-ms speed estimator remain candidates, NOT auto-applied.",
-            "- In encoder motor-off profile SYS_EN is ~50 Hz; remaining high-frequency glitches/missed edges require per-tick samples and independent reference.",
+            "- Encoder diagnostic OFF/ON builds emit SYS_EN ~50 Hz; missing edges require independent reference; synthetic estimator study is not board qualification.",
             "- estimator_metrics.csv and estimator_samples.csv (if present) are SYNTHETIC, NOT measured MCU response.",
             "- 1430 counts per wheel revolution is retained as the user's current engineering approximation.",
             "- Historical stage response is not a calibration of closed-loop speed PID."]
