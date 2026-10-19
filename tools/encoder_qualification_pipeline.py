@@ -97,15 +97,37 @@ def source_audit():
                 "50 Hz SYS_EN during motor OFF/ON resolves short-term PPS trends but cannot prove zero missed edges.",
             ]}
 
-def run(command, label, directory, timeout=300):
+def run(command, label, directory, timeout=300, live_output=False):
     path = directory/(label+".log")
     print("RUN:",label,flush=True)
     try:
         with path.open("x",encoding="utf-8") as log:
-            cp = subprocess.run(command, cwd=ROOT, stdout=log,
-                                stderr=subprocess.STDOUT, timeout=timeout,
-                                check=False)
-        return {"pass":cp.returncode==0, "returncode":cp.returncode,"log":path.name}
+            if not live_output:
+                cp = subprocess.run(command, cwd=ROOT, stdout=log,
+                                    stderr=subprocess.STDOUT, timeout=timeout,
+                                    check=False)
+                code=cp.returncode
+            else:
+                import threading
+                proc=subprocess.Popen(command,cwd=ROOT,stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT,text=True,
+                                      bufsize=1,errors="replace")
+                def relay():
+                    for line in proc.stdout:
+                        log.write(line)
+                        log.flush()
+                        print(line.rstrip(),flush=True)
+                worker=threading.Thread(target=relay,daemon=True)
+                worker.start()
+                try:
+                    code=proc.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+                    raise
+                finally:
+                    worker.join(timeout=5)
+        return {"pass":code==0, "returncode":code,"log":path.name}
     except (OSError,subprocess.TimeoutExpired) as ex:
         with path.open("a",encoding="utf-8") as log:
             log.write(str(ex))
@@ -545,7 +567,8 @@ def main(argv=None):
                 runinfo=run([sys.executable,"tools/system_uart_pipeline.py",
                              "--port",args.port,"--flash","--motor-on",
                              "--encoder-telemetry",
-                             "--outdir",str(out)],"motor_on_automated",path,950)
+                             "--outdir",str(out)],"motor_on_automated",path,950,
+                             live_output=True)
                 data["hardware"]={"status":"PASS" if runinfo["pass"] else "FAIL",
                                   "execution":runinfo}
                 new=out/"summary.json"
