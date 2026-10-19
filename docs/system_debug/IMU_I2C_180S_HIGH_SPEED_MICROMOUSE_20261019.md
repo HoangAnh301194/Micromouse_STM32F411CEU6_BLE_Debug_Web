@@ -89,3 +89,49 @@ With the updated `tools/imu_soak_pipeline.py`:
 
 **On Windows if nothing changes:** press Ctrl+C once, inspect the newest directory under `results/imu_soak_*` and its `still_uart.log`. If it contains no `SYS_M` frames, check COM number, PA9 to USB-UART RX, PA10 to USB-UART TX, common GND, 3.3V TTL, and whether the program stops during I2C initialization. If it does have SYS_M frames, inspect `cal`, `n`, `i2cerr` and `to`. Never assume MCU hardware is frozen just because console output is quiet.
 
+
+## UPDATE — MPU die temperature on existing I2C and 80–100% motor EMI experiment
+
+**Temperature needs NO extra MCU pin.** The on-chip MPU6050 temperature registers are `TEMP_OUT_H=0x41` and `TEMP_OUT_L=0x42`; datasheet conversion: `temperature_C = signed_raw / 340 + 36.53`. Firmware now obtains this via a **single extra two-byte asynchronous I2C read about once per second**, using existing I2C1 after a successful gyro read. It does **not** read in TIM11 or replace the 1kHz gyro acquisition. This is **MPU silicon temperature**, not motor, H-bridge or battery temperature. Temperature readings are tagged with their own valid/read/error/timeout/age fields and reported on `IMN`:
+
+```text
+IMN,...,tc=28210,tvalid=1,tok=17,terr=0,tto=0,tage=148
+```
+
+Here `tc` is **milli-degrees Celsius**, e.g. 28210 = 28.210°C. The host's `temperature_c` summary includes start/end/min/max/delta and Pearson correlation between die temperature and each 1s bias-corrected gyro mean. Correlation from a single boot is **not causation** and does not independently prove a temperature compensation model.
+
+**USART1 queue correction:** During active soak, simultaneous redundant `SYS_T/M/U/UQ/E` 1Hz bursts are suppressed. The `IM1/IMN/IMIR/IMPID` metrics remain, with an added `qp` peak queue indicator reset at SOAK start. New pipeline checks treat `qp >768 B` as insufficient TX headroom even if no packet is lost.
+
+**Motor state:** Earlier default command exercised **STILL and SHADOW only**, which *intentionally lock motor outputs* and therefore provide no powered-motor EMI comparison. The optional `--motor-live` uses a separate real motor firmware with pulses ≤35% duty; to explicitly test higher motor demand, an additional dedicated image is now available:
+
+```powershell
+# Safe default: temperature + 180s gyro stability, no motor energy
+python tools/imu_soak_pipeline.py --port COM7 --flash
+
+# Includes both safe profiles then separate low-duty LIVE (max 35%)
+python tools/imu_soak_pipeline.py --port COM7 --flash --motor-live
+
+# Includes both safe profiles then separate HIGH-PWM LIVE (80, 90, 100%)
+# Never run on the maze. Secure wheels clear of all surfaces and use
+# an independent manual switch to disconnect 2S VM immediately.
+python tools/imu_soak_pipeline.py --port COM7 --flash --motor-live --high-pwm
+```
+
+**HIGH-PWM stage profile (one 30s cycle, repeated within 180s):**
+
+| 5s slot | Motor command | Max energized duration | Minimum coast/rest |
+|---|---|---:|---:|
+| 0 | OFF both | 0s | 5.0s |
+| 1 | LEFT 80% | 1.0s | 4.0s |
+| 2 | RIGHT 80% | 1.0s | 4.0s |
+| 3 | BOTH 80% | 1.0s | 4.0s |
+| 4 | BOTH 90% | 0.75s | 4.25s |
+| 5 | BOTH 100% | 0.50s | 4.50s |
+
+The motor rate is ramp-limited by existing Motor Driver software; the sequence is open-loop **actual TIM2 PWM**, while synthetic PID computations run separately and do not control that PWM. The experiment does **not** run motor at 100% continuously for 3 minutes.
+
+The MCU sends `IMDRV` every ~250ms, recording requested duty, **applied duty**, encoder counts and stage, with immediate abort (`SOAK_DONE ok=0`, reason 5) if a driven wheel fails to advance ≥10 encoder counts within ~300ms. Missing PA10 PING >750ms, I2C read error, stale gyro/TIM11 fault, motor latch or host STOP also aborts and locks outputs. **These software safeguards cannot detect short-circuit current, driver overheating, wiring failure or a stalled motor faster than ~300ms.** A 2S VM supply is not proof of available measured motor current or that the actual wheel rotates. Supervise the fixture, no fingers near the wheels, and keep an **independent physical VM cutoff**; high duty must not be tested against a loaded/blocked wheel.
+
+Acceptance requires high levels (800/900/1000 permille) to appear as **applied PWM** in the UART trace, plus encoder movement; a PWM command or CI PASS alone is not sufficient evidence of actual rotation. Hardware validation is pending. The 180s STILL yaw drift metric must never be compared as "stationary bias" against LIVE if the robot body can rotate or vibrate.
+
+**Grounding:** [TDK/InvenSense MPU6050 register map](https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf), section 4.18, temperature registers and °C formula.
