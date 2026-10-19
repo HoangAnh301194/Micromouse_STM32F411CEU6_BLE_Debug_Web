@@ -4,6 +4,9 @@ on:
     branches: [giomuadongbac]
     paths:
       - "src/encoder.c"
+      - "src/i2c.c"
+      - "include/i2c.h"
+      - "tools/test_encoder_shadow_ab.py"
       - "src/main.c"
       - "include/encoder.h"
       - "src/control.c"
