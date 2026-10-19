@@ -1,0 +1,79 @@
+{
+  "port": "COM7",
+  "baud": 115200,
+  "capture_seconds": 30.158,
+  "record_counts": {
+    "SYS_T": 30,
+    "SYS_IR": 30,
+    "SYS_IRD": 30,
+    "SYS_IRC": 30,
+    "SYS_M": 30,
+    "SYS_U": 30,
+    "SYS_UQ": 30
+  },
+  "raw_value_samples": [],
+  "malformed_records": 0,
+  "SYS_IRD": {
+    "elapsed_ms": 29000,
+    "scans_started": 29000,
+    "scans_completed": 29000,
+    "scans_failed": 0,
+    "dma_started": 116000,
+    "dma_completed": 116000,
+    "dma_errors": 0,
+    "dma_timeouts": 0,
+    "adc_overruns": 0,
+    "scan_rate_hz": 1000.0,
+    "mean_scan_time_us": 723.83,
+    "mean_dma_completion_us": 22.0,
+    "scan_max_us_observed": 725,
+    "dma_max_us_observed": 23
+  },
+  "SYS_IRC": {
+    "elapsed_ms": 29000,
+    "ir_isr_cycles": 44461280,
+    "ir_isr_cpu_percent_of_nominal_sysclk": 1.597,
+    "tim10_irq_max_cycles": 162,
+    "dma_irq_max_cycles": 300,
+    "adc_clock_nominal_hz": 24000000
+  },
+  "SYS_IR": {
+    "elapsed_ms": 29000,
+    "fresh_control_ticks": 29000,
+    "ticks_without_new_scan": 0,
+    "max_sample_age_us": 293,
+    "fresh_control_tick_percent": 100.0
+  },
+  "SYS_T": {
+    "elapsed_ms": 29000,
+    "tim11_late_delta": 0,
+    "tim11_gap_delta": 0,
+    "tim11_max_irq_cycles": 1044
+  },
+  "SYS_M": {
+    "elapsed_ms": 29000,
+    "mpu_i2c_errors": 0,
+    "mpu_i2c_timeouts": 0,
+    "mpu_fresh_gyro_reads": 28979
+  },
+  "SYS_U": {
+    "elapsed_ms": 29000,
+    "uart_tx_drops": 29,
+    "uart_dma_errors": 0,
+    "uart_rx_errors": 0,
+    "uart_rx_overflows": 0
+  },
+  "SYS_UQ": {
+    "elapsed_ms": 29000,
+    "uart_bytes_accepted": 24198,
+    "uart_bytes_completed": 24181,
+    "uart_printf_cycles": 3143556,
+    "uart_queue_peak_bytes": 1022,
+    "uart_queue_bytes_at_end": 689
+  },
+  "has_ir_values": false,
+  "has_timing_counters": true,
+  "has_uart_health": true,
+  "uart_transport_clean": false,
+  "valid_capture": false
+}

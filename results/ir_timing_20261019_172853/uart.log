@@ -1,0 +1,548 @@
+t=5753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=5853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=5953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=6000,ticks=5846,late=0,gap=0,maxcy=1044,encmaxcy=455,motmaxcy=45,motticks=5846,valid=0,stale=0,ir=5846
+SYS_IR,ms=6000,new=5846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=6000,start=5847,done=5846,fail=0,busy=0,dma_start=23386,dma_done=23386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=4231136,scan_max_us=724,dma_us=514483,dma_max_us=22
+SYS_IRC,ms=6000,tim_irq=40927,tim_cy=4284472,tim_maxcy=162,dma_irq=23386,dma_cy=4670464,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=6000,cal=2,n=847,seq=0,age=0,i2cok=5842,i2cerr=0,to=0,nr=3996,busy=0,locked=1,wd=0
+SYS_U,ms=6000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=6000,q=638,peak=1002,accb=8674,doneb=8036,prncy=1016180,dmacy=12174,rxcy=0,rxb=0
+SYS_E,ms=6000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_CAL,ms=6000,state=2,retries=0,reason=0
+t=6053 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6153 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6253 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6353 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6453 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6553 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6653 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6753 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6853 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=6953 state=0 encL=0 encR=0 yaw= gz= dropped=1
+SYS_T,ms=7000,ticks=6846,late=0,gap=0,maxcy=1044,encmaxcy=455,motmaxcy=45,motticks=6846,valid=0,stale=0,ir=6846
+SYS_IR,ms=7000,new=6846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=7000,start=6847,done=6846,fail=0,busy=0,dma_start=27386,dma_done=27386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=4954928,scan_max_us=724,dma_us=602481,dma_max_us=22
+SYS_IRC,ms=7000,tim_irq=47927,tim_cy=5017604,tim_maxcy=162,dma_irq=27386,dma_cy=5468735,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=7000,cal=2,n=1845,seq=0,age=0,i2cok=6840,i2cerr=0,to=0,nr=4593,busy=0,locked=1,wd=0
+SYS_U,ms=7000,tx_drop=1,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=7000,q=639,peak=1002,accb=9996,doneb=9357,prncy=1194927,dmacy=14408,rxcy=0,rxb=0
+SYS_E,ms=7000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=7000,scan=6847,age_us=389,ambient_reads=6847,pair1_reads=6847,pair2_reads=6847,pair3_reads=6847,a0=9,a1=3,a2=18,a3=16,a4=6,a5=6,l0=9,l1=3,l2=24,l3=9,l4=6,l5=8,d0=0,d1=0,d2=6,d3=0,d4=0,d5=2
+t=7053 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7153 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7253 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7353 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7453 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7553 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7653 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7753 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7853 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=7953 state=0 encL=0 encR=0 yaw= gz= dropped=1
+SYS_T,ms=8000,ticks=7846,late=0,gap=0,maxcy=1044,encmaxcy=455,motmaxcy=45,motticks=7846,valid=0,stale=0,ir=7846
+SYS_IR,ms=8000,new=7846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=8000,start=7847,done=7846,fail=0,busy=0,dma_start=31386,dma_done=31386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=5678516,scan_max_us=724,dma_us=690482,dma_max_us=23
+SYS_IRC,ms=8000,tim_irq=54927,tim_cy=5752250,tim_maxcy=162,dma_irq=31386,dma_cy=6267150,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=8000,cal=2,n=2844,seq=0,age=0,i2cok=7839,i2cerr=0,to=0,nr=4595,busy=0,locked=1,wd=0
+SYS_U,ms=8000,tx_drop=1,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=8000,q=639,peak=1002,accb=11475,doneb=10836,prncy=1370066,dmacy=16260,rxcy=0,rxb=0
+SYS_E,ms=8000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=8000,scan=7847,age_us=390,ambient_reads=7847,pair1_reads=7847,pair2_reads=7847,pair3_reads=7847,a0=10,a1=4,a2=17,a3=10,a4=7,a5=8,l0=10,l1=4,l2=24,l3=9,l4=6,l5=8,d0=0,d1=0,d2=7,d3=0,d4=0,d5=0
+t=8053 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8153 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8253 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8353 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8453 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8553 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8653 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8753 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8853 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=8953 state=0 encL=0 encR=0 yaw= gz= dropped=1
+SYS_T,ms=9000,ticks=8846,late=0,gap=0,maxcy=1044,encmaxcy=456,motmaxcy=45,motticks=8846,valid=0,stale=0,ir=8846
+SYS_IR,ms=9000,new=8846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=9000,start=8847,done=8846,fail=0,busy=0,dma_start=35386,dma_done=35386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=6402105,scan_max_us=724,dma_us=778482,dma_max_us=23
+SYS_IRC,ms=9000,tim_irq=61927,tim_cy=6487077,tim_maxcy=162,dma_irq=35386,dma_cy=7065676,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=9000,cal=2,n=3844,seq=0,age=0,i2cok=8839,i2cerr=0,to=0,nr=4595,busy=0,locked=1,wd=0
+SYS_U,ms=9000,tx_drop=1,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=9000,q=639,peak=1002,accb=12958,doneb=12319,prncy=1545661,dmacy=19621,rxcy=0,rxb=0
+SYS_E,ms=9000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=9000,scan=8847,age_us=394,ambient_reads=8847,pair1_reads=8847,pair2_reads=8847,pair3_reads=8847,a0=9,a1=4,a2=17,a3=11,a4=6,a5=7,l0=8,l1=5,l2=28,l3=9,l4=6,l5=8,d0=0,d1=1,d2=11,d3=0,d4=0,d5=1
+t=9053 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9153 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9253 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9353 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9453 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9553 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9653 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9753 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9853 state=0 encL=0 encR=0 yaw= gz= dropped=1
+t=9953 state=0 encL=0 encR=0 yaw= gz= dropped=1
+SYS_T,ms=10000,ticks=9846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=9846,valid=844,stale=0,ir=9846
+SYS_IR,ms=10000,new=9846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=10000,start=9847,done=9846,fail=0,busy=0,dma_start=39386,dma_done=39386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=7125818,scan_max_us=724,dma_us=866486,dma_max_us=26
+SYS_IRC,ms=10000,tim_irq=68927,tim_cy=7221061,tim_maxcy=162,dma_irq=39386,dma_cy=7863876,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=10000,cal=3,n=4000,seq=844,age=986,i2cok=9839,i2cerr=0,to=0,nr=4899,busy=0,locked=1,wd=0
+SYS_U,ms=10000,tx_drop=1,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=10000,q=651,peak=1002,accb=14452,doneb=13801,prncy=1721907,dmacy=22790,rxcy=0,rxb=0
+SYS_E,ms=10000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_CAL,ms=10000,state=3,retries=0,reason=0
+t=10053 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10153 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10253 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10353 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10453 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10553 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10653 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10753 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10853 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=10953 state=0 encL=0 encR=0 yaw= gz= dropped=2
+SYS_T,ms=11000,ticks=10846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=10846,valid=1844,stale=0,ir=10846
+SYS_IR,ms=11000,new=10846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=11000,start=10847,done=10846,fail=0,busy=0,dma_start=43386,dma_done=43386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=7849524,scan_max_us=724,dma_us=954484,dma_max_us=26
+SYS_IRC,ms=11000,tim_irq=75927,tim_cy=7955144,tim_maxcy=162,dma_irq=43386,dma_cy=8662078,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=11000,cal=3,n=4000,seq=1844,age=989,i2cok=10839,i2cerr=0,to=0,nr=5198,busy=0,locked=1,wd=0
+SYS_U,ms=11000,tx_drop=2,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=11000,q=660,peak=1002,accb=15810,doneb=15150,prncy=1902142,dmacy=24833,rxcy=0,rxb=0
+SYS_E,ms=11000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=11000,scan=10847,age_us=405,ambient_reads=10848,pair1_reads=10847,pair2_reads=10847,pair3_reads=10847,a0=9,a1=3,a2=18,a3=9,a4=6,a5=7,l0=10,l1=4,l2=27,l3=11,l4=6,l5=8,d0=1,d1=1,d2=9,d3=2,d4=0,d5=1
+t=11053 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11153 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11253 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11353 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11453 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11553 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11653 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11753 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11853 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=11953 state=0 encL=0 encR=0 yaw= gz= dropped=2
+SYS_T,ms=12000,ticks=11846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=11846,valid=2844,stale=0,ir=11846
+SYS_IR,ms=12000,new=11846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=12000,start=11847,done=11846,fail=0,busy=0,dma_start=47386,dma_done=47386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=8573184,scan_max_us=724,dma_us=1042484,dma_max_us=26
+SYS_IRC,ms=12000,tim_irq=82927,tim_cy=8689808,tim_maxcy=162,dma_irq=47386,dma_cy=9460042,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=12000,cal=3,n=4000,seq=2843,age=989,i2cok=11838,i2cerr=0,to=0,nr=5206,busy=0,locked=1,wd=0
+SYS_U,ms=12000,tx_drop=2,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=12000,q=661,peak=1021,accb=17332,doneb=16671,prncy=2079371,dmacy=27067,rxcy=0,rxb=0
+SYS_E,ms=12000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=12000,scan=11847,age_us=404,ambient_reads=11848,pair1_reads=11847,pair2_reads=11847,pair3_reads=11847,a0=9,a1=5,a2=17,a3=1,a4=8,a5=6,l0=9,l1=4,l2=26,l3=9,l4=8,l5=8,d0=0,d1=0,d2=9,d3=8,d4=0,d5=2
+t=12053 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12153 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12253 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12353 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12453 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12553 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12653 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12753 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12853 state=0 encL=0 encR=0 yaw= gz= dropped=2
+t=12953 state=0 encL=0 encR=0 yaw= gz= dropped=2
+SYS_T,ms=13000,ticks=12846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=12846,valid=3844,stale=0,ir=12846
+SYS_IR,ms=13000,new=12846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=13000,start=12847,done=12846,fail=0,busy=0,dma_start=51386,dma_done=51386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=9296862,scan_max_us=724,dma_us=1130485,dma_max_us=26
+SYS_IRC,ms=13000,tim_irq=89927,tim_cy=9424588,tim_maxcy=162,dma_irq=51386,dma_cy=10258038,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=13000,cal=3,n=4000,seq=3843,age=989,i2cok=12838,i2cerr=0,to=0,nr=5206,busy=0,locked=1,wd=0
+SYS_U,ms=13000,tx_drop=2,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=13000,q=662,peak=1021,accb=18853,doneb=18191,prncy=2256575,dmacy=28919,rxcy=0,rxb=0
+SYS_E,ms=13000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=13053 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13153 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13253 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13353 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13453 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13553 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13653 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13753 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13853 state=0 encL=0 encR=0 yaw= gz= dropped=3
+t=13953 state=0 encL=0 encR=0 yaw= gz= dropped=3
+SYS_T,ms=14000,ticks=13846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=13846,valid=4844,stale=0,ir=13846
+SYS_IR,ms=14000,new=13846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=14000,start=13847,done=13846,fail=0,busy=0,dma_start=55386,dma_done=55386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=10020551,scan_max_us=724,dma_us=1218484,dma_max_us=26
+SYS_IRC,ms=14000,tim_irq=96927,tim_cy=10158599,tim_maxcy=162,dma_irq=55386,dma_cy=11056101,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=14000,cal=3,n=4000,seq=4843,age=989,i2cok=13838,i2cerr=0,to=0,nr=5503,busy=0,locked=1,wd=0
+SYS_U,ms=14000,tx_drop=3,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=14000,q=664,peak=1021,accb=20170,doneb=19506,prncy=2432230,dmacy=30962,rxcy=0,rxb=0
+SYS_E,ms=14000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=14053 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14153 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14253 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14353 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14453 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14553 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14653 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14753 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14853 state=0 encL=0 encR=0 yaw= gz= dropped=4
+t=14953 state=0 encL=0 encR=0 yaw= gz= dropped=4
+SYS_T,ms=15000,ticks=14846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=14846,valid=5844,stale=0,ir=14846
+SYS_IR,ms=15000,new=14846,old=0,age_us=276,age_max_us=293
+SYS_IRD,ms=15000,start=14847,done=14846,fail=0,busy=0,dma_start=59386,dma_done=59386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=10744222,scan_max_us=724,dma_us=1306482,dma_max_us=26
+SYS_IRC,ms=15000,tim_irq=103927,tim_cy=10893281,tim_maxcy=162,dma_irq=59386,dma_cy=11853980,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=15000,cal=3,n=4000,seq=5843,age=989,i2cok=14838,i2cerr=0,to=0,nr=5503,busy=0,locked=1,wd=0
+SYS_U,ms=15000,tx_drop=4,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=15000,q=665,peak=1021,accb=21488,doneb=20823,prncy=2607757,dmacy=33005,rxcy=0,rxb=0
+SYS_E,ms=15000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=15053 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15153 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15253 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15353 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15453 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15553 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15653 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15753 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15853 state=0 encL=0 encR=0 yaw= gz= dropped=5
+t=15953 state=0 encL=0 encR=0 yaw= gz= dropped=5
+SYS_T,ms=16000,ticks=15846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=15846,valid=6844,stale=0,ir=15846
+SYS_IR,ms=16000,new=15846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=16000,start=15847,done=15846,fail=0,busy=0,dma_start=63386,dma_done=63386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=11467914,scan_max_us=724,dma_us=1394482,dma_max_us=26
+SYS_IRC,ms=16000,tim_irq=110927,tim_cy=11627186,tim_maxcy=162,dma_irq=63386,dma_cy=12652132,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=16000,cal=3,n=4000,seq=6843,age=989,i2cok=15838,i2cerr=0,to=0,nr=5870,busy=0,locked=1,wd=0
+SYS_U,ms=16000,tx_drop=5,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=16000,q=665,peak=1021,accb=22806,doneb=22141,prncy=2783588,dmacy=34972,rxcy=0,rxb=0
+SYS_E,ms=16000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=16053 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16153 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16253 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16353 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16453 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16553 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16653 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16753 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16853 state=0 encL=0 encR=0 yaw= gz= dropped=6
+t=16953 state=0 encL=0 encR=0 yaw= gz= dropped=6
+SYS_T,ms=17000,ticks=16846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=16846,valid=7844,stale=0,ir=16846
+SYS_IR,ms=17000,new=16846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=17000,start=16847,done=16846,fail=0,busy=0,dma_start=67386,dma_done=67386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=12191573,scan_max_us=724,dma_us=1482482,dma_max_us=26
+SYS_IRC,ms=17000,tim_irq=117927,tim_cy=12361891,tim_maxcy=162,dma_irq=67386,dma_cy=13450115,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=17000,cal=3,n=4000,seq=7843,age=989,i2cok=16838,i2cerr=0,to=0,nr=5870,busy=0,locked=1,wd=0
+SYS_U,ms=17000,tx_drop=6,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=17000,q=665,peak=1021,accb=24124,doneb=23459,prncy=2959165,dmacy=37139,rxcy=0,rxb=0
+SYS_E,ms=17000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=17053 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17153 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17253 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17353 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17453 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17553 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17653 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17753 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17853 state=0 encL=0 encR=0 yaw= gz= dropped=7
+t=17953 state=0 encL=0 encR=0 yaw= gz= dropped=7
+SYS_T,ms=18000,ticks=17846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=17846,valid=8844,stale=0,ir=17846
+SYS_IR,ms=18000,new=17846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=18000,start=17847,done=17846,fail=0,busy=0,dma_start=71386,dma_done=71386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=12915228,scan_max_us=724,dma_us=1570482,dma_max_us=26
+SYS_IRC,ms=18000,tim_irq=124927,tim_cy=13096526,tim_maxcy=162,dma_irq=71386,dma_cy=14248059,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=18000,cal=3,n=4000,seq=8843,age=990,i2cok=17838,i2cerr=0,to=0,nr=5870,busy=0,locked=1,wd=0
+SYS_U,ms=18000,tx_drop=7,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=18000,q=665,peak=1021,accb=25442,doneb=24777,prncy=3134753,dmacy=39182,rxcy=0,rxb=0
+SYS_E,ms=18000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=18053 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18153 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18253 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18353 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18453 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18553 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18653 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18753 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18853 state=0 encL=0 encR=0 yaw= gz= dropped=8
+t=18953 state=0 encL=0 encR=0 yaw= gz= dropped=8
+SYS_T,ms=19000,ticks=18846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=18846,valid=9844,stale=0,ir=18846
+SYS_IR,ms=19000,new=18846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=19000,start=18847,done=18846,fail=0,busy=0,dma_start=75386,dma_done=75386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=13638907,scan_max_us=724,dma_us=1658481,dma_max_us=26
+SYS_IRC,ms=19000,tim_irq=131927,tim_cy=13830954,tim_maxcy=162,dma_irq=75386,dma_cy=15046040,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=19000,cal=3,n=4000,seq=9843,age=988,i2cok=18838,i2cerr=0,to=0,nr=5996,busy=0,locked=1,wd=0
+SYS_U,ms=19000,tx_drop=8,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=19000,q=665,peak=1021,accb=26760,doneb=26095,prncy=3310342,dmacy=41349,rxcy=0,rxb=0
+SYS_E,ms=19000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=19053 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19153 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19253 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19353 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19453 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19553 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19653 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19753 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19853 state=0 encL=0 encR=0 yaw= gz= dropped=9
+t=19953 state=0 encL=0 encR=0 yaw= gz= dropped=9
+SYS_T,ms=20000,ticks=19846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=19846,valid=10844,stale=0,ir=19846
+SYS_IR,ms=20000,new=19846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=20000,start=19847,done=19846,fail=0,busy=0,dma_start=79386,dma_done=79386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=14362591,scan_max_us=724,dma_us=1746480,dma_max_us=26
+SYS_IRC,ms=20000,tim_irq=138927,tim_cy=14565349,tim_maxcy=162,dma_irq=79386,dma_cy=15844141,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=20000,cal=3,n=4000,seq=10843,age=989,i2cok=19838,i2cerr=0,to=0,nr=6135,busy=0,locked=1,wd=0
+SYS_U,ms=20000,tx_drop=9,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=20000,q=667,peak=1021,accb=28080,doneb=27413,prncy=3485989,dmacy=43392,rxcy=0,rxb=0
+SYS_E,ms=20000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=20053 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20153 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20253 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20353 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20453 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20553 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20653 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20753 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20853 state=0 encL=0 encR=0 yaw= gz= dropped=10
+t=20953 state=0 encL=0 encR=0 yaw= gz= dropped=10
+SYS_T,ms=21000,ticks=20846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=20846,valid=11844,stale=0,ir=20846
+SYS_IR,ms=21000,new=20846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=21000,start=20847,done=20846,fail=0,busy=0,dma_start=83386,dma_done=83386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=15086247,scan_max_us=724,dma_us=1834479,dma_max_us=26
+SYS_IRC,ms=21000,tim_irq=145927,tim_cy=15300188,tim_maxcy=162,dma_irq=83386,dma_cy=16642131,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=21000,cal=3,n=4000,seq=11843,age=986,i2cok=20838,i2cerr=0,to=0,nr=6135,busy=0,locked=1,wd=0
+SYS_U,ms=21000,tx_drop=10,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=21000,q=668,peak=1021,accb=29411,doneb=28743,prncy=3661725,dmacy=45626,rxcy=0,rxb=0
+SYS_E,ms=21000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=21053 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21153 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21253 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21353 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21453 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21553 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21653 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21753 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21853 state=0 encL=0 encR=0 yaw= gz= dropped=11
+t=21953 state=0 encL=0 encR=0 yaw= gz= dropped=11
+SYS_T,ms=22000,ticks=21846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=21846,valid=12844,stale=0,ir=21846
+SYS_IR,ms=22000,new=21846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=22000,start=21847,done=21846,fail=0,busy=0,dma_start=87386,dma_done=87386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=15809900,scan_max_us=724,dma_us=1922479,dma_max_us=26
+SYS_IRC,ms=22000,tim_irq=152927,tim_cy=16034947,tim_maxcy=162,dma_irq=87386,dma_cy=17440206,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=22000,cal=3,n=4000,seq=12842,age=989,i2cok=21837,i2cerr=0,to=0,nr=6137,busy=0,locked=1,wd=0
+SYS_U,ms=22000,tx_drop=11,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=22000,q=668,peak=1021,accb=30742,doneb=30074,prncy=3837816,dmacy=47669,rxcy=0,rxb=0
+SYS_E,ms=22000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=22053 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22153 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22253 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22353 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22453 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22553 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22653 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22753 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22853 state=0 encL=0 encR=0 yaw= gz= dropped=12
+t=22953 state=0 encL=0 encR=0 yaw= gz= dropped=12
+SYS_T,ms=23000,ticks=22846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=22846,valid=13844,stale=0,ir=22846
+SYS_IR,ms=23000,new=22846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=23000,start=22847,done=22846,fail=0,busy=0,dma_start=91386,dma_done=91386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=16533653,scan_max_us=724,dma_us=2010478,dma_max_us=26
+SYS_IRC,ms=23000,tim_irq=159927,tim_cy=16768329,tim_maxcy=162,dma_irq=91386,dma_cy=18238441,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=23000,cal=3,n=4000,seq=13842,age=989,i2cok=22837,i2cerr=0,to=0,nr=6792,busy=0,locked=1,wd=0
+SYS_U,ms=23000,tx_drop=12,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=23000,q=668,peak=1021,accb=32073,doneb=31405,prncy=4014255,dmacy=49521,rxcy=0,rxb=0
+SYS_E,ms=23000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=23053 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23153 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23253 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23353 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23453 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23553 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23653 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23753 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23853 state=0 encL=0 encR=0 yaw= gz= dropped=13
+t=23953 state=0 encL=0 encR=0 yaw= gz= dropped=13
+SYS_T,ms=24000,ticks=23846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=23846,valid=14844,stale=0,ir=23846
+SYS_IR,ms=24000,new=23846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=24000,start=23847,done=23846,fail=0,busy=0,dma_start=95386,dma_done=95386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=17257290,scan_max_us=724,dma_us=2098477,dma_max_us=26
+SYS_IRC,ms=24000,tim_irq=166927,tim_cy=17503111,tim_maxcy=162,dma_irq=95386,dma_cy=19036504,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=24000,cal=3,n=4000,seq=14842,age=989,i2cok=23837,i2cerr=0,to=0,nr=6792,busy=0,locked=1,wd=0
+SYS_U,ms=24000,tx_drop=13,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=24000,q=668,peak=1021,accb=33404,doneb=32736,prncy=4190365,dmacy=51564,rxcy=0,rxb=0
+SYS_E,ms=24000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=24053 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24153 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24253 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24353 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24453 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24553 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24653 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24753 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24853 state=0 encL=0 encR=0 yaw= gz= dropped=14
+t=24953 state=0 encL=0 encR=0 yaw= gz= dropped=14
+SYS_T,ms=25000,ticks=24846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=24846,valid=15844,stale=0,ir=24846
+SYS_IR,ms=25000,new=24846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=25000,start=24847,done=24846,fail=0,busy=0,dma_start=99386,dma_done=99386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=17980954,scan_max_us=724,dma_us=2186477,dma_max_us=26
+SYS_IRC,ms=25000,tim_irq=173927,tim_cy=18237895,tim_maxcy=162,dma_irq=99386,dma_cy=19834628,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=25000,cal=3,n=4000,seq=15841,age=989,i2cok=24836,i2cerr=0,to=0,nr=6794,busy=0,locked=1,wd=0
+SYS_U,ms=25000,tx_drop=14,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=25000,q=668,peak=1021,accb=34735,doneb=34067,prncy=4366367,dmacy=53607,rxcy=0,rxb=0
+SYS_E,ms=25000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=25053 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25153 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25253 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25353 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25453 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25553 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25653 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25753 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25853 state=0 encL=0 encR=0 yaw= gz= dropped=15
+t=25953 state=0 encL=0 encR=0 yaw= gz= dropped=15
+SYS_T,ms=26000,ticks=25846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=25846,valid=16844,stale=0,ir=25846
+SYS_IR,ms=26000,new=25846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=26000,start=25847,done=25846,fail=0,busy=0,dma_start=103386,dma_done=103386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=18704666,scan_max_us=724,dma_us=2274477,dma_max_us=26
+SYS_IRC,ms=26000,tim_irq=180927,tim_cy=18972232,tim_maxcy=162,dma_irq=103386,dma_cy=20632731,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=26000,cal=3,n=4000,seq=16841,age=989,i2cok=25836,i2cerr=0,to=0,nr=6994,busy=0,locked=1,wd=0
+SYS_U,ms=26000,tx_drop=15,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=26000,q=671,peak=1021,accb=36069,doneb=35398,prncy=4542648,dmacy=55459,rxcy=0,rxb=0
+SYS_E,ms=26000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=26053 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26153 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26253 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26353 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26453 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26553 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26653 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26753 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26853 state=0 encL=0 encR=0 yaw= gz= dropped=16
+t=26953 state=0 encL=0 encR=0 yaw= gz= dropped=16
+SYS_T,ms=27000,ticks=26846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=26846,valid=17844,stale=0,ir=26846
+SYS_IR,ms=27000,new=26846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=27000,start=26847,done=26846,fail=0,busy=0,dma_start=107386,dma_done=107386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=19428353,scan_max_us=724,dma_us=2362476,dma_max_us=26
+SYS_IRC,ms=27000,tim_irq=187927,tim_cy=19706527,tim_maxcy=162,dma_irq=107386,dma_cy=21430754,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=27000,cal=3,n=4000,seq=17840,age=668,i2cok=26835,i2cerr=0,to=0,nr=7151,busy=0,locked=1,wd=0
+SYS_U,ms=27000,tx_drop=16,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=27000,q=671,peak=1021,accb=37403,doneb=36732,prncy=4718738,dmacy=57601,rxcy=0,rxb=0
+SYS_E,ms=27000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=27053 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27153 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27253 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27353 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27453 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27553 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27653 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27753 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27853 state=0 encL=0 encR=0 yaw= gz= dropped=17
+t=27953 state=0 encL=0 encR=0 yaw= gz= dropped=17
+SYS_T,ms=28000,ticks=27846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=27846,valid=18844,stale=0,ir=27846
+SYS_IR,ms=28000,new=27846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=28000,start=27847,done=27846,fail=0,busy=0,dma_start=111386,dma_done=111386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=20152150,scan_max_us=724,dma_us=2450475,dma_max_us=26
+SYS_IRC,ms=28000,tim_irq=194927,tim_cy=20439483,tim_maxcy=162,dma_irq=111386,dma_cy=22229212,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=28000,cal=3,n=4000,seq=18839,age=989,i2cok=27834,i2cerr=0,to=0,nr=8075,busy=0,locked=1,wd=0
+SYS_U,ms=28000,tx_drop=17,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=28000,q=671,peak=1021,accb=38737,doneb=38066,prncy=4895515,dmacy=59835,rxcy=0,rxb=0
+SYS_E,ms=28000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=28053 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28153 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28253 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28353 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28453 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28553 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28653 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28753 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28853 state=0 encL=0 encR=0 yaw= gz= dropped=18
+t=28953 state=0 encL=0 encR=0 yaw= gz= dropped=18
+SYS_T,ms=29000,ticks=28846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=28846,valid=19844,stale=0,ir=28846
+SYS_IR,ms=29000,new=28846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=29000,start=28847,done=28846,fail=0,busy=0,dma_start=115386,dma_done=115386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=20875805,scan_max_us=724,dma_us=2538473,dma_max_us=26
+SYS_IRC,ms=29000,tim_irq=201927,tim_cy=21174247,tim_maxcy=162,dma_irq=115386,dma_cy=23027305,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=29000,cal=3,n=4000,seq=19839,age=989,i2cok=28834,i2cerr=0,to=0,nr=8075,busy=0,locked=1,wd=0
+SYS_U,ms=29000,tx_drop=18,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=29000,q=671,peak=1021,accb=40071,doneb=39400,prncy=5071584,dmacy=61878,rxcy=0,rxb=0
+SYS_E,ms=29000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=29053 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29153 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29253 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29353 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29453 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29553 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29653 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29753 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29853 state=0 encL=0 encR=0 yaw= gz= dropped=19
+t=29953 state=0 encL=0 encR=0 yaw= gz= dropped=19
+SYS_T,ms=30000,ticks=29846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=29846,valid=20844,stale=0,ir=29846
+SYS_IR,ms=30000,new=29846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=30000,start=29847,done=29846,fail=0,busy=0,dma_start=119386,dma_done=119386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=21599463,scan_max_us=724,dma_us=2626470,dma_max_us=26
+SYS_IRC,ms=30000,tim_irq=208927,tim_cy=21909020,tim_maxcy=162,dma_irq=119386,dma_cy=23825315,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=30000,cal=3,n=4000,seq=20839,age=989,i2cok=29834,i2cerr=0,to=0,nr=8075,busy=0,locked=1,wd=0
+SYS_U,ms=30000,tx_drop=19,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=30000,q=671,peak=1021,accb=41405,doneb=40734,prncy=5247769,dmacy=63921,rxcy=0,rxb=0
+SYS_E,ms=30000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=30053 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30153 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30253 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30353 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30453 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30553 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30653 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30753 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30853 state=0 encL=0 encR=0 yaw= gz= dropped=20
+t=30953 state=0 encL=0 encR=0 yaw= gz= dropped=20
+SYS_T,ms=31000,ticks=30846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=30846,valid=21844,stale=0,ir=30846
+SYS_IR,ms=31000,new=30846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=31000,start=30847,done=30846,fail=0,busy=0,dma_start=123386,dma_done=123386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=22323221,scan_max_us=724,dma_us=2714469,dma_max_us=26
+SYS_IRC,ms=31000,tim_irq=215927,tim_cy=22642298,tim_maxcy=162,dma_irq=123386,dma_cy=24623636,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=31000,cal=3,n=4000,seq=21839,age=664,i2cok=30834,i2cerr=0,to=0,nr=8847,busy=0,locked=1,wd=0
+SYS_U,ms=31000,tx_drop=20,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=31000,q=671,peak=1021,accb=42739,doneb=42068,prncy=5423968,dmacy=66155,rxcy=0,rxb=0
+SYS_E,ms=31000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=31053 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31153 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31253 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31353 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31453 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31553 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31653 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31753 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31853 state=0 encL=0 encR=0 yaw= gz= dropped=21
+t=31953 state=0 encL=0 encR=0 yaw= gz= dropped=21
+SYS_T,ms=32000,ticks=31846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=31846,valid=22844,stale=0,ir=31846
+SYS_IR,ms=32000,new=31846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=32000,start=31847,done=31846,fail=0,busy=0,dma_start=127386,dma_done=127386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=23047056,scan_max_us=724,dma_us=2802468,dma_max_us=26
+SYS_IRC,ms=32000,tim_irq=222927,tim_cy=23375299,tim_maxcy=162,dma_irq=127386,dma_cy=25422210,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=32000,cal=3,n=4000,seq=22838,age=664,i2cok=31833,i2cerr=0,to=0,nr=9798,busy=0,locked=1,wd=0
+SYS_U,ms=32000,tx_drop=21,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=32000,q=671,peak=1021,accb=44073,doneb=43402,prncy=5600269,dmacy=68198,rxcy=0,rxb=0
+SYS_E,ms=32000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=32053 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32153 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32253 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32353 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32453 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32553 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32653 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32753 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32853 state=0 encL=0 encR=0 yaw= gz= dropped=22
+t=32953 state=0 encL=0 encR=0 yaw= gz= dropped=22
+SYS_T,ms=33000,ticks=32846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=32846,valid=23844,stale=0,ir=32846
+SYS_IR,ms=33000,new=32846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=33000,start=32847,done=32846,fail=0,busy=0,dma_start=131386,dma_done=131386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=23770732,scan_max_us=724,dma_us=2890467,dma_max_us=26
+SYS_IRC,ms=33000,tim_irq=229927,tim_cy=24109757,tim_maxcy=162,dma_irq=131386,dma_cy=26220243,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=33000,cal=3,n=4000,seq=23837,age=989,i2cok=32832,i2cerr=0,to=0,nr=9921,busy=0,locked=1,wd=0
+SYS_U,ms=33000,tx_drop=22,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=33000,q=671,peak=1021,accb=45407,doneb=44736,prncy=5776554,dmacy=70050,rxcy=0,rxb=0
+SYS_E,ms=33000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=33053 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33153 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33253 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33353 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33453 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33553 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33653 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33753 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33853 state=0 encL=0 encR=0 yaw= gz= dropped=23
+t=33953 state=0 encL=0 encR=0 yaw= gz= dropped=23
+SYS_T,ms=34000,ticks=33846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=33846,valid=24844,stale=0,ir=33846
+SYS_IR,ms=34000,new=33846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=34000,start=33847,done=33846,fail=0,busy=0,dma_start=135386,dma_done=135386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=24494501,scan_max_us=724,dma_us=2978466,dma_max_us=26
+SYS_IRC,ms=34000,tim_irq=236927,tim_cy=24844615,tim_maxcy=162,dma_irq=135386,dma_cy=27018960,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=34000,cal=3,n=4000,seq=24837,age=988,i2cok=33832,i2cerr=0,to=0,nr=9921,busy=0,locked=1,wd=0
+SYS_U,ms=34000,tx_drop=23,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=34000,q=671,peak=1021,accb=46741,doneb=46070,prncy=5952673,dmacy=72093,rxcy=0,rxb=0
+SYS_E,ms=34000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=34000,scan=33847,age_us=411,ambient_reads=33848,pair1_reads=33847,pair2_reads=33847,pair3_reads=33847,a0=9,a1=4,a2=18,a3=0,a4=6,a5=8,l0=7,l1=4,l2=28,l3=10,l4=7,l5=6,d0=0,d1=0,d2=10,d3=10,d4=1,d5=0
+t=34153 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34253 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34353 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34453 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34553 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34653 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34753 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34853 state=0 encL=0 encR=0 yaw= gz= dropped=24
+t=34953 state=0 encL=0 encR=0 yaw= gz= dropped=24
+SYS_T,ms=35000,ticks=34846,late=0,gap=0,maxcy=1044,encmaxcy=457,motmaxcy=45,motticks=34846,valid=25844,stale=0,ir=34846
+SYS_IR,ms=35000,new=34846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=35000,start=34847,done=34846,fail=0,busy=0,dma_start=139386,dma_done=139386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=25218203,scan_max_us=724,dma_us=3066466,dma_max_us=26
+SYS_IRC,ms=35000,tim_irq=243927,tim_cy=25577243,tim_maxcy=162,dma_irq=139386,dma_cy=27816706,dma_maxcy=299,adc_clk=24000000
+SYS_M,ms=35000,cal=3,n=4000,seq=25837,age=665,i2cok=34832,i2cerr=0,to=0,nr=10754,busy=0,locked=1,wd=0
+SYS_U,ms=35000,tx_drop=24,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=35000,q=672,peak=1023,accb=48234,doneb=47562,prncy=6131035,dmacy=74123,rxcy=0,rxb=0
+SYS_E,ms=35000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+t=35053 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35153 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35253 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35353 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35453 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35553 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35653 state=0 encL=0 encR=0 yaw= gz= dropped=25
+t=35753 state=0 encL=0 encR=0 yaw= gz= dropped=25

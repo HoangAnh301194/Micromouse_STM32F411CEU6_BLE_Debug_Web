@@ -11,7 +11,11 @@
  * The producer runs in main context; DMA completion runs in its IRQ.
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
+#if defined(INTEGRATION_DIAG)
+#define UART_TX_BUFFER_SIZE 2048U
+#else
 #define UART_TX_BUFFER_SIZE 1024U
+#endif
 #define UART_RX_BUFFER_SIZE 256U
 /* DMA2 HISR/HIFCR flags for Stream7 (STM32F411 RM0383). */
 #define UART_DMA7_TCIF  (1UL << 27)

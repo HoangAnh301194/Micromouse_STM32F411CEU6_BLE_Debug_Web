@@ -1,0 +1,631 @@
+SYS_IRV,ms=25800,scan=25646,age_us=499,ambient_reads=25647,pair1_reads=25646,pair2_reads=25646,pair3_reads=25646,a0=9,a1=5,a2=18,a3=0,a4=7,a5=8,l0=8,l1=4,l2=27,l3=11,l4=7,l5=9,d0=0,d1=0,d2=9,d3=11,d4=0,d5=1
+t=25853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=25953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=26000,ticks=25846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=25846,valid=16846,stale=0,ir=25846
+SYS_IR,ms=26000,new=25846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=26000,start=25847,done=25846,fail=0,busy=0,dma_start=103386,dma_done=103386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=18686657,scan_max_us=724,dma_us=2274194,dma_max_us=23,tim_irq=180927,tim_cy=19049567,tim_maxcy=164,dma_irq=103386,dma_cy=20617374,dSYS_M,ms=26000,cal=3,n=4000,seq=16841,age=989,i2cok=25839,i2cerr=0,to=0,nr=5449,busy=0,locked=1,wd=0
+SYS_U,ms=26000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=26000,q=621,peak=1011,accb=59375,doneb=58754,prncy=7093194,dmacy=74371,rxcy=0,rxb=0
+SYS_E,ms=26000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=26000,scan=25847,age_us=381,ambient_reads=25847,pair1_reads=25847,pair2_reads=25847,pair3_reads=25847,a0=9,a1=4,a2=20,a3=23,a4=7,a5=4,l0=9,l1=5,l2=24,l3=8,l4=6,l5=8,d0=0,d1=1,d2=4,d3=0,d4=0,d5=4
+t=26053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=26153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=26200,scan=26046,age_us=499,ambient_reads=26047,pair1_reads=26046,pair2_reads=26046,pair3_reads=26046,a0=9,a1=4,a2=17,a3=15,a4=6,a5=7,l0=10,l1=4,l2=28,l3=8,l4=8,l5=8,d0=1,d1=0,d2=11,d3=0,d4=2,d5=1
+t=26253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=26353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=26400,scan=26246,age_us=499,ambient_reads=26247,pair1_reads=26246,pair2_reads=26246,pair3_reads=26246,a0=9,a1=3,a2=19,a3=23,a4=7,a5=6,l0=9,l1=4,l2=27,l3=10,l4=8,l5=9,d0=0,d1=1,d2=8,d3=0,d4=1,d5=3
+t=26453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=26553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=26600,scan=26446,age_us=499,ambient_reads=26447,pair1_reads=26446,pair2_reads=26446,pair3_reads=26446,a0=9,a1=4,a2=19,a3=23,a4=7,a5=5,l0=9,l1=4,l2=27,l3=11,l4=8,l5=8,d0=0,d1=0,d2=8,d3=0,d4=1,d5=3
+t=26653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=26753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=26800,scan=26646,age_us=499,ambient_reads=26647,pair1_reads=26646,pair2_reads=26646,pair3_reads=26646,a0=10,a1=3,a2=20,a3=23,a4=7,a5=6,l0=8,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=2,d2=7,d3=0,d4=1,d5=2
+t=26853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=26953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=27000,ticks=26846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=26846,valid=17846,stale=0,ir=26846
+SYS_IR,ms=27000,new=26846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=27000,start=26847,done=26846,fail=0,busy=0,dma_start=107386,dma_done=107386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=19409657,scan_max_us=724,dma_us=2362190,dma_max_us=23,tim_irq=187927,tim_cy=19788877,tim_maxcy=164,dma_irq=107386,dma_cy=21415087,dSYS_M,ms=27000,cal=3,n=4000,seq=17841,age=989,i2cok=26839,i2cerr=0,to=0,nr=5458,busy=0,locked=1,wd=0
+SYS_U,ms=27000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=27000,q=621,peak=1011,accb=61690,doneb=61069,prncy=7368200,dmacy=76951,rxcy=0,rxb=0
+SYS_E,ms=27000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=27000,scan=26847,age_us=381,ambient_reads=26847,pair1_reads=26847,pair2_reads=26847,pair3_reads=26847,a0=10,a1=4,a2=18,a3=14,a4=6,a5=7,l0=9,l1=4,l2=24,l3=9,l4=7,l5=8,d0=0,d1=0,d2=6,d3=0,d4=1,d5=1
+t=27053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=27153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=27200,scan=27046,age_us=499,ambient_reads=27047,pair1_reads=27046,pair2_reads=27046,pair3_reads=27046,a0=9,a1=3,a2=20,a3=23,a4=8,a5=6,l0=9,l1=4,l2=28,l3=8,l4=8,l5=8,d0=0,d1=1,d2=8,d3=0,d4=0,d5=2
+t=27253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=27353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=27400,scan=27246,age_us=499,ambient_reads=27247,pair1_reads=27246,pair2_reads=27246,pair3_reads=27246,a0=9,a1=2,a2=20,a3=24,a4=8,a5=6,l0=8,l1=4,l2=28,l3=9,l4=8,l5=8,d0=0,d1=2,d2=8,d3=0,d4=0,d5=2
+t=27453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=27553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=27600,scan=27446,age_us=499,ambient_reads=27447,pair1_reads=27446,pair2_reads=27446,pair3_reads=27446,a0=9,a1=3,a2=20,a3=22,a4=7,a5=6,l0=8,l1=5,l2=28,l3=10,l4=8,l5=8,d0=0,d1=2,d2=8,d3=0,d4=1,d5=2
+t=27653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=27753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=27800,scan=27646,age_us=499,ambient_reads=27647,pair1_reads=27646,pair2_reads=27646,pair3_reads=27646,a0=9,a1=4,a2=20,a3=22,a4=7,a5=5,l0=9,l1=3,l2=28,l3=5,l4=8,l5=8,d0=0,d1=0,d2=8,d3=0,d4=1,d5=3
+t=27853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=27953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=28000,ticks=27846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=27846,valid=18846,stale=0,ir=27846
+SYS_IR,ms=28000,new=27846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=28000,start=27847,done=27846,fail=0,busy=0,dma_start=111386,dma_done=111386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=20132657,scan_max_us=724,dma_us=2450185,dma_max_us=23,tim_irq=194927,tim_cy=20529307,tim_maxcy=164,dma_irq=111386,dma_cy=22212986,dSYS_M,ms=28000,cal=3,n=4000,seq=18841,age=989,i2cok=27839,i2cerr=0,to=0,nr=5458,busy=0,locked=1,wd=0
+SYS_U,ms=28000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=28000,q=621,peak=1011,accb=64001,doneb=63380,prncy=7643150,dmacy=79719,rxcy=0,rxb=0
+SYS_E,ms=28000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=28000,scan=27847,age_us=381,ambient_reads=27847,pair1_reads=27847,pair2_reads=27847,pair3_reads=27847,a0=10,a1=4,a2=19,a3=24,a4=7,a5=7,l0=10,l1=4,l2=24,l3=8,l4=6,l5=8,d0=0,d1=0,d2=5,d3=0,d4=0,d5=1
+t=28053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=28153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=28200,scan=28046,age_us=499,ambient_reads=28047,pair1_reads=28046,pair2_reads=28046,pair3_reads=28046,a0=10,a1=5,a2=18,a3=1,a4=8,a5=8,l0=8,l1=5,l2=27,l3=10,l4=8,l5=9,d0=0,d1=0,d2=9,d3=9,d4=0,d5=1
+t=28253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=28353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=28400,scan=28246,age_us=499,ambient_reads=28247,pair1_reads=28246,pair2_reads=28246,pair3_reads=28246,a0=9,a1=3,a2=19,a3=23,a4=7,a5=5,l0=9,l1=4,l2=28,l3=11,l4=8,l5=8,d0=0,d1=1,d2=9,d3=0,d4=1,d5=3
+t=28453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=28553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=28600,scan=28446,age_us=498,ambient_reads=28447,pair1_reads=28446,pair2_reads=28446,pair3_reads=28446,a0=10,a1=5,a2=19,a3=10,a4=4,a5=7,l0=8,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=0,d2=8,d3=0,d4=4,d5=1
+t=28653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=28753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=28800,scan=28646,age_us=499,ambient_reads=28647,pair1_reads=28646,pair2_reads=28646,pair3_reads=28646,a0=9,a1=4,a2=19,a3=20,a4=7,a5=7,l0=9,l1=3,l2=28,l3=10,l4=6,l5=8,d0=0,d1=0,d2=9,d3=0,d4=0,d5=1
+t=28853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=28953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=29000,ticks=28846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=28846,valid=19846,stale=0,ir=28846
+SYS_IR,ms=29000,new=28846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=29000,start=28847,done=28846,fail=0,busy=0,dma_start=115386,dma_done=115386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=20855657,scan_max_us=724,dma_us=2538180,dma_max_us=23,tim_irq=201927,tim_cy=21268273,tim_maxcy=164,dma_irq=115386,dma_cy=23010702,dSYS_M,ms=29000,cal=3,n=4000,seq=19841,age=987,i2cok=28839,i2cerr=0,to=0,nr=5560,busy=0,locked=1,wd=0
+SYS_U,ms=29000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=29000,q=621,peak=1011,accb=66317,doneb=65696,prncy=7918424,dmacy=82487,rxcy=0,rxb=0
+SYS_E,ms=29000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=29000,scan=28847,age_us=381,ambient_reads=28847,pair1_reads=28847,pair2_reads=28847,pair3_reads=28847,a0=9,a1=4,a2=19,a3=12,a4=8,a5=7,l0=8,l1=4,l2=24,l3=10,l4=6,l5=8,d0=0,d1=0,d2=5,d3=0,d4=0,d5=1
+t=29053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=29153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=29200,scan=29046,age_us=499,ambient_reads=29047,pair1_reads=29046,pair2_reads=29046,pair3_reads=29046,a0=9,a1=2,a2=20,a3=22,a4=7,a5=6,l0=8,l1=6,l2=27,l3=11,l4=8,l5=8,d0=0,d1=4,d2=7,d3=0,d4=1,d5=2
+t=29253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=29353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=29400,scan=29246,age_us=499,ambient_reads=29247,pair1_reads=29246,pair2_reads=29246,pair3_reads=29246,a0=8,a1=5,a2=20,a3=16,a4=6,a5=7,l0=9,l1=4,l2=27,l3=8,l4=7,l5=8,d0=1,d1=0,d2=7,d3=0,d4=1,d5=1
+t=29453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=29553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=29600,scan=29446,age_us=499,ambient_reads=29447,pair1_reads=29446,pair2_reads=29446,pair3_reads=29446,a0=9,a1=3,a2=19,a3=23,a4=8,a5=6,l0=9,l1=3,l2=27,l3=9,l4=7,l5=8,d0=0,d1=0,d2=8,d3=0,d4=0,d5=2
+t=29653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=29753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=29800,scan=29646,age_us=499,ambient_reads=29647,pair1_reads=29646,pair2_reads=29646,pair3_reads=29646,a0=9,a1=3,a2=20,a3=22,a4=7,a5=4,l0=9,l1=3,l2=27,l3=9,l4=8,l5=8,d0=0,d1=0,d2=7,d3=0,d4=1,d5=4
+t=29853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=29953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=30000,ticks=29846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=29846,valid=20846,stale=0,ir=29846
+SYS_IR,ms=30000,new=29846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=30000,start=29847,done=29846,fail=0,busy=0,dma_start=119386,dma_done=119386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=21578657,scan_max_us=724,dma_us=2626179,dma_max_us=23,tim_irq=208927,tim_cy=22008070,tim_maxcy=164,dma_irq=119386,dma_cy=23808626,dSYS_M,ms=30000,cal=3,n=4000,seq=20840,age=988,i2cok=29838,i2cerr=0,to=0,nr=5575,busy=0,locked=1,wd=0
+SYS_U,ms=30000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=30000,q=621,peak=1011,accb=68628,doneb=68007,prncy=8193465,dmacy=85067,rxcy=0,rxb=0
+SYS_E,ms=30000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=30000,scan=29847,age_us=381,ambient_reads=29847,pair1_reads=29847,pair2_reads=29847,pair3_reads=29847,a0=9,a1=4,a2=18,a3=14,a4=6,a5=8,l0=9,l1=4,l2=23,l3=9,l4=7,l5=8,d0=0,d1=0,d2=5,d3=0,d4=1,d5=0
+t=30053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=30153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=30200,scan=30046,age_us=499,ambient_reads=30047,pair1_reads=30046,pair2_reads=30046,pair3_reads=30046,a0=10,a1=3,a2=20,a3=22,a4=8,a5=6,l0=8,l1=4,l2=27,l3=11,l4=8,l5=8,d0=0,d1=1,d2=7,d3=0,d4=0,d5=2
+t=30253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=30353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=30400,scan=30246,age_us=499,ambient_reads=30247,pair1_reads=30246,pair2_reads=30246,pair3_reads=30246,a0=9,a1=1,a2=20,a3=24,a4=6,a5=5,l0=8,l1=4,l2=28,l3=10,l4=8,l5=9,d0=0,d1=3,d2=8,d3=0,d4=2,d5=4
+t=30453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=30553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=30600,scan=30446,age_us=499,ambient_reads=30447,pair1_reads=30446,pair2_reads=30446,pair3_reads=30446,a0=10,a1=4,a2=20,a3=24,a4=7,a5=8,l0=9,l1=4,l2=27,l3=9,l4=8,l5=8,d0=0,d1=0,d2=7,d3=0,d4=1,d5=0
+t=30653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=30753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=30800,scan=30646,age_us=499,ambient_reads=30647,pair1_reads=30646,pair2_reads=30646,pair3_reads=30646,a0=10,a1=4,a2=18,a3=0,a4=7,a5=7,l0=7,l1=4,l2=27,l3=10,l4=8,l5=8,d0=0,d1=0,d2=9,d3=10,d4=1,d5=1
+t=30853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=30953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=31000,ticks=30846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=30846,valid=21846,stale=0,ir=30846
+SYS_IR,ms=31000,new=30846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=31000,start=30847,done=30846,fail=0,busy=0,dma_start=123386,dma_done=123386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=22301657,scan_max_us=724,dma_us=2714178,dma_max_us=23,tim_irq=215927,tim_cy=22747250,tim_maxcy=164,dma_irq=123386,dma_cy=24606259,dSYS_M,ms=31000,cal=3,n=4000,seq=21840,age=988,i2cok=30838,i2cerr=0,to=0,nr=5575,busy=0,locked=1,wd=0
+SYS_U,ms=31000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=31000,q=621,peak=1011,accb=70943,doneb=70322,prncy=8468461,dmacy=87835,rxcy=0,rxb=0
+SYS_E,ms=31000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=31000,scan=30847,age_us=381,ambient_reads=30847,pair1_reads=30847,pair2_reads=30847,pair3_reads=30847,a0=9,a1=4,a2=20,a3=23,a4=6,a5=8,l0=9,l1=5,l2=25,l3=9,l4=8,l5=8,d0=0,d1=1,d2=5,d3=0,d4=2,d5=0
+t=31053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=31153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=31200,scan=31046,age_us=499,ambient_reads=31047,pair1_reads=31046,pair2_reads=31046,pair3_reads=31046,a0=9,a1=5,a2=20,a3=23,a4=8,a5=6,l0=9,l1=4,l2=27,l3=9,l4=8,l5=8,d0=0,d1=0,d2=7,d3=0,d4=0,d5=2
+t=31253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=31353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=31400,scan=31246,age_us=499,ambient_reads=31247,pair1_reads=31246,pair2_reads=31246,pair3_reads=31246,a0=9,a1=3,a2=20,a3=20,a4=3,a5=4,l0=9,l1=4,l2=28,l3=11,l4=7,l5=8,d0=0,d1=1,d2=8,d3=0,d4=4,d5=4
+t=31453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=31553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=31600,scan=31446,age_us=499,ambient_reads=31447,pair1_reads=31446,pair2_reads=31446,pair3_reads=31446,a0=10,a1=4,a2=20,a3=23,a4=6,a5=6,l0=9,l1=5,l2=26,l3=9,l4=8,l5=8,d0=0,d1=1,d2=6,d3=0,d4=2,d5=2
+t=31653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=31753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=31800,scan=31646,age_us=499,ambient_reads=31647,pair1_reads=31646,pair2_reads=31646,pair3_reads=31646,a0=10,a1=4,a2=20,a3=23,a4=7,a5=6,l0=8,l1=4,l2=27,l3=10,l4=8,l5=9,d0=0,d1=0,d2=7,d3=0,d4=1,d5=3
+t=31853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=31953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=32000,ticks=31846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=31846,valid=22846,stale=0,ir=31846
+SYS_IR,ms=32000,new=31846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=32000,start=31847,done=31846,fail=0,busy=0,dma_start=127386,dma_done=127386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=23024657,scan_max_us=724,dma_us=2802173,dma_max_us=23,tim_irq=222927,tim_cy=23486700,tim_maxcy=164,dma_irq=127386,dma_cy=25403938,dSYS_M,ms=32000,cal=3,n=4000,seq=22840,age=989,i2cok=31838,i2cerr=0,to=0,nr=5575,busy=0,locked=1,wd=0
+SYS_U,ms=32000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=32000,q=621,peak=1011,accb=73256,doneb=72635,prncy=8743453,dmacy=90603,rxcy=0,rxb=0
+SYS_E,ms=32000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=32000,scan=31847,age_us=381,ambient_reads=31847,pair1_reads=31847,pair2_reads=31847,pair3_reads=31847,a0=9,a1=3,a2=20,a3=23,a4=8,a5=8,l0=8,l1=4,l2=24,l3=10,l4=6,l5=8,d0=0,d1=1,d2=4,d3=0,d4=0,d5=0
+t=32053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=32153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=32200,scan=32046,age_us=499,ambient_reads=32047,pair1_reads=32046,pair2_reads=32046,pair3_reads=32046,a0=10,a1=6,a2=18,a3=9,a4=7,a5=8,l0=11,l1=5,l2=28,l3=9,l4=9,l5=8,d0=1,d1=0,d2=10,d3=0,d4=2,d5=0
+t=32253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=32353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=32400,scan=32246,age_us=496,ambient_reads=32247,pair1_reads=32246,pair2_reads=32246,pair3_reads=32246,a0=10,a1=4,a2=19,a3=9,a4=7,a5=8,l0=11,l1=4,l2=27,l3=10,l4=8,l5=8,d0=1,d1=0,d2=8,d3=1,d4=1,d5=0
+t=32453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=32553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=32600,scan=32446,age_us=498,ambient_reads=32447,pair1_reads=32446,pair2_reads=32446,pair3_reads=32446,a0=10,a1=5,a2=18,a3=10,a4=0,a5=8,l0=9,l1=6,l2=27,l3=10,l4=7,l5=9,d0=0,d1=1,d2=9,d3=0,d4=7,d5=1
+t=32653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=32753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=32800,scan=32646,age_us=499,ambient_reads=32647,pair1_reads=32646,pair2_reads=32646,pair3_reads=32646,a0=10,a1=5,a2=20,a3=23,a4=8,a5=4,l0=8,l1=4,l2=28,l3=9,l4=7,l5=8,d0=0,d1=0,d2=8,d3=0,d4=0,d5=4
+t=32853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=32953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=33000,ticks=32846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=32846,valid=23846,stale=0,ir=32846
+SYS_IR,ms=33000,new=32846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=33000,start=32847,done=32846,fail=0,busy=0,dma_start=131386,dma_done=131386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=23747657,scan_max_us=724,dma_us=2890137,dma_max_us=23,tim_irq=229927,tim_cy=24222033,tim_maxcy=164,dma_irq=131386,dma_cy=26201540,dSYS_M,ms=33000,cal=3,n=4000,seq=23840,age=989,i2cok=32838,i2cerr=0,to=0,nr=6144,busy=0,locked=1,wd=0
+SYS_U,ms=33000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=33000,q=621,peak=1011,accb=75573,doneb=74952,prncy=9019058,dmacy=93490,rxcy=0,rxb=0
+SYS_E,ms=33000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=33000,scan=32847,age_us=381,ambient_reads=32847,pair1_reads=32847,pair2_reads=32847,pair3_reads=32847,a0=9,a1=3,a2=19,a3=19,a4=7,a5=6,l0=8,l1=4,l2=24,l3=8,l4=6,l5=8,d0=0,d1=1,d2=5,d3=0,d4=0,d5=2
+t=33053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=33153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=33200,scan=33046,age_us=499,ambient_reads=33047,pair1_reads=33046,pair2_reads=33046,pair3_reads=33046,a0=9,a1=3,a2=20,a3=23,a4=6,a5=5,l0=9,l1=5,l2=27,l3=9,l4=7,l5=8,d0=0,d1=2,d2=7,d3=0,d4=1,d5=3
+t=33253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=33353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=33400,scan=33246,age_us=499,ambient_reads=33247,pair1_reads=33246,pair2_reads=33246,pair3_reads=33246,a0=9,a1=2,a2=20,a3=23,a4=7,a5=6,l0=8,l1=4,l2=27,l3=8,l4=7,l5=9,d0=0,d1=2,d2=7,d3=0,d4=0,d5=3
+t=33453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=33553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=33600,scan=33446,age_us=497,ambient_reads=33447,pair1_reads=33446,pair2_reads=33446,pair3_reads=33446,a0=10,a1=5,a2=19,a3=6,a4=6,a5=5,l0=9,l1=5,l2=27,l3=10,l4=6,l5=9,d0=0,d1=0,d2=8,d3=4,d4=0,d5=4
+t=33653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=33753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=33800,scan=33646,age_us=497,ambient_reads=33647,pair1_reads=33646,pair2_reads=33646,pair3_reads=33646,a0=9,a1=6,a2=19,a3=0,a4=8,a5=8,l0=8,l1=5,l2=28,l3=11,l4=7,l5=10,d0=0,d1=0,d2=9,d3=11,d4=0,d5=2
+t=33853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=33953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=34000,ticks=33846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=33846,valid=24846,stale=0,ir=33846
+SYS_IR,ms=34000,new=33846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=34000,start=33847,done=33846,fail=0,busy=0,dma_start=135386,dma_done=135386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=24470657,scan_max_us=724,dma_us=2978133,dma_max_us=23,tim_irq=236927,tim_cy=24959338,tim_maxcy=164,dma_irq=135386,dma_cy=26998398,dSYS_M,ms=34000,cal=3,n=4000,seq=24840,age=987,i2cok=33838,i2cerr=0,to=0,nr=6144,busy=0,locked=1,wd=0
+SYS_U,ms=34000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=34000,q=621,peak=1011,accb=77885,doneb=77264,prncy=9294023,dmacy=96188,rxcy=0,rxb=0
+SYS_E,ms=34000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=34000,scan=33847,age_us=381,ambient_reads=33847,pair1_reads=33847,pair2_reads=33847,pair3_reads=33847,a0=10,a1=4,a2=18,a3=16,a4=6,a5=8,l0=8,l1=5,l2=24,l3=10,l4=8,l5=8,d0=0,d1=1,d2=6,d3=0,d4=2,d5=0
+t=34053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=34153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=34200,scan=34046,age_us=498,ambient_reads=34047,pair1_reads=34046,pair2_reads=34046,pair3_reads=34046,a0=9,a1=5,a2=18,a3=17,a4=5,a5=5,l0=9,l1=6,l2=27,l3=9,l4=8,l5=8,d0=0,d1=1,d2=9,d3=0,d4=3,d5=3
+t=34253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=34353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=34400,scan=34246,age_us=499,ambient_reads=34247,pair1_reads=34246,pair2_reads=34246,pair3_reads=34246,a0=9,a1=5,a2=19,a3=5,a4=8,a5=7,l0=8,l1=6,l2=28,l3=11,l4=8,l5=9,d0=0,d1=1,d2=9,d3=6,d4=0,d5=2
+t=34453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=34553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=34600,scan=34446,age_us=499,ambient_reads=34447,pair1_reads=34446,pair2_reads=34446,pair3_reads=34446,a0=10,a1=4,a2=18,a3=0,a4=7,a5=7,l0=10,l1=4,l2=26,l3=10,l4=6,l5=11,d0=0,d1=0,d2=8,d3=10,d4=0,d5=4
+t=34653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=34753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=34800,scan=34646,age_us=498,ambient_reads=34647,pair1_reads=34646,pair2_reads=34646,pair3_reads=34646,a0=10,a1=5,a2=18,a3=19,a4=5,a5=5,l0=9,l1=4,l2=26,l3=10,l4=8,l5=6,d0=0,d1=0,d2=8,d3=0,d4=3,d5=1
+t=34853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=34953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=35000,ticks=34846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=34846,valid=25846,stale=0,ir=34846
+SYS_IR,ms=35000,new=34846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=35000,start=34847,done=34846,fail=0,busy=0,dma_start=139386,dma_done=139386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=25193657,scan_max_us=724,dma_us=3066132,dma_max_us=23,tim_irq=243927,tim_cy=25693886,tim_maxcy=164,dma_irq=139386,dma_cy=27794262,dSYS_M,ms=35000,cal=3,n=4000,seq=25840,age=987,i2cok=34838,i2cerr=0,to=0,nr=6144,busy=0,locked=1,wd=0
+SYS_U,ms=35000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=35000,q=621,peak=1011,accb=80202,doneb=79581,prncy=9569049,dmacy=99017,rxcy=0,rxb=0
+SYS_E,ms=35000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=35000,scan=34847,age_us=382,ambient_reads=34847,pair1_reads=34847,pair2_reads=34847,pair3_reads=34847,a0=11,a1=4,a2=20,a3=21,a4=11,a5=7,l0=8,l1=5,l2=24,l3=11,l4=7,l5=7,d0=0,d1=1,d2=4,d3=0,d4=0,d5=0
+t=35053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=35153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=35200,scan=35046,age_us=499,ambient_reads=35047,pair1_reads=35046,pair2_reads=35046,pair3_reads=35046,a0=9,a1=4,a2=20,a3=8,a4=7,a5=6,l0=10,l1=4,l2=27,l3=10,l4=8,l5=9,d0=1,d1=0,d2=7,d3=2,d4=1,d5=3
+t=35253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=35353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=35400,scan=35246,age_us=498,ambient_reads=35247,pair1_reads=35246,pair2_reads=35246,pair3_reads=35246,a0=9,a1=4,a2=20,a3=9,a4=7,a5=8,l0=9,l1=5,l2=26,l3=10,l4=8,l5=10,d0=0,d1=1,d2=6,d3=1,d4=1,d5=2
+t=35453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=35553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=35600,scan=35446,age_us=498,ambient_reads=35447,pair1_reads=35446,pair2_reads=35446,pair3_reads=35446,a0=10,a1=4,a2=19,a3=16,a4=6,a5=7,l0=9,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=1,d2=8,d3=0,d4=2,d5=1
+t=35653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=35753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=35800,scan=35646,age_us=498,ambient_reads=35647,pair1_reads=35646,pair2_reads=35646,pair3_reads=35646,a0=9,a1=4,a2=18,a3=17,a4=5,a5=7,l0=8,l1=6,l2=27,l3=10,l4=8,l5=9,d0=0,d1=2,d2=9,d3=0,d4=3,d5=2
+t=35853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=35953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=36000,ticks=35846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=35846,valid=26846,stale=0,ir=35846
+SYS_IR,ms=36000,new=35846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=36000,start=35847,done=35846,fail=0,busy=0,dma_start=143386,dma_done=143386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=25916657,scan_max_us=724,dma_us=3154130,dma_max_us=23,tim_irq=250927,tim_cy=26427421,tim_maxcy=164,dma_irq=143386,dma_cy=28590556,dSYS_M,ms=36000,cal=3,n=4000,seq=26840,age=984,i2cok=35838,i2cerr=0,to=0,nr=6544,busy=0,locked=1,wd=0
+SYS_U,ms=36000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=36000,q=621,peak=1011,accb=82519,doneb=81898,prncy=9844427,dmacy=102076,rxcy=0,rxb=0
+SYS_E,ms=36000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=36000,scan=35847,age_us=379,ambient_reads=35847,pair1_reads=35847,pair2_reads=35847,pair3_reads=35847,a0=9,a1=4,a2=19,a3=0,a4=6,a5=8,l0=8,l1=5,l2=24,l3=9,l4=8,l5=8,d0=0,d1=1,d2=5,d3=9,d4=2,d5=0
+t=36053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=36153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=36200,scan=36046,age_us=498,ambient_reads=36047,pair1_reads=36046,pair2_reads=36046,pair3_reads=36046,a0=9,a1=5,a2=18,a3=16,a4=6,a5=7,l0=9,l1=5,l2=27,l3=11,l4=7,l5=7,d0=0,d1=0,d2=9,d3=0,d4=1,d5=0
+t=36253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=36353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=36400,scan=36246,age_us=497,ambient_reads=36247,pair1_reads=36246,pair2_reads=36246,pair3_reads=36246,a0=10,a1=4,a2=18,a3=20,a4=4,a5=6,l0=8,l1=5,l2=26,l3=13,l4=7,l5=8,d0=0,d1=1,d2=8,d3=0,d4=3,d5=2
+t=36453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=36553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=36600,scan=36446,age_us=500,ambient_reads=36447,pair1_reads=36446,pair2_reads=36446,pair3_reads=36446,a0=10,a1=6,a2=20,a3=9,a4=6,a5=7,l0=8,l1=4,l2=28,l3=9,l4=9,l5=7,d0=0,d1=0,d2=8,d3=0,d4=3,d5=0
+t=36653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=36753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=36800,scan=36646,age_us=497,ambient_reads=36647,pair1_reads=36646,pair2_reads=36646,pair3_reads=36646,a0=8,a1=3,a2=19,a3=0,a4=7,a5=7,l0=9,l1=4,l2=27,l3=10,l4=6,l5=6,d0=1,d1=1,d2=8,d3=10,d4=0,d5=0
+t=36853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=36953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=37000,ticks=36846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=36846,valid=27846,stale=0,ir=36846
+SYS_IR,ms=37000,new=36846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=37000,start=36847,done=36846,fail=0,busy=0,dma_start=147386,dma_done=147386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=26639657,scan_max_us=724,dma_us=3242126,dma_max_us=23,tim_irq=257927,tim_cy=27161852,tim_maxcy=164,dma_irq=147386,dma_cy=29386334,dSYS_M,ms=37000,cal=3,n=4000,seq=27839,age=988,i2cok=36837,i2cerr=0,to=0,nr=6546,busy=0,locked=1,wd=0
+SYS_U,ms=37000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=37000,q=621,peak=1011,accb=84832,doneb=84211,prncy=10119207,dmacy=104844,rxcy=0,rxb=0
+SYS_E,ms=37000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=37000,scan=36847,age_us=383,ambient_reads=36847,pair1_reads=36847,pair2_reads=36847,pair3_reads=36847,a0=10,a1=5,a2=19,a3=0,a4=8,a5=7,l0=8,l1=5,l2=24,l3=9,l4=8,l5=8,d0=0,d1=0,d2=5,d3=9,d4=0,d5=1
+t=37053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=37153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=37200,scan=37046,age_us=498,ambient_reads=37047,pair1_reads=37046,pair2_reads=37046,pair3_reads=37046,a0=10,a1=4,a2=20,a3=9,a4=6,a5=8,l0=10,l1=4,l2=28,l3=11,l4=8,l5=8,d0=0,d1=0,d2=8,d3=2,d4=2,d5=0
+t=37253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=37353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=37400,scan=37246,age_us=498,ambient_reads=37247,pair1_reads=37246,pair2_reads=37246,pair3_reads=37246,a0=9,a1=6,a2=20,a3=9,a4=7,a5=7,l0=10,l1=4,l2=27,l3=10,l4=8,l5=8,d0=1,d1=0,d2=7,d3=1,d4=1,d5=1
+t=37453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=37553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=37600,scan=37446,age_us=498,ambient_reads=37447,pair1_reads=37446,pair2_reads=37446,pair3_reads=37446,a0=9,a1=4,a2=19,a3=10,a4=8,a5=8,l0=9,l1=13,l2=28,l3=10,l4=8,l5=8,d0=0,d1=9,d2=9,d3=0,d4=0,d5=0
+t=37653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=37753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=37800,scan=37646,age_us=498,ambient_reads=37647,pair1_reads=37646,pair2_reads=37646,pair3_reads=37646,a0=9,a1=4,a2=19,a3=8,a4=7,a5=8,l0=10,l1=3,l2=28,l3=10,l4=7,l5=8,d0=1,d1=0,d2=9,d3=2,d4=0,d5=0
+t=37853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=37953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=38000,ticks=37846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=37846,valid=28846,stale=0,ir=37846
+SYS_IR,ms=38000,new=37846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=38000,start=37847,done=37846,fail=0,busy=0,dma_start=151386,dma_done=151386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=27362657,scan_max_us=724,dma_us=3330125,dma_max_us=23,tim_irq=264927,tim_cy=27893887,tim_maxcy=164,dma_irq=151386,dma_cy=30183133,dSYS_M,ms=38000,cal=3,n=4000,seq=28839,age=669,i2cok=37837,i2cerr=0,to=0,nr=7545,busy=0,locked=1,wd=0
+SYS_U,ms=38000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=38000,q=621,peak=1011,accb=87149,doneb=86528,prncy=10395058,dmacy=107835,rxcy=0,rxb=0
+SYS_E,ms=38000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=38000,scan=37847,age_us=381,ambient_reads=37847,pair1_reads=37847,pair2_reads=37847,pair3_reads=37847,a0=9,a1=4,a2=20,a3=9,a4=7,a5=6,l0=10,l1=2,l2=24,l3=9,l4=6,l5=9,d0=1,d1=0,d2=4,d3=0,d4=0,d5=3
+t=38053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=38153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=38200,scan=38046,age_us=497,ambient_reads=38047,pair1_reads=38046,pair2_reads=38046,pair3_reads=38046,a0=9,a1=4,a2=19,a3=9,a4=7,a5=7,l0=9,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=1,d2=8,d3=1,d4=1,d5=1
+t=38253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=38353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=38400,scan=38246,age_us=498,ambient_reads=38247,pair1_reads=38246,pair2_reads=38246,pair3_reads=38246,a0=9,a1=4,a2=19,a3=8,a4=7,a5=7,l0=9,l1=5,l2=28,l3=10,l4=8,l5=9,d0=0,d1=1,d2=9,d3=2,d4=1,d5=2
+t=38453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=38553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=38600,scan=38446,age_us=499,ambient_reads=38447,pair1_reads=38446,pair2_reads=38446,pair3_reads=38446,a0=9,a1=4,a2=19,a3=9,a4=5,a5=5,l0=9,l1=3,l2=25,l3=10,l4=8,l5=8,d0=0,d1=0,d2=6,d3=1,d4=3,d5=3
+t=38653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=38753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=38800,scan=38646,age_us=499,ambient_reads=38647,pair1_reads=38646,pair2_reads=38646,pair3_reads=38646,a0=8,a1=4,a2=18,a3=8,a4=6,a5=8,l0=10,l1=5,l2=26,l3=9,l4=6,l5=9,d0=2,d1=1,d2=8,d3=1,d4=0,d5=1
+t=38853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=38953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=39000,ticks=38846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=38846,valid=29846,stale=0,ir=38846
+SYS_IR,ms=39000,new=38846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=39000,start=38847,done=38846,fail=0,busy=0,dma_start=155386,dma_done=155386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=28085657,scan_max_us=724,dma_us=3418126,dma_max_us=23,tim_irq=271927,tim_cy=28625913,tim_maxcy=164,dma_irq=155386,dma_cy=30979945,dSYS_M,ms=39000,cal=3,n=4000,seq=29838,age=988,i2cok=38836,i2cerr=0,to=0,nr=8527,busy=0,locked=1,wd=0
+SYS_U,ms=39000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=39000,q=621,peak=1011,accb=89460,doneb=88839,prncy=10670911,dmacy=111781,rxcy=0,rxb=0
+SYS_E,ms=39000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=39000,scan=38847,age_us=383,ambient_reads=38847,pair1_reads=38847,pair2_reads=38847,pair3_reads=38847,a0=9,a1=5,a2=20,a3=4,a4=4,a5=6,l0=9,l1=5,l2=23,l3=9,l4=8,l5=8,d0=0,d1=0,d2=3,d3=5,d4=4,d5=2
+t=39053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=39153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=39200,scan=39046,age_us=498,ambient_reads=39047,pair1_reads=39046,pair2_reads=39046,pair3_reads=39046,a0=10,a1=5,a2=18,a3=16,a4=5,a5=8,l0=8,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=0,d2=9,d3=0,d4=3,d5=0
+t=39253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=39353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=39400,scan=39246,age_us=499,ambient_reads=39247,pair1_reads=39246,pair2_reads=39246,pair3_reads=39246,a0=9,a1=4,a2=18,a3=0,a4=6,a5=6,l0=8,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=1,d2=9,d3=10,d4=2,d5=2
+t=39453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=39553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=39600,scan=39446,age_us=499,ambient_reads=39447,pair1_reads=39446,pair2_reads=39446,pair3_reads=39446,a0=9,a1=4,a2=18,a3=0,a4=6,a5=8,l0=8,l1=5,l2=27,l3=10,l4=7,l5=8,d0=0,d1=1,d2=9,d3=10,d4=1,d5=0
+t=39653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=39753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=39800,scan=39646,age_us=498,ambient_reads=39647,pair1_reads=39646,pair2_reads=39646,pair3_reads=39646,a0=9,a1=5,a2=18,a3=18,a4=5,a5=5,l0=8,l1=5,l2=27,l3=10,l4=8,l5=9,d0=0,d1=0,d2=9,d3=0,d4=3,d5=4
+t=39853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=39953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=40000,ticks=39846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=39846,valid=30846,stale=0,ir=39846
+SYS_IR,ms=40000,new=39846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=40000,start=39847,done=39846,fail=0,busy=0,dma_start=159386,dma_done=159386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=28808657,scan_max_us=724,dma_us=3506125,dma_max_us=23,tim_irq=278927,tim_cy=29360442,tim_maxcy=164,dma_irq=159386,dma_cy=31775786,dSYS_M,ms=40000,cal=3,n=4000,seq=30838,age=988,i2cok=39836,i2cerr=0,to=0,nr=8527,busy=0,locked=1,wd=0
+SYS_U,ms=40000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=40000,q=621,peak=1011,accb=91775,doneb=91154,prncy=10945959,dmacy=114737,rxcy=0,rxb=0
+SYS_E,ms=40000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=40000,scan=39847,age_us=382,ambient_reads=39847,pair1_reads=39847,pair2_reads=39847,pair3_reads=39847,a0=9,a1=5,a2=17,a3=10,a4=3,a5=3,l0=9,l1=3,l2=23,l3=9,l4=8,l5=8,d0=0,d1=0,d2=6,d3=0,d4=5,d5=5
+t=40053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=40153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=40200,scan=40046,age_us=497,ambient_reads=40047,pair1_reads=40046,pair2_reads=40046,pair3_reads=40046,a0=9,a1=4,a2=19,a3=0,a4=6,a5=8,l0=9,l1=5,l2=27,l3=11,l4=6,l5=8,d0=0,d1=1,d2=8,d3=11,d4=0,d5=0
+t=40253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=40353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=40400,scan=40246,age_us=498,ambient_reads=40247,pair1_reads=40246,pair2_reads=40246,pair3_reads=40246,a0=10,a1=5,a2=19,a3=17,a4=5,a5=7,l0=9,l1=4,l2=27,l3=9,l4=7,l5=9,d0=0,d1=0,d2=8,d3=0,d4=2,d5=2
+t=40453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=40553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=40600,scan=40446,age_us=498,ambient_reads=40447,pair1_reads=40446,pair2_reads=40446,pair3_reads=40446,a0=9,a1=4,a2=18,a3=16,a4=6,a5=7,l0=8,l1=5,l2=26,l3=10,l4=8,l5=9,d0=0,d1=1,d2=8,d3=0,d4=2,d5=2
+t=40653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=40753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=40800,scan=40646,age_us=500,ambient_reads=40647,pair1_reads=40646,pair2_reads=40646,pair3_reads=40646,a0=9,a1=4,a2=19,a3=8,a4=6,a5=7,l0=9,l1=4,l2=27,l3=10,l4=7,l5=8,d0=0,d1=0,d2=8,d3=2,d4=1,d5=1
+t=40853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=40953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=41000,ticks=40846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=40846,valid=31846,stale=0,ir=40846
+SYS_IR,ms=41000,new=40846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=41000,start=40847,done=40846,fail=0,busy=0,dma_start=163386,dma_done=163386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=29531657,scan_max_us=724,dma_us=3594123,dma_max_us=23,tim_irq=285927,tim_cy=30094913,tim_maxcy=164,dma_irq=163386,dma_cy=32571717,dSYS_M,ms=41000,cal=3,n=4000,seq=31837,age=987,i2cok=40835,i2cerr=0,to=0,nr=8529,busy=0,locked=1,wd=0
+SYS_U,ms=41000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=41000,q=621,peak=1011,accb=94089,doneb=93468,prncy=11220892,dmacy=117505,rxcy=0,rxb=0
+SYS_E,ms=41000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=41000,scan=40847,age_us=382,ambient_reads=40847,pair1_reads=40847,pair2_reads=40847,pair3_reads=40847,a0=10,a1=5,a2=17,a3=16,a4=6,a5=6,l0=9,l1=5,l2=25,l3=10,l4=8,l5=8,d0=0,d1=0,d2=8,d3=0,d4=2,d5=2
+t=41053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=41153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=41200,scan=41046,age_us=496,ambient_reads=41047,pair1_reads=41046,pair2_reads=41046,pair3_reads=41046,a0=9,a1=4,a2=20,a3=9,a4=6,a5=6,l0=9,l1=4,l2=26,l3=9,l4=8,l5=9,d0=0,d1=0,d2=6,d3=0,d4=2,d5=3
+t=41253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=41353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=41400,scan=41246,age_us=497,ambient_reads=41247,pair1_reads=41246,pair2_reads=41246,pair3_reads=41246,a0=9,a1=3,a2=19,a3=0,a4=7,a5=8,l0=10,l1=4,l2=26,l3=11,l4=8,l5=9,d0=1,d1=1,d2=7,d3=11,d4=1,d5=1
+t=41453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=41553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=41600,scan=41446,age_us=499,ambient_reads=41447,pair1_reads=41446,pair2_reads=41446,pair3_reads=41446,a0=9,a1=4,a2=18,a3=0,a4=6,a5=8,l0=8,l1=5,l2=28,l3=10,l4=7,l5=9,d0=0,d1=1,d2=10,d3=10,d4=1,d5=1
+t=41653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=41753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=41800,scan=41646,age_us=500,ambient_reads=41647,pair1_reads=41646,pair2_reads=41646,pair3_reads=41646,a0=9,a1=4,a2=19,a3=8,a4=6,a5=7,l0=9,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=1,d2=8,d3=2,d4=2,d5=1
+t=41853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=41953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=42000,ticks=41846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=41846,valid=32846,stale=0,ir=41846
+SYS_IR,ms=42000,new=41846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=42000,start=41847,done=41846,fail=0,busy=0,dma_start=167386,dma_done=167386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=30254656,scan_max_us=724,dma_us=3682117,dma_max_us=23,tim_irq=292927,tim_cy=30828594,tim_maxcy=164,dma_irq=167386,dma_cy=33367985,dSYS_M,ms=42000,cal=3,n=4000,seq=32837,age=988,i2cok=41835,i2cerr=0,to=0,nr=8883,busy=0,locked=1,wd=0
+SYS_U,ms=42000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=42000,q=621,peak=1011,accb=96405,doneb=95784,prncy=11496197,dmacy=120198,rxcy=0,rxb=0
+SYS_E,ms=42000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=42000,scan=41847,age_us=381,ambient_reads=41847,pair1_reads=41847,pair2_reads=41847,pair3_reads=41847,a0=9,a1=4,a2=20,a3=0,a4=8,a5=8,l0=5,l1=4,l2=24,l3=9,l4=8,l5=8,d0=0,d1=0,d2=4,d3=9,d4=0,d5=0
+t=42053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=42153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=42200,scan=42046,age_us=498,ambient_reads=42047,pair1_reads=42046,pair2_reads=42046,pair3_reads=42046,a0=10,a1=6,a2=19,a3=16,a4=6,a5=8,l0=9,l1=5,l2=27,l3=9,l4=8,l5=7,d0=0,d1=0,d2=8,d3=0,d4=2,d5=0
+t=42253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=42353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=42400,scan=42246,age_us=497,ambient_reads=42247,pair1_reads=42246,pair2_reads=42246,pair3_reads=42246,a0=9,a1=3,a2=19,a3=0,a4=8,a5=7,l0=9,l1=5,l2=27,l3=10,l4=6,l5=9,d0=0,d1=2,d2=8,d3=10,d4=0,d5=2
+t=42453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=42553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=42600,scan=42446,age_us=497,ambient_reads=42447,pair1_reads=42446,pair2_reads=42446,pair3_reads=42446,a0=9,a1=3,a2=20,a3=0,a4=8,a5=8,l0=8,l1=5,l2=27,l3=10,l4=7,l5=8,d0=0,d1=2,d2=7,d3=10,d4=0,d5=0
+t=42653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=42753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=42800,scan=42646,age_us=498,ambient_reads=42647,pair1_reads=42646,pair2_reads=42646,pair3_reads=42646,a0=9,a1=6,a2=18,a3=17,a4=5,a5=6,l0=9,l1=5,l2=27,l3=9,l4=8,l5=9,d0=0,d1=0,d2=9,d3=0,d4=3,d5=3
+t=42853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=42953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=43000,ticks=42846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=42846,valid=33846,stale=0,ir=42846
+SYS_IR,ms=43000,new=42846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=43000,start=42847,done=42846,fail=0,busy=0,dma_start=171386,dma_done=171386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=30977656,scan_max_us=724,dma_us=3770116,dma_max_us=23,tim_irq=299927,tim_cy=31563120,tim_maxcy=164,dma_irq=171386,dma_cy=34163893,dSYS_M,ms=43000,cal=3,n=4000,seq=33836,age=987,i2cok=42834,i2cerr=0,to=0,nr=8885,busy=0,locked=1,wd=0
+SYS_U,ms=43000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=43000,q=621,peak=1011,accb=98718,doneb=98097,prncy=11771310,dmacy=122966,rxcy=0,rxb=0
+SYS_E,ms=43000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=43000,scan=42847,age_us=381,ambient_reads=42847,pair1_reads=42847,pair2_reads=42847,pair3_reads=42847,a0=9,a1=4,a2=18,a3=16,a4=5,a5=5,l0=10,l1=5,l2=24,l3=9,l4=7,l5=8,d0=1,d1=1,d2=6,d3=0,d4=2,d5=3
+t=43053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=43153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=43200,scan=43046,age_us=499,ambient_reads=43047,pair1_reads=43046,pair2_reads=43046,pair3_reads=43046,a0=9,a1=4,a2=19,a3=10,a4=8,a5=8,l0=8,l1=5,l2=28,l3=10,l4=8,l5=9,d0=0,d1=1,d2=9,d3=0,d4=0,d5=1
+t=43253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=43353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=43400,scan=43246,age_us=497,ambient_reads=43247,pair1_reads=43246,pair2_reads=43246,pair3_reads=43246,a0=9,a1=3,a2=20,a3=0,a4=8,a5=8,l0=8,l1=5,l2=27,l3=11,l4=6,l5=8,d0=0,d1=2,d2=7,d3=11,d4=0,d5=0
+t=43453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=43553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=43600,scan=43446,age_us=498,ambient_reads=43447,pair1_reads=43446,pair2_reads=43446,pair3_reads=43446,a0=10,a1=4,a2=18,a3=17,a4=5,a5=6,l0=9,l1=4,l2=26,l3=9,l4=8,l5=9,d0=0,d1=0,d2=8,d3=0,d4=3,d5=3
+t=43653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=43753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=43800,scan=43646,age_us=500,ambient_reads=43647,pair1_reads=43646,pair2_reads=43646,pair3_reads=43646,a0=8,a1=4,a2=18,a3=8,a4=6,a5=8,l0=9,l1=4,l2=27,l3=9,l4=8,l5=8,d0=1,d1=0,d2=9,d3=1,d4=2,d5=0
+t=43853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=43953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=44000,ticks=43846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=43846,valid=34846,stale=0,ir=43846
+SYS_IR,ms=44000,new=43846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=44000,start=43847,done=43846,fail=0,busy=0,dma_start=175386,dma_done=175386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=31700656,scan_max_us=724,dma_us=3858115,dma_max_us=23,tim_irq=306927,tim_cy=32297231,tim_maxcy=164,dma_irq=175386,dma_cy=34959946,dSYS_M,ms=44000,cal=3,n=4000,seq=34836,age=987,i2cok=43834,i2cerr=0,to=0,nr=9083,busy=0,locked=1,wd=0
+SYS_U,ms=44000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=44000,q=621,peak=1011,accb=101032,doneb=100411,prncy=12046543,dmacy=125922,rxcy=0,rxb=0
+SYS_E,ms=44000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=44000,scan=43847,age_us=384,ambient_reads=43847,pair1_reads=43847,pair2_reads=43847,pair3_reads=43847,a0=10,a1=5,a2=19,a3=5,a4=7,a5=8,l0=8,l1=5,l2=33,l3=9,l4=8,l5=9,d0=0,d1=0,d2=14,d3=4,d4=1,d5=1
+t=44053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=44153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=44200,scan=44046,age_us=498,ambient_reads=44047,pair1_reads=44046,pair2_reads=44046,pair3_reads=44046,a0=10,a1=5,a2=18,a3=19,a4=5,a5=5,l0=9,l1=6,l2=26,l3=10,l4=8,l5=3,d0=0,d1=1,d2=8,d3=0,d4=3,d5=0
+t=44253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=44353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=44400,scan=44246,age_us=499,ambient_reads=44247,pair1_reads=44246,pair2_reads=44246,pair3_reads=44246,a0=8,a1=4,a2=18,a3=0,a4=7,a5=7,l0=8,l1=5,l2=28,l3=10,l4=8,l5=8,d0=0,d1=1,d2=10,d3=10,d4=1,d5=1
+t=44453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=44553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=44600,scan=44446,age_us=497,ambient_reads=44447,pair1_reads=44446,pair2_reads=44446,pair3_reads=44446,a0=10,a1=5,a2=19,a3=0,a4=8,a5=8,l0=5,l1=5,l2=27,l3=11,l4=6,l5=9,d0=0,d1=0,d2=8,d3=11,d4=0,d5=1
+t=44653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=44753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=44800,scan=44646,age_us=499,ambient_reads=44647,pair1_reads=44646,pair2_reads=44646,pair3_reads=44646,a0=10,a1=6,a2=18,a3=4,a4=8,a5=8,l0=9,l1=4,l2=27,l3=11,l4=6,l5=8,d0=0,d1=0,d2=9,d3=7,d4=0,d5=0
+t=44853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=44953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=45000,ticks=44846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=44846,valid=35846,stale=0,ir=44846
+SYS_IR,ms=45000,new=44846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=45000,start=44847,done=44846,fail=0,busy=0,dma_start=179386,dma_done=179386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=32423656,scan_max_us=724,dma_us=3946113,dma_max_us=23,tim_irq=313927,tim_cy=33031684,tim_maxcy=164,dma_irq=179386,dma_cy=35755928,dSYS_M,ms=45000,cal=3,n=4000,seq=35835,age=987,i2cok=44833,i2cerr=0,to=0,nr=9122,busy=0,locked=1,wd=0
+SYS_U,ms=45000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=45000,q=621,peak=1011,accb=103353,doneb=102732,prncy=12321831,dmacy=128502,rxcy=0,rxb=0
+SYS_E,ms=45000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=45000,scan=44847,age_us=382,ambient_reads=44847,pair1_reads=44847,pair2_reads=44847,pair3_reads=44847,a0=9,a1=4,a2=18,a3=20,a4=5,a5=6,l0=9,l1=3,l2=24,l3=10,l4=8,l5=8,d0=0,d1=0,d2=6,d3=0,d4=3,d5=2
+t=45053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=45153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=45200,scan=45046,age_us=498,ambient_reads=45047,pair1_reads=45046,pair2_reads=45046,pair3_reads=45046,a0=9,a1=5,a2=20,a3=0,a4=8,a5=8,l0=9,l1=5,l2=27,l3=11,l4=7,l5=8,d0=0,d1=0,d2=7,d3=11,d4=0,d5=0
+t=45253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=45353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=45400,scan=45246,age_us=497,ambient_reads=45247,pair1_reads=45246,pair2_reads=45246,pair3_reads=45246,a0=9,a1=5,a2=18,a3=0,a4=6,a5=8,l0=9,l1=5,l2=27,l3=12,l4=6,l5=8,d0=0,d1=0,d2=9,d3=12,d4=0,d5=0
+t=45453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=45553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=45600,scan=45446,age_us=499,ambient_reads=45447,pair1_reads=45446,pair2_reads=45446,pair3_reads=45446,a0=6,a1=6,a2=20,a3=4,a4=9,a5=7,l0=6,l1=5,l2=28,l3=11,l4=5,l5=8,d0=0,d1=0,d2=8,d3=7,d4=0,d5=1
+t=45653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=45753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=45800,scan=45646,age_us=499,ambient_reads=45647,pair1_reads=45646,pair2_reads=45646,pair3_reads=45646,a0=9,a1=5,a2=14,a3=6,a4=8,a5=7,l0=8,l1=6,l2=28,l3=11,l4=7,l5=9,d0=0,d1=1,d2=14,d3=5,d4=0,d5=2
+t=45853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=45953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=46000,ticks=45846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=45846,valid=36846,stale=0,ir=45846
+SYS_IR,ms=46000,new=45846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=46000,start=45847,done=45846,fail=0,busy=0,dma_start=183386,dma_done=183386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=33146656,scan_max_us=724,dma_us=4034111,dma_max_us=23,tim_irq=320927,tim_cy=33766194,tim_maxcy=164,dma_irq=183386,dma_cy=36551831,dSYS_M,ms=46000,cal=3,n=4000,seq=36835,age=988,i2cok=45833,i2cerr=0,to=0,nr=9157,busy=0,locked=1,wd=0
+SYS_U,ms=46000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=46000,q=621,peak=1011,accb=105670,doneb=105049,prncy=12597072,dmacy=131082,rxcy=0,rxb=0
+SYS_E,ms=46000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=46000,scan=45847,age_us=382,ambient_reads=45847,pair1_reads=45847,pair2_reads=45847,pair3_reads=45847,a0=10,a1=4,a2=19,a3=10,a4=7,a5=7,l0=9,l1=4,l2=24,l3=10,l4=8,l5=8,d0=0,d1=0,d2=5,d3=0,d4=1,d5=1
+t=46053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=46153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=46200,scan=46046,age_us=497,ambient_reads=46047,pair1_reads=46046,pair2_reads=46046,pair3_reads=46046,a0=10,a1=6,a2=20,a3=0,a4=8,a5=8,l0=8,l1=5,l2=27,l3=11,l4=6,l5=8,d0=0,d1=0,d2=7,d3=11,d4=0,d5=0
+t=46253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=46353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=46400,scan=46246,age_us=498,ambient_reads=46247,pair1_reads=46246,pair2_reads=46246,pair3_reads=46246,a0=8,a1=3,a2=20,a3=15,a4=6,a5=7,l0=8,l1=5,l2=28,l3=9,l4=8,l5=7,d0=0,d1=2,d2=8,d3=0,d4=2,d5=0
+t=46453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=46553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=46600,scan=46446,age_us=499,ambient_reads=46447,pair1_reads=46446,pair2_reads=46446,pair3_reads=46446,a0=10,a1=4,a2=18,a3=0,a4=6,a5=6,l0=9,l1=5,l2=28,l3=10,l4=8,l5=9,d0=0,d1=1,d2=10,d3=10,d4=2,d5=3
+t=46653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=46753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=46800,scan=46646,age_us=499,ambient_reads=46647,pair1_reads=46646,pair2_reads=46646,pair3_reads=46646,a0=10,a1=6,a2=19,a3=4,a4=8,a5=7,l0=8,l1=6,l2=27,l3=11,l4=8,l5=8,d0=0,d1=0,d2=8,d3=7,d4=0,d5=1
+t=46853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=46953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=47000,ticks=46846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=46846,valid=37846,stale=0,ir=46846
+SYS_IR,ms=47000,new=46846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=47000,start=46847,done=46846,fail=0,busy=0,dma_start=187386,dma_done=187386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=33869656,scan_max_us=724,dma_us=4122109,dma_max_us=23,tim_irq=327927,tim_cy=34500720,tim_maxcy=164,dma_irq=187386,dma_cy=37347721,dSYS_M,ms=47000,cal=3,n=4000,seq=37835,age=988,i2cok=46833,i2cerr=0,to=0,nr=9157,busy=0,locked=1,wd=0
+SYS_U,ms=47000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=47000,q=621,peak=1011,accb=107991,doneb=107370,prncy=12872239,dmacy=133850,rxcy=0,rxb=0
+SYS_E,ms=47000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=47000,scan=46847,age_us=382,ambient_reads=46847,pair1_reads=46847,pair2_reads=46847,pair3_reads=46847,a0=9,a1=4,a2=20,a3=0,a4=8,a5=8,l0=10,l1=4,l2=24,l3=10,l4=6,l5=9,d0=1,d1=0,d2=4,d3=10,d4=0,d5=1
+t=47053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=47153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=47200,scan=47046,age_us=499,ambient_reads=47047,pair1_reads=47046,pair2_reads=47046,pair3_reads=47046,a0=9,a1=4,a2=18,a3=9,a4=7,a5=7,l0=9,l1=4,l2=29,l3=10,l4=8,l5=8,d0=0,d1=0,d2=11,d3=1,d4=1,d5=1
+t=47253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=47353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=47400,scan=47246,age_us=500,ambient_reads=47247,pair1_reads=47246,pair2_reads=47246,pair3_reads=47246,a0=10,a1=4,a2=18,a3=17,a4=5,a5=6,l0=8,l1=5,l2=28,l3=11,l4=8,l5=9,d0=0,d1=1,d2=10,d3=0,d4=3,d5=3
+t=47453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=47553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=47600,scan=47446,age_us=497,ambient_reads=47447,pair1_reads=47446,pair2_reads=47446,pair3_reads=47446,a0=9,a1=4,a2=19,a3=0,a4=8,a5=8,l0=9,l1=4,l2=28,l3=10,l4=7,l5=8,d0=0,d1=0,d2=9,d3=10,d4=0,d5=0
+t=47653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=47753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=47800,scan=47646,age_us=499,ambient_reads=47647,pair1_reads=47646,pair2_reads=47646,pair3_reads=47646,a0=9,a1=5,a2=19,a3=3,a4=8,a5=7,l0=8,l1=5,l2=28,l3=11,l4=8,l5=8,d0=0,d1=0,d2=9,d3=8,d4=0,d5=1
+t=47853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=47953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=48000,ticks=47846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=47846,valid=38846,stale=0,ir=47846
+SYS_IR,ms=48000,new=47846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=48000,start=47847,done=47846,fail=0,busy=0,dma_start=191386,dma_done=191386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=34592656,scan_max_us=724,dma_us=4210108,dma_max_us=23,tim_irq=334927,tim_cy=35234464,tim_maxcy=164,dma_irq=191386,dma_cy=38143877,dSYS_M,ms=48000,cal=3,n=4000,seq=38835,age=987,i2cok=47833,i2cerr=0,to=0,nr=9423,busy=0,locked=1,wd=0
+SYS_U,ms=48000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=48000,q=621,peak=1011,accb=110311,doneb=109690,prncy=13147867,dmacy=136806,rxcy=0,rxb=0
+SYS_E,ms=48000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=48000,scan=47847,age_us=384,ambient_reads=47847,pair1_reads=47847,pair2_reads=47847,pair3_reads=47847,a0=8,a1=4,a2=21,a3=19,a4=4,a5=8,l0=8,l1=5,l2=24,l3=9,l4=8,l5=7,d0=0,d1=1,d2=3,d3=0,d4=4,d5=0
+t=48053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=48153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=48200,scan=48046,age_us=497,ambient_reads=48047,pair1_reads=48046,pair2_reads=48046,pair3_reads=48046,a0=9,a1=4,a2=20,a3=0,a4=6,a5=7,l0=8,l1=5,l2=26,l3=10,l4=7,l5=9,d0=0,d1=1,d2=6,d3=10,d4=1,d5=2
+t=48253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=48353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=48400,scan=48246,age_us=499,ambient_reads=48247,pair1_reads=48246,pair2_reads=48246,pair3_reads=48246,a0=9,a1=5,a2=19,a3=0,a4=6,a5=8,l0=8,l1=5,l2=27,l3=10,l4=5,l5=8,d0=0,d1=0,d2=8,d3=10,d4=0,d5=0
+t=48453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=48553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=48600,scan=48446,age_us=499,ambient_reads=48447,pair1_reads=48446,pair2_reads=48446,pair3_reads=48446,a0=10,a1=5,a2=18,a3=2,a4=8,a5=7,l0=6,l1=5,l2=27,l3=11,l4=8,l5=9,d0=0,d1=0,d2=9,d3=9,d4=0,d5=2
+t=48653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=48753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=48800,scan=48646,age_us=498,ambient_reads=48647,pair1_reads=48646,pair2_reads=48646,pair3_reads=48646,a0=9,a1=4,a2=20,a3=21,a4=10,a5=7,l0=8,l1=4,l2=27,l3=9,l4=8,l5=8,d0=0,d1=0,d2=7,d3=0,d4=0,d5=1
+t=48853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=48953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=49000,ticks=48846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=48846,valid=39846,stale=0,ir=48846
+SYS_IR,ms=49000,new=48846,old=0,age_us=276,age_max_us=293
+SYS_IRD,ms=49000,start=48847,done=48846,fail=0,busy=0,dma_start=195386,dma_done=195386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=35315656,scan_max_us=724,dma_us=4298106,dma_max_us=23,tim_irq=341927,tim_cy=35968996,tim_maxcy=164,dma_irq=195386,dma_cy=38939729,dSYS_M,ms=49000,cal=3,n=4000,seq=39835,age=984,i2cok=48833,i2cerr=0,to=0,nr=9432,busy=0,locked=1,wd=0
+SYS_U,ms=49000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=49000,q=621,peak=1011,accb=112628,doneb=112007,prncy=13422976,dmacy=139386,rxcy=0,rxb=0
+SYS_E,ms=49000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=49000,scan=48847,age_us=381,ambient_reads=48847,pair1_reads=48847,pair2_reads=48847,pair3_reads=48847,a0=10,a1=5,a2=19,a3=8,a4=6,a5=7,l0=9,l1=5,l2=24,l3=10,l4=7,l5=8,d0=0,d1=0,d2=5,d3=2,d4=1,d5=1
+t=49053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=49153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=49200,scan=49046,age_us=498,ambient_reads=49047,pair1_reads=49046,pair2_reads=49046,pair3_reads=49046,a0=9,a1=5,a2=18,a3=18,a4=5,a5=6,l0=10,l1=5,l2=26,l3=11,l4=7,l5=7,d0=1,d1=0,d2=8,d3=0,d4=2,d5=1
+t=49253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=49353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=49400,scan=49246,age_us=500,ambient_reads=49247,pair1_reads=49246,pair2_reads=49246,pair3_reads=49246,a0=9,a1=5,a2=18,a3=8,a4=6,a5=8,l0=8,l1=4,l2=27,l3=10,l4=8,l5=8,d0=0,d1=0,d2=9,d3=2,d4=2,d5=0
+t=49453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=49553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=49600,scan=49446,age_us=497,ambient_reads=49447,pair1_reads=49446,pair2_reads=49446,pair3_reads=49446,a0=9,a1=4,a2=18,a3=0,a4=7,a5=7,l0=9,l1=4,l2=27,l3=10,l4=7,l5=8,d0=0,d1=0,d2=9,d3=10,d4=0,d5=1
+t=49653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=49753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=49800,scan=49646,age_us=498,ambient_reads=49647,pair1_reads=49646,pair2_reads=49646,pair3_reads=49646,a0=10,a1=4,a2=19,a3=16,a4=6,a5=7,l0=8,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=1,d2=8,d3=0,d4=2,d5=1
+t=49853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=49953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=50000,ticks=49846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=49846,valid=40846,stale=0,ir=49846
+SYS_IR,ms=50000,new=49846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=50000,start=49847,done=49846,fail=0,busy=0,dma_start=199386,dma_done=199386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=36038656,scan_max_us=724,dma_us=4386100,dma_max_us=23,tim_irq=348927,tim_cy=36703585,tim_maxcy=164,dma_irq=199386,dma_cy=39735656,dSYS_M,ms=50000,cal=3,n=4000,seq=40835,age=984,i2cok=49833,i2cerr=0,to=0,nr=9432,busy=0,locked=1,wd=0
+SYS_U,ms=50000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=50000,q=621,peak=1011,accb=114947,doneb=114326,prncy=13698140,dmacy=141966,rxcy=0,rxb=0
+SYS_E,ms=50000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=50000,scan=49847,age_us=381,ambient_reads=49847,pair1_reads=49847,pair2_reads=49847,pair3_reads=49847,a0=9,a1=4,a2=19,a3=5,a4=6,a5=8,l0=8,l1=4,l2=22,l3=10,l4=7,l5=8,d0=0,d1=0,d2=3,d3=5,d4=1,d5=0
+t=50053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=50153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=50200,scan=50046,age_us=499,ambient_reads=50047,pair1_reads=50046,pair2_reads=50046,pair3_reads=50046,a0=9,a1=4,a2=20,a3=9,a4=6,a5=7,l0=11,l1=4,l2=27,l3=10,l4=8,l5=8,d0=2,d1=0,d2=7,d3=1,d4=2,d5=1
+t=50253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=50353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=50400,scan=50246,age_us=497,ambient_reads=50247,pair1_reads=50246,pair2_reads=50246,pair3_reads=50246,a0=9,a1=4,a2=20,a3=9,a4=8,a5=7,l0=10,l1=5,l2=27,l3=10,l4=7,l5=8,d0=1,d1=1,d2=7,d3=1,d4=0,d5=1
+t=50453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=50553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=50600,scan=50446,age_us=497,ambient_reads=50447,pair1_reads=50446,pair2_reads=50446,pair3_reads=50446,a0=9,a1=3,a2=20,a3=0,a4=8,a5=8,l0=8,l1=5,l2=27,l3=11,l4=7,l5=9,d0=0,d1=2,d2=7,d3=11,d4=0,d5=1
+t=50653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=50753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=50800,scan=50646,age_us=497,ambient_reads=50647,pair1_reads=50646,pair2_reads=50646,pair3_reads=50646,a0=9,a1=5,a2=18,a3=0,a4=6,a5=8,l0=9,l1=5,l2=27,l3=10,l4=6,l5=9,d0=0,d1=0,d2=9,d3=10,d4=0,d5=1
+t=50853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=50953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=51000,ticks=50846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=50846,valid=41846,stale=0,ir=50846
+SYS_IR,ms=51000,new=50846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=51000,start=50847,done=50846,fail=0,busy=0,dma_start=203386,dma_done=203386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=36761656,scan_max_us=724,dma_us=4474098,dma_max_us=23,tim_irq=355927,tim_cy=37437043,tim_maxcy=164,dma_irq=203386,dma_cy=40531953,dSYS_M,ms=51000,cal=3,n=4000,seq=41835,age=984,i2cok=50833,i2cerr=0,to=0,nr=9865,busy=0,locked=1,wd=0
+SYS_U,ms=51000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=51000,q=621,peak=1011,accb=117264,doneb=116643,prncy=13973667,dmacy=144734,rxcy=0,rxb=0
+SYS_E,ms=51000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=51000,scan=50847,age_us=380,ambient_reads=50847,pair1_reads=50847,pair2_reads=50847,pair3_reads=50847,a0=9,a1=4,a2=18,a3=0,a4=6,a5=8,l0=9,l1=4,l2=24,l3=10,l4=7,l5=9,d0=0,d1=0,d2=6,d3=10,d4=1,d5=1
+t=51053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=51153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=51200,scan=51046,age_us=500,ambient_reads=51047,pair1_reads=51046,pair2_reads=51046,pair3_reads=51046,a0=9,a1=4,a2=19,a3=9,a4=6,a5=7,l0=9,l1=4,l2=27,l3=9,l4=8,l5=7,d0=0,d1=0,d2=8,d3=0,d4=2,d5=0
+t=51253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=51353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=51400,scan=51246,age_us=500,ambient_reads=51247,pair1_reads=51246,pair2_reads=51246,pair3_reads=51246,a0=9,a1=4,a2=19,a3=8,a4=6,a5=7,l0=9,l1=4,l2=27,l3=9,l4=8,l5=7,d0=0,d1=0,d2=8,d3=1,d4=2,d5=0
+t=51453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=51553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=51600,scan=51446,age_us=499,ambient_reads=51447,pair1_reads=51446,pair2_reads=51446,pair3_reads=51446,a0=8,a1=5,a2=15,a3=0,a4=7,a5=8,l0=8,l1=5,l2=27,l3=10,l4=6,l5=9,d0=0,d1=0,d2=12,d3=10,d4=0,d5=1
+t=51653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=51753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=51800,scan=51646,age_us=497,ambient_reads=51647,pair1_reads=51646,pair2_reads=51646,pair3_reads=51646,a0=9,a1=4,a2=19,a3=0,a4=6,a5=7,l0=8,l1=5,l2=27,l3=11,l4=7,l5=8,d0=0,d1=1,d2=8,d3=11,d4=1,d5=1
+t=51853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=51953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=52000,ticks=51846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=51846,valid=42846,stale=0,ir=51846
+SYS_IR,ms=52000,new=51846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=52000,start=51847,done=51846,fail=0,busy=0,dma_start=207386,dma_done=207386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=37484656,scan_max_us=724,dma_us=4562093,dma_max_us=23,tim_irq=362927,tim_cy=38171475,tim_maxcy=164,dma_irq=207386,dma_cy=41327860,dSYS_M,ms=52000,cal=3,n=4000,seq=42835,age=988,i2cok=51833,i2cerr=0,to=0,nr=9878,busy=0,locked=1,wd=0
+SYS_U,ms=52000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=52000,q=621,peak=1011,accb=119579,doneb=118958,prncy=14248616,dmacy=147502,rxcy=0,rxb=0
+SYS_E,ms=52000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=52000,scan=51847,age_us=382,ambient_reads=51847,pair1_reads=51847,pair2_reads=51847,pair3_reads=51847,a0=9,a1=4,a2=18,a3=0,a4=8,a5=7,l0=8,l1=4,l2=25,l3=11,l4=8,l5=8,d0=0,d1=0,d2=7,d3=11,d4=0,d5=1
+t=52053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=52153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=52200,scan=52046,age_us=498,ambient_reads=52047,pair1_reads=52046,pair2_reads=52046,pair3_reads=52046,a0=10,a1=5,a2=18,a3=15,a4=7,a5=6,l0=8,l1=5,l2=26,l3=11,l4=7,l5=9,d0=0,d1=0,d2=8,d3=0,d4=0,d5=3
+t=52253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=52353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=52400,scan=52246,age_us=497,ambient_reads=52247,pair1_reads=52246,pair2_reads=52246,pair3_reads=52246,a0=9,a1=4,a2=19,a3=0,a4=6,a5=8,l0=8,l1=6,l2=28,l3=10,l4=7,l5=9,d0=0,d1=2,d2=9,d3=10,d4=1,d5=1
+t=52453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=52553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=52600,scan=52446,age_us=499,ambient_reads=52447,pair1_reads=52446,pair2_reads=52446,pair3_reads=52446,a0=10,a1=6,a2=19,a3=4,a4=9,a5=8,l0=8,l1=4,l2=27,l3=11,l4=5,l5=9,d0=0,d1=0,d2=8,d3=7,d4=0,d5=1
+t=52653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=52753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=52800,scan=52646,age_us=498,ambient_reads=52647,pair1_reads=52646,pair2_reads=52646,pair3_reads=52646,a0=9,a1=4,a2=18,a3=16,a4=5,a5=6,l0=9,l1=5,l2=27,l3=10,l4=8,l5=8,d0=0,d1=1,d2=9,d3=0,d4=3,d5=2
+t=52853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=52953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=53000,ticks=52846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=52846,valid=43846,stale=0,ir=52846
+SYS_IR,ms=53000,new=52846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=53000,start=52847,done=52846,fail=0,busy=0,dma_start=211386,dma_done=211386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=38207656,scan_max_us=724,dma_us=4650088,dma_max_us=23,tim_irq=369927,tim_cy=38906008,tim_maxcy=164,dma_irq=211386,dma_cy=42123775,dSYS_M,ms=53000,cal=3,n=4000,seq=43835,age=987,i2cok=52833,i2cerr=0,to=0,nr=9893,busy=0,locked=1,wd=0
+SYS_U,ms=53000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=53000,q=621,peak=1011,accb=121898,doneb=121277,prncy=14523782,dmacy=150082,rxcy=0,rxb=0
+SYS_E,ms=53000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=53000,scan=52847,age_us=381,ambient_reads=52847,pair1_reads=52847,pair2_reads=52847,pair3_reads=52847,a0=9,a1=4,a2=20,a3=5,a4=7,a5=5,l0=8,l1=4,l2=25,l3=9,l4=6,l5=8,d0=0,d1=0,d2=5,d3=4,d4=0,d5=3
+t=53053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=53153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=53200,scan=53046,age_us=497,ambient_reads=53047,pair1_reads=53046,pair2_reads=53046,pair3_reads=53046,a0=8,a1=3,a2=18,a3=0,a4=8,a5=8,l0=8,l1=5,l2=27,l3=10,l4=7,l5=9,d0=0,d1=2,d2=9,d3=10,d4=0,d5=1
+t=53253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=53353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=53400,scan=53246,age_us=500,ambient_reads=53247,pair1_reads=53246,pair2_reads=53246,pair3_reads=53246,a0=9,a1=3,a2=19,a3=8,a4=6,a5=7,l0=9,l1=4,l2=26,l3=9,l4=8,l5=5,d0=0,d1=1,d2=7,d3=1,d4=2,d5=0
+t=53453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=53553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=53600,scan=53446,age_us=499,ambient_reads=53447,pair1_reads=53446,pair2_reads=53446,pair3_reads=53446,a0=9,a1=5,a2=18,a3=2,a4=7,a5=6,l0=9,l1=6,l2=27,l3=10,l4=7,l5=8,d0=0,d1=1,d2=9,d3=8,d4=0,d5=2
+t=53653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=53753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=53800,scan=53646,age_us=499,ambient_reads=53647,pair1_reads=53646,pair2_reads=53646,pair3_reads=53646,a0=10,a1=5,a2=18,a3=0,a4=7,a5=8,l0=8,l1=5,l2=28,l3=10,l4=6,l5=8,d0=0,d1=0,d2=10,d3=10,d4=0,d5=0
+t=53853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=53953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=54000,ticks=53846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=53846,valid=44846,stale=0,ir=53846
+SYS_IR,ms=54000,new=53846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=54000,start=53847,done=53846,fail=0,busy=0,dma_start=215386,dma_done=215386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=38930656,scan_max_us=724,dma_us=4738085,dma_max_us=23,tim_irq=376927,tim_cy=39640548,tim_maxcy=164,dma_irq=215386,dma_cy=42919544,dSYS_M,ms=54000,cal=3,n=4000,seq=44835,age=988,i2cok=53833,i2cerr=0,to=0,nr=9893,busy=0,locked=1,wd=0
+SYS_U,ms=54000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=54000,q=621,peak=1011,accb=124213,doneb=123592,prncy=14798792,dmacy=152850,rxcy=0,rxb=0
+SYS_E,ms=54000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=54000,scan=53847,age_us=382,ambient_reads=53847,pair1_reads=53847,pair2_reads=53847,pair3_reads=53847,a0=10,a1=4,a2=18,a3=0,a4=8,a5=8,l0=10,l1=4,l2=24,l3=10,l4=7,l5=10,d0=0,d1=0,d2=6,d3=10,d4=0,d5=2
+t=54053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=54153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=54200,scan=54046,age_us=500,ambient_reads=54047,pair1_reads=54046,pair2_reads=54046,pair3_reads=54046,a0=9,a1=4,a2=19,a3=8,a4=6,a5=8,l0=9,l1=5,l2=26,l3=11,l4=6,l5=8,d0=0,d1=1,d2=7,d3=3,d4=0,d5=0
+t=54253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=54353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=54400,scan=54246,age_us=499,ambient_reads=54247,pair1_reads=54246,pair2_reads=54246,pair3_reads=54246,a0=9,a1=5,a2=17,a3=5,a4=8,a5=6,l0=9,l1=5,l2=27,l3=11,l4=7,l5=9,d0=0,d1=0,d2=10,d3=6,d4=0,d5=3
+t=54453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=54553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=54600,scan=54446,age_us=499,ambient_reads=54447,pair1_reads=54446,pair2_reads=54446,pair3_reads=54446,a0=9,a1=5,a2=18,a3=5,a4=8,a5=7,l0=9,l1=6,l2=28,l3=10,l4=8,l5=9,d0=0,d1=1,d2=10,d3=5,d4=0,d5=2
+t=54653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=54753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=54800,scan=54646,age_us=497,ambient_reads=54647,pair1_reads=54646,pair2_reads=54646,pair3_reads=54646,a0=9,a1=4,a2=19,a3=0,a4=6,a5=8,l0=8,l1=6,l2=27,l3=11,l4=8,l5=9,d0=0,d1=2,d2=8,d3=11,d4=2,d5=1
+t=54853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=54953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_T,ms=55000,ticks=54846,late=0,gap=0,maxcy=1049,encmaxcy=457,motmaxcy=46,motticks=54846,valid=45846,stale=0,ir=54846
+SYS_IR,ms=55000,new=54846,old=0,age_us=275,age_max_us=293
+SYS_IRD,ms=55000,start=54847,done=54846,fail=0,busy=0,dma_start=219386,dma_done=219386,dma_err=0,dma_to=0,adc_ovr=0,scan_us=39653656,scan_max_us=724,dma_us=4826084,dma_max_us=23,tim_irq=383927,tim_cy=40374621,tim_maxcy=164,dma_irq=219386,dma_cy=43715560,dSYS_M,ms=55000,cal=3,n=4000,seq=45835,age=987,i2cok=54833,i2cerr=0,to=0,nr=10089,busy=0,locked=1,wd=0
+SYS_U,ms=55000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+SYS_UQ,ms=55000,q=622,peak=1011,accb=126534,doneb=125912,prncy=15074284,dmacy=155618,rxcy=0,rxb=0
+SYS_E,ms=55000,encL=0,encR=0,ppsL=0,ppsR=0,appL=0,appR=0
+SYS_IRV,ms=55000,scan=54847,age_us=384,ambient_reads=54847,pair1_reads=54847,pair2_reads=54847,pair3_reads=54847,a0=9,a1=5,a2=19,a3=16,a4=6,a5=7,l0=8,l1=5,l2=24,l3=10,l4=6,l5=8,d0=0,d1=0,d2=5,d3=0,d4=0,d5=1
+t=55053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=55153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=55200,scan=55046,age_us=497,ambient_reads=55047,pair1_reads=55046,pair2_reads=55046,pair3_reads=55046,a0=10,a1=5,a2=19,a3=0,a4=7,a5=8,l0=8,l1=5,l2=27,l3=11,l4=7,l5=8,d0=0,d1=0,d2=8,d3=11,d4=0,d5=0
+t=55253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=55353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=55400,scan=55246,age_us=497,ambient_reads=55247,pair1_reads=55246,pair2_reads=55246,pair3_reads=55246,a0=9,a1=3,a2=19,a3=0,a4=7,a5=8,l0=9,l1=4,l2=27,l3=10,l4=7,l5=8,d0=0,d1=1,d2=8,d3=10,d4=0,d5=0
+t=55453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=55553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=55600,scan=55446,age_us=499,ambient_reads=55447,pair1_reads=55446,pair2_reads=55446,pair3_reads=55446,a0=8,a1=5,a2=18,a3=4,a4=8,a5=8,l0=10,l1=6,l2=27,l3=10,l4=8,l5=8,d0=2,d1=1,d2=9,d3=6,d4=0,d5=0
+t=55653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+t=55753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+SYS_IRV,ms=55800,scan=55646,age_us=498,ambient_reads=55647,pair1_reads=55646,pair2_reads=55646,pair3_reads=55646,a0=10,a1=4,a2=18,a3=18,a4=5,a5=6,l0=8,l1=5,l2=27,l3=9,l4=8,l5=9,d0=0,d1=1,d2=9,d3=0,d4=3,d5=3

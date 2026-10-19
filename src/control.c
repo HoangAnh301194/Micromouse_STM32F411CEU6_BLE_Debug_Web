@@ -26,6 +26,7 @@ void Control_GetIRSnapshot(IR_Data_t *out)
     primask=__get_PRIMASK();__disable_irq();
     for (i=0U;i<IR_SENSOR_COUNT;i++) out->value[i]=ir_latest.value[i];
     out->scan_count=ir_latest.scan_count;
+    out->completed_us=ir_latest.completed_us;
     if (!primask) __enable_irq();
 }
 void Control_GetDebugStats(Control_DebugStats_t *out)
@@ -44,6 +45,10 @@ void Control_GetDebugStats(Control_DebugStats_t *out)
     out->gyro_valid_ticks = di_stats.gyro_valid_ticks;
     out->gyro_invalid_after_first_valid = di_stats.gyro_invalid_after_first_valid;
     out->ir_scan_count = di_stats.ir_scan_count;
+    out->ir_fresh_ticks = di_stats.ir_fresh_ticks;
+    out->ir_no_new_ticks = di_stats.ir_no_new_ticks;
+    out->ir_last_age_us = di_stats.ir_last_age_us;
+    out->ir_max_age_us = di_stats.ir_max_age_us;
     if (!primask) __enable_irq();
 }
 #endif
@@ -189,17 +194,35 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 
     if (IR_GetLatest(&sample)) {
         uint8_t i;
+#if defined(INTEGRATION_DIAG)
+        uint32_t age_us = micros() - sample.completed_us;
+#endif
 
         for (i = 0; i < IR_SENSOR_COUNT; i++) {
             ir_latest.value[i] = sample.value[i];
         }
         ir_latest.scan_count = sample.scan_count;
+        ir_latest.completed_us = sample.completed_us;
 #if defined(INTEGRATION_DIAG)
         di_stats.ir_scan_count = sample.scan_count;
+        di_stats.ir_fresh_ticks++;
+        di_stats.ir_last_age_us = age_us;
+        if (age_us > di_stats.ir_max_age_us)
+            di_stats.ir_max_age_us = age_us;
 #endif
-
-        IR_StartScan();
+#if defined(INTEGRATION_DIAG)
+    } else {
+        uint32_t age_us = (ir_latest.scan_count != 0U) ?
+                          (uint32_t)(micros() - ir_latest.completed_us) : 0U;
+        di_stats.ir_no_new_ticks++;
+        di_stats.ir_last_age_us = age_us;
+        if (age_us > di_stats.ir_max_age_us)
+            di_stats.ir_max_age_us = age_us;
+#endif
     }
+    /* A failed scan returns to IDLE; retry here without waiting for a
+     * successful snapshot that will never arrive after the failure. */
+    IR_StartScan();
 
     {
         MPU6050_Snapshot_t gyro;

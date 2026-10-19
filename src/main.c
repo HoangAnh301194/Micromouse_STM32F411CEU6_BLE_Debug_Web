@@ -70,6 +70,8 @@ int main(void)
     uint32_t last_debug_ms = 0;
 #if defined(INTEGRATION_DIAG)
     uint32_t last_system_diag_ms = 0U;
+    uint32_t last_ir_value_ms = 0U;
+    uint32_t last_ir_value_scan = 0U;
     uint8_t last_cal_state = 0U;
     uint32_t last_sweep_stage = 0xFFFFFFFFUL;
     uint8_t last_sweep_state = 0xFFU;
@@ -272,6 +274,40 @@ int main(void)
                         (unsigned long)sd.gyro_valid_ticks,
                         (unsigned long)sd.gyro_invalid_after_first_valid,
                         (unsigned long)sd.ir_scan_count);
+            UART_Printf("SYS_IR,ms=%lu,new=%lu,old=%lu,age_us=%lu,age_max_us=%lu\r\n",
+                        (unsigned long)now,
+                        (unsigned long)sd.ir_fresh_ticks,
+                        (unsigned long)sd.ir_no_new_ticks,
+                        (unsigned long)sd.ir_last_age_us,
+                        (unsigned long)sd.ir_max_age_us);
+            {
+                IR_Diagnostics_t ir;
+                IR_GetDiagnostics(&ir);
+                UART_Printf("SYS_IRD,ms=%lu,start=%lu,done=%lu,fail=%lu,busy=%lu,dma_start=%lu,dma_done=%lu,dma_err=%lu,dma_to=%lu,adc_ovr=%lu,scan_us=%lu,scan_max_us=%lu,dma_us=%lu,dma_max_us=%lu\r\n",
+                            (unsigned long)now,
+                            (unsigned long)ir.scans_started,
+                            (unsigned long)ir.scans_completed,
+                            (unsigned long)ir.scans_failed,
+                            (unsigned long)ir.start_busy,
+                            (unsigned long)ir.dma_started,
+                            (unsigned long)ir.dma_completed,
+                            (unsigned long)ir.dma_errors,
+                            (unsigned long)ir.dma_timeouts,
+                            (unsigned long)ir.adc_overruns,
+                            (unsigned long)ir.scan_total_us,
+                            (unsigned long)ir.scan_max_us,
+                            (unsigned long)ir.dma_total_us,
+                            (unsigned long)ir.dma_max_us);
+                UART_Printf("SYS_IRC,ms=%lu,tim_irq=%lu,tim_cy=%lu,tim_maxcy=%lu,dma_irq=%lu,dma_cy=%lu,dma_maxcy=%lu,adc_clk=%lu\r\n",
+                            (unsigned long)now,
+                            (unsigned long)ir.tim10_irq_count,
+                            (unsigned long)ir.tim10_irq_total_cycles,
+                            (unsigned long)ir.tim10_irq_max_cycles,
+                            (unsigned long)ir.dma_irq_count,
+                            (unsigned long)ir.dma_irq_total_cycles,
+                            (unsigned long)ir.dma_irq_max_cycles,
+                            (unsigned long)(Board_GetAPB2ClockHz() / 4U));
+            }
             UART_Printf("SYS_M,ms=%lu,cal=%u,n=%u,seq=%lu,age=%lu,i2cok=%lu,i2cerr=%lu,to=%lu,nr=%lu,busy=%lu,locked=%u,wd=%u\r\n",
                         (unsigned long)now,
                         (unsigned)mpu.cal_state,
@@ -330,6 +366,47 @@ int main(void)
                 last_cal_state = mpu.cal_state;
             }
         }
+        if ((uint32_t)(now - last_ir_value_ms) >= 1000U) {
+            IR_Data_t ir_snapshot;
+            last_ir_value_ms = now;
+            Control_GetIRSnapshot(&ir_snapshot);
+            if (ir_snapshot.scan_count != 0U &&
+                ir_snapshot.scan_count != last_ir_value_scan) {
+                IR_Diagnostics_t ir;
+                uint32_t age = micros() - ir_snapshot.completed_us;
+                IR_GetDiagnostics(&ir);
+                if (ir.raw_scan_count == ir_snapshot.scan_count) {
+                    UART_Printf("SYS_IRV,ms=%lu,scan=%lu,age_us=%lu,ambient_reads=%lu,pair1_reads=%lu,pair2_reads=%lu,pair3_reads=%lu,a0=%u,a1=%u,a2=%u,a3=%u,a4=%u,a5=%u,l0=%u,l1=%u,l2=%u,l3=%u,l4=%u,l5=%u,d0=%u,d1=%u,d2=%u,d3=%u,d4=%u,d5=%u\r\n",
+                                (unsigned long)now,
+                                (unsigned long)ir_snapshot.scan_count,
+                                (unsigned long)age,
+                                (unsigned long)ir.ambient_reads,
+                                (unsigned long)ir.pair1_reads,
+                                (unsigned long)ir.pair2_reads,
+                                (unsigned long)ir.pair3_reads,
+                                (unsigned)ir.ambient_raw[0],
+                                (unsigned)ir.ambient_raw[1],
+                                (unsigned)ir.ambient_raw[2],
+                                (unsigned)ir.ambient_raw[3],
+                                (unsigned)ir.ambient_raw[4],
+                                (unsigned)ir.ambient_raw[5],
+                                (unsigned)ir.emitter_raw[0],
+                                (unsigned)ir.emitter_raw[1],
+                                (unsigned)ir.emitter_raw[2],
+                                (unsigned)ir.emitter_raw[3],
+                                (unsigned)ir.emitter_raw[4],
+                                (unsigned)ir.emitter_raw[5],
+                                (unsigned)ir_snapshot.value[0],
+                                (unsigned)ir_snapshot.value[1],
+                                (unsigned)ir_snapshot.value[2],
+                                (unsigned)ir_snapshot.value[3],
+                                (unsigned)ir_snapshot.value[4],
+                                (unsigned)ir_snapshot.value[5]);
+                    last_ir_value_scan = ir_snapshot.scan_count;
+                }
+            }
+        }
+
 #endif
 
         if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
@@ -369,9 +446,11 @@ int main(void)
                       gyro,
                       distance,
                       angle_error);
+#if !defined(INTEGRATION_DIAG)
             UART_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f dropped=%lu\r\n",
                         (unsigned long)now,(unsigned int)state,(long)left_count,
                         (long)right_count,yaw,gyro,(unsigned long)UART_GetDroppedMessages());
+#endif
         }
     }
 }

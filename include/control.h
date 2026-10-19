@@ -24,6 +24,10 @@ typedef struct {
     uint32_t gyro_valid_ticks;
     uint32_t gyro_invalid_after_first_valid;
     uint32_t ir_scan_count;
+    uint32_t ir_fresh_ticks;
+    uint32_t ir_no_new_ticks;
+    uint32_t ir_last_age_us;
+    uint32_t ir_max_age_us;
 } Control_DebugStats_t;
 void Control_GetDebugStats(Control_DebugStats_t *out);
 /* Read latest already-acquired IR data; never initiate an ADC scan. */

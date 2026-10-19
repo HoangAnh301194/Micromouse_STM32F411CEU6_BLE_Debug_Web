@@ -1,5 +1,19 @@
 # Host Tools
 
+## IR Sensor Timing Capture
+
+`ir_sensor_timing_capture.py` captures motor-off diagnostic telemetry from
+USART1 PA9/PA10 and saves the raw UART stream plus a JSON timing summary:
+
+```powershell
+python tools/ir_sensor_timing_capture.py --port COM7 --seconds 30
+```
+
+Use the actual USB-UART port and physically disconnect motor VM before the IR
+test. See [IR timing validation](../docs/system_debug/IR_SENSOR_TIMING_20261019.md)
+for the diagnostic record definitions and acceptance scope. The capture
+script requires pyserial (`python -m pip install pyserial`).
+
 ## BLE Debug Console
 
 <p align="center">

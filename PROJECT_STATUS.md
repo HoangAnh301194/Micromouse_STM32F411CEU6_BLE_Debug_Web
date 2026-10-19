@@ -15,7 +15,7 @@
 | TIM3 / TIM4 | Encoder hai bánh; dấu tiến đã được chỉnh về dương |
 | TIM10 + ADC1 + DMA2 Stream0 | Đọc 6 mắt IR; `src/ir_sensor.c` sở hữu |
 | I2C1 | PB8 SCL / PB9 SDA; MPU6050 địa chỉ 0x68; OLED dự kiến 0x3C |
-| USART1 | PA9 TX DMA2 Stream7 Ch4 / PA10 RX IRQ, 115200 8N1, TX queue 1024 byte |
+| USART1 | PA9 TX DMA2 Stream7 Ch4 / PA10 RX IRQ, 115200 8N1, production TX queue 1024 byte (2 KiB in `INTEGRATION_DIAG`) |
 | USART2/JDY-33 BLE | PA2 TX / PA3 RX, 115200 baud, TXE IRQ, TX buffer 4096 byte |
 | Nguồn | Bo thử đã dùng pin 2S cấp VM ở các bài LIVE; chưa có phép đo định lượng dòng/VM sụt áp |
 | Sơ đồ chân | `include/pinout.h` là cấu hình PCB hiện hành; không tự ý thay đổi |
@@ -32,7 +32,7 @@
 | **Motor Driver Rev3** | Tích hợp, hồi quy phần mềm; LIVE PWM 80–100% có phản hồi encoder khi bánh được cô lập | Dạng sóng, dòng motor, điện áp VM, nhiệt driver, phanh, chạy có tải; không đánh đồng với chứng nhận an toàn điện |
 | **Encoder hai bánh** | Có xung thực và dấu tiến dương | PPR/quãng đường theo mốc ngoài, tốc độ RPM/mm/s, miss pulse, sai lệch L/R chưa nghiệm thu đầy đủ |
 | **TIM11 và PID** | 1 kHz ổn định trong bài thử; PID giả lập chạy đủ tải không mất chu kỳ | Chưa nghiệm thu bộ PID tốc độ bánh, điều khiển bám tường, thời gian đáp ứng/quá độ khi di chuyển tốc độ cao |
-| **IR 6 kênh** | ADC1/DMA/TIM10 hoạt động và có scan counter thực | **Ưu tiên tiếp theo**: chưa chuẩn hóa mức tường, nhiễu chéo, độ trễ, độ chính xác khoảng cách; còn busy-wait ADC trong TIM10 ISR |
+| **IR 6 kênh** | **Acquisition/timing phase đạt trên board**: ADC1/DMA2 Stream0 async, 1 kHz scan trong 30 giây; TIM11 nhận mẫu mới 100%; zero DMA/ADC errors/timeouts, TIM11 late/gap, MPU I2C errors/timeouts, UART drops | Chưa đánh giá độ chính xác/khoảng cách, nhiễu, nhiễu chéo hay phản hồi theo tường; phase này chỉ xác nhận acquisition, nhịp và tải |
 | **BLE USART2 PA2/PA3** | Đã có TXE IRQ + 4096B buffer, RX polling | Chưa đo thông lượng, RX overflow, mất bản tin, khi TX queue đầy hàm có thể bỏ phần đuôi mà không có thống kê |
 | **OLED** | Có địa chỉ định nghĩa 0x3C, **chưa có driver OLED trong core đã rà soát** | Cần phân xử I2C1 với MPU, làm mới hạn chế và truyền không chặn |
 | **Wall-follow, flood-fill, fast-run** | Core tối giản có trạng thái IDLE/STRAIGHT/TURN và lệnh F/L/R/S/Z | Chưa có nghiệm thu điều khiển mê cung và chạy tốc độ cao; UI BLE cũ không chứng minh tính năng firmware đang hoạt động |
@@ -45,19 +45,18 @@
 - **LIVE PWM 80–100%, 180 giây:** [summary JSON](results/imu_soak_20261019_123733/summary.json) · [CSV](results/imu_soak_20261019_123733/measurements.csv). Real PWM và encoder có hoạt động; gần 1 kHz MPU không có lỗi I2C/timeout hay mất chu kỳ TIM11 trong phép thử; nhiệt độ bên trong MPU khoảng 32,345–32,460 °C. Không đo được trực tiếp từ trường EMI, điện áp/dòng motor hay góc tham chiếu độc lập.
 - **Benchmark USART1:** [104312](results/system_uart_20261019_104312/uart/uart_rate_summary.json), [104529](results/system_uart_20261019_104529/uart/uart_rate_summary.json), [105726](results/system_uart_20261019_105726/uart/uart_rate_summary.json). 60 Hz có dự phòng, 80 Hz đạt, các tần số cao hơn làm queue đầy trước khi CPU thành nút thắt.
 - **Motor OFF/ON trước đó:** [summary](results/system_uart_20261019_104529/summary.json). Một phiên OFF từng fallback I2C xuống gần 300 kHz; nguyên nhân cụ thể chưa khẳng định, các phiên MPU mới đạt nominal 400 kHz.
+- **IR 6 kênh, motor-off, 30 giây:** [summary JSON](results/ir_timing_20261019_173447/summary.json) · [UART log gốc](results/ir_timing_20261019_173447/uart.log). 29.000 scan/29 s (1 kHz), 116.000/116.000 DMA completions; scan trung bình 723,71 µs, max 724 µs; age mẫu max 293 µs, TIM11 fresh 29.000/29.000 ticks; đo cycle-counter IR ISR tương ứng khoảng 1,5965% nominal 96 MHz. DMA/ADC/timeout, TIM11 late/gap, MPU I2C errors/timeouts và UART drops đều 0; UART queue peak 1049/2047 byte. Có 30 bản tin raw đủ 6 kênh; **không** đánh giá accuracy/nhiễu. Các capture thử trước được giữ lại nhưng đánh dấu invalid trong `summary.json` do telemetry bị truncate hoặc UART queue drop.
 - **CI mã nguồn tại commit rà soát `2fca0d9`:** workflow Motor Driver, Clock, System Integration và UART+MPU RC2 đều **success**. Chỉ chứng minh mã build/hồi quy, không tự chạy lại phần cứng.
 
 **Đã dọn sau bàn giao MPU:** `tools/imu_soak_pipeline.py` và `tools/test_imu_soak_pipeline.py` cùng firmware thí nghiệm chuyên biệt không còn nằm trong working tree của nhánh hiện tại. Dữ liệu lịch sử trong `results/` **được giữ nguyên**. Tool UART/clock/motor/system khác còn tồn tại và không được xóa tùy tiện.
 
 ## 4. Thứ tự phát triển tiếp
 
-### P0 — IR sáu kênh: module kế tiếp được đề xuất
+### P0 — IR sáu kênh: acquisition/timing phase
 
-1. Phân tích chính xác chuỗi `TIM10 -> emitter GPIO -> ADC1 scan -> DMA -> trừ ambient -> publish`. Hàm `ADC_TriggerAndWait()` hiện **bận chờ cờ DMA ngay trong TIM10 IRQ**; đo thời gian chiếm ISR, timeout và rủi ro làm chậm tác vụ khác. Thiết kế lại bất đồng bộ khi thích hợp, tránh phá lịch quét ổn định.
-2. Thử với các tường ở khoảng cách đo bằng dụng cụ cơ học, thu đủ **ambient, LED-ON, LED-ON − ambient** từng kênh L90/L45/L0/R0/R45/R90; đo trung bình, phân tán, ngưỡng và bão hòa.
-3. Kiểm tra nhiễu chéo giữa các cặp emitter đang ghép `L90+R45`, `L45+R90`, `L0+R0`; thay đổi ánh sáng môi trường và tải motor.
-4. Đo thời gian quét thực, tuổi mẫu tại TIM11, ADC/DMA lỗi/timeout, bản tin bỏ và tình trạng MPU khi quét IR. Dùng USART1 làm kênh đo đã chốt; thiết kế thông lượng log để không vượt queue.
-5. Tạo biên bản nghiệm thu IR riêng, giữ log gốc, cập nhật bảng trạng thái này sau khi có phép đo vật lý.
+1. **Đã làm:** thay busy-wait ADC/DMA trong TIM10 bằng state machine async, DMA IRQ, timeout/error recovery; chỉ publish đủ scan.
+2. **Đã đo:** scan rate, scan/DMA durations, ISR cycles, tuổi/freshness tại TIM11, DMA/ADC lỗi, UART queue/drop, MPU/I2C và raw ADC sáu kênh; xem biên bản và log phía trên.
+3. Phase tiếp theo (chưa làm trong phạm vi này): đánh giá theo khoảng cách/tường và nhiễu chéo giữa các cặp emitter; không suy ra độ chính xác từ log timing hiện tại.
 
 ### P1 — Encoder + PID điều khiển thực
 
@@ -80,4 +79,4 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 5. Không tuyên bố nghiệm thu điều khiển tốc độ cao từ build PASS, từ 180 giây quét cảm biến tĩnh, hoặc từ bài PID giả lập.
 6. Sau mỗi mốc bàn giao, cập nhật `PROJECT_STATUS.md`, README module, danh sách giới hạn còn mở. Không force-push làm mất thay đổi đồng thời.
 
-**Câu mở đầu khuyến nghị cho chat/agent kế tiếp:** “Tiếp tục nghiệm thu IR 6 kênh trên nhánh giomuadongbac. Đọc PROJECT_STATUS.md, phân tích TIM10/ADC/DMA busy-wait, thiết kế pipeline kiểm thử phần cứng IR không ảnh hưởng MPU/I2C và TIM11 1 kHz; giữ nguyên dữ liệu nghiệm thu I2C–MPU6050.”
+**Câu mở đầu khuyến nghị cho chat/agent kế tiếp:** “Tiếp tục module IR trên nhánh giomuadongbac. Đọc PROJECT_STATUS.md và docs/system_debug/IR_SENSOR_TIMING_20261019.md; acquisition/timing đã đạt smoke-test board, phase sau mới kiểm tra tường/accuracy/noise. Giữ nguyên dữ liệu nghiệm thu I2C–MPU6050.”
