@@ -7,6 +7,9 @@
 #include "motor.h"
 #include "stm32f4xx.h"
 #include "system_timer.h"
+#if defined(DIAG_SOAK_180S)
+#include "soak_diag.h"
+#endif
 #if defined(INTEGRATION_DIAG)
 #include "integration_sweep.h"
 #endif
@@ -18,6 +21,16 @@ static volatile IR_Data_t ir_latest;
 static volatile Control_DebugStats_t di_stats;
 static volatile uint32_t di_prev_irq_us;
 static volatile uint8_t di_seen_valid;
+void Control_GetIRSnapshot(IR_Data_t *out)
+{
+    uint32_t primask;
+    uint8_t i;
+    if (!out) return;
+    primask=__get_PRIMASK();__disable_irq();
+    for (i=0U;i<IR_SENSOR_COUNT;i++) out->value[i]=ir_latest.value[i];
+    out->scan_count=ir_latest.scan_count;
+    if (!primask) __enable_irq();
+}
 void Control_GetDebugStats(Control_DebugStats_t *out)
 {
     uint32_t primask;
@@ -211,6 +224,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
         }
     }
+#if defined(DIAG_SOAK_180S)
+    Soak_PidTick(); /* synthetic load, ISR only; no output to physical motor */
+#endif
 #if defined(INTEGRATION_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - start_cycles;
