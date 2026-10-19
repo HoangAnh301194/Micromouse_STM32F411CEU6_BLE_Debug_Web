@@ -1,0 +1,120 @@
+{
+  "created": "2026-10-20T01:48:05",
+  "mode": "full",
+  "software": {
+    "git": {
+      "branch": "giomuadongbac",
+      "commit": "8aab5e5d2c189776e3b2a452f616a002c8b9426e",
+      "tracked_dirty": false
+    },
+    "source": {
+      "checks": {
+        "quadrature_x4": true,
+        "counter_16bit": true,
+        "encoder_on_tim11": true,
+        "motor_off_flag": true,
+        "encoder_motor_off_profile": true,
+        "encoder_telemetry_locked": true,
+        "motor_off_sticky_lock": true,
+        "positive_forward_unchanged": true
+      },
+      "pass": true,
+      "limits": [
+        "No explicit TIM3/TIM4 IC1F/IC2F hardware glitch filter configuration.",
+        "Raw PPS from one-millisecond delta: quantization 1000 counts/s.",
+        "EMA alpha 0.30 at 1 kHz is not equivalent to encoder electrical filtering.",
+        "1 Hz SYS_E cannot detect high-rate glitches or independently prove zero missed edges."
+      ]
+    },
+    "self_test": {
+      "status": "PASS",
+      "rollover_cases": 3,
+      "parser_cases": 2
+    },
+    "checks": {
+      "integration_audit": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_audit.log"
+      },
+      "integration_negative": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_negative.log"
+      },
+      "encoder_probe_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_probe_parser.log"
+      },
+      "encoder_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_native.log"
+      },
+      "pipeline_regression": {
+        "pass": true,
+        "returncode": 0,
+        "log": "pipeline_regression.log"
+      },
+      "estimator_selftest": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_selftest.log"
+      },
+      "motor_driver_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "motor_driver_native.log"
+      },
+      "sweep_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "sweep_native.log"
+      },
+      "ir_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_native.log"
+      },
+      "ir_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_parser.log"
+      },
+      "estimator_study": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_study.log"
+      },
+      "build_locked": {
+        "pass": true,
+        "returncode": 0,
+        "log": "build_locked.log"
+      }
+    },
+    "pass": true
+  },
+  "hardware": {
+    "status": "ABORTED_OR_INCOMPLETE",
+    "details": "Motor sweep failed; check raw logs and STOP state"
+  },
+  "sweep": {
+    "status": "REVIEWED",
+    "source": "D:\\Micromouse_STM32F411CEU6_BLE_Debug_Web\\results\\encoder_qual_20261020_014805\\system_uart_hardware\\summary.json",
+    "stage_count": 66,
+    "motor_on_stages": 33,
+    "both_wheels_mismatch_mean_pct": 0.65,
+    "qualified_electrically": false,
+    "note": "Stage-average counts only; not 1ms dynamics or ground-truth RPM."
+  },
+  "restored_motor_off": {
+    "pass": true,
+    "returncode": 0,
+    "log": "restore_motor_off.log"
+  },
+  "error": "Motor sweep failed; check raw logs and STOP state",
+  "plots": [
+    "sweep_response.png"
+  ]
+}
