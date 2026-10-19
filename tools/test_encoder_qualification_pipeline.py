@@ -54,6 +54,51 @@ class EncoderHostTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 p.summarize_encoder([p.parse("SYS_E,ms=1,encL=1,encR=2,ppsL=0,ppsR=0,appL=0,appR=0")],Path(directory))
 
+    def test_motor_off_on_50hz_end_to_end(self):
+        # Synthetic UART fixture: does not power motors or certify real signal.
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            run=folder/"new_motor_run"
+            run.mkdir()
+            for phase in ("off","on"):
+                l_count=r_count=0
+                frames=[
+                    "0.0\tSYS_M,ms=0,locked=1,i2cerr=0,to=0",
+                    "0.0\tSYS_T,ms=0,late=0,gap=0",
+                    "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0",
+                    "0.0\tSYS_STEP,ms=0,id=25,group=2,state=1,duty=700",
+                ]
+                for i in range(160):
+                    if phase=="on":
+                        l_count+=5
+                        r_count+=4
+                    ms=20*(i+1)
+                    frames.append("0.01\tSYS_EN,ms=%d,l=%d,r=%d,vL=%d,vR=%d" %
+                                  (ms,l_count,r_count,
+                                   250 if phase=="on" else 0,
+                                   200 if phase=="on" else 0))
+                frames += [
+                    "4.0\tSYS_T,ms=4000,late=0,gap=0",
+                    "4.0\tSYS_U,ms=4000,tx_drop=0,dma_err=0",
+                    "4.0\tSYS_M,ms=4000,locked=1,i2cerr=0,to=0",
+                ]
+                (run/(phase+"_uart.log")).write_text("\n".join(frames)+"\n",
+                                                       encoding="utf-8")
+            result=p.analyze_sweep_telemetry(run,folder)
+            self.assertEqual(result["ON"]["status"],"PASS")
+            self.assertEqual(result["OFF"]["status"],"PASS")
+            self.assertTrue((folder/"encoder_motor_on_50hz.csv").exists())
+
+    def test_motor_sweep_missing_telemetry_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            run=folder/"failed_motor"
+            run.mkdir()
+            (run/"off_uart.log").write_text("0.1\tSYS_EN,ms=1,l=0,r=0,vL=0,vR=0\n",
+                                            encoding="utf-8")
+            with self.assertRaises(RuntimeError):
+                p.analyze_sweep_telemetry(run,folder)
+
     def test_historical_sweep_report(self):
         report={"results":[{"mode":"ON","extended":{"stages":[{
             "wheel_group":2,"pwm_percent":20,"drive_ms":2000,
