@@ -59,6 +59,20 @@ static volatile uint8_t i2c_dma_busy = 0;
 static uint32_t i2c_nominal_scl_hz = 0;
 /* 1=400 kHz, 2=300 kHz, 3=200 kHz, 0=100 kHz. */
 static uint8_t i2c_current_speed_mode = 1U;
+#if defined(ENCODER_ALPHA_AB_DIAG)
+static volatile I2C_BusyDiag_t i2c_busy_diag;
+void I2C_GetBusyDiag(I2C_BusyDiag_t *out)
+{
+    if (!out) return;
+    /* Written in main-context I2C transactions. Read from main only. */
+    out->busy_timeouts = i2c_busy_diag.busy_timeouts;
+    out->bus_recoveries = i2c_busy_diag.bus_recoveries;
+    out->last_sr1 = i2c_busy_diag.last_sr1;
+    out->last_sr2 = i2c_busy_diag.last_sr2;
+    out->last_pb8_pb9_levels = i2c_busy_diag.last_pb8_pb9_levels;
+    out->last_after_recovery_levels = i2c_busy_diag.last_after_recovery_levels;
+}
+#endif
 
 /* [FIX] Separate TX and RX callbacks */
 static I2C_DMA_Callback_t i2c_dma_tx_callback = 0;  /* For OLED (Stream 6) */
@@ -117,12 +131,22 @@ static I2C_Status I2C_WaitBusFree(uint32_t i2c_base) {
     
     while ((*(volatile uint32_t *)(i2c_base + I2C_SR2)) & I2C_SR2_BUSY) {
         if (delay_elapsed_ms(start_time, I2C_TIMEOUT_MS)) {
+#if defined(ENCODER_ALPHA_AB_DIAG)
+            ++i2c_busy_diag.busy_timeouts;
+            i2c_busy_diag.last_sr1 = (*(volatile uint32_t *)(i2c_base + I2C_SR1));
+            i2c_busy_diag.last_sr2 = (*(volatile uint32_t *)(i2c_base + I2C_SR2));
+            i2c_busy_diag.last_pb8_pb9_levels = (GPIOB_IDR >> 8) & 3U;
+#endif
             I2C_ClearErrors(i2c_base);
             (*(volatile uint32_t *)(i2c_base + I2C_CR1)) |= I2C_CR1_STOP;
             delay_us_blocking(100);
             
             if ((*(volatile uint32_t *)(i2c_base + I2C_SR2)) & I2C_SR2_BUSY) {
                 I2C_BusRecovery();
+#if defined(ENCODER_ALPHA_AB_DIAG)
+                ++i2c_busy_diag.bus_recoveries;
+                i2c_busy_diag.last_after_recovery_levels = (GPIOB_IDR >> 8) & 3U;
+#endif
                 return I2C_BUSY;
             }
         }
