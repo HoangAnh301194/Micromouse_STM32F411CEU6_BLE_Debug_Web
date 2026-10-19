@@ -89,6 +89,8 @@ def source_audit():
         "shadow_alpha_optin": "-DENCODER_ALPHA_AB_DIAG=1" in cfg and
             "Encoder_GetShadowSnapshot" in enc and "SYS_AM,ms=" in main,
         "i2c_boot_probe_logged": "SYS_IPB,ms=" in main,
+        "i2c_busy_status_logged": "SYS_IB,ms=" in main and
+            "I2C_GetBusyDiag" in (ROOT/"src/i2c.c").read_text(encoding="utf-8"),
         "motor_off_sticky_lock": "Motor_LockOutputs();" in main,
         "positive_forward_unchanged": "ENCODER_LEFT_DIRECTION  -1" in
             (ROOT/"include/encoder.h").read_text(encoding="utf-8"),
@@ -442,9 +444,25 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                 "fallback_occurred":q["idx"]>0,
                 "explanation":"Status 255 means unattempted. Probe status 0 indicates driver success; WHO_AM_I must equal 0x68. The configured clock is nominal, not an SCL oscilloscope measurement.",
             }
+        busy_samples=[x for x in all_records if x["type"]=="SYS_IB"]
+        busy_diag=None
+        if busy_samples:
+            d=busy_samples[-1]
+            pins=d.get("pin",-1)
+            after=d.get("after",-1)
+            busy_diag={"busy_timeouts":d.get("n"),
+                       "bus_recoveries":d.get("rec"),
+                       "sr1_at_last_timeout":d.get("sr1"),
+                       "sr2_at_last_timeout":d.get("sr2"),
+                       "PB8_SCL_high_at_timeout":bool(pins & 1) if pins>=0 else None,
+                       "PB9_SDA_high_at_timeout":bool(pins & 2) if pins>=0 else None,
+                       "PB8_SCL_high_after_recovery":bool(after & 1) if after>=0 else None,
+                       "PB9_SDA_high_after_recovery":bool(after & 2) if after>=0 else None,
+                       "caveat":"GPIO input register sampled during/after recovery, not an oscilloscope waveform."}
         reports[phase]={"status":status,"samples":len(records),
                          "steady_drive_samples":len(drive),"wheels":results,
                          "i2c_startup_probe":startup_probe,
+                         "i2c_busy_debug":busy_diag,
                          "health":health,
                          "note":"PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."}
     if reports["ON"]["status"]!="PASS" or reports["OFF"]["status"]!="PASS":
