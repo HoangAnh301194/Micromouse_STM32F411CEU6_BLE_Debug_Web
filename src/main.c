@@ -338,6 +338,27 @@ int main(void)
                         (unsigned long)Board_GetHsiTrim(),
                         (unsigned long)Board_GetClockFault(),
                         (unsigned long)I2C_GetConfiguredSclHz());
+#if defined(ENCODER_PROFILE_DIAG)
+            /* Report retained MPU init probe result once per second.
+             * For a 300k fallback, reveals whether 400k failed address ACK,
+             * WHO_AM_I read, or WHO_AM_I value. Observation only. */
+            UART_Printf("SYS_IPB,ms=%lu,idx=%u,mode=%u,a0=%u,w0=%u,id0=%u,a1=%u,w1=%u,id1=%u,a2=%u,w2=%u,id2=%u,a3=%u,w3=%u,id3=%u\r\n",
+                        (unsigned long)now,
+                        (unsigned)mpu.selected_speed_index,
+                        (unsigned)mpu.selected_speed_mode,
+                        (unsigned)mpu.probe_address_status[0],
+                        (unsigned)mpu.probe_who_status[0],
+                        (unsigned)mpu.probe_who_value[0],
+                        (unsigned)mpu.probe_address_status[1],
+                        (unsigned)mpu.probe_who_status[1],
+                        (unsigned)mpu.probe_who_value[1],
+                        (unsigned)mpu.probe_address_status[2],
+                        (unsigned)mpu.probe_who_status[2],
+                        (unsigned)mpu.probe_who_value[2],
+                        (unsigned)mpu.probe_address_status[3],
+                        (unsigned)mpu.probe_who_status[3],
+                        (unsigned)mpu.probe_who_value[3]);
+#endif
             /* Optional UART profiling also runs in Motor OFF/ON diagnostics.
              * The production image has no instrumentation or this log. */
             {
