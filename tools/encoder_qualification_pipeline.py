@@ -523,6 +523,8 @@ def report(directory,data):
             json.dumps(data.get("sweep"),indent=2,ensure_ascii=False),
             "## Encoder OFF/ON high-rate telemetry",
             json.dumps(data.get("encoder_motor_on"),indent=2,ensure_ascii=False),
+            "## Qualification warnings (kept separate from Encoder measurements)",
+            str(data.get("warning","None")),
             "","## Remaining limitations",
             "- Input capture filter IC1F/IC2F and 10-ms speed estimator remain candidates, NOT auto-applied.",
             "- Encoder diagnostic OFF/ON builds emit SYS_EN ~50 Hz; missing edges require independent reference; synthetic estimator study is not board qualification.",
@@ -599,7 +601,31 @@ def main(argv=None):
                     data["sweep"]=sweep_summary(new,path,"motor_on")
                 data["encoder_motor_on"]=analyze_sweep_telemetry(out,path)
                 if not runinfo["pass"]:
-                    raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
+                    # Do not mislabel an entirely completed encoder sweep as
+                    # aborted solely because the MPU boot probe chose ~300 kHz.
+                    # Keep the original 400-kHz system gate NOT QUALIFIED.
+                    nested=(json.loads(new.read_text(encoding="utf-8"))
+                            if new.exists() else {})
+                    phases=nested.get("results",[])
+                    failed={phase.get("mode"): [
+                        key for key,ok in phase.get("checks",{}).items() if not ok
+                    ] for phase in phases}
+                    only_fallback=(len(phases)==2 and
+                                   all(phase.get("stages")==33 for phase in phases) and
+                                   all(set(items).issubset({"i2c_400k_nominal"})
+                                       for items in failed.values()) and
+                                   any("i2c_400k_nominal" in items
+                                       for items in failed.values()))
+                    if only_fallback:
+                        data["hardware"]["status"]="SWEEP_COMPLETE_I2C_RATE_UNQUALIFIED"
+                        data["hardware"]["i2c_rate_failed_phases"]=failed
+                        data["warning"]=(
+                            "All 33 OFF/ON motor stages completed, but at least "
+                            "one boot chose an I2C rate other than 400 kHz. "
+                            "Encoder 50-Hz diagnostics and raw logs remain valid "
+                            "for analysis; whole-system 400-kHz acceptance is not met.")
+                    else:
+                        raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
             finally:
                 # Attempt restoration even when a motor-on test fails or is interrupted.
                 restored=run([sys.executable,"-m","platformio","run","-e",
@@ -638,7 +664,9 @@ def main(argv=None):
         json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     report(path,data)
     print("Results:",path)
-    return 2 if "error" in data else 0
+    if data.get("warning"):
+        print("I2C RATE WARNING:",data["warning"],flush=True)
+    return 2 if ("error" in data or "warning" in data) else 0
 
 if __name__=="__main__":
     raise SystemExit(main())
