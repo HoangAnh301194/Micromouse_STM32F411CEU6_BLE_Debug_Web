@@ -14,9 +14,6 @@
 #include "motor.h"
 #include "board.h"
 #include "system_timer.h"
-#if defined(DIAG_SOAK_180S)
-#include "soak_diag.h"
-#endif
 #include <string.h>
 #if defined(UART_PROFILE_DIAG)
 #include "uart_bench.h"
@@ -50,33 +47,6 @@ static void PrintStatus(const MPU6050_Handle_t *mpu, uint32_t now)
 }
 static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
 {
-#if defined(DIAG_SOAK_180S)
-    if (strcmp(cmd,"SOAK ARM LIVE")==0) {
-        UART_Printf("SOAK_ARM,ok=%u\r\n",(unsigned)Soak_ArmLive(mpu));
-    } else if (strcmp(cmd,"SOAK START")==0) {
-        uint8_t ok=Soak_Start((MPU6050_Handle_t *)mpu,now);
-        UART_Printf("SOAK_ACK,ok=%u\r\n",(unsigned)ok);
-    } else if (strcmp(cmd,"PING")==0) {
-        Soak_Heartbeat(now);
-        UART_Printf("CMD_PING,ms=%lu\r\n",(unsigned long)now);
-    } else if (strcmp(cmd,"STOP")==0 || strcmp(cmd,"S")==0) {
-        Soak_Stop(4U);
-        Sweep_Abort(SWEEP_STOP_REQUEST);
-        Motor_Stop();
-        UART_SendString("CMD_STOP,ack=1\r\n");
-    } else if (strcmp(cmd,"STATUS")==0 || strcmp(cmd,"?")==0) {
-        UART_Printf("SOAK_STATUS,active=%u,once=%u,ms=%lu\r\n",
-                    (unsigned)Soak_IsActive(),(unsigned)Soak_HasStarted(),
-                    (unsigned long)now);
-    } else if (strcmp(cmd,"HELP")==0) {
-        UART_SendString("SOAK_HELP,SOAK START|SOAK ARM LIVE|STATUS|PING|STOP|!; one-shot 180s; LIVE requires explicit arm\r\n");
-    } else if (strcmp(cmd,"START")==0 || strcmp(cmd,"MODE ON")==0 ||
-               strcmp(cmd,"MODE OFF")==0) {
-        UART_SendString("SOAK_REJECT,reason=SWEEP_DISABLED\r\n");
-    } else if (cmd_len) {
-        UART_Printf("CMD_REJECT,reason=UNKNOWN,len=%u\r\n",(unsigned)cmd_len);
-    }
-#else
 #if defined(UART_PROFILE_DIAG)
     if (strncmp(cmd,"TXBENCH ",8)==0) {
         uint32_t target = 0U;
@@ -133,7 +103,6 @@ static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
     } else if (cmd_len) {
         UART_Printf("CMD_REJECT,reason=UNKNOWN,len=%u\r\n",(unsigned)cmd_len);
     }
-#endif /* DIAG_SOAK_180S */
 }
 void IntegrationSerial_Poll(const MPU6050_Handle_t *mpu, uint32_t now_ms)
 {
@@ -142,9 +111,6 @@ void IntegrationSerial_Poll(const MPU6050_Handle_t *mpu, uint32_t now_ms)
         if (value=='!') {
 #if defined(UART_PROFILE_DIAG)
             (void)UART_Bench_SetRate(0U,now_ms,mpu);
-#endif
-#if defined(DIAG_SOAK_180S)
-            Soak_Stop(4U);
 #endif
             Sweep_Abort(SWEEP_STOP_REQUEST);
             Motor_Stop();

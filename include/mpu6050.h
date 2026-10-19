@@ -268,7 +268,7 @@ typedef struct {
   uint8_t selected_speed_mode;
   uint8_t selected_speed_index;
 
-#if defined(DIAG_SOAK_180S)
+#if defined(MPU_TEMP_MONITOR)
   /* MPU6050 die temperature. 0x41/0x42, degrees C = raw/340 + 36.53.
    * Optional 1Hz asynchronous 2-byte I2C read; never from TIM11. */
   int32_t temperature_mc;
@@ -310,6 +310,13 @@ typedef struct {
 
 uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *handle,
                             MPU6050_Snapshot_t *out);
+
+#if defined(MPU_TEMP_MONITOR)
+/* Optional 1Hz die temperature over existing I2C1. Values in milli-Celsius.
+ * Returns 1 if valid; check age_ms to avoid using old sensor data. */
+uint8_t MPU6050_GetTemperatureMC(const MPU6050_Handle_t *handle,
+                                 int32_t *temperature_mc, uint32_t *age_ms);
+#endif
 
 #if defined(MPU_PHASE_AB)
 typedef struct {

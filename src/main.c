@@ -2,19 +2,15 @@
 #include "bt_debug.h"
 #include "control.h"
 #include "encoder.h"
-#include "i2c.h"
 #include "ir_sensor.h"
 #include "motion.h"
 #include "motor.h"
-#include "mpu6050.h"
+#include "mpu6050_i2c_module.h"
 #include "system_timer.h"
 #include "uart.h"
 #include "integration_sweep.h"
 #if defined(INTEGRATION_DIAG)
 #include "integration_serial.h"
-#if defined(DIAG_SOAK_180S)
-#include "soak_diag.h"
-#endif
 #if defined(UART_PROFILE_DIAG)
 #include "uart_bench.h"
 #endif
@@ -120,24 +116,14 @@ int main(void)
     BT_Init();
     IR_Init();
 
-#if defined(DIAG_SOAK_180S)
-    UART_SendString("SOAK_BOOT,stage=MPU_INIT\r\n");
-#endif
     mpu_status = MPU6050_Init(&mpu);
     if (mpu_status == MPU6050_OK) {
         mpu_status = MPU6050_Calibrate(&mpu); /* Starts async calibration. */
     }
 
-#if defined(DIAG_SOAK_180S)
-    if (mpu_status == MPU6050_OK)
-        UART_SendString("SOAK_BOOT,stage=CAL_START\r\n");
-#endif
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
     Sweep_Init();
-#if defined(DIAG_SOAK_180S)
-    Soak_Init();
-#endif
 #if defined(UART_PROFILE_DIAG)
     UART_Bench_Init();
 #endif
@@ -147,8 +133,8 @@ int main(void)
         Motor_Stop();
         Board_StatusLed(1);
         BT_SendString("[BOOT] MPU6050 init/calibration failed\r\n");
-#if defined(DIAG_SOAK_180S)
-        UART_Printf("SOAK_BOOT_FAIL,stage=MPU_INIT,status=%u,step=%u,reg=%u,i2c=%u,got=%u\r\n",
+#if defined(INTEGRATION_DIAG)
+        UART_Printf("MPU_BOOT_FAIL,status=%u,step=%u,reg=%u,i2c=%u,got=%u\r\n",
                     (unsigned)mpu_status, (unsigned)mpu.init_step,
                     (unsigned)mpu.init_register, (unsigned)mpu.init_i2c_status,
                     (unsigned)mpu.init_read_value);
@@ -189,9 +175,6 @@ int main(void)
 #if defined(INTEGRATION_DIAG)
         /* RX IRQ only queues bytes; command parsing is budgeted in main. */
         IntegrationSerial_Poll(&mpu, now);
-#if defined(DIAG_SOAK_180S)
-        Soak_Poll(&mpu, now);
-#endif
 #if defined(UART_PROFILE_DIAG)
         /* Main-only TX generator, never in TIM11 or USART ISR. */
         UART_Bench_Poll(now, &mpu);
@@ -267,14 +250,7 @@ int main(void)
                             (long)Encoder_GetRightSpeedPPS());
             }
         }
-        /* During the 180s test IM1/IMN/IMIR/IMPID own telemetry.
-         * Do not burst SYS_T/M/U/UQ/E at the same second, which previously
-         * peaked at 979/1024B and nearly filled the USART1 DMA queue. */
-        if ((uint32_t)(now - last_system_diag_ms) >= 1000U
-#if defined(DIAG_SOAK_180S)
-            && !Soak_IsActive()
-#endif
-            ) {
+        if ((uint32_t)(now - last_system_diag_ms) >= 1000U) {
             Control_DebugStats_t sd;
             Motor_Diagnostics_t md;
             MPU6050_Snapshot_t snap = {0};

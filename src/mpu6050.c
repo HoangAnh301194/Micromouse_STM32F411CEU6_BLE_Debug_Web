@@ -241,7 +241,7 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->dma_running = 0U;
     h->last_dma_req_us = 0U;
     h->sample_phase = 0U;
-#if defined(DIAG_SOAK_180S)
+#if defined(MPU_TEMP_MONITOR)
     h->temperature_mc = 0;
     h->temperature_last_ms = millis();
     h->temperature_reads = 0U;
@@ -511,7 +511,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     I2C_Status status, start;
     if (!h) return MPU6050_ERROR;
 
-#if defined(DIAG_SOAK_180S)
+#if defined(MPU_TEMP_MONITOR)
     /* 1Hz optional temperature transaction shares the SAME async I2C1
      * state machine. No concurrent transaction, blocking read, or ISR work.
      * This code must not interpret TEMP bytes as gyro samples. */
@@ -649,7 +649,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         }
 #endif
         h->sample_phase = 0U;
-#if defined(DIAG_SOAK_180S)
+#if defined(MPU_TEMP_MONITOR)
         /* Request temperature after processing this gyro sample; actual
          * I2C read begins later once the previous STOP frees the bus. */
         if (h->last_status_ready &&
@@ -781,7 +781,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         return MPU6050_OK;
     }
 
-#if defined(DIAG_SOAK_180S)
+#if defined(MPU_TEMP_MONITOR)
     /* Service at most one short TEMP_OUT_H/L read per second between
      * gyro samples. If I2C busy, defer and do NOT block the 1kHz TIM11. */
     if (h->sample_phase == 0U && h->temperature_pending) {
@@ -934,6 +934,19 @@ uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *h,
     if (!primask) __enable_irq();
     return out->valid;
 }
+
+#if defined(MPU_TEMP_MONITOR)
+/* Asynchronous 1Hz MPU die-temperature sample. Main-context consumer;
+ * validity and measurement age must be checked separately. */
+uint8_t MPU6050_GetTemperatureMC(const MPU6050_Handle_t *h,
+                                 int32_t *temperature_mc, uint32_t *age_ms)
+{
+    if (!h || !h->temperature_valid) return 0U;
+    if (temperature_mc) *temperature_mc=h->temperature_mc;
+    if (age_ms) *age_ms=(uint32_t)(millis()-h->temperature_last_ms);
+    return 1U;
+}
+#endif
 
 float MPU6050_GetYaw(MPU6050_Handle_t *h) { return h ? h->yaw : 0.0f; }
 float MPU6050_GetGyroZ(MPU6050_Handle_t *h) { return h ? h->gyro_z_filtered : 0.0f; }

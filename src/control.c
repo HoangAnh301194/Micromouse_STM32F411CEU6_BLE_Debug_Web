@@ -7,9 +7,6 @@
 #include "motor.h"
 #include "stm32f4xx.h"
 #include "system_timer.h"
-#if defined(DIAG_SOAK_180S)
-#include "soak_diag.h"
-#endif
 #if defined(INTEGRATION_DIAG)
 #include "integration_sweep.h"
 #endif
@@ -224,9 +221,6 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
         }
     }
-#if defined(DIAG_SOAK_180S)
-    Soak_PidTick(); /* synthetic load, ISR only; no output to physical motor */
-#endif
 #if defined(INTEGRATION_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - start_cycles;

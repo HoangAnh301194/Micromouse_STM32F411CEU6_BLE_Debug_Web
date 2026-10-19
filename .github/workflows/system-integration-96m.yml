@@ -20,8 +20,6 @@ on:
       - 'src/uart.c'
       - 'include/uart.h'
       - 'tools/system_sweep_native_test.py'
-      - 'tools/imu_soak_pipeline.py'
-      - 'tools/test_imu_soak_pipeline.py'
       - 'docs/system_debug/**'
       - 'include/encoder.h'
   pull_request:
@@ -46,8 +44,6 @@ jobs:
         run: python tools/system_sweep_native_test.py
       - name: Host serial parser synthetic regression
         run: python tools/test_system_uart_pipeline.py
-      - name: IMU 180s yaw-drift shadow/live synthetic parser and metric validation
-        run: python tools/test_imu_soak_pipeline.py
       - name: UART PA9/PA10 rate profile offline analysis and CLI
         run: python tools/test_uart_rate_benchmark.py
       - name: Regression clock and RC2 UART MPU
@@ -70,11 +66,3 @@ jobs:
         run: python -m platformio run -e integration_diag_motor_on_96m
       - name: Build motor-locked UART throughput profiler (NO FLASH)
         run: python -m platformio run -e integration_diag_uart_96m
-      - name: Build 180s stationary MPU/I2C diagnostic (NO FLASH)
-        run: python -m platformio run -e integration_diag_imu_soak_96m
-      - name: Build full 1kHz PID synthetic shadow diagnostic (NO FLASH)
-        run: python -m platformio run -e integration_diag_full_shadow_96m
-      - name: Build explicitly armed bounded live motor diagnostic (NO FLASH)
-        run: python -m platformio run -e integration_diag_full_live_96m
-      - name: Build 80-100pct brief PWM motor/IMU temperature diagnostic (NO FLASH)
-        run: python -m platformio run -e integration_diag_full_live_high_pwm_96m
