@@ -93,6 +93,8 @@ def candidate_rows(stage_rows, phase="ON"):
     return [
         row for row in stage_rows
         if row["phase"] == phase and row["state"] in (1, 2)
+        and (row["state"] == 1 or
+             row["metric"] == METRICS[1])  # coast onset only
         and 20 <= row["pwm_percent"] <= 80
         and row["n"] >= 100
         and (row["group"] == 2 or
@@ -207,7 +209,7 @@ def summarize(stage_rows, samples, issues):
         "candidate_alphas": list(ALPHAS),
         "reference": "Trailing 20-ms integrated encoder counts, not external truth.",
         "sampling": "Metrics accumulated at 1 kHz; SYS_AB visualization at 10 Hz.",
-        "optimization_scope": "ON DRIVE/COAST active wheels, PWM 20-80%; 90-100% reserved for separate risk analysis.",
+        "optimization_scope": "ON active wheels PWM 20-80%; steady noise/tracking from DRIVE only, early transient from DRIVE and COAST; 90-100% reserved for separate risk analysis.",
         "metrics": per_metric,
         "by_wheel": by_wheel,
         "by_pwm": by_pwm,
