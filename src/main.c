@@ -120,11 +120,18 @@ int main(void)
     BT_Init();
     IR_Init();
 
+#if defined(DIAG_SOAK_180S)
+    UART_SendString("SOAK_BOOT,stage=MPU_INIT\r\n");
+#endif
     mpu_status = MPU6050_Init(&mpu);
     if (mpu_status == MPU6050_OK) {
         mpu_status = MPU6050_Calibrate(&mpu); /* Starts async calibration. */
     }
 
+#if defined(DIAG_SOAK_180S)
+    if (mpu_status == MPU6050_OK)
+        UART_SendString("SOAK_BOOT,stage=CAL_START\r\n");
+#endif
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
     Sweep_Init();
@@ -140,6 +147,12 @@ int main(void)
         Motor_Stop();
         Board_StatusLed(1);
         BT_SendString("[BOOT] MPU6050 init/calibration failed\r\n");
+#if defined(DIAG_SOAK_180S)
+        UART_Printf("SOAK_BOOT_FAIL,stage=MPU_INIT,status=%u,step=%u,reg=%u,i2c=%u,got=%u\r\n",
+                    (unsigned)mpu_status, (unsigned)mpu.init_step,
+                    (unsigned)mpu.init_register, (unsigned)mpu.init_i2c_status,
+                    (unsigned)mpu.init_read_value);
+#endif
 
         while (1) {
         }
