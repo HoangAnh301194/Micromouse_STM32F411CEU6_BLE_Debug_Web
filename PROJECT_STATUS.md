@@ -80,3 +80,11 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 6. Sau mỗi mốc bàn giao, cập nhật `PROJECT_STATUS.md`, README module, danh sách giới hạn còn mở. Không force-push làm mất thay đổi đồng thời.
 
 **Câu mở đầu khuyến nghị cho chat/agent kế tiếp:** “Tiếp tục module IR trên nhánh giomuadongbac. Đọc PROJECT_STATUS.md và docs/system_debug/IR_SENSOR_TIMING_20261019.md; acquisition/timing đã đạt smoke-test board, phase sau mới kiểm tra tường/accuracy/noise. Giữ nguyên dữ liệu nghiệm thu I2C–MPU6050.”
+
+## 6. Encoder software pipeline — khởi tạo 20/10/2026
+
+- Pipeline mới tại `tools/encoder_qualification_pipeline.py` thực hiện audit nguồn, kiểm thử C-native bằng mã thực `src/encoder.c`, build firmware, nghiên cứu PPS mô phỏng, thu UART và phân tích sweep PWM lịch sử. Xem `docs/encoder/QUALIFICATION_PIPELINE_20261020.md`.
+- Profile riêng `integration_diag_encoder_motor_off_96m` kế thừa khóa motor đầu ra, bổ sung `SYS_EN` khoảng 50 Hz trong main. Production, Motor Driver, I2C/MPU và IR không thay thuật toán.
+- Có workflow CI host/build nhưng **chưa nghiệm thu profile mới trên board**. Phân tích 50 Hz không chứng minh không mất cạnh xung hoặc độ chính xác PPS ở 1 kHz.
+- Giữ nguyên `ENCODER_PPR=1430` và dấu encoder. Chưa thay EMA 1 ms, IC1F/IC2F hoặc PID khi chưa có phép đo so sánh thực.
+- Motor-on phải cấp quyền riêng: bánh nâng/cố định, cắt VM độc lập, người giám sát và chấp nhận sweep thực tới 100% PWM.
