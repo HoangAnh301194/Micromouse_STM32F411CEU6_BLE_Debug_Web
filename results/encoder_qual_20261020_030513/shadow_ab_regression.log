@@ -1,0 +1,17 @@
+D:\Micromouse_STM32F411CEU6_BLE_Debug_Web\tools\encoder_shadow_ab.py:49: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\ADMIN\\AppData\\Local\\Temp\\tmp__2syfxb\\off_uart.log' mode='r' encoding='utf-8'>
+  for line in path.open(encoding="utf-8", errors="replace"):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+D:\Micromouse_STM32F411CEU6_BLE_Debug_Web\tools\encoder_shadow_ab.py:49: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\ADMIN\\AppData\\Local\\Temp\\tmp__2syfxb\\on_uart.log' mode='r' encoding='utf-8'>
+  for line in path.open(encoding="utf-8", errors="replace"):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.D:\Micromouse_STM32F411CEU6_BLE_Debug_Web\tools\encoder_shadow_ab.py:49: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\ADMIN\\AppData\\Local\\Temp\\tmpxvkw240j\\off_uart.log' mode='r' encoding='utf-8'>
+  for line in path.open(encoding="utf-8", errors="replace"):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+D:\Micromouse_STM32F411CEU6_BLE_Debug_Web\tools\encoder_shadow_ab.py:49: ResourceWarning: unclosed file <_io.TextIOWrapper name='C:\\Users\\ADMIN\\AppData\\Local\\Temp\\tmpxvkw240j\\on_uart.log' mode='r' encoding='utf-8'>
+  for line in path.open(encoding="utf-8", errors="replace"):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..
+----------------------------------------------------------------------
+Ran 3 tests in 0.127s
+
+OK
