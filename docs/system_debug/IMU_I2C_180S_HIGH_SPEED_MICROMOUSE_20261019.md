@@ -72,3 +72,20 @@ Software PASS only indicates no specified timing/data faults. Yaw drift needs it
 - **Repeatability:** several 180s runs with varied battery voltage, temperature and load; compare mean, quantiles and worst-case faults rather than a single PASS.
 
 The 60Hz UART benchmark was previously established only for approximately 75-byte probe records. If IM6 plus existing 1Hz telemetry approaches the TX-ring limit, the PC report must flag queue/drops; do not assume 60Hz is universally safe for larger messages.
+
+
+## Troubleshooting: apparent hang after successful ST-Link upload
+
+ST-Link `Programming Finished / Verified OK` confirms FLASH, **not** MPU calibration, USART1 reception, or the subsequent 180s experiment.
+
+With the updated `tools/imu_soak_pipeline.py`:
+- The PC prints that COM7 is open at 115200 8N1, then once-per-second `SYS_M` fields: `cal_state`, calibration sample count, successful gyro reads, I2C errors, timeout and gyro sequence.
+- Normal first calibration is about 5 seconds warm-up + 4 seconds for 4000 gyro samples at 1kHz (~9s), plus boot overhead. Retries may extend this.
+- If the PC sees **no SYS_M in 15s**, it stops with recent raw UART lines. This distinguishes a missing UART / early MCU boot path from ordinary gyro warm-up.
+- `cal=4` means firmware calibration rejected all attempts; the host exits immediately instead of waiting for 60 seconds.
+- The calibration timeout remains **60s** for slow sampling/retries; if this fires, inspect `still_uart.log` for `SYS_CAL` and `SYS_M`.
+- If MPU register probing fails **before** TIM11 starts, firmware now emits `SOAK_BOOT_FAIL` on PA9, including step/register/I2C status (the previous code only sent a BLE failure).
+- After `SOAK_ACK`, the program prints progress every ~10s until `180/180s`. Then the SHADOW phase flashes and performs its own calibration and 180s test. This means an entire two-phase run lasts >360s plus uploads/calibration.
+
+**On Windows if nothing changes:** press Ctrl+C once, inspect the newest directory under `results/imu_soak_*` and its `still_uart.log`. If it contains no `SYS_M` frames, check COM number, PA9 to USB-UART RX, PA10 to USB-UART TX, common GND, 3.3V TTL, and whether the program stops during I2C initialization. If it does have SYS_M frames, inspect `cal`, `n`, `i2cerr` and `to`. Never assume MCU hardware is frozen just because console output is quiet.
+
