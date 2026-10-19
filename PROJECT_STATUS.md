@@ -88,3 +88,5 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 - Có workflow CI host/build nhưng **chưa nghiệm thu profile mới trên board**. Phân tích 50 Hz không chứng minh không mất cạnh xung hoặc độ chính xác PPS ở 1 kHz.
 - Giữ nguyên `ENCODER_PPR=1430` và dấu encoder. Chưa thay EMA 1 ms, IC1F/IC2F hoặc PID khi chưa có phép đo so sánh thực.
 - Motor-on phải cấp quyền riêng: bánh nâng/cố định, cắt VM độc lập, người giám sát và chấp nhận sweep thực tới 100% PWM.
+
+**Cập nhật Encoder motor-on pipeline:** Profile mới `integration_diag_encoder_motor_on_96m` cho phép ghi `SYS_EN` khoảng 50 Hz trong sweep motor thật có `MODE ON` + `START` qua UART. Lệnh tổng hợp dùng `--motor-on-sweep --fixture-ready`, không cần quay tay và không yêu cầu xác nhận riêng cho 100% PWM. Các điều kiện bánh nâng/cố định, cắt nguồn VM độc lập và có người trực vẫn bắt buộc. Chưa chạy nghiệm thu trên board bằng profile mới; kết quả CI/build chưa được xác minh tại thời điểm cập nhật.
