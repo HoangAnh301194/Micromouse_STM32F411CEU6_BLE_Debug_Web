@@ -15,4 +15,27 @@ int32_t Encoder_GetRightCount(void);
 float Encoder_GetLeftSpeedPPS(void);
 float Encoder_GetRightSpeedPPS(void);
 
+/* Opt-in 1-kHz shadow estimator bank. Never feeds production motion/PID. */
+#if defined(ENCODER_ALPHA_AB_DIAG)
+#define ENCODER_SHADOW_ALPHAS 7U
+#define ENCODER_SHADOW_WINDOWS 3U
+typedef struct {
+    int32_t alpha_left[ENCODER_SHADOW_ALPHAS];
+    int32_t alpha_right[ENCODER_SHADOW_ALPHAS];
+    int32_t box_left[ENCODER_SHADOW_WINDOWS];
+    int32_t box_right[ENCODER_SHADOW_WINDOWS];
+    /* 1-kHz cumulative metrics; snapshots reset on each diagnostic stage. */
+    uint32_t ticks;
+    uint32_t valid_reference_ticks;
+    uint32_t quiet_ticks;
+    uint32_t window_ticks;
+    uint32_t window_abs_error_left[ENCODER_SHADOW_ALPHAS];
+    uint32_t window_abs_error_right[ENCODER_SHADOW_ALPHAS];
+    uint32_t variation_left[ENCODER_SHADOW_ALPHAS];
+    uint32_t variation_right[ENCODER_SHADOW_ALPHAS];
+} Encoder_ShadowSnapshot_t;
+void Encoder_ShadowResetMetrics(void);
+void Encoder_GetShadowSnapshot(Encoder_ShadowSnapshot_t *out);
+#endif
+
 #endif
