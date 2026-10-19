@@ -23,6 +23,7 @@ GATES = (
     ("integration_audit", ["tools/system_integration_gate.py", "--audit"]),
     ("integration_negative", ["tools/system_integration_gate.py", "--self-test"]),
     ("encoder_probe_parser", ["tools/encoder_manual_probe.py", "--self-test"]),
+    ("shadow_ab_regression", ["tools/test_encoder_shadow_ab.py"]),
     ("encoder_native", ["tools/encoder_native_test.py"]),
     ("pipeline_regression", ["tools/test_encoder_qualification_pipeline.py"]),
     ("estimator_selftest", ["tools/encoder_estimator_benchmark.py", "--self-test"]),
@@ -85,6 +86,8 @@ def source_audit():
             "-DENCODER_PROFILE_DIAG=1" in cfg,
         "encoder_telemetry_diagnostic_guard": "Encoder telemetry requires an explicit integration diagnostic mode" in main,
         "encoder_motor_on_profile": "integration_diag_encoder_motor_on_96m" in cfg,
+        "shadow_alpha_optin": "-DENCODER_ALPHA_AB_DIAG=1" in cfg and
+            "Encoder_GetShadowSnapshot" in enc and "SYS_AM,ms=" in main,
         "i2c_boot_probe_logged": "SYS_IPB,ms=" in main,
         "motor_off_sticky_lock": "Motor_LockOutputs();" in main,
         "positive_forward_unchanged": "ENCODER_LEFT_DIRECTION  -1" in
@@ -543,6 +546,8 @@ def report(directory,data):
             json.dumps(data.get("sweep"),indent=2,ensure_ascii=False),
             "## Encoder OFF/ON high-rate telemetry",
             json.dumps(data.get("encoder_motor_on"),indent=2,ensure_ascii=False),
+             "## Alpha A/B estimator comparison (1kHz MCU metrics)",
+             json.dumps(data.get("alpha_ab"),indent=2,ensure_ascii=False),
             "## Qualification warnings (kept separate from Encoder measurements)",
             str(data.get("warning","None")),
             "","## Remaining limitations",
@@ -620,6 +625,13 @@ def main(argv=None):
                 if new.exists():
                     data["sweep"]=sweep_summary(new,path,"motor_on")
                 data["encoder_motor_on"]=analyze_sweep_telemetry(out,path)
+                from encoder_shadow_ab import analyze as analyze_alpha_ab
+                data["alpha_ab"]=analyze_alpha_ab(out,path)
+                if data["alpha_ab"]["status"]!="COMPLETE_PROVISIONAL":
+                    raise RuntimeError(
+                        "1kHz shadow alpha A/B incomplete; preserve raw logs and review: "+
+                        str(data["alpha_ab"]["missing_metric_frames_count"])+
+                        " missing per-stage metric frames")
                 if not runinfo["pass"]:
                     # Do not mislabel an entirely completed encoder sweep as
                     # aborted solely because the MPU boot probe chose ~300 kHz.
