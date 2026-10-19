@@ -18,6 +18,9 @@
 #include "uart.h"
 #include "stm32f4xx.h"
 
+#if defined(DIAG_SOAK_HIGH_PWM) && !defined(DIAG_SOAK_MOTOR_LIVE)
+#error "High duty requires explicit LIVE diagnostic profile"
+#endif
 #if defined(DIAG_SOAK_MOTOR_LIVE) && (!defined(DIAG_SOAK_PID) || !defined(INTEGRATION_DIAG_MOTOR_ON))
 #error "LIVE soak needs PID stress and motor-ON diagnostic image"
 #endif
@@ -30,6 +33,12 @@
 #define SOAK_HEARTBEAT_TIMEOUT_MS 750UL
 #define SOAK_MOTOR_RENEW_MS 40UL
 static volatile uint8_t active, once, live_armed, aborted;
+#if defined(DIAG_SOAK_MOTOR_LIVE)
+static uint32_t drive_stage_index, drive_start_ms, drive_last_report_ms;
+static int32_t drive_start_enc_l, drive_start_enc_r;
+static uint8_t drive_stage_checked;
+static int16_t drive_target_l, drive_target_r;
+#endif
 static uint32_t began_ms, next_sample_us, last_diag_ms, last_lease_ms, last_drive_ms;
 static uint32_t last_heartbeat_ms, start_good, start_seq, start_stale;
 static uint32_t base_gap, base_gyro_invalid, base_timeout, base_errors, base_drop;
@@ -44,27 +53,75 @@ static int32_t FixedMilli(float x)
     if (x < -1000000.0f) return -1000000000L;
     return (int32_t)(x * 1000.0f + (x >= 0 ? 0.5f : -0.5f));
 }
+#if defined(DIAG_SOAK_MOTOR_LIVE)
+/* Actual PWM drive. Single-sided and both-wheel stages; no reversal.
+ * HIGH uses short peaks only and keeps >4s cooling/coasting per slot.
+ * At 100% the motor remains energized for at most 500ms in a 30s cycle. */
 static void DriveStep(uint32_t elapsed_ms)
 {
-#if defined(DIAG_SOAK_MOTOR_LIVE)
-    uint32_t part = (elapsed_ms / 5000U) % 6U;
-    /* Each five-second segment drives at most 2s, then COAST >=3s.
-     * Includes equal-pair/individual 20-35% steps for EMI/supply comparison.
-     * Do not use open-loop commands on the maze or with wheels grounded. */
-    int16_t l=0, r=0;
-    if ((elapsed_ms % 5000U) < 2000U) {
-        if (part == 1U) { l=200; r=200; }
-        else if (part == 2U) { l=300; r=300; }
-        else if (part == 3U) { l=250; }
-        else if (part == 4U) { r=250; }
-        else if (part == 5U) { l=350; r=350; }
-    }
-    if (l || r) Motor_SetPairPermille(l,r);
-    else Motor_Stop();
-#else
-    (void)elapsed_ms;
+    uint32_t stage=elapsed_ms/5000U,part=stage%6U,within=elapsed_ms%5000U;
+    uint32_t duration=2000U;
+    int16_t l=0,r=0,applied_l=0,applied_r=0;
+    int32_t dl,dr;
+#if defined(DIAG_SOAK_HIGH_PWM)
+    if (part>=1U && part<=3U)duration=1000U;
+    else if (part==4U)duration=750U;
+    else if (part==5U)duration=500U;
 #endif
+    if (stage!=drive_stage_index) {
+        drive_stage_index=stage;
+        drive_start_ms=elapsed_ms-within;
+        drive_start_enc_l=Encoder_GetLeftCount();
+        drive_start_enc_r=Encoder_GetRightCount();
+        drive_stage_checked=0U;
+    }
+    if (within<duration) {
+#if defined(DIAG_SOAK_HIGH_PWM)
+        if (part==1U)l=800;
+        else if (part==2U)r=800;
+        else if (part==3U)l=r=800;
+        else if (part==4U)l=r=900;
+        else if (part==5U)l=r=1000;
+#else
+        if (part==1U)l=r=200;
+        else if (part==2U)l=r=300;
+        else if (part==3U)l=250;
+        else if (part==4U)r=250;
+        else if (part==5U)l=r=350;
+#endif
+    }
+    drive_target_l=l;
+    drive_target_r=r;
+    if (l||r)Motor_SetPairPermille(l,r);
+    else Motor_Stop();
+
+    /* Detect disconnected/locked/stalled encoder response while high PWM
+     * remains commanded. At least 10 counts per driven wheel by 300ms.
+     * Fail closed immediately; this is NOT a current/thermal monitor. */
+    if (!drive_stage_checked && within>=300U && within<duration &&
+        (l!=0||r!=0)) {
+        dl=Encoder_GetLeftCount()-drive_start_enc_l;
+        dr=Encoder_GetRightCount()-drive_start_enc_r;
+        if ((l && (dl<10 && dl>-10)) || (r && (dr<10 && dr>-10))) {
+            UART_Printf("IMDRV_FAULT,t=%lu,stage=%lu,l=%d,r=%d,dl=%ld,dr=%ld\r\n",
+                  (unsigned long)elapsed_ms,(unsigned long)stage,
+                  (int)l,(int)r,(long)dl,(long)dr);
+            Soak_Stop(5U);
+            return;
+        }
+        drive_stage_checked=1U;
+    }
+    if ((uint32_t)(elapsed_ms-drive_last_report_ms)>=250U) {
+        drive_last_report_ms=elapsed_ms;
+        Motor_GetAppliedPairPermille(&applied_l,&applied_r);
+        UART_Printf("IMDRV,t=%lu,stage=%lu,part=%lu,setL=%d,setR=%d,appL=%d,appR=%d,encL=%ld,encR=%ld\r\n",
+            (unsigned long)elapsed_ms,(unsigned long)stage,
+            (unsigned long)part,(int)l,(int)r,(int)applied_l,(int)applied_r,
+            (long)Encoder_GetLeftCount(),(long)Encoder_GetRightCount());
+    }
 }
+#endif
+
 void Soak_Init(void)
 {
     active=once=live_armed=aborted=0U;
@@ -72,6 +129,13 @@ void Soak_Init(void)
     last_heartbeat_ms=start_good=start_seq=start_stale=0U;
     base_gap=base_gyro_invalid=base_timeout=base_errors=base_drop=0U;
     pid_ticks=pid_maxcy=0U;
+#if defined(DIAG_SOAK_MOTOR_LIVE)
+    drive_stage_index=0xFFFFFFFFUL;
+    drive_start_ms=drive_last_report_ms=0U;
+    drive_start_enc_l=drive_start_enc_r=0;
+    drive_stage_checked=0U;
+    drive_target_l=drive_target_r=0;
+#endif
     plant=pid_last_error=pid_last_command=0.0f;
 #if defined(DIAG_SOAK_PID)
     PID_Init(&fake_pid, 0.9f, 0.3f, 0.001f, 70.0f, 50.0f);
@@ -116,11 +180,16 @@ uint8_t Soak_Start(MPU6050_Handle_t *mpu, uint32_t now_ms)
     start_good=mpu->fresh_gyro_reads;
     start_seq=s.sequence;
     began_ms=last_diag_ms=last_drive_ms=last_heartbeat_ms=now_ms;
+    UART_ResetProfileQueuePeak();
+#if defined(DIAG_SOAK_MOTOR_LIVE)
+    drive_stage_index=0xFFFFFFFFUL;
+    drive_last_report_ms=0U;
+#endif
     next_sample_us=micros()+SOAK_RATE_US;
     last_lease_ms=now_ms;
     once=active=1U;
     aborted=0U;
-    UART_Printf("SOAK_BEGIN,t=%lu,dur=180000,rate=60,live=%u,pid=%u,iclk=%lu,bias=%ld\r\n",
+    UART_Printf("SOAK_BEGIN,t=%lu,dur=180000,rate=60,live=%u,pid=%u,high=%u,iclk=%lu,bias=%ld\r\n",
                 (unsigned long)now_ms,
 #if defined(DIAG_SOAK_MOTOR_LIVE)
                 1U,
@@ -128,6 +197,11 @@ uint8_t Soak_Start(MPU6050_Handle_t *mpu, uint32_t now_ms)
                 0U,
 #endif
 #if defined(DIAG_SOAK_PID)
+                1U,
+#else
+                0U,
+#endif
+#if defined(DIAG_SOAK_HIGH_PWM)
                 1U,
 #else
                 0U,
@@ -206,6 +280,7 @@ void Soak_Poll(MPU6050_Handle_t *mpu, uint32_t now_ms)
     if ((uint32_t)(now_ms-last_lease_ms)>=SOAK_MOTOR_RENEW_MS) {
         last_lease_ms=now_ms;
         DriveStep(elapsed);
+        if (!active) return; /* encoder no-response fail-closed */
     }
 #endif
     now_us=micros();
@@ -239,7 +314,7 @@ void Soak_Poll(MPU6050_Handle_t *mpu, uint32_t now_ms)
         MPU6050_GetNoiseWindow(mpu,&n);
         Control_GetIRSnapshot(&ir);
         Motor_GetAppliedPairPermille(&left,&right);
-        UART_Printf("IM1,t=%lu,good=%lu,seq=%lu,stale=%lu,err=%lu,to=%lu,nr=%lu,xfer=%lu,ir=%lu,late=%lu,gap=%lu,irqcy=%lu,q=%lu,drop=%lu,rxerr=%lu\r\n",
+        UART_Printf("IM1,t=%lu,good=%lu,seq=%lu,stale=%lu,err=%lu,to=%lu,nr=%lu,xfer=%lu,ir=%lu,late=%lu,gap=%lu,irqcy=%lu,q=%lu,qp=%lu,drop=%lu,rxerr=%lu\r\n",
             (unsigned long)elapsed,
             (unsigned long)(mpu->fresh_gyro_reads-start_good),
             (unsigned long)mpu->published_sequence,
@@ -253,9 +328,10 @@ void Soak_Poll(MPU6050_Handle_t *mpu, uint32_t now_ms)
             (unsigned long)(t.gaps_gt1500us-base_gap),
             (unsigned long)t.max_irq_cycles,
             (unsigned long)u.queued_bytes,
+            (unsigned long)u.queue_peak,
             (unsigned long)(u.dropped_msgs-base_drop),
             (unsigned long)u.rx_errors);
-        UART_Printf("IMN,t=%lu,n=%lu,mean=%ld,std=%ld,bias=%ld,rawmin=%ld,rawmax=%ld,gmin=%lu,gmax=%lu,eq=%lu\r\n",
+        UART_Printf("IMN,t=%lu,n=%lu,mean=%ld,std=%ld,bias=%ld,rawmin=%ld,rawmax=%ld,gmin=%lu,gmax=%lu,eq=%lu,tc=%ld,tvalid=%u,tok=%lu,terr=%lu,tto=%lu,tage=%lu\r\n",
             (unsigned long)elapsed,(unsigned long)n.n,
             (long)FixedMilli(n.mean_corrected_dps),
             (long)FixedMilli(n.std_dps),
@@ -264,7 +340,13 @@ void Soak_Poll(MPU6050_Handle_t *mpu, uint32_t now_ms)
             (long)FixedMilli(n.max_dps),
             (unsigned long)n.interval_min_us,
             (unsigned long)n.interval_max_us,
-            (unsigned long)n.equal_consecutive_raw);
+            (unsigned long)n.equal_consecutive_raw,
+            (long)mpu->temperature_mc,
+            (unsigned)mpu->temperature_valid,
+            (unsigned long)mpu->temperature_reads,
+            (unsigned long)mpu->temperature_errors,
+            (unsigned long)mpu->temperature_timeouts,
+            (unsigned long)(now_ms-mpu->temperature_last_ms));
         UART_Printf("IMIR,t=%lu,c=%lu,s0=%u,s1=%u,s2=%u,s3=%u,s4=%u,s5=%u\r\n",
              (unsigned long)elapsed,(unsigned long)ir.scan_count,
              (unsigned)ir.value[0],(unsigned)ir.value[1],(unsigned)ir.value[2],
