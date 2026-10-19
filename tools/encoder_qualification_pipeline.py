@@ -23,6 +23,8 @@ GATES = (
     ("integration_audit", ["tools/system_integration_gate.py", "--audit"]),
     ("integration_negative", ["tools/system_integration_gate.py", "--self-test"]),
     ("encoder_probe_parser", ["tools/encoder_manual_probe.py", "--self-test"]),
+    ("encoder_native", ["tools/encoder_native_test.py"]),
+    ("estimator_selftest", ["tools/encoder_estimator_benchmark.py", "--self-test"]),
     ("motor_driver_native", ["tools/motor_driver_native_test.py"]),
     ("sweep_native", ["tools/system_sweep_native_test.py"]),
     ("ir_native", ["tools/ir_sensor_native_test.py"]),
@@ -109,6 +111,9 @@ def gates(directory, skip_build):
        "self_test":self_test(),"checks":{}}
     for name,args in GATES:
         d["checks"][name]=run([sys.executable,*args],name,directory,180)
+    d["checks"]["estimator_study"]=run(
+        [sys.executable,"tools/encoder_estimator_benchmark.py",
+         "--outdir",str(directory)],"estimator_study",directory,90)
     if not skip_build:
         d["checks"]["build_locked"]=run(
             [sys.executable,"-m","platformio","run","-e",
@@ -250,6 +255,7 @@ def report(directory,data):
             "","## Remaining limitations",
             "- Input capture filter IC1F/IC2F and 10-ms speed estimator remain candidates, NOT auto-applied.",
             "- SYS_E is logged at ~1 Hz; accurate high-frequency jitter and missed edges need a new timestamped firmware measurement and independent reference.",
+            "- estimator_metrics.csv and estimator_samples.csv (if present) are SYNTHETIC, NOT measured MCU response.",
             "- 1430 counts per wheel revolution is retained as the user's current engineering approximation.",
             "- Historical stage response is not a calibration of closed-loop speed PID."]
     (directory/"REPORT.md").write_text("\n".join(lines)+"\n",encoding="utf-8")
@@ -333,6 +339,7 @@ def main(argv=None):
             data["hardware"]=serial_capture(args.port,args.seconds,path)
     except (RuntimeError,OSError,ValueError) as ex:
         data["error"]=str(ex)
+        data["hardware"]={"status":"ABORTED_OR_INCOMPLETE","details":str(ex)}
         print("PIPELINE FAILED:",ex,file=sys.stderr)
     finally:
         (path/"summary.json").write_text(
