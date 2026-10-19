@@ -173,3 +173,26 @@ During real-board run `104529`, the Motor-ON log recorded applied PWM and nonzer
 The 104529 Motor-ON endurance phase passed 33 software stages with zero TIM11 gap/late, gyro stale, UART drops or DMA errors, and ~**0.155% measured UART CPU** for normal telemetry. Its Motor-OFF phase was **UNQUALIFIED** only for an I2C nominal clock check: MPU boot speed probing selected **~296,296 Hz** rather than 400,000 Hz; the operational OFF I2C errors/timeouts remained zero. The reason the 400 kHz boot probe failed is not yet captured. **Important:** the 5–400 Hz UART stress benchmark was conducted in separate motor-locked firmware *before* the motor endurance phases. 80 Hz under concurrent energized motor load has **not** been established.
 
 **Handover status:** PA9 TX DMA and PA10 RX command/PING are **qualified for controlled debug use with 115200 8N1, 60 Hz recommended**, packet-dependent and with queue/error monitoring. **Not yet qualified:** combined motor-power electrical behavior / EMI, stress UART at 80 Hz with motor energized, all packet sizes, lifetime endurance, or safety-critical communication. Keep these scopes distinct.
+
+## 180-second high-speed Micromouse MPU/I2C and full-system workload
+
+Three explicitly separated, **real-hardware measurement** profiles are available:
+- **STILL:** robot physically stationary, motor hard-locked, real gyro/I2C ~1kHz and compact 60Hz UART for 180s after calibration, comparing three integrated yaw variants to measure actual bias drift.
+- **SHADOW:** same real sensor/IR/encoder/TIM11 activity, with an additional 1kHz PID_Compute on a **synthetic controlled plant**; motor remains locked. Tests processor contention without actual motion.
+- **LIVE (separately armed):** SHADOW workload plus limited actual wheel PWM left/right/both (maximum 35% with >=3s COAST per 5s window). **Wheels must be raised; independent motor supply cutoff required.** This is vibration/electrical stress, not stationary gyro-bias ground truth or physical high-speed PID control.
+
+Run with the adapter's actual COM port:
+```powershell
+# Safe default: STILL + SHADOW (2 x 180s plus boot/calibration)
+python tools/imu_soak_pipeline.py --port COM7 --flash
+
+# Opt-in LIVE third phase only with suspended wheels and motor VM cutoff
+python tools/imu_soak_pipeline.py --port COM7 --flash --motor-live
+
+# Analyze saved results without a board
+python tools/imu_soak_pipeline.py --review results/imu_soak_YYYYMMDD_HHMMSS/measurements.csv
+```
+
+Results: `results/imu_soak_<timestamp>/summary.json`, `measurements.csv` and per-mode raw UART logs. Frames include `IM6` (60Hz) and `IM1/IMN/IMIR/IMPID` (1Hz), plus `I2CP` boot speed fallback and completion status. The PC scores sample availability, MCU gyro/I2C/IR/TIM11/UART health, fake PID load and yaw drift in degrees / degrees per minute. **No physical 180s data yet.** Passing checks does not guarantee a small yaw drift.
+
+**Methodology, three experiments, safety and links to high-speed Micromouse gyro/motor/IR debugging research:** [IMU/I2C 180-second stress and yaw-drift guide](docs/system_debug/IMU_I2C_180S_HIGH_SPEED_MICROMOUSE_20261019.md).
