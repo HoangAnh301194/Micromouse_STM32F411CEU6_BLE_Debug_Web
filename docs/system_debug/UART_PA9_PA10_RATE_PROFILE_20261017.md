@@ -1,8 +1,26 @@
 # UART1 PA9/PA10 — throughput, CPU budget and TIM11 contention benchmark
 
-Date: 2026-10-17. Main branch: `giomuadongbac`.
-**This is a future hardware test; CI does NOT prove the optimal measured rate.**
-All 96MHz/HSI trim25 numbers are PLL-derived nominal until independently measured.
+Protocol drafted: 2026-10-17. Real hardware benchmark evidence: **2026-10-19** on `giomuadongbac`, 96 MHz nominal HSI trim25. Three independent UART bench captures now exist; GitHub CI cannot independently measure the wire frequency or UART line timing. RCC clock calculations are nominal until measured with external instruments.
+
+
+## Measured evidence / recommendation (2026-10-19)
+
+| Rate | 104312 | 104529 | 105726 | Peak TX queue in 104529 | Measured UART CPU in 104529 | Decision |
+|---|---:|---:|---:|---:|---:|---|
+| 40 Hz | 200/200 | 200/200 | 201/201 | 542 B | 0.484% | PASS |
+| **60 Hz** | 300/300 | 300/300 | 301/301 | 575 B | 0.595% | **Recommended** |
+| 80 Hz | 400/400 | 401/401 | 401/401 | 696 B | 0.728% | Highest benchmark PASS |
+| 100 Hz | 501/501 | 501/501 | 501/501 | 978 B | 0.828% | LIMIT: queue >768 B |
+| 120 Hz | 601/601 | 601/601 | 601/601 | 865 B | 0.954% | LIMIT: queue >768 B |
+| 140 Hz | 678/701 | 684/701 | 681/701 | 1023 B | 1.058% | FAIL: dropped records |
+
+The three benchmarks all have 5 seconds per rate and send a separate 10 Hz PA10 PING stream in the same session. Their UART test firmware **hard-locks motor outputs**. The highest qualifying measured rate for the existing ~75-byte message is **80 Hz**; **60 Hz** is the safer continuous operating point with extra queue headroom. General-purpose task allocation and immutable result links are in the [root README](../../README.md). This does not determine a universal maximum rate for other message formats.
+
+**Data:** [104312](../../results/system_uart_20261019_104312/uart/uart_rate_summary.json), [104529](../../results/system_uart_20261019_104529/uart/uart_rate_summary.json), [105726](../../results/system_uart_20261019_105726/uart/uart_rate_summary.json).
+
+In the long 104529 motor phases, normal UART traffic generated **zero TX drops, RX/DMA errors and TIM11 late**; measured UART-specific CPU contribution was **0.163% Motor OFF / 0.155% Motor ON**. This was **NOT an 80 Hz TX stress benchmark during Motor ON**. Firmware Motor ON issues real Motor Driver PWM commands, not simulated motor load; recorded positive encoder movement is evidence of pulses, not an independent physical voltage/current measurement. The subsequent 105726 system summary is empty and provides no completed Motor ON result.
+
+Motor OFF 104529 failed the single check `i2c_400k_nominal` because the MPU probe selected ~296,296 Hz on that boot. Its runtime I2C error and timeout counters remained zero; Motor ON chose 400,000 Hz. Investigating 400 kHz boot-probe fallback is a separate follow-up and should not be silently marked PASS.
 
 ## Current code and theoretical ceiling
 
