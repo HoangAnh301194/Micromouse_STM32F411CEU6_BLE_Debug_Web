@@ -98,16 +98,18 @@ def summarise(items, mode):
            latest(ir,"c",0)>ir[0].get("c",0)+100000,
        "no_uart_tx_drop_or_rx_error":latest(secs,"drop",1)==0
            and latest(secs,"rxerr",1)==0,
+       "tx_queue_peak_below_75pct":bool(secs) and
+           max((x.get("qp",1024) for x in secs),default=1024)<=768,
+       "temperature_1hz_fresh_and_error_free":len(temps)>=150 and
+           latest(noise,"terr",1)==0 and latest(noise,"tto",1)==0 and
+           max((x.get("tage",999999) for x in temps),default=999999)<=3000,
        "pid_load_executed": mode=="STILL" or
            latest(pid,"n",0)>=int(180*1000*.95),
-       "motor_control_requested_in_live": mode!="LIVE" or any(
-           x.get("cmdL",0)>0 or x.get("cmdR",0)>0 for x in pid),
-       "live_encoder_pulses_observed": mode!="LIVE" or (
-           bool(pid) and (
-               max((r.get("encL",0) for r in pid),default=0) -
-               min((r.get("encL",0) for r in pid),default=0) >= 500 or
-               max((r.get("encR",0) for r in pid),default=0) -
-               min((r.get("encR",0) for r in pid),default=0) >= 500)),
+       "motor_control_requested_in_live":mode!="LIVE" or motor_requested,
+       "live_encoder_pulses_observed":mode!="LIVE" or motor_encoders_active,
+       "high_pwm_80_90_100_applied":not begin_is_high or
+           high_levels=={800,900,1000},
+       "no_motor_stall_trip":not any(x.get("type")=="IMDRV_FAULT" for x in items),
        "gyro_sequence_monotonic":bool(seqs) and all(z>0 for z in seqs),
        "no_60hz_generator_stalls_over_40ms":bool(gaps) and max(gaps)<=40,
     }
@@ -130,6 +132,21 @@ def summarise(items, mode):
         "raw_sample_gap_max_us":max((x.get("gmax",0) for x in noise),default=None),
         "raw_sample_gap_min_us":min((x.get("gmin",0) for x in noise if x.get("n",0)>1),default=None),
         "raw_equal_pairs":sum(x.get("eq",0) for x in noise),
+        "temperature_c":{
+            "n":len(temp_mc),
+            "start":round(temp_mc[0]/1000,3) if temp_mc else None,
+            "end":round(temp_mc[-1]/1000,3) if temp_mc else None,
+            "min":round(min(temp_mc)/1000,3) if temp_mc else None,
+            "max":round(max(temp_mc)/1000,3) if temp_mc else None,
+            "delta":round((temp_mc[-1]-temp_mc[0])/1000,3) if len(temp_mc)>1 else None,
+            "gyro_residual_temperature_corr":temp_corr,
+            "read_count":latest(noise,"tok"),
+            "error_count":latest(noise,"terr"),
+        },
+        "tx_queue_peak_bytes":max((x.get("qp",1024) for x in secs),default=None),
+        "live_high_pwm":begin_is_high,
+        "high_pwm_applied_permille":sorted(high_levels),
+        "motor_drive_frames":len(motors),
         "last_health":secs[-1] if secs else {},
         "last_pid":pid[-1] if pid else {},
         "initial_i2c_probe":probes,
