@@ -4,6 +4,7 @@ on:
     branches: [giomuadongbac]
     paths:
       - "src/encoder.c"
+      - "src/main.c"
       - "include/encoder.h"
       - "src/control.c"
       - "platformio.ini"
@@ -15,14 +16,18 @@ on:
 jobs:
   encoder-native-and-offline:
     runs-on: ubuntu-22.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Native and host-only software tests (no ST-Link, UART, motor)
-        run: python tools/encoder_qualification_pipeline.py --mode offline --skip-build
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Native, simulator, and locked diagnostic firmware build (no hardware)
+        run: python tools/encoder_qualification_pipeline.py --mode offline
+      - name: Verify production firmware still builds
+        run: python -m platformio run -e genericSTM32F411CE
       - name: Upload evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4
