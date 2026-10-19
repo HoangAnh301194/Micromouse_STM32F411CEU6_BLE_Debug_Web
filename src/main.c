@@ -1,5 +1,9 @@
 #include "board.h"
 #include "bt_debug.h"
+#if defined(ENCODER_PROFILE_DIAG) && !defined(INTEGRATION_DIAG_MOTOR_OFF)
+#error "Encoder high-rate diagnostic requires compile-time motor-OFF lock"
+#endif
+
 #include "control.h"
 #include "encoder.h"
 #include "ir_sensor.h"
@@ -70,6 +74,9 @@ int main(void)
     uint32_t last_debug_ms = 0;
 #if defined(INTEGRATION_DIAG)
     uint32_t last_system_diag_ms = 0U;
+#if defined(ENCODER_PROFILE_DIAG)
+    uint32_t last_encoder_diag_ms = 0U;
+#endif
     uint32_t last_ir_value_ms = 0U;
     uint32_t last_ir_value_scan = 0U;
     uint8_t last_cal_state = 0U;
@@ -366,6 +373,27 @@ int main(void)
                 last_cal_state = mpu.cal_state;
             }
         }
+#if defined(ENCODER_PROFILE_DIAG)
+        /* Opt-in encoder telemetry at ~50Hz. Sample a coherent pair in main,
+         * never format UART text inside TIM11 and never touch motor commands.
+         * This is decimated observation of TIM11's 1kHz encoder updates. */
+        if ((uint32_t)(now - last_encoder_diag_ms) >= 20U) {
+            uint32_t primask = __get_PRIMASK();
+            int32_t left_count, right_count;
+            int32_t left_pps, right_pps;
+            last_encoder_diag_ms = now;
+            __disable_irq();
+            left_count = Encoder_GetLeftCount();
+            right_count = Encoder_GetRightCount();
+            left_pps = (int32_t)Encoder_GetLeftSpeedPPS();
+            right_pps = (int32_t)Encoder_GetRightSpeedPPS();
+            if (!primask) __enable_irq();
+            UART_Printf("SYS_EN,ms=%lu,l=%ld,r=%ld,vL=%ld,vR=%ld\r\n",
+                        (unsigned long)now,
+                        (long)left_count, (long)right_count,
+                        (long)left_pps, (long)right_pps);
+        }
+#endif
         if ((uint32_t)(now - last_ir_value_ms) >= 1000U) {
             IR_Data_t ir_snapshot;
             last_ir_value_ms = now;
