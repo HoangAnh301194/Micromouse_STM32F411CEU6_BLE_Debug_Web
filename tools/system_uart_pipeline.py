@@ -344,6 +344,27 @@ def write_output(outdir, results, rows):
         for mode, data in rows.items():
             for item in data:
                 w.writerow({"phase": mode, **item})
+    # Generic measurements.csv intentionally has a fixed schema and cannot
+    # hold SYS_AB/SYS_AM alpha fields. Preserve complete parsed diagnostic
+    # records in separate CSVs, so gitignored raw .log files are not the only
+    # possible way to recover real alpha A/B data on the remote repository.
+    for phase, data in rows.items():
+        captured=[item for item in data
+                  if item.get("type") in ("SYS_AB","SYS_AM","SYS_IPB","SYS_IB")]
+        if not captured:
+            continue
+        keys=("type","host_elapsed_s","ms","id","state","w","m","n",
+              "x0","x1","x2","x3","x4","x5","x6","a05","a10",
+              "a20","a30","a40","a60","a80","b5","b10","b20",
+              "idx","mode","a0","w0","id0","a1","w1","id1",
+              "a2","w2","id2","a3","w3","id3","rec","sr1",
+              "sr2","pin","after")
+        with (outdir/("encoder_shadow_"+phase.lower()+".csv")).open(
+                "w",newline="",encoding="utf-8") as handle:
+            writer=csv.DictWriter(handle,fieldnames=keys,extrasaction="ignore")
+            writer.writeheader()
+            for item in captured:
+                writer.writerow(item)
 
 
 
