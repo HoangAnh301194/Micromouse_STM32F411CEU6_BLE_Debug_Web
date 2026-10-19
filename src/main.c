@@ -267,7 +267,14 @@ int main(void)
                             (long)Encoder_GetRightSpeedPPS());
             }
         }
-        if ((uint32_t)(now - last_system_diag_ms) >= 1000U) {
+        /* During the 180s test IM1/IMN/IMIR/IMPID own telemetry.
+         * Do not burst SYS_T/M/U/UQ/E at the same second, which previously
+         * peaked at 979/1024B and nearly filled the USART1 DMA queue. */
+        if ((uint32_t)(now - last_system_diag_ms) >= 1000U
+#if defined(DIAG_SOAK_180S)
+            && !Soak_IsActive()
+#endif
+            ) {
             Control_DebugStats_t sd;
             Motor_Diagnostics_t md;
             MPU6050_Snapshot_t snap = {0};
