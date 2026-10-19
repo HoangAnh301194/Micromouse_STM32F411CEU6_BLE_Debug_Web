@@ -80,6 +80,9 @@ def source_audit():
         "counter_16bit": "tim->ARR = 0xFFFFU;" in enc,
         "encoder_on_tim11": "Encoder_Update(CONTROL_DT_S);" in ctrl,
         "motor_off_flag": "-DINTEGRATION_DIAG_MOTOR_OFF=1" in cfg,
+        "encoder_motor_off_profile": "integration_diag_encoder_motor_off_96m" in cfg and
+            "-DENCODER_PROFILE_DIAG=1" in cfg,
+        "encoder_telemetry_locked": "Encoder high-rate diagnostic requires" in main,
         "motor_off_sticky_lock": "Motor_LockOutputs();" in main,
         "positive_forward_unchanged": "ENCODER_LEFT_DIRECTION  -1" in
             (ROOT/"include/encoder.h").read_text(encoding="utf-8"),
@@ -117,7 +120,7 @@ def gates(directory, skip_build):
     if not skip_build:
         d["checks"]["build_locked"]=run(
             [sys.executable,"-m","platformio","run","-e",
-             "integration_diag_motor_off_96m"],"build_locked",directory,420)
+             "integration_diag_encoder_motor_off_96m"],"build_locked",directory,420)
     d["pass"]=d["source"]["pass"] and all(
         v["pass"] for v in d["checks"].values())
     return d
@@ -158,7 +161,44 @@ def summarize_encoder(records, directory, title="locked_capture"):
                       "nonzero_1s_windows":sum(x!=0 for x in diffs),
                       "max_abs_1s_delta":max(abs(x) for x in diffs),
                       "last_filtered_pps":e[-1]["pps"+side]}
-    return {"frame_counts":{k:len(v) for k,v in by.items()},
+    fast=[x for x in by.get("SYS_EN",[]) if all(
+        isinstance(x.get(k),int) for k in ("ms","l","r","vL","vR"))]
+    fast_stats={"status":"NOT_MEASURED","reason":"Encoder diagnostic profile not active"}
+    if len(fast)>=3:
+        samples=[]
+        for i,x in enumerate(fast):
+            previous=fast[i-1] if i else x
+            delta_ms=x["ms"]-previous["ms"]
+            dL=x["l"]-previous["l"]
+            dR=x["r"]-previous["r"]
+            samples.append({
+                "ms":x["ms"],"countL":x["l"],"countR":x["r"],
+                "delta_ms":delta_ms,"deltaL":dL,"deltaR":dR,
+                "pps_20ms_L":round(dL*1000/delta_ms,2) if delta_ms>0 else 0,
+                "pps_20ms_R":round(dR*1000/delta_ms,2) if delta_ms>0 else 0,
+                "pps_ema_L":x["vL"],"pps_ema_R":x["vR"],
+            })
+        with (directory/"encoder_50hz.csv").open("x",newline="",encoding="utf-8") as f:
+            writer=csv.DictWriter(f,fieldnames=list(samples[0]))
+            writer.writeheader()
+            writer.writerows(samples)
+        gaps=[x["delta_ms"] for x in samples[1:] if x["delta_ms"]>0]
+        mismatch={}
+        for side in ("L","R"):
+            diffs=[abs(x["pps_20ms_"+side]-x["pps_ema_"+side])
+                   for x in samples[1:] if x["delta_ms"]>0]
+            mismatch[side]={
+                "mean_abs_ema_vs_window_pps":round(statistics.mean(diffs),2) if diffs else None,
+                "max_abs_ema_vs_window_pps":round(max(diffs),2) if diffs else None,
+            }
+        fast_stats={"status":"OBSERVED","samples":len(fast),
+                    "median_interval_ms":statistics.median(gaps) if gaps else None,
+                    "max_interval_ms":max(gaps) if gaps else None,
+                    "intervals_over_40ms":sum(x>40 for x in gaps),
+                    "pps_comparison":mismatch,
+                    "limitations":"50Hz is decimated; these differences are not solely measurement noise or proof of missed pulses."}
+    return {"high_rate_encoder":fast_stats,
+            "frame_counts":{k:len(v) for k,v in by.items()},
             "seconds_between_encoder_frames":(e[-1]["ms"]-e[0]["ms"])/1000,
             "wheels":wheels, "tim11_late_delta":diff("late","SYS_T"),
             "tim11_gap_delta":diff("gap","SYS_T"),
@@ -254,7 +294,7 @@ def report(directory,data):
             json.dumps(data.get("sweep"),indent=2,ensure_ascii=False),
             "","## Remaining limitations",
             "- Input capture filter IC1F/IC2F and 10-ms speed estimator remain candidates, NOT auto-applied.",
-            "- SYS_E is logged at ~1 Hz; accurate high-frequency jitter and missed edges need a new timestamped firmware measurement and independent reference.",
+            "- In encoder motor-off profile SYS_EN is ~50 Hz; remaining high-frequency glitches/missed edges require per-tick samples and independent reference.",
             "- estimator_metrics.csv and estimator_samples.csv (if present) are SYNTHETIC, NOT measured MCU response.",
             "- 1430 counts per wheel revolution is retained as the user's current engineering approximation.",
             "- Historical stage response is not a calibration of closed-loop speed PID."]
@@ -330,7 +370,7 @@ def main(argv=None):
             finally:
                 # Attempt restoration even when a motor-on test fails or is interrupted.
                 restored=run([sys.executable,"-m","platformio","run","-e",
-                              "integration_diag_motor_off_96m","-t","upload"],
+                              "integration_diag_encoder_motor_off_96m","-t","upload"],
                              "restore_motor_off",path,360)
                 data["restored_motor_off"]=restored
                 if not restored["pass"]:
@@ -342,7 +382,7 @@ def main(argv=None):
                 if data["software"]["git"]["tracked_dirty"]:
                     raise RuntimeError("Tracked tree modified; motor-off flashing blocked")
                 f=run([sys.executable,"-m","platformio","run","-e",
-                       "integration_diag_motor_off_96m","-t","upload"],
+                       "integration_diag_encoder_motor_off_96m","-t","upload"],
                       "motor_off_upload",path,360)
                 data["upload"]=f
                 if not f["pass"]:
