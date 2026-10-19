@@ -92,3 +92,13 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 **Cập nhật Encoder motor-on pipeline:** Profile mới `integration_diag_encoder_motor_on_96m` cho phép ghi `SYS_EN` khoảng 50 Hz trong sweep motor thật có `MODE ON` + `START` qua UART. Lệnh tổng hợp dùng `--motor-on-sweep --fixture-ready`, không cần quay tay và không yêu cầu xác nhận riêng cho 100% PWM. Các điều kiện bánh nâng/cố định, cắt nguồn VM độc lập và có người trực vẫn bắt buộc. Chưa chạy nghiệm thu trên board bằng profile mới; kết quả CI/build chưa được xác minh tại thời điểm cập nhật.
 
 - **Bổ sung chẩn đoán I2C cho lượt Encoder OFF/ON kế tiếp:** riêng các profile `ENCODER_PROFILE_DIAG` xuất `SYS_IPB` mỗi giây, gồm tốc độ MPU chọn và trạng thái ACK/WHO_AM_I của các mức 400/300/200/100 kHz. Lý do: log `encoder_qual_20261020_014805` ghi ON `iclk=296296` thay vì 400000, trong khi `i2cerr=to=0`; không kết luận do motor EMI khi chưa có probe và bằng chứng độc lập. Wrapper giữ nghiêm điều kiện I2C 400 kHz, tách cảnh báo tốc độ khỏi kết luận dữ liệu Encoder khi toàn bộ 33 bước và telemetry 50 Hz đầy đủ. Chưa chạy firmware mới trên phần cứng.
+
+### Encoder EMA alpha + I2C multi-diagnostic A/B — source ready 20/10/2026
+
+- Added **diagnostic-only** `ENCODER_ALPHA_AB_DIAG=1` to OFF/ON Encoder PlatformIO profiles; production motor/PID and `SPEED_LPF_ALPHA=0.30` remain unchanged.
+- Every TIM11 1-ms tick: run shadow EMA `0.05/0.10/0.20/0.30/0.40/0.60/0.80` plus 5/10/20-ms rolling encoder count windows on both wheels. Cumulative per-interval error-versus-boxcar and 1-ms variation are emitted gradually via `SYS_AM`; snapshot comparisons via `SYS_AB` at 10 Hz.
+- I2C startup probe `SYS_IPB` supplemented with diagnostic-only `SYS_IB` (SR1/SR2, BUSY timeout/recovery counters, PB8/PB9 levels). No production I2C timing or recovery policy changed. Baseline `022526` ON saw initial 400-kHz I2C_BUSY and successful 296-kHz fallback.
+- New `tools/encoder_shadow_ab.py` + synthetic regression generate per-wheel/per-PWM alpha comparisons and **provisional** top two. Scores use a dependent trailing 20-ms Encoder count reference, not externally measured RPM; never auto-apply recommended alpha.
+- Retain 13 prior gates plus shadow regression and both diagnostic builds, 33×OFF +33×ON stages, all UART safety checks, and locked-OFF firmware restoration. Raw and CSV logs remain available even on a flagged I2C fallback.
+- GitHub Actions run **39315053774** on commit `5906d0f3` completed successfully for host/native checks, diagnostic builds and production build (software CI only). **Hardware A/B and I2C 400-kHz acceptance have not yet been run/verified for the new implementation.**
+- Detailed protocol: `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
