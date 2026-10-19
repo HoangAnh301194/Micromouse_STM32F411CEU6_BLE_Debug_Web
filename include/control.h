@@ -2,6 +2,7 @@
 #define CONTROL_H
 
 #include "mpu6050.h"
+#include "ir_sensor.h"
 #include <stdint.h>
 
 #define CONTROL_FREQUENCY_HZ  1000UL
@@ -25,6 +26,8 @@ typedef struct {
     uint32_t ir_scan_count;
 } Control_DebugStats_t;
 void Control_GetDebugStats(Control_DebugStats_t *out);
+/* Read latest already-acquired IR data; never initiate an ADC scan. */
+void Control_GetIRSnapshot(IR_Data_t *out);
 #endif
 
 #endif
