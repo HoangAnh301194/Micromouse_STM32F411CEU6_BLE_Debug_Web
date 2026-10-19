@@ -122,6 +122,9 @@ def gates(directory, skip_build):
         d["checks"]["build_locked"]=run(
             [sys.executable,"-m","platformio","run","-e",
              "integration_diag_encoder_motor_off_96m"],"build_locked",directory,420)
+        d["checks"]["build_encoder_on"]=run(
+            [sys.executable,"-m","platformio","run","-e",
+             "integration_diag_encoder_motor_on_96m"],"build_encoder_on",directory,420)
     d["pass"]=d["source"]["pass"] and all(
         v["pass"] for v in d["checks"].values())
     return d
@@ -279,6 +282,111 @@ def sweep_summary(path,directory,tag="historical"):
             "qualified_electrically":False,
             "note":"Stage-average counts only; not 1ms dynamics or ground-truth RPM."}
 
+def analyze_sweep_telemetry(run_directory, report_directory):
+    """Turn existing OFF/ON raw UART log into aligned 50-Hz encoder evidence.
+
+    SYS_STEP transitions tag subsequent SYS_EN samples with drive/coast stage.
+    A 20-ms PPS estimate is valid only when both frames share the same stage
+    and state; crossing a transition is intentionally marked unavailable.
+    """
+    reports={}
+    for phase in ("OFF", "ON"):
+        logfile=run_directory/(phase.lower()+"_uart.log")
+        if not logfile.exists():
+            raise RuntimeError("Missing raw "+phase+" UART log; cannot analyze new motor capture")
+        records=[]
+        current={"stage":-1,"state":0,"group":-1,"pwm":0,"since":None}
+        all_records=[]
+        with logfile.open(encoding="utf-8",errors="replace") as handle:
+            for line in handle:
+                _, tab, frame=line.partition("\t")
+                data=parse(frame if tab else line)
+                if data is None:
+                    continue
+                all_records.append(data)
+                if data["type"]=="SYS_STEP":
+                    current={"stage":data.get("id",-1),
+                             "state":data.get("state",-1),
+                             "group":data.get("group",-1),
+                             "pwm":data.get("duty",0)//10,
+                             "since":data.get("ms")}
+                if data["type"]!="SYS_EN":
+                    continue
+                if not all(isinstance(data.get(k),int)
+                           for k in ("ms","l","r","vL","vR")):
+                    continue
+                item={"ms":data["ms"],"countL":data["l"],"countR":data["r"],
+                      "emaL":data["vL"],"emaR":data["vR"],
+                      "stage":current["stage"],"state":current["state"],
+                      "group":current["group"],"pwm_percent":current["pwm"],
+                      "since_stage_ms":(data["ms"]-current["since"]
+                                        if current["since"] is not None else -1)}
+                prior=records[-1] if records else None
+                same_segment=(prior is not None and
+                              (item["stage"],item["state"]) ==
+                              (prior["stage"],prior["state"]))
+                dt=item["ms"]-prior["ms"] if same_segment else 0
+                item["dt_ms"]=dt
+                for wheel in ("L","R"):
+                    item["delta"+wheel]=(item["count"+wheel]-prior["count"+wheel]
+                                         if dt>0 else "")
+                    item["pps"+wheel]=(round(item["delta"+wheel]*1000/dt,2)
+                                       if dt>0 else "")
+                records.append(item)
+        if len(records)<100:
+            raise RuntimeError(phase+": fewer than 100 complete 50-Hz SYS_EN samples")
+        with (report_directory/("encoder_motor_"+phase.lower()+"_50hz.csv")).open(
+                "x",newline="",encoding="utf-8") as output:
+            writer=csv.DictWriter(output,fieldnames=list(records[0]))
+            writer.writeheader()
+            writer.writerows(records)
+        drive=[x for x in records if x["state"]==1 and
+               x["since_stage_ms"]>=300 and x["pwm_percent"]>=20
+               and x["dt_ms"]>0]
+        results=[]
+        for wheel in ("L","R"):
+            values=[float(x["pps"+wheel]) for x in drive
+                    if x["pps"+wheel]!=""]
+            residuals=[abs(float(x["pps"+wheel])-x["ema"+wheel])
+                       for x in drive if x["pps"+wheel]!=""]
+            results.append({"wheel":wheel,"steady_drive_samples":len(values),
+                            "mean_20ms_pps":round(statistics.mean(values),2)
+                                if values else None,
+                            "std_20ms_pps":round(statistics.pstdev(values),2)
+                                if len(values)>1 else None,
+                            "mae_pps_vs_1ms_ema":round(statistics.mean(residuals),2)
+                                if residuals else None})
+        def counter_delta(kind,key):
+            d=[x for x in all_records if x["type"]==kind and
+               isinstance(x.get(key),int)]
+            return ((d[-1][key]-d[0][key]) & 0xFFFFFFFF) if len(d)>=2 else None
+        health={"tim11_late_delta":counter_delta("SYS_T","late"),
+                "tim11_gap_delta":counter_delta("SYS_T","gap"),
+                "uart_tx_drop_delta":counter_delta("SYS_U","tx_drop"),
+                "uart_dma_error_delta":counter_delta("SYS_U","dma_err"),
+                "mpu_i2c_error_delta":counter_delta("SYS_M","i2cerr"),
+                "mpu_timeout_delta":counter_delta("SYS_M","to")}
+        status="PASS"
+        if any(v is None for v in health.values()) or any(v!=0 for v in health.values()):
+            status="FAIL_HEALTH"
+        if not drive or any(x["steady_drive_samples"]<50 for x in results):
+            status="INSUFFICIENT_DRIVE_SAMPLES"
+        if phase=="ON":
+            positive=[x for x in drive if x["pwm_percent"]>=40 and
+                      ((x["group"] in (0,2) and x["ppsL"]!="" and x["ppsL"]>0) or
+                       (x["group"] in (1,2) and x["ppsR"]!="" and x["ppsR"]>0))]
+            if len(positive)<50:
+                status="NO_ENCODER_RESPONSE"
+        reports[phase]={"status":status,"samples":len(records),
+                         "steady_drive_samples":len(drive),"wheels":results,
+                         "health":health,
+                         "note":"PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."}
+    if reports["ON"]["status"]!="PASS" or reports["OFF"]["status"]!="PASS":
+        raise RuntimeError("Encoder motor telemetry did not meet host diagnostic checks: "+
+                           repr({k:v["status"] for k,v in reports.items()}))
+    return reports
+
+
 def render_plots(directory):
     """Optional matplotlib plots; never affects pass/fail."""
     try:
@@ -331,6 +439,26 @@ def render_plots(directory):
         plt.tight_layout();plt.savefig(directory/"sweep_response.png",dpi=150)
         plt.close();saved.append("sweep_response.png")
         break
+    for phase in ("off","on"):
+        path=directory/("encoder_motor_"+phase+"_50hz.csv")
+        if not path.exists():
+            continue
+        with path.open(newline="",encoding="utf-8") as file:
+            rows=list(csv.DictReader(file))
+        if not rows:
+            continue
+        t=[(int(x["ms"])-int(rows[0]["ms"]))/1000 for x in rows]
+        fig=plt.figure(figsize=(11,4))
+        for key in ("ppsL","ppsR","emaL","emaR"):
+            data=[float(x[key]) if x[key] else float("nan") for x in rows]
+            plt.plot(t,data,label=key,linewidth=0.9)
+        plt.title("Encoder "+phase.upper()+" • 20ms PPS versus firmware EMA")
+        plt.xlabel("Time (seconds)");plt.ylabel("counts/second")
+        plt.grid(alpha=.25);plt.legend(ncol=4);plt.tight_layout()
+        png="encoder_motor_"+phase+"_speed.png"
+        fig.savefig(directory/png,dpi=150)
+        plt.close(fig)
+        saved.append(png)
     return saved
 
 def report(directory,data):
