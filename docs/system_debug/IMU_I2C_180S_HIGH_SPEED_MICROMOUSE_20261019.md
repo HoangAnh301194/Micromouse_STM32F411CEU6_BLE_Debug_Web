@@ -2,7 +2,7 @@
 
 **Scope:** STM32F411CEU6, nominal 96MHz HSI trim25, TIM11 1kHz, MPU6050 I2C1, six IR ADC channels and USART1 PA9/PA10 115200 baud.
 
-**Status:** source and all 3 firmware images compile in CI; synthetic host analysis passes. No new 180-second physical result has been recorded; do not claim gyro drift is acceptable until the robot is actually measured.
+**Status:** source and all 3 firmware images compile in CI; synthetic host analysis passes. Actual 180s STILL and SHADOW hardware measurements have now completed on 2026-10-19; see [the measured performance and actionable analysis](IMU_I2C_180S_RESULTS_20261019_115313.md). **LIVE physical motor phase remains untested.** PASS indicates telemetry/scheduling checks, not intrinsic absence of gyro bias or yaw drift.
 
 ## Three modes and how they differ
 
