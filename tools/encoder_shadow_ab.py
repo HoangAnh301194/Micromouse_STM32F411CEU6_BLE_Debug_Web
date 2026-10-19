@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""Analyze real STM32 1-kHz shadow EMA measurements with conservative ranking.
+
+Never treat the trailing 20-ms count window as independent speed ground truth.
+The six stage-level SYS_AM frames are generated from 1-kHz measurements on MCU;
+SYS_AB samples at 10 Hz are for visualization only, not alpha-lag qualification.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from collections import defaultdict
+from pathlib import Path
+import statistics
+
+ALPHAS = (0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 0.80)
+KEYS = tuple("x" + str(i) for i in range(7))
+METRICS = {0: "steady_abs_error_vs_box20", 1: "first_500ms_abs_error_vs_box20",
+           2: "steady_total_variation"}
+SAMPLE_KEYS = ("a05", "a10", "a20", "a30", "a40", "a60", "a80",
+               "b5", "b10", "b20")
+
+
+def parse_frame(line):
+    frame = line.partition("\t")[2] if "\t" in line else line
+    parts = frame.strip().split(",")
+    if not parts or parts[0] not in ("SYS_AM", "SYS_AB", "SYS_STEP"):
+        return None
+    record = {"type": parts[0]}
+    for token in parts[1:]:
+        name, eq, value = token.partition("=")
+        if not eq or not name or name in record:
+            return None
+        try:
+            record[name] = int(value)
+        except ValueError:
+            record[name] = value
+    return record
+
+
+def load_shadow(run_directory):
+    stage_rows, samples, issues = [], [], []
+    for phase in ("OFF", "ON"):
+        path = Path(run_directory) / (phase.lower() + "_uart.log")
+        if not path.is_file():
+            raise ValueError("Missing raw UART evidence: " + str(path))
+        stage = {"id": -1, "state": 0, "group": -1, "pwm_percent": 0}
+        for line in path.open(encoding="utf-8", errors="replace"):
+            row = parse_frame(line)
+            if row is None:
+                continue
+            if row["type"] == "SYS_STEP":
+                if all(isinstance(row.get(key), int) for key in
+                       ("id", "state", "group", "duty")):
+                    stage = {"id": row["id"], "state": row["state"],
+                             "group": row["group"],
+                             "pwm_percent": row["duty"] // 10}
+            elif row["type"] == "SYS_AB":
+                if (isinstance(row.get("w"), int)
+                        and all(isinstance(row.get(k), int) for k in
+                                ("ms", *SAMPLE_KEYS))):
+                    samples.append({"phase": phase, **stage,
+                                    "wheel": "L" if row["w"] == 0 else "R",
+                                    "ms": row["ms"],
+                                    **{key: row[key] for key in SAMPLE_KEYS}})
+            elif row["type"] == "SYS_AM":
+                if (not all(isinstance(row.get(k), int)
+                            for k in ("id", "state", "w", "m", "n", *KEYS))
+                        or row["w"] not in (0, 1)
+                        or row["m"] not in METRICS or row["id"] >= 33):
+                    issues.append({"phase": phase, "issue": "malformed_SYS_AM"})
+                    continue
+                stage_rows.append({
+                    "phase": phase, "stage": row["id"],
+                    "group": row["id"] // 11, "pwm_percent": (row["id"] % 11) * 10,
+                    "state": row["state"], "wheel": "L" if row["w"] == 0 else "R",
+                    "metric": METRICS[row["m"]], "n": row["n"],
+                    **{f"alpha_{str(alpha).replace('.', '_')}":
+                       round(row[key] / row["n"], 5)
+                       if row["n"] > 0 else None
+                       for alpha, key in zip(ALPHAS, KEYS)}
+                })
+    return stage_rows, samples, issues
+
+
+def candidate_rows(stage_rows, phase="ON"):
+    # Only active motor and middle PWM steps; 90-100% runs are deliberately
+    # shorter and separately reviewed rather than optimizing against them.
+    return [
+        row for row in stage_rows
+        if row["phase"] == phase and row["state"] in (1, 2)
+        and 20 <= row["pwm_percent"] <= 80
+        and (row["state"] == 2 or row["metric"] != METRICS[2])
+        and row["n"] >= 100
+        and (row["group"] == 2 or
+             (row["group"] == 0 and row["wheel"] == "L") or
+             (row["group"] == 1 and row["wheel"] == "R"))
+    ]
+
+
+def summarize(stage_rows, samples, issues):
+    seen = set()
+    duplicated = []
+    for row in stage_rows:
+        key = (row["phase"], row["stage"], row["state"],
+               row["wheel"], row["metric"])
+        if key in seen:
+            duplicated.append(key)
+        seen.add(key)
+    # Includes both wheels even when only one is active; 33 x 2 intervals
+    # x two wheels x three metrics, per OFF or ON phase.
+    expected = {
+        (phase, stage, state, wheel, metric)
+        for phase in ("OFF", "ON") for stage in range(33)
+        for state in (1, 2) for wheel in ("L", "R")
+        for metric in METRICS.values()
+    }
+    missing = sorted(expected - seen)
+    points = candidate_rows(stage_rows)
+    per_metric = {}
+    for metric in METRICS.values():
+        basis = [row for row in points if row["metric"] == metric]
+        totals = {}
+        for idx, alpha in enumerate(ALPHAS):
+            name = "alpha_" + str(alpha).replace(".", "_")
+            used = [row for row in basis
+                    if row[name] is not None and row["n"] > 0]
+            n = sum(row["n"] for row in used)
+            totals[name] = (round(sum(row[name] * row["n"] for row in used) / n, 5)
+                            if n else None)
+        per_metric[metric] = {"intervals": len(basis), "weighted_ticks":
+                              sum(row["n"] for row in basis), "values": totals}
+
+    # Multicriterion proxy ranking, not physical-accuracy validation.
+    base_name = "alpha_0_3"
+    weights = {METRICS[0]: 0.50, METRICS[1]: 0.35, METRICS[2]: 0.15}
+    ranking = []
+    for alpha in ALPHAS:
+        name = "alpha_" + str(alpha).replace(".", "_")
+        terms = {}
+        for metric, weight in weights.items():
+            x = per_metric[metric]["values"][name]
+            baseline = per_metric[metric]["values"][base_name]
+            if x is None or baseline is None or baseline <= 0:
+                terms = {}
+                break
+            terms[metric] = x / baseline
+        if terms:
+            ranking.append({"alpha": alpha,
+                            "heuristic_score_vs_alpha_0_30": round(
+                                sum(weights[k] * terms[k] for k in weights), 5),
+                            "relative_metrics": {
+                                key: round(val, 5) for key, val in terms.items()}})
+    ranking.sort(key=lambda x: x["heuristic_score_vs_alpha_0_30"])
+    passes = not missing and not duplicated and not issues and len(samples) >= 500
+    return {
+        "status": "COMPLETE_PROVISIONAL" if passes else "INSUFFICIENT_SHADOW_DATA",
+        "expected_metric_frames": len(expected),
+        "observed_metric_frames": len(stage_rows),
+        "missing_metric_frames_count": len(missing),
+        "missing_first_12": [list(x) for x in missing[:12]],
+        "duplicated_frames_count": len(duplicated),
+        "issues": issues[:20],
+        "sample_frames": len(samples),
+        "candidate_alphas": list(ALPHAS),
+        "reference": "Trailing 20-ms integrated encoder counts, not external truth.",
+        "sampling": "Metrics accumulated at 1 kHz; SYS_AB visualization at 10 Hz.",
+        "optimization_scope": "ON DRIVE/COAST active wheels, PWM 20-80%; 90-100% reserved for separate risk analysis.",
+        "metrics": per_metric,
+        "ranking": ranking,
+        "provisional_top_two": [row["alpha"] for row in ranking[:2]],
+        "decision": ("Shortlist only; do not change production alpha without "
+                     "repeatability and independent velocity/plant assessment."),
+        "caveats": [
+            "A lower score means closer to the SAME ENCODER's trailing 20ms count proxy; it does not prove true RPM accuracy.",
+            "The speed response and inertia of the physical motor affect step and coast error.",
+            "Per-interval first 500ms errors are cumulative signed-magnitude errors, not time-to-settle.",
+            "High-PWM runs are short. Independent rpm and mechanical load remain unqualified.",
+            "UART timing and ISR overhead must be compared to historical baseline.",
+        ],
+    }
+
+
+def write_csv(path, rows):
+    if not rows:
+        return
+    with Path(path).open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def analyze(run_directory, report_directory):
+    report_directory = Path(report_directory)
+    rows, samples, issues = load_shadow(run_directory)
+    report = summarize(rows, samples, issues)
+    write_csv(report_directory / "encoder_alpha_stage_metrics.csv", rows)
+    write_csv(report_directory / "encoder_alpha_samples_10hz.csv", samples)
+    (report_directory / "encoder_alpha_ab.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run-dir", type=Path)
+    parser.add_argument("--output-dir", type=Path)
+    args = parser.parse_args()
+    if not args.run_dir or not args.output_dir:
+        parser.error("--run-dir and --output-dir required")
+    report = analyze(args.run_dir, args.output_dir)
+    print("Shadow A/B status:", report["status"])
+    print("Provisional alpha shortlist:", report["provisional_top_two"])
+    return 0 if report["status"] == "COMPLETE_PROVISIONAL" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
