@@ -39,9 +39,9 @@ def parse_line(s: str):
 
 
 def inspect_encoder_drive(logs, mode):
-    """Response consistency on the 250ms DRIVE portion only (state=COAST).
-    
-    SYS_STEP state=2 is emitted at the end of the 250ms DRIVE interval.
+    """Encoder response consistency on each actual DRIVE interval (state=COAST).
+
+    SYS_STEP state=2 is emitted at the end of the current DRIVE interval.
     Logs at state=1 refer to the preceding COAST and must NOT be interpreted
     as response to the new stage. Thresholds are relative diagnostic flags,
     not electrical/current or actual PWM measurement.
@@ -297,7 +297,8 @@ class PhaseSession:
                 step_desc = ("DRIVE" if state == 1 else
                              "COAST" if state == 2 else
                              "DONE" if state == 3 else "FAULT")
-                print(f"{self.name} stage {data.get('id',-1)+1}/33 | "
+                display_stage=(33 if state==3 else data.get("id",-1)+1)
+                print(f"{self.name} stage {display_stage}/33 | "
                       f"{wheel} | PWM={data.get('duty',0)/10:.0f}% | "
                       f"{step_desc}",flush=True)
                 if data.get("state") == 4:
