@@ -66,6 +66,7 @@ class EncoderHostTests(unittest.TestCase):
                     "0.0\tSYS_M,ms=0,locked=1,i2cerr=0,to=0",
                     "0.0\tSYS_T,ms=0,late=0,gap=0",
                     "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0",
+                    "0.0\tSYS_IPB,ms=0,idx=1,mode=2,a0=1,w0=255,id0=255,a1=0,w1=0,id1=104,a2=255,w2=255,id2=255,a3=255,w3=255,id3=255",
                     "0.0\tSYS_STEP,ms=0,id=25,group=2,state=1,duty=700",
                 ]
                 for i in range(160):
@@ -86,6 +87,8 @@ class EncoderHostTests(unittest.TestCase):
                                                        encoding="utf-8")
             result=p.analyze_sweep_telemetry(run,folder)
             self.assertEqual(result["ON"]["status"],"PASS")
+            self.assertTrue(result["ON"]["i2c_startup_probe"]["fallback_occurred"])
+            self.assertEqual(result["ON"]["i2c_startup_probe"]["attempt_400k"]["address_status"],1)
             self.assertEqual(result["OFF"]["status"],"PASS")
             self.assertTrue((folder/"encoder_motor_on_50hz.csv").exists())
 
