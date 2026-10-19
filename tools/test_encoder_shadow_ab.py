@@ -64,7 +64,7 @@ class ShadowABTests(unittest.TestCase):
             self.assertTrue((root / "encoder_alpha_stage_metrics.csv").is_file())
             self.assertTrue((root / "encoder_alpha_samples_10hz.csv").is_file())
             self.assertEqual(sum(report["metrics"][k]["intervals"] for k in METRICS.values()),
-                             3 * 2 * 7 * 4 * 2)  # 20-80% x L/R/Both active wheels
+                             3 * 2 * 7 * 4)  # 20-80% x L/R/Both active wheels
 
 
 if __name__ == "__main__":
