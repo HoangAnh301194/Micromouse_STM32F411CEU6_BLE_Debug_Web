@@ -12,6 +12,123 @@ static volatile float speed_right_pps = 0.0f;
 static int16_t last_left_raw = 0;
 static int16_t last_right_raw = 0;
 
+#if defined(ENCODER_ALPHA_AB_DIAG)
+/* Shadow-only 1kHz estimator bank. No data path to production control. */
+#if !defined(ENCODER_PROFILE_DIAG) || !defined(INTEGRATION_DIAG)
+#error "Encoder alpha A/B requires diagnostic Encoder integration profile"
+#endif
+static const float shadow_alpha[ENCODER_SHADOW_ALPHAS] = {
+    0.05f, 0.10f, 0.20f, 0.30f, 0.40f, 0.60f, 0.80f
+};
+static float shadow_l[ENCODER_SHADOW_ALPHAS];
+static float shadow_r[ENCODER_SHADOW_ALPHAS];
+static int16_t shadow_ring_l[20], shadow_ring_r[20];
+static uint8_t shadow_pos, shadow_filled;
+static int32_t shadow_sum_l[ENCODER_SHADOW_WINDOWS];
+static int32_t shadow_sum_r[ENCODER_SHADOW_WINDOWS];
+static uint32_t shadow_stage_ticks, shadow_steady_ticks, shadow_early_ticks;
+static uint32_t shadow_steady_error_l[ENCODER_SHADOW_ALPHAS];
+static uint32_t shadow_steady_error_r[ENCODER_SHADOW_ALPHAS];
+static uint32_t shadow_early_error_l[ENCODER_SHADOW_ALPHAS];
+static uint32_t shadow_early_error_r[ENCODER_SHADOW_ALPHAS];
+static uint32_t shadow_variation_l[ENCODER_SHADOW_ALPHAS];
+static uint32_t shadow_variation_r[ENCODER_SHADOW_ALPHAS];
+
+static uint32_t ShadowAbs(float value)
+{
+    if (value < 0.0f) value = -value;
+    return (uint32_t)value;
+}
+static void ShadowAccum(uint32_t *acc, uint32_t value)
+{
+    if (*acc > (0xFFFFFFFFUL - value)) *acc = 0xFFFFFFFFUL;
+    else *acc += value;
+}
+static void ShadowResetCounters(void)
+{
+    uint8_t i;
+    shadow_stage_ticks = shadow_steady_ticks = shadow_early_ticks = 0U;
+    for (i = 0U; i < ENCODER_SHADOW_ALPHAS; ++i) {
+        shadow_steady_error_l[i] = shadow_steady_error_r[i] = 0U;
+        shadow_early_error_l[i] = shadow_early_error_r[i] = 0U;
+        shadow_variation_l[i] = shadow_variation_r[i] = 0U;
+    }
+}
+static void ShadowUpdate(int16_t dl, int16_t dr, float raw_l, float raw_r)
+{
+    uint8_t i, p5, p10;
+    float reference_l, reference_r;
+    p5 = (uint8_t)((shadow_pos + 15U) % 20U);
+    p10 = (uint8_t)((shadow_pos + 10U) % 20U);
+    shadow_sum_l[0] += (int32_t)dl - shadow_ring_l[p5];
+    shadow_sum_l[1] += (int32_t)dl - shadow_ring_l[p10];
+    shadow_sum_l[2] += (int32_t)dl - shadow_ring_l[shadow_pos];
+    shadow_sum_r[0] += (int32_t)dr - shadow_ring_r[p5];
+    shadow_sum_r[1] += (int32_t)dr - shadow_ring_r[p10];
+    shadow_sum_r[2] += (int32_t)dr - shadow_ring_r[shadow_pos];
+    shadow_ring_l[shadow_pos] = dl;
+    shadow_ring_r[shadow_pos] = dr;
+    shadow_pos = (uint8_t)((shadow_pos + 1U) % 20U);
+    if (shadow_filled < 20U) ++shadow_filled;
+    reference_l = (float)(shadow_sum_l[2] * 50);
+    reference_r = (float)(shadow_sum_r[2] * 50);
+    ++shadow_stage_ticks;
+    for (i = 0U; i < ENCODER_SHADOW_ALPHAS; ++i) {
+        float prior_l = shadow_l[i], prior_r = shadow_r[i];
+        shadow_l[i] += shadow_alpha[i] * (raw_l - shadow_l[i]);
+        shadow_r[i] += shadow_alpha[i] * (raw_r - shadow_r[i]);
+        if (shadow_filled < 20U) continue;
+        if (shadow_stage_ticks <= 500U) {
+            ShadowAccum(&shadow_early_error_l[i], ShadowAbs(shadow_l[i] - reference_l));
+            ShadowAccum(&shadow_early_error_r[i], ShadowAbs(shadow_r[i] - reference_r));
+        } else {
+            ShadowAccum(&shadow_steady_error_l[i], ShadowAbs(shadow_l[i] - reference_l));
+            ShadowAccum(&shadow_steady_error_r[i], ShadowAbs(shadow_r[i] - reference_r));
+            ShadowAccum(&shadow_variation_l[i], ShadowAbs(shadow_l[i] - prior_l));
+            ShadowAccum(&shadow_variation_r[i], ShadowAbs(shadow_r[i] - prior_r));
+        }
+    }
+    if (shadow_filled == 20U) {
+        if (shadow_stage_ticks <= 500U) ++shadow_early_ticks;
+        else ++shadow_steady_ticks;
+    }
+}
+void Encoder_ShadowResetMetrics(void)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    ShadowResetCounters();
+    if (!primask) __enable_irq();
+}
+void Encoder_GetShadowSnapshot(Encoder_ShadowSnapshot_t *out)
+{
+    uint32_t primask;
+    uint8_t i;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->ticks = shadow_stage_ticks;
+    out->valid_reference_ticks = shadow_early_ticks;
+    out->window_ticks = shadow_steady_ticks;
+    out->quiet_ticks = 0U;
+    for (i = 0U; i < ENCODER_SHADOW_ALPHAS; ++i) {
+        out->alpha_left[i] = (int32_t)shadow_l[i];
+        out->alpha_right[i] = (int32_t)shadow_r[i];
+        out->window_abs_error_left[i] = shadow_steady_error_l[i];
+        out->window_abs_error_right[i] = shadow_steady_error_r[i];
+        out->transient_abs_error_left[i] = shadow_early_error_l[i];
+        out->transient_abs_error_right[i] = shadow_early_error_r[i];
+        out->variation_left[i] = shadow_variation_l[i];
+        out->variation_right[i] = shadow_variation_r[i];
+    }
+    for (i = 0U; i < ENCODER_SHADOW_WINDOWS; ++i) {
+        out->box_left[i] = shadow_sum_l[i] * (i == 0U ? 200 : (i == 1U ? 100 : 50));
+        out->box_right[i] = shadow_sum_r[i] * (i == 0U ? 200 : (i == 1U ? 100 : 50));
+    }
+    if (!primask) __enable_irq();
+}
+#endif
+
 static void GPIO_EncoderAF(GPIO_TypeDef *port, uint8_t pin, uint8_t af)
 {
     uint32_t shift;
@@ -93,6 +210,11 @@ void Encoder_Update(float dt_s)
 
     speed_left_pps += SPEED_LPF_ALPHA * (raw_left_pps - speed_left_pps);
     speed_right_pps += SPEED_LPF_ALPHA * (raw_right_pps - speed_right_pps);
+#if defined(ENCODER_ALPHA_AB_DIAG)
+    ShadowUpdate((int16_t)(delta_left * ENCODER_LEFT_DIRECTION),
+                 (int16_t)(delta_right * ENCODER_RIGHT_DIRECTION),
+                 raw_left_pps, raw_right_pps);
+#endif
 }
 
 void Encoder_Reset(void)
@@ -106,6 +228,22 @@ void Encoder_Reset(void)
     total_right = 0;
     speed_left_pps = 0.0f;
     speed_right_pps = 0.0f;
+#if defined(ENCODER_ALPHA_AB_DIAG)
+    {
+        uint8_t i;
+        shadow_pos = shadow_filled = 0U;
+        for (i = 0U; i < 20U; ++i) {
+            shadow_ring_l[i] = shadow_ring_r[i] = 0;
+        }
+        for (i = 0U; i < ENCODER_SHADOW_ALPHAS; ++i) {
+            shadow_l[i] = shadow_r[i] = 0.0f;
+        }
+        for (i = 0U; i < ENCODER_SHADOW_WINDOWS; ++i) {
+            shadow_sum_l[i] = shadow_sum_r[i] = 0;
+        }
+        ShadowResetCounters();
+    }
+#endif
 
     if (!primask) __enable_irq();
 }
