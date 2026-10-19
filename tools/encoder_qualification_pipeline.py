@@ -24,6 +24,7 @@ GATES = (
     ("integration_negative", ["tools/system_integration_gate.py", "--self-test"]),
     ("encoder_probe_parser", ["tools/encoder_manual_probe.py", "--self-test"]),
     ("encoder_native", ["tools/encoder_native_test.py"]),
+    ("pipeline_regression", ["tools/test_encoder_qualification_pipeline.py"]),
     ("estimator_selftest", ["tools/encoder_estimator_benchmark.py", "--self-test"]),
     ("motor_driver_native", ["tools/motor_driver_native_test.py"]),
     ("sweep_native", ["tools/system_sweep_native_test.py"]),
