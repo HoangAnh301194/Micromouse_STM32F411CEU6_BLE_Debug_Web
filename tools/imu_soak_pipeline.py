@@ -156,7 +156,7 @@ def summarise(items, mode):
           "Yaw drift is an IMU relative-heading observation, not external angular truth.",
           "In LIVE mode vibration and physical yaw may contribute; do not label it stationary bias.",
           "60Hz UART does not transport all 1000Hz IMU samples; on-device counters capture intervening faults.",
-          "No external voltage, current, temperature, mechanical displacement or PWM waveform measurements."
+          "No external motor voltage/current, motor temperature, chassis ground-truth orientation or electrical PWM waveform measurements."
         ],
     }
 
@@ -333,15 +333,21 @@ def main():
     a.add_argument("--port",help="USART1 PA9/PA10 USB adapter, e.g. COM7")
     a.add_argument("--flash",action="store_true",help="Flash each explicitly selected firmware")
     a.add_argument("--motor-live",action="store_true",help="EXPLICIT wheels-lifted motor VM consent for third 180s benchmark")
+    a.add_argument("--high-pwm",action="store_true",
+                   help="With --motor-live, opt into 80/90/100%% short physical PWM pulses")
     a.add_argument("--outdir",type=Path)
     a.add_argument("--review",type=Path,help="Offline CSV review; never connect or flash")
     args=a.parse_args()
     if args.review:return review(args.review)
     if not args.port or not args.flash:
         a.error("hardware capture requires --port and --flash; offline analysis uses --review")
+    if args.high_pwm and not args.motor_live:
+        a.error("--high-pwm requires --motor-live (two explicit safety gates)")
     if args.motor_live:
-        print("LIVE MOTOR: secure lifted wheels, use independent motor VM switch, supervise all 180s; max PWM 35%, coast >=3s.",flush=True)
-    runs=PROFILES+([LIVE] if args.motor_live else [])
+        print("LIVE MOTOR: secure lifted wheels, independent VM cutoff, supervise all 180s.",flush=True)
+    if args.high_pwm:
+        print("HIGH PWM: 80% <=1s, 90% <=0.75s, 100% <=0.5s; >=4s coast per 5s slot.",flush=True)
+    runs=PROFILES+([LIVE_HIGH if args.high_pwm else LIVE] if args.motor_live else [])
     name="imu_soak_"+datetime.now().strftime("%Y%m%d_%H%M%S")
     out=args.outdir or ROOT/"results"/name
     out.mkdir(parents=True,exist_ok=True)
