@@ -1,6 +1,8 @@
 {
   "port": "COM7",
   "baud": 115200,
+  "firmware_profile": "integration_diag_motor_off_96m",
+  "source_commit": "9c7862ab9cc092295c14cab707bb366582db9433",
   "capture_seconds": 30.068,
   "record_counts": {
     "SYS_T": 30,

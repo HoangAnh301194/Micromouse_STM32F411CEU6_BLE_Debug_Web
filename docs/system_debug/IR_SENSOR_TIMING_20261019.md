@@ -76,7 +76,8 @@ not substitute for this board capture.
 
 Profile `integration_diag_motor_off_96m`, uploaded and verified by ST-Link;
 USART1 captured on COM7 at 115200 baud for 30.068 s. The board was run with
-motor outputs locked and motor VM physically disconnected.
+motor outputs locked and motor VM physically disconnected. Firmware source:
+commit `9c7862ab9cc092295c14cab707bb366582db9433`.
 
 - IR native regression and capture parser unit tests passed; the production,
   motor-off diagnostic, and UART diagnostic PlatformIO profiles all built.
