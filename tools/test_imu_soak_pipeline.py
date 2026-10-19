@@ -49,4 +49,35 @@ for mode in ("STILL","SHADOW","LIVE"):
     for r in err:
         if r.get("type")=="IM1" and r.get("t")==180000:r["err"]=1
     assert not mod.summarise(err,mode)["checks"]["no_i2c_errors"]
+# Regression: do not silently wait for 60s on UART silence, and abort as
+# soon as the MPU explicitly reports calibration failed. No hardware needed.
+from collections import deque
+import time
+original_boot_timeout=mod.BOOT_SYS_M_TIMEOUT
+try:
+    mod.BOOT_SYS_M_TIMEOUT=.12
+    no_uart=mod.Session.__new__(mod.Session)
+    no_uart.mode="STILL"
+    no_uart.recent_raw=deque(maxlen=8)
+    no_uart.send=lambda msg:None
+    no_uart.poll=lambda ping=False:(time.sleep(.005) or None)
+    try:
+        no_uart.run()
+        raise AssertionError("missing SYS_M did not fail")
+    except TimeoutError as exc:
+        assert "no SYS_M" in str(exc)
+
+    calibration_failed=mod.Session.__new__(mod.Session)
+    calibration_failed.mode="STILL"
+    calibration_failed.recent_raw=deque(maxlen=8)
+    calibration_failed.send=lambda msg:None
+    calibration_failed.poll=lambda ping=False:{"type":"SYS_M","cal":4,"n":0}
+    try:
+        calibration_failed.run()
+        raise AssertionError("cal=4 did not fail")
+    except RuntimeError as exc:
+        assert "calibration FAILED" in str(exc)
+finally:
+    mod.BOOT_SYS_M_TIMEOUT=original_boot_timeout
+
 print("PASS CLI, 60Hz 180s drift summaries, shadow/live gates and negative fault cases; hardware not tested")
