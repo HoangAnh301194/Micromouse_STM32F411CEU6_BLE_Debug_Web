@@ -152,6 +152,30 @@ def summarize(stage_rows, samples, issues):
                             "relative_metrics": {
                                 key: round(val, 5) for key, val in terms.items()}})
     ranking.sort(key=lambda x: x["heuristic_score_vs_alpha_0_30"])
+    def region_summary(region):
+        out = {}
+        for metric in METRICS.values():
+            target = [row for row in region if row["metric"] == metric and row["n"] > 0]
+            n = sum(row["n"] for row in target)
+            out[metric] = {
+                "intervals": len(target), "ticks": n,
+                **{str(alpha): round(
+                    sum(row["alpha_" + str(alpha).replace(".", "_")] * row["n"]
+                        for row in target) / n, 5) if n else None
+                   for alpha in ALPHAS}
+            }
+        return out
+    by_wheel = {wheel: region_summary([row for row in points
+                                      if row["wheel"] == wheel])
+                for wheel in ("L", "R")}
+    by_pwm = {
+        str(pwm): {
+            wheel: region_summary([row for row in points if
+                                   row["pwm_percent"] == pwm and
+                                   row["wheel"] == wheel])
+            for wheel in ("L", "R")
+        } for pwm in range(20, 81, 10)
+    }
     passes = not missing and not duplicated and not issues and len(samples) >= 500
     return {
         "status": "COMPLETE_PROVISIONAL" if passes else "INSUFFICIENT_SHADOW_DATA",
@@ -167,6 +191,8 @@ def summarize(stage_rows, samples, issues):
         "sampling": "Metrics accumulated at 1 kHz; SYS_AB visualization at 10 Hz.",
         "optimization_scope": "ON DRIVE/COAST active wheels, PWM 20-80%; 90-100% reserved for separate risk analysis.",
         "metrics": per_metric,
+        "by_wheel": by_wheel,
+        "by_pwm": by_pwm,
         "ranking": ranking,
         "provisional_top_two": [row["alpha"] for row in ranking[:2]],
         "decision": ("Shortlist only; do not change production alpha without "
