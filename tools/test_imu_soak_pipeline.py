@@ -27,11 +27,19 @@ for mode in ("STILL","SHADOW","LIVE"):
                         "mean":1,"gmin":910,"gmax":1200,"eq":0})
         records.append({"type":"IMIR","t":ms,"c":second*1000})
         records.append({"type":"IMPID","t":ms,"n":second*1000 if mode!="STILL" else 0,
-                        "cmdL":200 if mode=="LIVE" else 0,"cmdR":200 if mode=="LIVE" else 0})
+                        "cmdL":200 if mode=="LIVE" else 0,"cmdR":200 if mode=="LIVE" else 0,
+                        "encL":second*75 if mode=="LIVE" else 0,
+                        "encR":second*74 if mode=="LIVE" else 0})
     records.append({"type":"SOAK_DONE","ok":1,"reason":0,"ms":180000})
     out=mod.summarise(records,mode)
     assert out["passed_telemetry_checks"],(mode,out["checks"])
     assert out["captured_60hz_samples"]==10800
+    if mode=="LIVE":
+        noencoder=[dict(r) for r in records]
+        for x in noencoder:
+            if x.get("type")=="IMPID":x["encL"]=x["encR"]=0
+        assert not mod.summarise(noencoder,"LIVE")["checks"]["live_encoder_pulses_observed"]
+
     damaged=[dict(r) for r in records]
     damaged[-1]["ok"]=0
     assert not mod.summarise(damaged,mode)["checks"]["completed_180s"]
