@@ -21,6 +21,7 @@ ROOT=Path(__file__).resolve().parent.parent
 PROFILES=[("STILL","integration_diag_imu_soak_96m"),
           ("SHADOW","integration_diag_full_shadow_96m")]
 LIVE=("LIVE","integration_diag_full_live_96m")
+LIVE_HIGH=("LIVE","integration_diag_full_live_high_pwm_96m")
 DURATION=180.0
 BAUD=115200
 CAL_TIMEOUT=60.0
@@ -29,7 +30,7 @@ RUN_TIMEOUT=190.0
 
 def parse_line(line):
     parts=line.strip().split(",")
-    if not parts or not(parts[0].startswith(("SOAK_","I2CP","IM6","IM1","IMN","IMIR","IMPID","SYS_","CMD_"))):
+    if not parts or not(parts[0].startswith(("SOAK_","I2CP","IM6","IM1","IMN","IMIR","IMPID","IMDRV","SYS_","CMD_"))):
         return None
     rec={"type":parts[0]}
     for p in parts[1:]:
@@ -46,6 +47,7 @@ def summarise(items, mode):
     noise=[x for x in items if x.get("type")=="IMN"]
     pid=[x for x in items if x.get("type")=="IMPID"]
     ir=[x for x in items if x.get("type")=="IMIR"]
+    motors=[x for x in items if x.get("type")=="IMDRV"]
     end=next((x for x in reversed(items) if x.get("type")=="SOAK_DONE"),{})
     begin=next((x for x in items if x.get("type")=="SOAK_BEGIN"),{})
     if len(samples)>=2:
@@ -64,6 +66,26 @@ def summarise(items, mode):
     seqs=[samples[i]["s"]-samples[i-1]["s"] for i in range(1,len(samples))
           if isinstance(samples[i].get("s"),int) and isinstance(samples[i-1].get("s"),int)]
     def latest(a,k,default=None):return a[-1].get(k,default) if a else default
+    temps=[x for x in noise if x.get("tvalid")==1]
+    begin_is_high=begin.get("high")==1
+    temp_mc=[x.get("tc") for x in temps if isinstance(x.get("tc"),int)]
+    def correlation(x,y):
+        if len(x)<3:return None
+        ax=statistics.mean(x);ay=statistics.mean(y)
+        sx=sum((v-ax)**2 for v in x);sy=sum((v-ay)**2 for v in y)
+        if not sx or not sy:return None
+        return round(sum((a-ax)*(b-ay) for a,b in zip(x,y))/(sx*sy)**.5,4)
+    temp_corr=correlation([r["tc"]/1000 for r in temps],
+                          [r["mean"]/1000 for r in temps])
+    motor_requested=any(r.get("setL",0)>0 or r.get("setR",0)>0 for r in motors)
+    motor_encoders_active=bool(motors) and (
+       max((r.get("encL",0) for r in motors),default=0)-
+       min((r.get("encL",0) for r in motors),default=0)>=500 or
+       max((r.get("encR",0) for r in motors),default=0)-
+       min((r.get("encR",0) for r in motors),default=0)>=500)
+    high_levels={v for v in (800,900,1000) if any(
+       (r.get("setL")==v or r.get("setR")==v) and
+       (r.get("appL")==v or r.get("appR")==v) for r in motors)}
     checks={
        "completed_180s":end.get("ok")==1 and end.get("ms",0)>=180000,
        "samples_60hz_at_least_95pct":len(samples)>=int(180*60*.95),
