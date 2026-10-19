@@ -92,6 +92,41 @@ class EncoderHostTests(unittest.TestCase):
             self.assertEqual(result["OFF"]["status"],"PASS")
             self.assertTrue((folder/"encoder_motor_on_50hz.csv").exists())
 
+    def test_uart_health_failure_preserves_encoder_metrics(self):
+        # UART integrity is still FAIL, but the independent encoder bank
+        # must remain reviewable instead of aborting before alpha A/B.
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            raw=folder/"run"
+            raw.mkdir()
+            for phase in ("off","on"):
+                l_count=r_count=0
+                frames=[
+                    "0.0\tSYS_M,ms=0,locked=1,i2cerr=0,to=0",
+                    "0.0\tSYS_T,ms=0,late=0,gap=0",
+                    "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0",
+                    "0.0\tSYS_STEP,ms=0,id=25,group=2,state=1,duty=700",
+                ]
+                for i in range(160):
+                    if phase=="on":
+                        l_count+=5
+                        r_count+=4
+                    ms=20*(i+1)
+                    frames.append("0.01\tSYS_EN,ms=%d,l=%d,r=%d,vL=%d,vR=%d" %
+                                  (ms,l_count,r_count,250 if phase=="on" else 0,
+                                   200 if phase=="on" else 0))
+                frames+=["4.0\tSYS_T,ms=4000,late=0,gap=0",
+                         "4.0\tSYS_M,ms=4000,locked=1,i2cerr=0,to=0",
+                         "4.0\tSYS_U,ms=4000,tx_drop=%d,dma_err=0" %
+                         (1 if phase=="on" else 0)]
+                (raw/(phase+"_uart.log")).write_text(
+                    "\n".join(frames)+"\n",encoding="utf-8")
+            result=p.analyze_sweep_telemetry(raw,folder)
+            self.assertEqual(result["OFF"]["status"],"PASS")
+            self.assertEqual(result["ON"]["status"],"FAIL_HEALTH")
+            self.assertEqual(result["ON"]["health"]["uart_tx_drop_delta"],1)
+            self.assertTrue((folder/"encoder_motor_on_50hz.csv").is_file())
+
     def test_motor_sweep_missing_telemetry_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             folder=Path(directory)
