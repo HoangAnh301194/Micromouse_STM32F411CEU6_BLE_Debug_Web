@@ -424,6 +424,18 @@ int main(void)
                         (unsigned)mpu.probe_address_status[3],
                         (unsigned)mpu.probe_who_status[3],
                         (unsigned)mpu.probe_who_value[3]);
+            {
+                I2C_BusyDiag_t ib;
+                I2C_GetBusyDiag(&ib);
+                UART_Printf("SYS_IB,ms=%lu,n=%lu,rec=%lu,sr1=%lu,sr2=%lu,pin=%lu,after=%lu\r\n",
+                            (unsigned long)now,
+                            (unsigned long)ib.busy_timeouts,
+                            (unsigned long)ib.bus_recoveries,
+                            (unsigned long)ib.last_sr1,
+                            (unsigned long)ib.last_sr2,
+                            (unsigned long)ib.last_pb8_pb9_levels,
+                            (unsigned long)ib.last_after_recovery_levels);
+            }
 #endif
             /* Optional UART profiling also runs in Motor OFF/ON diagnostics.
              * The production image has no instrumentation or this log. */
