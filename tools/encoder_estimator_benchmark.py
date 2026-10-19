@@ -42,7 +42,8 @@ def evaluate():
         raw=total-previous
         previous=total
         ema_1ms+=0.3*(raw*1000-ema_1ms)
-        if tick>3000 and tick<12000-250 or tick>12000+250 and tick<20000-250 or tick>20000+250:
+        steady = (3250 < tick < 11750 or 12250 < tick < 19750 or tick > 20250)
+        if steady:
             errs[("EMA 1ms",1)].append(ema_1ms-true)
         for window in WINDOWS:
             buf=window_bins[window]
@@ -50,7 +51,7 @@ def evaluate():
             if len(buf)==window:
                 last[window]=sum(buf)*1000/window
                 buf.clear()
-            if tick>3000+250 and tick<12000-250 or tick>12000+250 and tick<20000-250 or tick>20000+250:
+            if steady:
                 errs[("boxcar",window)].append(last[window]-true)
         if tick%100==0:
             examples.append({"ms":tick,"reference_pps":round(true,2),
