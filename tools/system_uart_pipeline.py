@@ -324,7 +324,7 @@ def write_output(outdir, results, rows):
     fields = ("type", "host_elapsed_s", "ms", "ticks", "late", "gap",
               "maxcy", "encmaxcy", "motmaxcy", "motticks", "valid", "stale",
               "ir", "cal", "seq", "age", "i2cok", "i2cerr", "to", "busy",
-              "dt", "vL", "vR", "appL", "appR", "ppsL", "ppsR",
+              "dt", "vL", "vR", "appL", "appR", "ppsL", "ppsR", "l", "r",
               "q", "peak", "accb", "doneb", "prncy", "dmacy", "rxcy", "rxb",
               "mode", "state", "id", "group", "step", "duty", "dl", "dr")
     with (outdir/"measurements.csv").open("w", newline="", encoding="utf-8") as f:
@@ -345,7 +345,7 @@ def review_saved_measurements(csv_file):
                "step","duty","dl","dr","locked","wd","dt","vL","vR",
                "appL","appR","ppsL","ppsR","q","peak","accb","doneb",
                "prncy","dmacy","rxcy","rxb","rx_err","rx_ov",
-               "tx_drop","dma_err","trim","clkfault","iclk","mode"}
+               "tx_drop","dma_err","trim","clkfault","iclk","mode","l","r"}
     with csv_file.open(newline="", encoding="utf-8-sig") as file:
         for row in csv.DictReader(file):
             phase = row.get("phase")
@@ -389,6 +389,8 @@ def main():
     p.add_argument("--baud", type=int, default=115200)
     p.add_argument("--flash", action="store_true",
                    help="Automatically upload each diagnostic firmware via ST-Link")
+    p.add_argument("--encoder-telemetry", action="store_true",
+                   help="Use encoder-specific OFF/ON builds with ~50Hz SYS_EN logs")
     p.add_argument("--motor-on", action="store_true",
                    help="EXPLICIT consent to physical 0..100%% motor-on phase")
     p.add_argument("--mode", choices=["off", "on"], default="off",
@@ -407,6 +409,8 @@ def main():
         p.error("--uart-only is mutually exclusive with --motor-on/--with-uart")
     if args.with_uart and not args.flash:
         p.error("--with-uart needs --flash to switch diagnostic firmware profiles")
+    if args.encoder_telemetry and args.uart_only:
+        p.error("--encoder-telemetry cannot be used with UART-only profile")
     if args.mode == "on" and not args.motor_on:
         p.error("--mode on requires --motor-on")
     if args.motor_on:
@@ -435,7 +439,11 @@ def main():
     try:
         for mode in run_modes:
             if args.flash:
-                flash(MOTOR_ON_ENV if mode == "ON" else MOTOR_OFF_ENV)
+                firmware = (("integration_diag_encoder_motor_on_96m" if mode == "ON"
+                             else "integration_diag_encoder_motor_off_96m")
+                            if args.encoder_telemetry
+                            else (MOTOR_ON_ENV if mode == "ON" else MOTOR_OFF_ENV))
+                flash(firmware)
             session=None
             try:
                 session=PhaseSession(args.port,args.baud,mode,outdir)
