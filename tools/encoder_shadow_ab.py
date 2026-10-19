@@ -91,7 +91,6 @@ def candidate_rows(stage_rows, phase="ON"):
         row for row in stage_rows
         if row["phase"] == phase and row["state"] in (1, 2)
         and 20 <= row["pwm_percent"] <= 80
-        and (row["state"] == 2 or row["metric"] != METRICS[2])
         and row["n"] >= 100
         and (row["group"] == 2 or
              (row["group"] == 0 and row["wheel"] == "L") or
