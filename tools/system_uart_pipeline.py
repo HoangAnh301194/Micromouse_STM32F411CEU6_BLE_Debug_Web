@@ -290,6 +290,16 @@ class PhaseSession:
         while time.monotonic() < deadline:
             data = self.poll(heartbeat=True)
             if data and data.get("type") == "SYS_STEP":
+                group = ("LEFT","RIGHT","BOTH")
+                selection = data.get("group",-1)
+                wheel = group[selection] if selection in (0,1,2) else "UNKNOWN"
+                state = data.get("state",-1)
+                step_desc = ("DRIVE" if state == 1 else
+                             "COAST" if state == 2 else
+                             "DONE" if state == 3 else "FAULT")
+                print(f"{self.name} stage {data.get('id',-1)+1}/33 | "
+                      f"{wheel} | PWM={data.get('duty',0)/10:.0f}% | "
+                      f"{step_desc}",flush=True)
                 if data.get("state") == 4:
                     raise RuntimeError(f"{self.name} firmware abort: {data}")
                 if data.get("state") == 3:
