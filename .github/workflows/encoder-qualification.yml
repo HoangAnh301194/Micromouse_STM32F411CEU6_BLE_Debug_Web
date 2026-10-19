@@ -1,0 +1,32 @@
+name: Encoder unified qualification (host only)
+on:
+  push:
+    branches: [giomuadongbac]
+    paths:
+      - "src/encoder.c"
+      - "include/encoder.h"
+      - "src/control.c"
+      - "platformio.ini"
+      - "tools/encoder_*.py"
+      - "tests/encoder/**"
+      - ".github/workflows/encoder-qualification.yml"
+  workflow_dispatch:
+
+jobs:
+  encoder-native-and-offline:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Native and host-only software tests (no ST-Link, UART, motor)
+        run: python tools/encoder_qualification_pipeline.py --mode offline --skip-build
+      - name: Upload evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: encoder-offline-qualification
+          path: results/encoder_qual_*/
+          if-no-files-found: warn
