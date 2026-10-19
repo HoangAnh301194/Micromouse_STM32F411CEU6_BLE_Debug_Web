@@ -25,6 +25,19 @@ typedef enum {
     I2C_IDLE /* No pending asynchronous transaction */
 } I2C_Status;
 
+/* Read-only BUSY timeout evidence in optional Encoder A/B firmware only. */
+#if defined(ENCODER_ALPHA_AB_DIAG)
+typedef struct {
+    uint32_t busy_timeouts;
+    uint32_t bus_recoveries;
+    uint32_t last_sr1;
+    uint32_t last_sr2;
+    uint32_t last_pb8_pb9_levels;
+    uint32_t last_after_recovery_levels;
+} I2C_BusyDiag_t;
+void I2C_GetBusyDiag(I2C_BusyDiag_t *out);
+#endif
+
 /**
  * @brief I2C Instance
  */
