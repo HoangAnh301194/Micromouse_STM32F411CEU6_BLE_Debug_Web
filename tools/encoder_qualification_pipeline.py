@@ -316,16 +316,27 @@ def main(argv=None):
                 raise RuntimeError("Tracked tree modified; motor-on flash blocked")
             print("MOTOR-ON: REAL PWM 0..100%, 33 stages x OFF/ON; operator must remain present.")
             out=path/"system_uart_hardware"
-            runinfo=run([sys.executable,"tools/system_uart_pipeline.py",
-                         "--port",args.port,"--flash","--motor-on",
-                         "--outdir",str(out)],"motor_on_automated",path,950)
-            data["hardware"]={"status":"PASS" if runinfo["pass"] else "FAIL",
-                              "execution":runinfo}
-            new=out/"summary.json"
-            if new.exists():
-                data["sweep"]=sweep_summary(new,path,"motor_on")
-            if not runinfo["pass"]:
-                raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
+            try:
+                runinfo=run([sys.executable,"tools/system_uart_pipeline.py",
+                             "--port",args.port,"--flash","--motor-on",
+                             "--outdir",str(out)],"motor_on_automated",path,950)
+                data["hardware"]={"status":"PASS" if runinfo["pass"] else "FAIL",
+                                  "execution":runinfo}
+                new=out/"summary.json"
+                if new.exists():
+                    data["sweep"]=sweep_summary(new,path,"motor_on")
+                if not runinfo["pass"]:
+                    raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
+            finally:
+                # Attempt restoration even when a motor-on test fails or is interrupted.
+                restored=run([sys.executable,"-m","platformio","run","-e",
+                              "integration_diag_motor_off_96m","-t","upload"],
+                             "restore_motor_off",path,360)
+                data["restored_motor_off"]=restored
+                if not restored["pass"]:
+                    print("WARNING: motor-off restoration failed; disconnect VM and verify firmware.",
+                          file=sys.stderr)
+
         elif args.mode!="offline":
             if args.flash_motor_off:
                 if data["software"]["git"]["tracked_dirty"]:
