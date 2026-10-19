@@ -195,4 +195,21 @@ python tools/imu_soak_pipeline.py --review results/imu_soak_YYYYMMDD_HHMMSS/meas
 
 Results: `results/imu_soak_<timestamp>/summary.json`, `measurements.csv` and per-mode raw UART logs. Frames include `IM6` (60Hz) and `IM1/IMN/IMIR/IMPID` (1Hz), plus `I2CP` boot speed fallback and completion status. The PC scores sample availability, MCU gyro/I2C/IR/TIM11/UART health, fake PID load and yaw drift in degrees / degrees per minute. **Real 180s STILL + SHADOW hardware data are now available:** [2026-10-19 measurement analysis](docs/system_debug/IMU_I2C_180S_RESULTS_20261019_115313.md) ([CSV](results/imu_soak_20261019_115313/measurements.csv), [JSON](results/imu_soak_20261019_115313/summary.json)). Both passes showed zero I2C/TIM11 faults, but un-deadzoned yaw drifted **0.458° STILL** and **0.801° SHADOW**; UART TX queue peaked at **965/979 B out of 1024 B** despite no drops. LIVE motor mode has **not** yet been measured. Passing checks does not guarantee a small yaw drift.
 
+
+**NEW: actual MPU die temperature is read over the existing I2C1 lines (PB8/PB9), no new pin.** Each second an asynchronous two-byte read of MPU6050 `TEMP_OUT` (0x41, 0x42) reports `tc` in milli-°C plus validity, age, I2C errors and read count alongside `IMN`. The host summary correlates temperature with raw-gyro residual bias. This is **not** motor/H-bridge temperature.
+
+The previous STILL + SHADOW tests intentionally **never drove motor outputs**. For a genuine energized-motor EMI test with your 2S VM (wheels suspended, manual independent VM cutoff), the HIGH-PWM LIVE firmware uses short actual pulses at 80/90/100%, retains a 1kHz PID CPU stress workload, records `IMDRV` encoder/applied duty every 250ms and stops if expected encoder motion is missing. **It does not sustain 100% PWM over the 180s test**: 80% ≤1s, 90% ≤0.75s and 100% ≤0.5s, each followed by ≥4s rest; repeats over the test.
+
+```powershell
+# Use the following if STILL and SHADOW have already been measured:
+python tools/imu_soak_pipeline.py --port COM7 --flash --motor-live --high-pwm --only-live
+
+# To repeat all three phases, omit --only-live:
+python tools/imu_soak_pipeline.py --port COM7 --flash --motor-live --high-pwm
+```
+
+**High duty and 2S:** verify the actual N20 motor's rated voltage and current before energizing; 2S packs are up to 8.4V fully charged. Even 0.5s at 100% PWM may overdrive an unsuitable motor or stall it. There is no motor current/temperature/VM sag measurement here. Secure the chassis, keep hands clear, use a separate physical VM switch, and supervise the whole motor run. Software timeout/encoder safeguards cannot replace current limiting.
+
+To avoid the 965–979B UART TX peak from the first hardware trial, the new soak firmware suppresses redundant 1Hz system frames during active experiments and adds a strict **≤768B TX queue peak** software gate. New temperature readings / high-PWM motor results **still require a new real-board test**; CI compile PASS does not establish EMI immunity.
+
 **Methodology, three experiments, safety and links to high-speed Micromouse gyro/motor/IR debugging research:** [IMU/I2C 180-second stress and yaw-drift guide](docs/system_debug/IMU_I2C_180S_HIGH_SPEED_MICROMOUSE_20261019.md).
