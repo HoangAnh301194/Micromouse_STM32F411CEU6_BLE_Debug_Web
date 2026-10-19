@@ -1,7 +1,8 @@
 #include "board.h"
 #include "bt_debug.h"
-#if defined(ENCODER_PROFILE_DIAG) && !defined(INTEGRATION_DIAG_MOTOR_OFF)
-#error "Encoder high-rate diagnostic requires compile-time motor-OFF lock"
+#if defined(ENCODER_PROFILE_DIAG) && (!defined(INTEGRATION_DIAG) || \
+    !(defined(INTEGRATION_DIAG_MOTOR_OFF) || defined(INTEGRATION_DIAG_MOTOR_ON)))
+#error "Encoder telemetry requires an explicit integration diagnostic mode"
 #endif
 
 #include "control.h"
@@ -374,7 +375,8 @@ int main(void)
             }
         }
 #if defined(ENCODER_PROFILE_DIAG)
-        /* Opt-in encoder telemetry at ~50Hz. Sample a coherent pair in main,
+        /* Opt-in encoder telemetry at ~50Hz for OFF/ON diagnostic builds.
+         * Sample a coherent pair in main,
          * never format UART text inside TIM11 and never touch motor commands.
          * This is decimated observation of TIM11's 1kHz encoder updates. */
         if ((uint32_t)(now - last_encoder_diag_ms) >= 20U) {
