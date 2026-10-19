@@ -141,7 +141,7 @@ def run(command, label, directory, timeout=300, live_output=False):
             for idx in anchors[-8:]:
                 chosen.update(range(max(0,idx-2),min(len(entries),idx+3)))
             chosen.update(range(max(0,len(entries)-18),len(entries)))
-            excerpt="\\n".join(entries[i] for i in sorted(chosen))
+            excerpt="\n".join(entries[i] for i in sorted(chosen))
             outcome["diagnostic_excerpt"]=excerpt[-6000:]
             print("GATE FAILED:",label,"(exit",code,")",flush=True)
             print(outcome["diagnostic_excerpt"],flush=True)
