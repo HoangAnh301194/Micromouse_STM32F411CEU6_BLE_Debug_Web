@@ -31,6 +31,8 @@ typedef struct {
     uint32_t window_ticks;
     uint32_t window_abs_error_left[ENCODER_SHADOW_ALPHAS];
     uint32_t window_abs_error_right[ENCODER_SHADOW_ALPHAS];
+    uint32_t transient_abs_error_left[ENCODER_SHADOW_ALPHAS];
+    uint32_t transient_abs_error_right[ENCODER_SHADOW_ALPHAS];
     uint32_t variation_left[ENCODER_SHADOW_ALPHAS];
     uint32_t variation_right[ENCODER_SHADOW_ALPHAS];
 } Encoder_ShadowSnapshot_t;
