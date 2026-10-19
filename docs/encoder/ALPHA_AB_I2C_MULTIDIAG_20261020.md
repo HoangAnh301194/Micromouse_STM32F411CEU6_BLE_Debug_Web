@@ -82,7 +82,7 @@ The existing report/check gates remain, plus:
 - `encoder_alpha_samples_10hz.csv`
 - `encoder_alpha_stage_metrics.csv`
 - `encoder_alpha_ab.json` — weighted per-metric summaries, scores,
-  per-wheel/per-PWM comparison, **provisional alpha top two**
+  per-wheel/per-PWM comparison and separate wheel rankings, **provisional alpha top two**
 - `encoder_alpha_overlay_60pct_L.png`,
   `encoder_alpha_overlay_60pct_R.png`, `encoder_alpha_ranking.png`
   when matplotlib is available
@@ -94,8 +94,10 @@ using a predeclared normalized heuristic:
 `score = 0.50 × steady deviation ratio + 0.35 × first-500ms deviation
 ratio + 0.15 × steady variation ratio`.
 
-Only active wheel intervals with PWM 20–80% participate in the alpha shortlist,
-avoiding short 90–100% intervals and stationary channels. Detailed per-wheel
+Only active wheel intervals with PWM 20–80% participate in the alpha shortlist:
+steady-state deviation and variation are taken from **DRIVE only**;
+first-500ms transition deviation includes both DRIVE onset and COAST onset.
+Short 90–100% intervals and stationary channels are excluded. Detailed per-wheel
 and per-PWM tables remain available. The ranking is **not** an automatic
 firmware configuration choice. Require repeated tests at comparable battery
 voltage/load, PWM step-response and, ideally, an independent tachometer or
