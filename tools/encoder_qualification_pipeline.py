@@ -199,7 +199,7 @@ def serial_capture(port,seconds,directory):
         raise RuntimeError("Incomplete motor-off telemetry")
     return summarize_encoder(records,directory)
 
-def sweep_summary(path,directory):
+def sweep_summary(path,directory,tag="historical"):
     if not path.exists():
         return {"status":"NOT_AVAILABLE","source":str(path)}
     info=json.loads(path.read_text(encoding="utf-8"))
@@ -219,7 +219,7 @@ def sweep_summary(path,directory):
                          "coastL":stage.get("coast_left_counts"),
                          "coastR":stage.get("coast_right_counts")})
     if rows:
-        with (directory/"sweep_encoder_stages.csv").open("x",encoding="utf-8",newline="") as f:
+        with (directory/(f"sweep_encoder_stages_{tag}.csv")).open("x",encoding="utf-8",newline="") as f:
             w=csv.DictWriter(f,fieldnames=list(rows[0]))
             w.writeheader()
             w.writerows(rows)
@@ -317,7 +317,7 @@ def main(argv=None):
                               "execution":runinfo}
             new=out/"summary.json"
             if new.exists():
-                data["sweep"]=sweep_summary(new,path)
+                data["sweep"]=sweep_summary(new,path,"motor_on")
             if not runinfo["pass"]:
                 raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
         elif args.mode!="offline":
