@@ -543,6 +543,45 @@ def render_plots(directory):
         fig.savefig(directory/png,dpi=150)
         plt.close(fig)
         saved.append(png)
+    alpha_csv=directory/"encoder_alpha_samples_10hz.csv"
+    if alpha_csv.exists():
+        with alpha_csv.open(newline="",encoding="utf-8") as file:
+            alpha_samples=list(csv.DictReader(file))
+        for wheel in ("L","R"):
+            # Stage 28 is BOTH wheels at 60% PWM, 3.5s DRIVE.
+            section=[x for x in alpha_samples if x["phase"]=="ON" and
+                     x["stage"]=="28" and x["state"]=="1" and
+                     x["wheel"]==wheel]
+            if len(section)<8:
+                continue
+            t=[(int(x["ms"])-int(section[0]["ms"]))/1000 for x in section]
+            fig=plt.figure(figsize=(10,4))
+            for key in ("a05","a10","a20","a30","a40","a60","a80","b20"):
+                plt.plot(t,[float(x[key]) for x in section],label=key,
+                         linewidth=1.0)
+            plt.title("Shadow EMA alpha A/B: wheel "+wheel+" at PWM 60%")
+            plt.xlabel("Stage elapsed time (s)")
+            plt.ylabel("Encoder counts/second")
+            plt.grid(alpha=.25);plt.legend(ncol=4);plt.tight_layout()
+            png="encoder_alpha_overlay_60pct_"+wheel+".png"
+            fig.savefig(directory/png,dpi=150)
+            plt.close(fig)
+            saved.append(png)
+    alpha_report=directory/"encoder_alpha_ab.json"
+    if alpha_report.exists():
+        ranking=json.loads(alpha_report.read_text(encoding="utf-8")).get("ranking",[])
+        if ranking:
+            fig=plt.figure(figsize=(9,4))
+            plt.bar([str(x["alpha"]) for x in ranking],
+                    [x["heuristic_score_vs_alpha_0_30"] for x in ranking])
+            plt.title("Diagnostic proxy score versus alpha=0.30 (NOT true RPM accuracy)")
+            plt.xlabel("Shadow EMA alpha")
+            plt.ylabel("Relative weighted score (lower is better)")
+            plt.tight_layout()
+            png="encoder_alpha_ranking.png"
+            fig.savefig(directory/png,dpi=150)
+            plt.close(fig)
+            saved.append(png)
     return saved
 
 def report(directory,data):
