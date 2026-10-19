@@ -102,3 +102,21 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 - Retain 13 prior gates plus shadow regression and both diagnostic builds, 33×OFF +33×ON stages, all UART safety checks, and locked-OFF firmware restoration. Raw and CSV logs remain available even on a flagged I2C fallback.
 - GitHub Actions run **39315053774** on commit `5906d0f3` completed successfully for host/native checks, diagnostic builds and production build (software CI only). **Hardware A/B and I2C 400-kHz acceptance have not yet been run/verified for the new implementation.**
 - Detailed protocol: `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
+
+### Lượt chẩn đoán Encoder A/B 030513 — thực nghiệm 20/10/2026
+
+- Lượt đầu tiên với `ENCODER_ALPHA_AB_DIAG` (commit đo `697d9dd`):
+  phần mềm/build PASS, OFF 33 giai đoạn PASS, ON 33 giai đoạn hoàn tất;
+  trả `ABORTED_OR_INCOMPLETE` ở host do health UART ON:
+  `rx_err=24`, `tx_drop=1`. Không phải lỗi đếm xung Encoder hay mất
+  chu kỳ TIM11 (`late=gap=0`); không được tuyên bố nghiệm thu hệ thống.
+- I2C 400 kHz **đã được chọn** ở cả OFF/ON, lỗi đọc/timeout bằng 0.
+  Công đo A/B tăng chi phí Encoder IRQ: ON `encmaxcy=8235` vs
+  baseline `971`; toàn TIM11 max `8965` vs `1905`.
+- Không thể chốt `alpha`: pipeline cũ abort trước bước phân tích shadow,
+  và CSV đo tổng quát bỏ các cột `SYS_AB/SYS_AM`. Các log UART gốc
+  chưa được push trong bộ `030513`.
+- Cập nhật host tiếp theo: lưu `encoder_shadow_off.csv/on.csv` đầy đủ,
+  bảo toàn phân tích alpha khi health UART thất bại, vẫn báo chưa nghiệm thu.
+  Có thể chạy lại riêng `tools/encoder_shadow_ab.py` trên log địa phương,
+  **không cần chạy lại motor**. Chưa thay `SPEED_LPF_ALPHA=0.30`.
