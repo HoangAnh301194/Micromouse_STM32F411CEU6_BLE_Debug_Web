@@ -278,6 +278,60 @@ def sweep_summary(path,directory,tag="historical"):
             "qualified_electrically":False,
             "note":"Stage-average counts only; not 1ms dynamics or ground-truth RPM."}
 
+def render_plots(directory):
+    """Optional matplotlib plots; never affects pass/fail."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return "SKIP: matplotlib not installed (CSVs are still available)"
+    saved=[]
+    csvpath=directory/"encoder_50hz.csv"
+    if not csvpath.exists():
+        csvpath=directory/"locked_capture.csv"
+    if csvpath.exists():
+        with csvpath.open(newline="",encoding="utf-8") as file:
+            rows=list(csv.DictReader(file))
+        if rows:
+            t=[(int(x["ms"])-int(rows[0]["ms"]))/1000 for x in rows]
+            plt.figure(figsize=(10,4))
+            keys=("countL","countR")
+            for key in keys:
+                plt.plot(t,[int(x[key]) for x in rows],label=key)
+            plt.legend();plt.grid(alpha=.25);plt.xlabel("t (s)")
+            plt.ylabel("Decoded timer counts");plt.title("Encoder counters")
+            plt.tight_layout();plt.savefig(directory/"encoder_counts.png",dpi=150)
+            plt.close();saved.append("encoder_counts.png")
+            vel=("pps_20ms_L","pps_20ms_R","pps_ema_L","pps_ema_R") if "pps_20ms_L" in rows[0] else ("ppsL","ppsR")
+            plt.figure(figsize=(10,4))
+            for key in vel:
+                plt.plot(t,[float(x[key]) for x in rows],label=key,linewidth=1.1)
+            plt.legend();plt.grid(alpha=.25);plt.xlabel("t (s)")
+            plt.ylabel("counts / second");plt.title("Measured window-PPS vs firmware EMA")
+            plt.tight_layout();plt.savefig(directory/"encoder_speed.png",dpi=150)
+            plt.close();saved.append("encoder_speed.png")
+    for name in ("sweep_encoder_stages_motor_on.csv","sweep_encoder_stages_historical.csv"):
+        path=directory/name
+        if not path.exists():
+            continue
+        with path.open(newline="",encoding="utf-8") as file:
+            rows=list(csv.DictReader(file))
+        both=[x for x in rows if x["mode"]=="ON" and x["group"]=="2"]
+        if not both:
+            continue
+        plt.figure(figsize=(10,4))
+        duty=[int(x["pwm_percent"]) for x in both]
+        for key in ("mean_pps_L","mean_pps_R"):
+            plt.plot(duty,[float(x[key]) for x in both],marker="o",label=key)
+        plt.legend();plt.grid(alpha=.25);plt.xlabel("Commanded PWM (%)")
+        plt.ylabel("Mean counts / second during drive")
+        plt.title("Both wheels (stage-averaged encoder counts, not RPM ground truth)")
+        plt.tight_layout();plt.savefig(directory/"sweep_response.png",dpi=150)
+        plt.close();saved.append("sweep_response.png")
+        break
+    return saved
+
 def report(directory,data):
     lines=["# Encoder unified pipeline report","",
            "Firmware changes: none by this pipeline.",
@@ -396,6 +450,13 @@ def main(argv=None):
         (path/"summary.json").write_text(
             json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
         report(path,data)
+    try:
+        data["plots"]=render_plots(path)
+    except (OSError,ValueError,RuntimeError) as ex:
+        data["plots"]="SKIP: "+str(ex)
+    (path/"summary.json").write_text(
+        json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+    report(path,data)
     print("Results:",path)
     return 2 if "error" in data else 0
 
