@@ -7,7 +7,15 @@ import sys
 base=Path(__file__).resolve().parent
 p=subprocess.run([sys.executable,str(base/"imu_soak_pipeline.py"),"--help"],
                  capture_output=True,text=True,timeout=8,check=True)
-assert "--motor-live" in p.stdout and "--high-pwm" in p.stdout and "--review" in p.stdout
+assert "--motor-live" in p.stdout and "--high-pwm" in p.stdout and "--review" in p.stdout and "--only-live" in p.stdout
+# Important: invalid high duty/only-live flags are rejected before any
+# platformio upload or USB serial access.
+for extra in ("--high-pwm","--only-live"):
+    failure=subprocess.run([sys.executable,str(base/"imu_soak_pipeline.py"),
+                            "--port","COM7","--flash",extra],
+                           capture_output=True,text=True,timeout=8)
+    assert failure.returncode!=0
+    assert "requires --motor-live" in failure.stderr
 spec=importlib.util.spec_from_file_location("soak",base/"imu_soak_pipeline.py")
 mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
 assert mod.parse_line("IMDRV,t=200,stage=1,setL=800,appL=800,encL=123")["appL"]==800
