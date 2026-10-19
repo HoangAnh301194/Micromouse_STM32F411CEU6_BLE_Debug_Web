@@ -335,6 +335,8 @@ def main():
     a.add_argument("--motor-live",action="store_true",help="EXPLICIT wheels-lifted motor VM consent for third 180s benchmark")
     a.add_argument("--high-pwm",action="store_true",
                    help="With --motor-live, opt into 80/90/100%% short physical PWM pulses")
+    a.add_argument("--only-live",action="store_true",
+                   help="Skip previously measured STILL and SHADOW; requires explicit --motor-live")
     a.add_argument("--outdir",type=Path)
     a.add_argument("--review",type=Path,help="Offline CSV review; never connect or flash")
     args=a.parse_args()
@@ -343,11 +345,14 @@ def main():
         a.error("hardware capture requires --port and --flash; offline analysis uses --review")
     if args.high_pwm and not args.motor_live:
         a.error("--high-pwm requires --motor-live (two explicit safety gates)")
+    if args.only_live and not args.motor_live:
+        a.error("--only-live requires --motor-live")
     if args.motor_live:
         print("LIVE MOTOR: secure lifted wheels, independent VM cutoff, supervise all 180s.",flush=True)
     if args.high_pwm:
         print("HIGH PWM: 80% <=1s, 90% <=0.75s, 100% <=0.5s; >=4s coast per 5s slot.",flush=True)
-    runs=PROFILES+([LIVE_HIGH if args.high_pwm else LIVE] if args.motor_live else [])
+    live=[LIVE_HIGH if args.high_pwm else LIVE] if args.motor_live else []
+    runs=live if args.only_live else PROFILES+live
     name="imu_soak_"+datetime.now().strftime("%Y%m%d_%H%M%S")
     out=args.outdir or ROOT/"results"/name
     out.mkdir(parents=True,exist_ok=True)
