@@ -85,6 +85,7 @@ def source_audit():
             "-DENCODER_PROFILE_DIAG=1" in cfg,
         "encoder_telemetry_diagnostic_guard": "Encoder telemetry requires an explicit integration diagnostic mode" in main,
         "encoder_motor_on_profile": "integration_diag_encoder_motor_on_96m" in cfg,
+        "i2c_boot_probe_logged": "SYS_IPB,ms=" in main,
         "motor_off_sticky_lock": "Motor_LockOutputs();" in main,
         "positive_forward_unchanged": "ENCODER_LEFT_DIRECTION  -1" in
             (ROOT/"include/encoder.h").read_text(encoding="utf-8"),
@@ -400,8 +401,30 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                        (x["group"] in (1,2) and x["ppsR"]!="" and x["ppsR"]>0))]
             if len(positive)<50:
                 status="NO_ENCODER_RESPONSE"
+        probe_entries=[x for x in all_records if x["type"]=="SYS_IPB" and
+                       isinstance(x.get("idx"),int)]
+        startup_probe=None
+        if probe_entries:
+            q=probe_entries[-1]
+            startup_probe={
+                "selected_speed_index":q["idx"],
+                "selected_speed_mode":q.get("mode"),
+                "configured_scl_hz":next((
+                    x["iclk"] for x in reversed(all_records)
+                    if x["type"]=="SYS_U" and isinstance(x.get("iclk"),int)
+                ),None),
+                "attempt_400k":{"address_status":q.get("a0"),
+                                "who_read_status":q.get("w0"),
+                                "who_am_i":q.get("id0")},
+                "attempt_300k":{"address_status":q.get("a1"),
+                                "who_read_status":q.get("w1"),
+                                "who_am_i":q.get("id1")},
+                "fallback_occurred":q["idx"]>0,
+                "explanation":"Status 255 means unattempted. Probe status 0 indicates driver success; WHO_AM_I must equal 0x68. The configured clock is nominal, not an SCL oscilloscope measurement.",
+            }
         reports[phase]={"status":status,"samples":len(records),
                          "steady_drive_samples":len(drive),"wheels":results,
+                         "i2c_startup_probe":startup_probe,
                          "health":health,
                          "note":"PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."}
     if reports["ON"]["status"]!="PASS" or reports["OFF"]["status"]!="PASS":
