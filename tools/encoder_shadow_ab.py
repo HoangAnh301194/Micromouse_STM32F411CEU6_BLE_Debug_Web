@@ -57,7 +57,7 @@ def load_shadow(run_directory):
                              "group": row["group"],
                              "pwm_percent": row["duty"] // 10}
             elif row["type"] == "SYS_AB":
-                if (isinstance(row.get("w"), int)
+                if (row.get("w") in (0, 1)
                         and all(isinstance(row.get(k), int) for k in
                                 ("ms", *SAMPLE_KEYS))):
                     samples.append({"phase": phase, **stage,
@@ -68,7 +68,10 @@ def load_shadow(run_directory):
                 if (not all(isinstance(row.get(k), int)
                             for k in ("id", "state", "w", "m", "n", *KEYS))
                         or row["w"] not in (0, 1)
-                        or row["m"] not in METRICS or row["id"] >= 33):
+                        or row["m"] not in METRICS or not 0 <= row["id"] < 33
+                        or row["state"] not in (1, 2)
+                        or row["n"] < 0
+                        or any(row[key] < 0 for key in KEYS)):
                     issues.append({"phase": phase, "issue": "malformed_SYS_AM"})
                     continue
                 stage_rows.append({
@@ -176,6 +179,21 @@ def summarize(stage_rows, samples, issues):
             for wheel in ("L", "R")
         } for pwm in range(20, 81, 10)
     }
+    def wheel_ranking(wheel):
+        summary = by_wheel[wheel]
+        base = {key: summary[key]["0.3"] for key in weights}
+        if any(value is None or value <= 0 for value in base.values()):
+            return []
+        rows = []
+        for alpha in ALPHAS:
+            terms = [summary[key][str(alpha)] / base[key] for key in weights]
+            if any(v is None for v in terms):
+                continue
+            rows.append({"alpha": alpha,
+                         "score": round(sum(t * v for t, v in
+                                            zip(weights.values(), terms)), 5)})
+        return sorted(rows, key=lambda x: x["score"])
+    rank_by_wheel = {wheel: wheel_ranking(wheel) for wheel in ("L", "R")}
     passes = not missing and not duplicated and not issues and len(samples) >= 500
     return {
         "status": "COMPLETE_PROVISIONAL" if passes else "INSUFFICIENT_SHADOW_DATA",
@@ -193,6 +211,7 @@ def summarize(stage_rows, samples, issues):
         "metrics": per_metric,
         "by_wheel": by_wheel,
         "by_pwm": by_pwm,
+        "ranking_by_wheel": rank_by_wheel,
         "ranking": ranking,
         "provisional_top_two": [row["alpha"] for row in ranking[:2]],
         "decision": ("Shortlist only; do not change production alpha without "
