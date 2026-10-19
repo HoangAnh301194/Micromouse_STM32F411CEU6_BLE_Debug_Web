@@ -268,6 +268,18 @@ typedef struct {
   uint8_t selected_speed_mode;
   uint8_t selected_speed_index;
 
+#if defined(DIAG_SOAK_180S)
+  /* MPU6050 die temperature. 0x41/0x42, degrees C = raw/340 + 36.53.
+   * Optional 1Hz asynchronous 2-byte I2C read; never from TIM11. */
+  int32_t temperature_mc;
+  uint32_t temperature_last_ms;
+  uint32_t temperature_reads;
+  uint32_t temperature_errors;
+  uint32_t temperature_timeouts;
+  uint8_t temperature_valid;
+  uint8_t temperature_pending;
+#endif
+
   /* 1-second raw-sample diagnostic window (main-loop only). */
   int64_t raw_sum;
   uint64_t raw_sum_squares;
