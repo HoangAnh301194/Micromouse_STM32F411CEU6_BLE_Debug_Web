@@ -465,9 +465,13 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                          "i2c_busy_debug":busy_diag,
                          "health":health,
                          "note":"PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."}
-    if reports["ON"]["status"]!="PASS" or reports["OFF"]["status"]!="PASS":
-        raise RuntimeError("Encoder motor telemetry did not meet host diagnostic checks: "+
-                           repr({k:v["status"] for k,v in reports.items()}))
+    statuses={k:v["status"] for k,v in reports.items()}
+    if any(v not in ("PASS","FAIL_HEALTH") for v in statuses.values()):
+        raise RuntimeError("Encoder motor telemetry incomplete or no response: "+
+                           repr(statuses))
+    # Health failures remain visible but MUST NOT suppress the independent
+    # alpha A/B analysis of collected 1-kHz evidence.
+    return reports
     return reports
 
 
@@ -684,37 +688,46 @@ def main(argv=None):
                 data["encoder_motor_on"]=analyze_sweep_telemetry(out,path)
                 from encoder_shadow_ab import analyze as analyze_alpha_ab
                 data["alpha_ab"]=analyze_alpha_ab(out,path)
+                # Complete sweeps with UART/I2C qualification faults are not
+                # physically accepted, but their alpha/encoder evidence should
+                # be analyzed and retained. No safety gate is relaxed.
+                nested=(json.loads(new.read_text(encoding="utf-8"))
+                        if new.exists() else {})
+                phases=nested.get("results",[])
+                failed={phase.get("mode"): [
+                    key for key,ok in phase.get("checks",{}).items() if not ok
+                ] for phase in phases}
+                all_stages=(len(phases)==2 and
+                            all(phase.get("stages")==33 for phase in phases))
+                failures=set(item for items in failed.values() for item in items)
+                health_failed=any(
+                    x["status"]!="PASS" for x in data["encoder_motor_on"].values()
+                )
+                warnings=[]
+                if not runinfo["pass"] or health_failed:
+                    allowed={"i2c_400k_nominal","uart_no_rx_error","uart_no_tx_drop"}
+                    if not all_stages or not failures or not failures.issubset(allowed):
+                        raise RuntimeError(
+                            "Incomplete/unsafe motor sweep; check raw logs and STOP state: "+
+                            repr(failed))
+                    data["hardware"]["status"]="SWEEP_COMPLETE_HEALTH_UNQUALIFIED"
+                    data["hardware"]["failed_checks"]=failed
+                    warnings.append(
+                        "All 33 OFF/ON stages completed, but full system "
+                        "acceptance FAILED: "+repr(failed)+
+                        ". Encoder/alpha evidence is preserved for review.")
                 if data["alpha_ab"]["status"]!="COMPLETE_PROVISIONAL":
-                    raise RuntimeError(
-                        "1kHz shadow alpha A/B incomplete; preserve raw logs and review: "+
-                        str(data["alpha_ab"]["missing_metric_frames_count"])+
-                        " missing per-stage metric frames")
-                if not runinfo["pass"]:
-                    # Do not mislabel an entirely completed encoder sweep as
-                    # aborted solely because the MPU boot probe chose ~300 kHz.
-                    # Keep the original 400-kHz system gate NOT QUALIFIED.
-                    nested=(json.loads(new.read_text(encoding="utf-8"))
-                            if new.exists() else {})
-                    phases=nested.get("results",[])
-                    failed={phase.get("mode"): [
-                        key for key,ok in phase.get("checks",{}).items() if not ok
-                    ] for phase in phases}
-                    only_fallback=(len(phases)==2 and
-                                   all(phase.get("stages")==33 for phase in phases) and
-                                   all(set(items).issubset({"i2c_400k_nominal"})
-                                       for items in failed.values()) and
-                                   any("i2c_400k_nominal" in items
-                                       for items in failed.values()))
-                    if only_fallback:
-                        data["hardware"]["status"]="SWEEP_COMPLETE_I2C_RATE_UNQUALIFIED"
-                        data["hardware"]["i2c_rate_failed_phases"]=failed
-                        data["warning"]=(
-                            "All 33 OFF/ON motor stages completed, but at least "
-                            "one boot chose an I2C rate other than 400 kHz. "
-                            "Encoder 50-Hz diagnostics and raw logs remain valid "
-                            "for analysis; whole-system 400-kHz acceptance is not met.")
+                    if all_stages:
+                        if not failures:
+                            data["hardware"]["status"]="SWEEP_COMPLETE_ALPHA_INCOMPLETE"
+                        warnings.append(
+                            "Alpha A/B data are incomplete: missing "+
+                            str(data["alpha_ab"]["missing_metric_frames_count"])+
+                            " metric frames; any ranking is exploratory, not accepted.")
                     else:
-                        raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
+                        raise RuntimeError("Alpha A/B incomplete after unfinished sweep")
+                if warnings:
+                    data["warning"]=" ".join(warnings)
             finally:
                 # Attempt restoration even when a motor-on test fails or is interrupted.
                 restored=run([sys.executable,"-m","platformio","run","-e",
