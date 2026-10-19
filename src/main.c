@@ -70,6 +70,51 @@ static void HandleBleCommand(char c)
     }
 }
 
+#if defined(ENCODER_ALPHA_AB_DIAG)
+/* Only called in main, never from TIM11. Six short metrics frames per stage,
+ * scheduled across subsequent main iterations to protect UART DMA queue. */
+static void Encoder_LogShadowMetric(uint32_t now, uint32_t stage,
+                                    uint8_t state, uint8_t line,
+                                    const Encoder_ShadowSnapshot_t *snap)
+{
+    const uint32_t *arr;
+    uint32_t n;
+    uint8_t wheel = line / 3U;
+    uint8_t metric = line % 3U;
+    if (wheel == 0U) {
+        arr = metric == 0U ? snap->window_abs_error_left :
+              metric == 1U ? snap->transient_abs_error_left :
+                             snap->variation_left;
+    } else {
+        arr = metric == 0U ? snap->window_abs_error_right :
+              metric == 1U ? snap->transient_abs_error_right :
+                             snap->variation_right;
+    }
+    n = metric == 1U ? snap->valid_reference_ticks : snap->window_ticks;
+    UART_Printf("SYS_AM,ms=%lu,id=%lu,state=%u,w=%u,m=%u,n=%lu,x0=%lu,x1=%lu,x2=%lu,x3=%lu,x4=%lu,x5=%lu,x6=%lu\r\n",
+                (unsigned long)now, (unsigned long)stage,
+                (unsigned)state, (unsigned)wheel, (unsigned)metric,
+                (unsigned long)n, (unsigned long)arr[0],
+                (unsigned long)arr[1], (unsigned long)arr[2],
+                (unsigned long)arr[3], (unsigned long)arr[4],
+                (unsigned long)arr[5], (unsigned long)arr[6]);
+}
+static void Encoder_LogShadowInstant(uint32_t now,
+                                     const Encoder_ShadowSnapshot_t *snap)
+{
+    uint8_t w;
+    for (w = 0U; w < 2U; ++w) {
+        const int32_t *a = w == 0U ? snap->alpha_left : snap->alpha_right;
+        const int32_t *box = w == 0U ? snap->box_left : snap->box_right;
+        UART_Printf("SYS_AB,ms=%lu,w=%u,a05=%ld,a10=%ld,a20=%ld,a30=%ld,a40=%ld,a60=%ld,a80=%ld,b5=%ld,b10=%ld,b20=%ld\r\n",
+                    (unsigned long)now, (unsigned)w,
+                    (long)a[0], (long)a[1], (long)a[2],
+                    (long)a[3], (long)a[4], (long)a[5], (long)a[6],
+                    (long)box[0], (long)box[1], (long)box[2]);
+    }
+}
+#endif
+
 int main(void)
 {
     uint32_t last_debug_ms = 0;
@@ -77,6 +122,13 @@ int main(void)
     uint32_t last_system_diag_ms = 0U;
 #if defined(ENCODER_PROFILE_DIAG)
     uint32_t last_encoder_diag_ms = 0U;
+#if defined(ENCODER_ALPHA_AB_DIAG)
+    uint32_t last_shadow_diag_ms = 0U, shadow_last_emit_ms = 0U;
+    uint32_t shadow_completed_stage = 0U;
+    uint8_t shadow_completed_state = 0U;
+    uint8_t shadow_metric_next = 6U;
+    Encoder_ShadowSnapshot_t shadow_completed;
+#endif
 #endif
     uint32_t last_ir_value_ms = 0U;
     uint32_t last_ir_value_scan = 0U;
@@ -219,6 +271,16 @@ int main(void)
                 uint32_t dt_ms = last_sweep_log_ms ?
                     (uint32_t)(now - last_sweep_log_ms) : 0U;
                 Motor_GetAppliedPairPermille(&applied_l, &applied_r);
+#if defined(ENCODER_ALPHA_AB_DIAG)
+                if (last_sweep_stage != 0xFFFFFFFFUL) {
+                    Encoder_GetShadowSnapshot(&shadow_completed);
+                    shadow_completed_stage = last_sweep_stage;
+                    shadow_completed_state = last_sweep_state;
+                    shadow_metric_next = 0U;
+                    shadow_last_emit_ms = now - 25U;
+                }
+                Encoder_ShadowResetMetrics();
+#endif
                 /* state=2 denotes END OF DRIVE; state=1 with id>0
                  * denotes END OF PREVIOUS STAGE'S COAST. Both dl/dr
                  * and elapsed dt_ms refer to the preceding interval. */
@@ -238,6 +300,10 @@ int main(void)
                 last_sweep_enc_l = left;
                 last_sweep_enc_r = right;
                 last_sweep_log_ms = now;
+#if defined(ENCODER_ALPHA_AB_DIAG)
+                /* Completed interval is queued above; first frame is sent
+                 * outside this transition bundle at the normal main cadence. */
+#endif
                 if (sw.state == SWEEP_COAST) {
                     coast_start_ms = coast_last_ms = now;
                     coast_start_l = left;
@@ -395,6 +461,24 @@ int main(void)
                 last_cal_state = mpu.cal_state;
             }
         }
+#if defined(ENCODER_ALPHA_AB_DIAG)
+        /* Optional low-rate snapshots. Underlying seven EMA and three
+         * boxcar candidates advance at EVERY 1ms TIM11 tick. */
+        if ((uint32_t)(now - last_shadow_diag_ms) >= 100U) {
+            Encoder_ShadowSnapshot_t snap;
+            last_shadow_diag_ms = now;
+            Encoder_GetShadowSnapshot(&snap);
+            Encoder_LogShadowInstant(now, &snap);
+        }
+        if (shadow_metric_next < 6U &&
+            (uint32_t)(now - shadow_last_emit_ms) >= 25U) {
+            Encoder_LogShadowMetric(now, shadow_completed_stage,
+                                    shadow_completed_state,
+                                    shadow_metric_next, &shadow_completed);
+            shadow_last_emit_ms = now;
+            ++shadow_metric_next;
+        }
+#endif
 #if defined(ENCODER_PROFILE_DIAG)
         /* Opt-in encoder telemetry at ~50Hz for OFF/ON diagnostic builds.
          * Sample a coherent pair in main,
