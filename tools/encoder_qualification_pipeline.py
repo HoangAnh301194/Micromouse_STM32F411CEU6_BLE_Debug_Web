@@ -366,9 +366,9 @@ def main(argv=None):
     p.add_argument("--flash-motor-off",action="store_true")
     p.add_argument("--confirm-vm-disconnected",action="store_true")
     p.add_argument("--motor-on-sweep",action="store_true",
-                   help="DANGER: actual 0..100%% PWM OFF/ON sweep")
-    for flag in ("lifted","cutoff","high-pwm","operator-present"):
-        p.add_argument("--confirm-"+flag,action="store_true")
+                   help="Run automatic OFF/ON 33-stage motor sweep (0..100%% PWM)")
+    p.add_argument("--fixture-ready",action="store_true",
+                   help="Wheels securely lifted/guarded, independent VM cutoff available, operator present")
     p.add_argument("--self-test",action="store_true")
     args=p.parse_args(argv)
     if args.self_test:
@@ -385,9 +385,8 @@ def main(argv=None):
     if args.motor_on_sweep:
         if args.mode!="full" or args.flash_motor_off or args.confirm_vm_disconnected:
             p.error("motor-on sweep requires full without motor-off options")
-        if not all((args.confirm_lifted,args.confirm_cutoff,
-                    args.confirm_high_pwm,args.confirm_operator_present)):
-            p.error("DANGER: motor-on requires 4 explicit --confirm-* flags")
+        if not args.fixture_ready:
+            p.error("Motor test requires --fixture-ready (lifted wheels, independent VM cutoff and operator present)")
     elif args.mode!="offline" and not args.confirm_vm_disconnected:
         p.error("motor-off serial capture/flash requires --confirm-vm-disconnected")
     path=args.outdir or ROOT/"results"/("encoder_qual_"+datetime.now().strftime("%Y%m%d_%H%M%S"))
@@ -414,12 +413,14 @@ def main(argv=None):
             try:
                 runinfo=run([sys.executable,"tools/system_uart_pipeline.py",
                              "--port",args.port,"--flash","--motor-on",
+                             "--encoder-telemetry",
                              "--outdir",str(out)],"motor_on_automated",path,950)
                 data["hardware"]={"status":"PASS" if runinfo["pass"] else "FAIL",
                                   "execution":runinfo}
                 new=out/"summary.json"
                 if new.exists():
                     data["sweep"]=sweep_summary(new,path,"motor_on")
+                data["encoder_motor_on"]=analyze_sweep_telemetry(out,path)
                 if not runinfo["pass"]:
                     raise RuntimeError("Motor sweep failed; check raw logs and STOP state")
             finally:
