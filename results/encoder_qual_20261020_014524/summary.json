@@ -1,0 +1,173 @@
+{
+  "created": "2026-10-20T01:45:24",
+  "mode": "full",
+  "software": {
+    "git": {
+      "branch": "giomuadongbac",
+      "commit": "8aab5e5d2c189776e3b2a452f616a002c8b9426e",
+      "tracked_dirty": false
+    },
+    "source": {
+      "checks": {
+        "quadrature_x4": true,
+        "counter_16bit": true,
+        "encoder_on_tim11": true,
+        "motor_off_flag": true,
+        "encoder_motor_off_profile": true,
+        "encoder_telemetry_locked": true,
+        "motor_off_sticky_lock": true,
+        "positive_forward_unchanged": true
+      },
+      "pass": true,
+      "limits": [
+        "No explicit TIM3/TIM4 IC1F/IC2F hardware glitch filter configuration.",
+        "Raw PPS from one-millisecond delta: quantization 1000 counts/s.",
+        "EMA alpha 0.30 at 1 kHz is not equivalent to encoder electrical filtering.",
+        "1 Hz SYS_E cannot detect high-rate glitches or independently prove zero missed edges."
+      ]
+    },
+    "self_test": {
+      "status": "PASS",
+      "rollover_cases": 3,
+      "parser_cases": 2
+    },
+    "checks": {
+      "integration_audit": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_audit.log"
+      },
+      "integration_negative": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_negative.log"
+      },
+      "encoder_probe_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_probe_parser.log"
+      },
+      "encoder_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_native.log"
+      },
+      "pipeline_regression": {
+        "pass": true,
+        "returncode": 0,
+        "log": "pipeline_regression.log"
+      },
+      "estimator_selftest": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_selftest.log"
+      },
+      "motor_driver_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "motor_driver_native.log"
+      },
+      "sweep_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "sweep_native.log"
+      },
+      "ir_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_native.log"
+      },
+      "ir_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_parser.log"
+      },
+      "estimator_study": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_study.log"
+      },
+      "build_locked": {
+        "pass": true,
+        "returncode": 0,
+        "log": "build_locked.log"
+      }
+    },
+    "pass": true
+  },
+  "hardware": {
+    "high_rate_encoder": {
+      "status": "OBSERVED",
+      "samples": 5998,
+      "median_interval_ms": 20,
+      "max_interval_ms": 20,
+      "intervals_over_40ms": 0,
+      "pps_comparison": {
+        "L": {
+          "mean_abs_ema_vs_window_pps": 0.0,
+          "max_abs_ema_vs_window_pps": 0.0
+        },
+        "R": {
+          "mean_abs_ema_vs_window_pps": 0.03,
+          "max_abs_ema_vs_window_pps": 160.0
+        }
+      },
+      "limitations": "50Hz is decimated; these differences are not solely measurement noise or proof of missed pulses."
+    },
+    "frame_counts": {
+      "SYS_EN": 5998,
+      "SYS_T": 120,
+      "SYS_IR": 120,
+      "SYS_IRD": 120,
+      "SYS_IRC": 120,
+      "SYS_M": 120,
+      "SYS_U": 120,
+      "SYS_UQ": 120,
+      "SYS_E": 120,
+      "SYS_CAL": 7,
+      "SYS_IRV": 120
+    },
+    "seconds_between_encoder_frames": 119.0,
+    "wheels": {
+      "L": {
+        "net_counts": 0,
+        "nonzero_1s_windows": 0,
+        "max_abs_1s_delta": 0,
+        "last_filtered_pps": 0
+      },
+      "R": {
+        "net_counts": 0,
+        "nonzero_1s_windows": 2,
+        "max_abs_1s_delta": 1,
+        "last_filtered_pps": 0
+      }
+    },
+    "tim11_late_delta": 0,
+    "tim11_gap_delta": 0,
+    "mpu_i2c_error_delta": 0,
+    "mpu_timeout_delta": 0,
+    "uart_tx_drop_delta": 0,
+    "motor_lock_frames": 120,
+    "all_reported_locked": true,
+    "note": "1Hz snapshots do not qualify high-rate PPS jitter or missed edges."
+  },
+  "sweep": {
+    "status": "REVIEWED",
+    "source": "D:\\Micromouse_STM32F411CEU6_BLE_Debug_Web\\results\\system_uart_20261019_104529\\summary.json",
+    "stage_count": 66,
+    "motor_on_stages": 33,
+    "both_wheels_mismatch_mean_pct": 0.7,
+    "qualified_electrically": false,
+    "note": "Stage-average counts only; not 1ms dynamics or ground-truth RPM."
+  },
+  "upload": {
+    "pass": true,
+    "returncode": 0,
+    "log": "motor_off_upload.log"
+  },
+  "plots": [
+    "encoder_counts.png",
+    "encoder_speed.png",
+    "sweep_response.png"
+  ]
+}
