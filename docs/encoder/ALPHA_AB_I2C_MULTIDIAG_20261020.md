@@ -140,3 +140,51 @@ configuration with an unsecured robot.
   dependable 400-kHz startup.
 - Raw logs (including `.log` ignored by `.gitignore`) must be retained
   and intentionally pushed if needed for publication-grade audit.
+
+## First real multi-diagnostic run: 20261020_030513 (provisional)
+
+Source data: `results/encoder_qual_20261020_030513/`, executed at
+`697d9dd` and later uploaded. This run completed OFF and ON 33-stage
+sweeps, passed all software/build gates, and restored motor-off firmware.
+
+- OFF: `tx_drop=0`, `rx_err=0`, `TIM11 late=gap=0`.
+- ON: `tx_drop=1`, `rx_err=24`, `TIM11 late=gap=0`.
+  Hence both `uart_no_tx_drop` and `uart_no_rx_error` failed.
+- MPU: 400-kHz configured I2C in **both phases**; `i2cerr=0`,
+  `to=0`. No fallback to 296 kHz this run.
+- Max TIM11 cycles (ON): 8,965 vs 1,905 baseline `022526`.
+  Max Encoder update cycles: 8,235 vs 971 baseline. These are
+  maxima, not CPU utilization or representative duration.
+- Physical motor PWM response was recorded and encoder consistency gates
+  passed; this does **not** prove physical wheel-speed precision.
+
+**Alpha scores from this run are NOT qualified or reconstructed from the
+regular `measurements.csv`.** The old host pipeline evaluated the 50-Hz
+health before running the alpha analyzer, so `alpha_ab` is `null`
+in `030513/summary.json`. Moreover the standard `measurements.csv`
+fixed schema discarded the `SYS_AB/SYS_AM` fields. The entire original
+`off_uart.log` and `on_uart.log` was not present in the uploaded
+GitHub result folder as of this review.
+
+**Salvage without another hardware run**, if raw logs still exist locally:
+
+```powershell
+python tools/encoder_shadow_ab.py --run-dir results/encoder_qual_20261020_030513/system_uart_hardware --output-dir results/encoder_qual_20261020_030513
+```
+
+The host analyzer preserves any real alpha measurements it can parse,
+including partial data while labelling missing or duplicate metric frames.
+Then push its JSON/CSV output and the ignored original raw UART logs. If
+the raw logs have been deleted, the earlier fixed-schema
+`measurements.csv` cannot reconstruct the 1-kHz alpha metrics.
+
+**Subsequent code correction:** full pipeline no longer suppresses alpha
+analysis solely because UART health is unqualified; a completed sweep
+can be recorded as `SWEEP_COMPLETE_HEALTH_UNQUALIFIED` with strict
+exit status. A new per-phase `encoder_shadow_off.csv` /
+`encoder_shadow_on.csv` preserves parsed full SYS_AM/SYS_AB/SYS_IPB/
+SYS_IB fields in addition to the original `.log` files, making
+future uploaded results independently analyzable.
+
+No production alpha or motor/PID parameters were changed based on
+this run.
