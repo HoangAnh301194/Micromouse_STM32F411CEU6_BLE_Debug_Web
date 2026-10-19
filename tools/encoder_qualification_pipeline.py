@@ -128,7 +128,24 @@ def run(command, label, directory, timeout=300, live_output=False):
                     raise
                 finally:
                     worker.join(timeout=5)
-        return {"pass":code==0, "returncode":code,"log":path.name}
+        outcome={"pass":code==0, "returncode":code,"log":path.name}
+        if code:
+            # The full compiler log remains on disk. Surface a bounded
+            # diagnostic excerpt to the user and persist it in summary.json.
+            entries=path.read_text(encoding="utf-8",errors="replace").splitlines()
+            anchors=[i for i,line in enumerate(entries)
+                     if any(token in line.lower() for token in
+                            ("error:", "fatal error:", "failed", "exception",
+                             "undefined reference", "configurationerror"))]
+            chosen=set()
+            for idx in anchors[-8:]:
+                chosen.update(range(max(0,idx-2),min(len(entries),idx+3)))
+            chosen.update(range(max(0,len(entries)-18),len(entries)))
+            excerpt="\\n".join(entries[i] for i in sorted(chosen))
+            outcome["diagnostic_excerpt"]=excerpt[-6000:]
+            print("GATE FAILED:",label,"(exit",code,")",flush=True)
+            print(outcome["diagnostic_excerpt"],flush=True)
+        return outcome
     except (OSError,subprocess.TimeoutExpired) as ex:
         with path.open("a",encoding="utf-8") as log:
             log.write(str(ex))
@@ -517,6 +534,9 @@ def report(directory,data):
            "## Software gates"]
     for name,item in data["software"]["checks"].items():
         lines.append("- "+name+": "+("PASS" if item["pass"] else "FAIL"))
+        if not item["pass"] and item.get("diagnostic_excerpt"):
+            lines.extend(["", "### "+name+" error excerpt", "", "```text",
+                          item["diagnostic_excerpt"], "```", ""])
     lines+=["","## Static code audit"]
     lines.extend("- "+x for x in data["software"]["source"]["limits"])
     lines+=["","## Hardware / sweep",json.dumps(data.get("hardware"),indent=2,ensure_ascii=False),
