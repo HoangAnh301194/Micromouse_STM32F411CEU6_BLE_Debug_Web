@@ -10,6 +10,7 @@ import argparse
 import csv
 from datetime import datetime
 import json
+from collections import deque
 from pathlib import Path
 import statistics
 import subprocess
@@ -23,6 +24,7 @@ LIVE=("LIVE","integration_diag_full_live_96m")
 DURATION=180.0
 BAUD=115200
 CAL_TIMEOUT=60.0
+BOOT_SYS_M_TIMEOUT=15.0  # MCU must stream SYS_M at 1Hz during calibration
 RUN_TIMEOUT=190.0
 
 def parse_line(line):
@@ -133,55 +135,118 @@ class Session:
         self.last_ping=0
         self.records=[]
         self.raw=(outdir/(mode.lower()+"_uart.log")).open("w",encoding="utf-8")
+        self.last_flush=time.monotonic()
+        self.recent_raw=deque(maxlen=8)
+        self.last_progress_s=-10
+        print(f"[{mode}] Opened {port} at 115200 8N1; waiting for MPU calibration",
+              flush=True)
+
     def send(self,s):
-        self.ser.write((s+"\n").encode("ascii"));self.ser.flush()
+        self.ser.write((s+"\n").encode("ascii"))
+        self.ser.flush()
+
     def poll(self,ping=False):
         if ping and time.monotonic()-self.last_ping>=.15:
-            self.send("PING");self.last_ping=time.monotonic()
+            self.send("PING")
+            self.last_ping=time.monotonic()
         raw=self.ser.readline().decode("utf-8","replace").strip()
         if not raw:return None
         self.raw.write(f"{time.monotonic()-self.start:.4f}\t{raw}\n")
+        self.recent_raw.append(raw)
+        if time.monotonic()-self.last_flush>=1.0:
+            self.raw.flush()
+            self.last_flush=time.monotonic()
         row=parse_line(raw)
         if row:
             row["host_elapsed_s"]=round(time.monotonic()-self.start,4)
             self.records.append(row)
         return row
+
     def until(self,kind,seconds,accepted=None,ping=False):
         limit=time.monotonic()+seconds
         while time.monotonic()<limit:
             r=self.poll(ping=ping)
-            if not r or r.get("type")!=kind: continue
+            if not r:continue
+            if r.get("type")=="SOAK_BOOT_FAIL":
+                raise RuntimeError(f"{self.mode}: MCU boot failure: {r}")
+            if kind=="SOAK_DONE" and r.get("type")=="IM1":
+                secs=int(r.get("t",0))//1000
+                if secs>=self.last_progress_s+10:
+                    self.last_progress_s=secs
+                    print(f"[{self.mode}] {secs:3d}/180s"
+                          f" gyro_good={r.get('good','?')} I2Cerr={r.get('err','?')}"
+                          f" I2Cto={r.get('to','?')} TIM11gap={r.get('gap','?')}"
+                          f" UARTdrop={r.get('drop','?')}",flush=True)
+            if r.get("type")!=kind:continue
             if accepted is not None and r.get("ok")!=accepted:
                 raise RuntimeError(f"{self.mode} rejected: {r}")
             return r
-        raise TimeoutError(f"{self.mode}: no {kind} within {seconds}s")
+        raise TimeoutError(f"{self.mode}: missing {kind} within {seconds}s;"
+                           f" recent UART={list(self.recent_raw)}")
+
     def run(self):
         self.send("HELP")
-        # Capture the calibration-completed status, not simply 10 seconds
-        # since connect. USART opening can itself toggle adapter reset lines.
+        # SYS_M must emit once per second even while MPU is warming up.
+        # Fail fast on silent boot, but allow calibration retries until 60s.
         deadline=time.monotonic()+CAL_TIMEOUT
+        first_sysm_deadline=time.monotonic()+BOOT_SYS_M_TIMEOUT
+        last_cal_state=None
         while time.monotonic()<deadline:
             r=self.poll()
-            if r and r.get("type")=="SYS_M" and r.get("cal")==3:
-                break
-        else:raise TimeoutError("MPU not calibrated/valid within 60s")
+            if r:
+                if r.get("type")=="SOAK_BOOT_FAIL":
+                    raise RuntimeError(f"{self.mode}: MCU boot error: {r}")
+                if r.get("type")=="SYS_CAL":
+                    print(f"[{self.mode}] calibration transition:"
+                          f" state={r.get('state')} retries={r.get('retries')}"
+                          f" reason={r.get('reason')}",flush=True)
+                if r.get("type")=="SYS_M":
+                    first_sysm_deadline=time.monotonic()+BOOT_SYS_M_TIMEOUT
+                    cal=r.get("cal")
+                    if cal!=last_cal_state:
+                        print(f"[{self.mode}] cal_state={cal}",flush=True)
+                        last_cal_state=cal
+                    print(f"[{self.mode}] calibration: state={cal}"
+                          f" n={r.get('n')} I2Cok={r.get('i2cok')}"
+                          f" I2Cerr={r.get('i2cerr')}"
+                          f" timeout={r.get('to')} seq={r.get('seq')}",
+                          flush=True)
+                    if cal==4:
+                        raise RuntimeError(
+                            f"{self.mode}: MPU calibration FAILED; "
+                            f"status={r}; recent UART={list(self.recent_raw)}")
+                    if cal==3:
+                        print(f"[{self.mode}] MPU calibrated; preparing 180s soak",
+                              flush=True)
+                        break
+            if time.monotonic()>first_sysm_deadline:
+                raise TimeoutError(
+                    f"{self.mode}: no SYS_M in {BOOT_SYS_M_TIMEOUT:.0f}s; "
+                    "check COM port, PA9->USB RX, common GND, and MPU boot."
+                    f" Recent UART={list(self.recent_raw)}")
+        else:
+            raise TimeoutError(
+                f"{self.mode}: MPU not calibrated within {CAL_TIMEOUT:.0f}s;"
+                f" recent UART={list(self.recent_raw)}")
         if self.mode=="LIVE":
             self.send("SOAK ARM LIVE")
             self.until("SOAK_ARM",5,accepted=1)
         self.send("SOAK START")
         self.until("SOAK_ACK",5,accepted=1)
+        print(f"[{self.mode}] SOAK START accepted, measurement started",flush=True)
         done=self.until("SOAK_DONE",RUN_TIMEOUT,ping=True)
         if done.get("ok")!=1:
             raise RuntimeError(f"{self.mode}: session aborted by MCU: {done}")
-        # Drain the remaining DMA output including 1Hz health and tail records.
         end=time.monotonic()+1.0
         while time.monotonic()<end:self.poll()
         report=summarise(self.records,self.mode)
         print(self.mode,"PASS" if report["passed_telemetry_checks"] else "REVIEW",
               "samples",report["captured_60hz_samples"],
               "drift",report["yaw_drift"].get("yaw_filtered"),
-              "failed_checks",[k for k,v in report["checks"].items() if not v],flush=True)
+              "failed_checks",[k for k,v in report["checks"].items() if not v],
+              flush=True)
         return report
+
     def close(self,emergency=False):
         try:
             if emergency:self.send("!")
