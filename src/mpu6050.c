@@ -12,6 +12,7 @@
 #define MPU6050_CONFIG        0x1AU
 #define MPU6050_SMPLRT_DIV    0x19U
 #define MPU6050_GYRO_ZOUT_H   0x47U
+#define MPU6050_TEMP_OUT_H    0x41U
 #define MPU6050_INT_STATUS    0x3AU
 #define MPU6050_INT_ENABLE    0x38U
 #define MPU6050_INT_PIN_CFG   0x37U
@@ -240,6 +241,15 @@ MPU6050_Status MPU6050_Init(MPU6050_Handle_t *h)
     h->dma_running = 0U;
     h->last_dma_req_us = 0U;
     h->sample_phase = 0U;
+#if defined(DIAG_SOAK_180S)
+    h->temperature_mc = 0;
+    h->temperature_last_ms = millis();
+    h->temperature_reads = 0U;
+    h->temperature_errors = 0U;
+    h->temperature_timeouts = 0U;
+    h->temperature_valid = 0U;
+    h->temperature_pending = 0U;
+#endif
     h->last_status_ready = 0U;
     h->status_reads = 0U;
     h->status_ready_reads = 0U;
@@ -501,6 +511,28 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
     I2C_Status status, start;
     if (!h) return MPU6050_ERROR;
 
+#if defined(DIAG_SOAK_180S)
+    /* 1Hz optional temperature transaction shares the SAME async I2C1
+     * state machine. No concurrent transaction, blocking read, or ISR work.
+     * This code must not interpret TEMP bytes as gyro samples. */
+    if (h->sample_phase == 5U) {
+        status = I2C_Read2Async_Poll(bytes, &duration_us);
+        if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
+        h->sample_phase = 0U;
+        if (status == I2C_OK) {
+            int16_t temp_raw=(int16_t)(((uint16_t)bytes[0]<<8)|bytes[1]);
+            h->temperature_mc = 36530L + ((int32_t)temp_raw*1000L)/340L;
+            h->temperature_valid = 1U;
+            h->temperature_reads++;
+            h->temperature_last_ms = millis();
+        } else {
+            h->temperature_errors++;
+            if (status == I2C_TIMEOUT) h->temperature_timeouts++;
+        }
+        return MPU6050_OK;
+    }
+#endif
+
     if (h->sample_phase == 1U || h->sample_phase == 2U) {
         status = I2C_Read2Async_Poll(bytes, &duration_us);
         if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
@@ -617,6 +649,13 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         }
 #endif
         h->sample_phase = 0U;
+#if defined(DIAG_SOAK_180S)
+        /* Request temperature after processing this gyro sample; actual
+         * I2C read begins later once the previous STOP frees the bus. */
+        if (h->last_status_ready &&
+            (uint32_t)(millis()-h->temperature_last_ms)>=1000U)
+            h->temperature_pending = 1U;
+#endif
 
         if (!h->calibrating) MPU6050_TrackRaw(h, raw, now);
         if (h->calibrating) {
@@ -742,6 +781,23 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         return MPU6050_OK;
     }
 
+#if defined(DIAG_SOAK_180S)
+    /* Service at most one short TEMP_OUT_H/L read per second between
+     * gyro samples. If I2C busy, defer and do NOT block the 1kHz TIM11. */
+    if (h->sample_phase == 0U && h->temperature_pending) {
+        start = I2C_Read2Async_Start(h->address, MPU6050_TEMP_OUT_H);
+        if (start == I2C_OK) {
+            h->temperature_pending = 0U;
+            h->sample_phase = 5U;
+            return MPU6050_OK;
+        }
+        if (start != I2C_BUSY) {
+            h->temperature_pending = 0U;
+            h->temperature_errors++;
+            return MPU6050_ERROR;
+        }
+    }
+#endif
     now = micros();
 #if defined(MPU_TIM11_TICK_SCHED)
     /* A tick is an opportunity, not a queue. Main starts the next
