@@ -12,6 +12,9 @@
 #include "integration_sweep.h"
 #if defined(INTEGRATION_DIAG)
 #include "integration_serial.h"
+#if defined(DIAG_SOAK_180S)
+#include "soak_diag.h"
+#endif
 #if defined(UART_PROFILE_DIAG)
 #include "uart_bench.h"
 #endif
@@ -125,6 +128,9 @@ int main(void)
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
     Sweep_Init();
+#if defined(DIAG_SOAK_180S)
+    Soak_Init();
+#endif
 #if defined(UART_PROFILE_DIAG)
     UART_Bench_Init();
 #endif
@@ -170,6 +176,9 @@ int main(void)
 #if defined(INTEGRATION_DIAG)
         /* RX IRQ only queues bytes; command parsing is budgeted in main. */
         IntegrationSerial_Poll(&mpu, now);
+#if defined(DIAG_SOAK_180S)
+        Soak_Poll(&mpu, now);
+#endif
 #if defined(UART_PROFILE_DIAG)
         /* Main-only TX generator, never in TIM11 or USART ISR. */
         UART_Bench_Poll(now, &mpu);
