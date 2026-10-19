@@ -47,7 +47,7 @@ If the correct motor-locked diagnostic image is **already installed**, omit `--f
 **C. Explicitly authorized whole-platform sweep with motor power, not a default follow-up.** This is provided for after separately confirming the mechanical/electrical test fixture and accepting 0..100% PWM. **Do not execute casually**:
 
 ```powershell
-python tools/encoder_qualification_pipeline.py --mode full --port COM7 --motor-on-sweep --confirm-lifted --confirm-cutoff --confirm-high-pwm --confirm-operator-present
+python tools/encoder_qualification_pipeline.py --mode full --port COM7 --motor-on-sweep --fixture-ready
 ```
 
 This runs static/native tests, a safe OFF phase, and then the previously qualified diagnostic ON stages through `system_uart_pipeline.py`. It needs a connected ST-Link and a human operator present throughout. No source-level auto-tuning takes place.
@@ -90,3 +90,17 @@ Typical outputs:
 - Python 3 (host), gcc for C native regressions, PlatformIO for build/flash, pyserial for UART.
 - Matplotlib is **not required** by this script. CSV can be plotted offline later.
 - Unit-only quick check: `python tools/encoder_qualification_pipeline.py --self-test`.
+
+## Motor-driven Encoder benchmark (no manual turning)
+
+One command after wheel fixture setup: upload encoder OFF, run 33 shadow stages; upload encoder ON, run the same 33 stages at 0,10,...,100% PWM by LEFT / RIGHT / BOTH; record 50-Hz encoder data during both; analyze health and stage response; then attempt restoring motor-locked OFF firmware.
+
+Use `--motor-on-sweep --fixture-ready` (command above). The former already authorizes up to 100% PWM. No separate high-PWM confirmation and no manual rotation or timing required. The fixture-ready flag means the wheels are securely lifted/guarded, an independent physical VM cutoff exists, and the operator remains present.
+
+Hardware telemetry during the ON sweep is collected via `integration_diag_encoder_motor_on_96m`. This profile inherits the existing motor-on serial/MPU heartbeat/fault-latch state machine and adds decimated `SYS_EN` samples (~50 Hz). The equivalent encoder OFF profile also emits `SYS_EN`.
+
+Additional outputs: `encoder_motor_off_50hz.csv`, `encoder_motor_on_50hz.csv`, and (with matplotlib) `encoder_motor_off_speed.png`, `encoder_motor_on_speed.png`. These store window-PPS, existing EMA PPS, stage/group/PWM labels and system-health summaries. CSV/logs are written to new result paths. No PID/autotuning changes are made.
+
+The existing hard deadline, serial STOP and 750-ms heartbeat are retained. A software STOP or post-test flashing is never a substitute for an independent physical VM cutoff.
+
+Remaining open: true missed-pulse rate, external RPM accuracy, PWM electrical waveform, current, thermal limits, PID speed closed-loop qualification. None can be inferred solely from MCU timer counts.
