@@ -60,3 +60,16 @@ host regression logs, simulated estimator study, and archived PWM review.
 The real 33-stage OFF/ON sweep reaches **100% PWM**. It is a separately
 gated opt-in, never part of default qualification. Follow the
 [Encoder pipeline safety protocol](../docs/encoder/QUALIFICATION_PIPELINE_20261020.md).
+
+### Encoder motor-driven sweep (no hand turning)
+
+With all wheels securely lifted/guarded, an independent VM cutoff available and
+an operator present, the following single command runs source/native/build checks,
+ST-Link flash, the historical 33-stage OFF and ON sweeps up to 100% PWM,
+50-Hz encoder capture and automatic report/plots:
+
+    python tools/encoder_qualification_pipeline.py --mode full --port COM7 --motor-on-sweep --fixture-ready
+
+The `--motor-on-sweep` option includes 100% PWM; there is no separate
+high-PWM acknowledgment. Keep the physical motor supply cutoff accessible.
+See docs/encoder/QUALIFICATION_PIPELINE_20261020.md for test limitations.
