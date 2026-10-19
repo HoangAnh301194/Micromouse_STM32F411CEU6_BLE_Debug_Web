@@ -1,0 +1,270 @@
+{
+  "reports": [
+    {
+      "mode": "STILL",
+      "passed_telemetry_checks": true,
+      "checks": {
+        "completed_180s": true,
+        "samples_60hz_at_least_95pct": true,
+        "no_telemetry_gaps_over_100ms": true,
+        "fresh_gyro_at_least_900hz": true,
+        "no_gyro_stale": true,
+        "no_i2c_errors": true,
+        "no_tim11_gaps": true,
+        "ir_adc_scans_present": true,
+        "no_uart_tx_drop_or_rx_error": true,
+        "pid_load_executed": true,
+        "motor_control_requested_in_live": true,
+        "live_encoder_pulses_observed": true,
+        "gyro_sequence_monotonic": true,
+        "no_60hz_generator_stalls_over_40ms": true
+      },
+      "captured_60hz_samples": 10799,
+      "captured_1hz_health": 179,
+      "captured_1hz_noise": 179,
+      "observed_window_s": 179.971,
+      "mean_telemetry_gap_ms": 16.667,
+      "worst_telemetry_gap_ms": 17,
+      "seq_increment_nonpositive": 0,
+      "telemetry_gaps_over_25ms": 0,
+      "sample_age_max_us": 1609,
+      "yaw_drift": {
+        "yaw_filtered": {
+          "start_deg": 0.0,
+          "end_deg": 0.003,
+          "drift_deg": 0.003,
+          "drift_deg_per_min": 0.001
+        },
+        "yaw_no_deadzone": {
+          "start_deg": -0.001,
+          "end_deg": 0.456,
+          "drift_deg": 0.457,
+          "drift_deg_per_min": 0.152358
+        },
+        "yaw_raw_integrated": {
+          "start_deg": -0.001,
+          "end_deg": 0.457,
+          "drift_deg": 0.458,
+          "drift_deg_per_min": 0.152691
+        }
+      },
+      "gyro_noise_mean_corrected_dps_mean": 0.00254,
+      "gyro_noise_std_dps_max": 0.178,
+      "raw_sample_gap_max_us": 1810,
+      "raw_sample_gap_min_us": 243,
+      "raw_equal_pairs": 133608,
+      "last_health": {
+        "type": "IM1",
+        "t": 179000,
+        "good": 178681,
+        "seq": 179539,
+        "stale": 0,
+        "err": 0,
+        "to": 0,
+        "nr": 63636,
+        "xfer": 134,
+        "ir": 188867,
+        "late": 0,
+        "gap": 0,
+        "irqcy": 968,
+        "q": 408,
+        "drop": 0,
+        "rxerr": 0,
+        "host_elapsed_s": 188.0984
+      },
+      "last_pid": {
+        "type": "IMPID",
+        "t": 179000,
+        "n": 0,
+        "maxcy": 0,
+        "e": 0,
+        "u": 0,
+        "cmdL": 0,
+        "cmdR": 0,
+        "encL": 0,
+        "encR": 0,
+        "host_elapsed_s": 188.1175
+      },
+      "initial_i2c_probe": [
+        {
+          "id": 0,
+          "a": 0,
+          "w": 0,
+          "v": 104,
+          "selected": 0
+        },
+        {
+          "id": 1,
+          "a": 255,
+          "w": 255,
+          "v": 255,
+          "selected": 0
+        },
+        {
+          "id": 2,
+          "a": 255,
+          "w": 255,
+          "v": 255,
+          "selected": 0
+        },
+        {
+          "id": 3,
+          "a": 255,
+          "w": 255,
+          "v": 255,
+          "selected": 0
+        }
+      ],
+      "i2c_nominal_hz": 400000,
+      "completion": {
+        "type": "SOAK_DONE",
+        "ok": 1,
+        "reason": 0,
+        "ms": 180000,
+        "seq": 858,
+        "good": 9847,
+        "host_elapsed_s": 189.0906
+      },
+      "limitations": [
+        "Yaw drift is an IMU relative-heading observation, not external angular truth.",
+        "In LIVE mode vibration and physical yaw may contribute; do not label it stationary bias.",
+        "60Hz UART does not transport all 1000Hz IMU samples; on-device counters capture intervening faults.",
+        "No external voltage, current, temperature, mechanical displacement or PWM waveform measurements."
+      ]
+    },
+    {
+      "mode": "SHADOW",
+      "passed_telemetry_checks": true,
+      "checks": {
+        "completed_180s": true,
+        "samples_60hz_at_least_95pct": true,
+        "no_telemetry_gaps_over_100ms": true,
+        "fresh_gyro_at_least_900hz": true,
+        "no_gyro_stale": true,
+        "no_i2c_errors": true,
+        "no_tim11_gaps": true,
+        "ir_adc_scans_present": true,
+        "no_uart_tx_drop_or_rx_error": true,
+        "pid_load_executed": true,
+        "motor_control_requested_in_live": true,
+        "live_encoder_pulses_observed": true,
+        "gyro_sequence_monotonic": true,
+        "no_60hz_generator_stalls_over_40ms": true
+      },
+      "captured_60hz_samples": 10799,
+      "captured_1hz_health": 179,
+      "captured_1hz_noise": 179,
+      "observed_window_s": 179.97,
+      "mean_telemetry_gap_ms": 16.667,
+      "worst_telemetry_gap_ms": 17,
+      "seq_increment_nonpositive": 0,
+      "telemetry_gaps_over_25ms": 0,
+      "sample_age_max_us": 1533,
+      "yaw_drift": {
+        "yaw_filtered": {
+          "start_deg": 0.0,
+          "end_deg": -0.011,
+          "drift_deg": -0.011,
+          "drift_deg_per_min": -0.003667
+        },
+        "yaw_no_deadzone": {
+          "start_deg": -0.001,
+          "end_deg": 0.8,
+          "drift_deg": 0.801,
+          "drift_deg_per_min": 0.267045
+        },
+        "yaw_raw_integrated": {
+          "start_deg": -0.001,
+          "end_deg": 0.8,
+          "drift_deg": 0.801,
+          "drift_deg_per_min": 0.267045
+        }
+      },
+      "gyro_noise_mean_corrected_dps_mean": 0.00446,
+      "gyro_noise_std_dps_max": 0.319,
+      "raw_sample_gap_max_us": 2221,
+      "raw_sample_gap_min_us": 240,
+      "raw_equal_pairs": 128624,
+      "last_health": {
+        "type": "IM1",
+        "t": 179000,
+        "good": 178740,
+        "seq": 179601,
+        "stale": 0,
+        "err": 0,
+        "to": 0,
+        "nr": 61814,
+        "xfer": 133,
+        "ir": 188866,
+        "late": 0,
+        "gap": 0,
+        "irqcy": 2306,
+        "q": 377,
+        "drop": 0,
+        "rxerr": 0,
+        "host_elapsed_s": 188.5037
+      },
+      "last_pid": {
+        "type": "IMPID",
+        "t": 179000,
+        "n": 178999,
+        "maxcy": 1309,
+        "e": -20811,
+        "u": -19601,
+        "cmdL": 0,
+        "cmdR": 0,
+        "encL": 0,
+        "encR": 0,
+        "host_elapsed_s": 188.5257
+      },
+      "initial_i2c_probe": [
+        {
+          "id": 0,
+          "a": 0,
+          "w": 0,
+          "v": 104,
+          "selected": 0
+        },
+        {
+          "id": 1,
+          "a": 255,
+          "w": 255,
+          "v": 255,
+          "selected": 0
+        },
+        {
+          "id": 2,
+          "a": 255,
+          "w": 255,
+          "v": 255,
+          "selected": 0
+        },
+        {
+          "id": 3,
+          "a": 255,
+          "w": 255,
+          "v": 255,
+          "selected": 0
+        }
+      ],
+      "i2c_nominal_hz": 400000,
+      "completion": {
+        "type": "SOAK_DONE",
+        "ok": 1,
+        "reason": 0,
+        "ms": 180000,
+        "seq": 861,
+        "good": 9851,
+        "host_elapsed_s": 189.496
+      },
+      "limitations": [
+        "Yaw drift is an IMU relative-heading observation, not external angular truth.",
+        "In LIVE mode vibration and physical yaw may contribute; do not label it stationary bias.",
+        "60Hz UART does not transport all 1000Hz IMU samples; on-device counters capture intervening faults.",
+        "No external voltage, current, temperature, mechanical displacement or PWM waveform measurements."
+      ]
+    }
+  ],
+  "hardware_physical_qualified": false,
+  "note": "LIVE means bounded low-PWM actual motor commands. STATIC and SHADOW keep hardware outputs locked."
+}
