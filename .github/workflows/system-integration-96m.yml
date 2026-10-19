@@ -76,3 +76,5 @@ jobs:
         run: python -m platformio run -e integration_diag_full_shadow_96m
       - name: Build explicitly armed bounded live motor diagnostic (NO FLASH)
         run: python -m platformio run -e integration_diag_full_live_96m
+      - name: Build 80-100pct brief PWM motor/IMU temperature diagnostic (NO FLASH)
+        run: python -m platformio run -e integration_diag_full_live_high_pwm_96m
