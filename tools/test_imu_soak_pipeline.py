@@ -8,9 +8,9 @@ base=Path(__file__).resolve().parent
 p=subprocess.run([sys.executable,str(base/"imu_soak_pipeline.py"),"--help"],
                  capture_output=True,text=True,timeout=8,check=True)
 assert "--motor-live" in p.stdout and "--high-pwm" in p.stdout and "--review" in p.stdout
-assert mod.parse_line("IMDRV,t=200,stage=1,setL=800,appL=800,encL=123")["appL"]==800
 spec=importlib.util.spec_from_file_location("soak",base/"imu_soak_pipeline.py")
 mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+assert mod.parse_line("IMDRV,t=200,stage=1,setL=800,appL=800,encL=123")["appL"]==800
 assert mod.parse_line("IM6,t=100,s=42,y=-1234,n=-567,r=-890,z=23,a=500")["y"]==-1234
 assert mod.parse_line("SOAK_DONE,ok=1,reason=0,ms=180000")["ok"]==1
 for mode in ("STILL","SHADOW","LIVE"):
