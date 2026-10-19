@@ -104,3 +104,12 @@ Additional outputs: `encoder_motor_off_50hz.csv`, `encoder_motor_on_50hz.csv`, a
 The existing hard deadline, serial STOP and 750-ms heartbeat are retained. A software STOP or post-test flashing is never a substitute for an independent physical VM cutoff.
 
 Remaining open: true missed-pulse rate, external RPM accuracy, PWM electrical waveform, current, thermal limits, PID speed closed-loop qualification. None can be inferred solely from MCU timer counts.
+
+## I2C rate fallback observed in 2026-10-20 motor-on log
+
+- Historical diagnostic ON at `results/encoder_qual_20261020_014805/` recorded `iclk=296296` in `SYS_U` throughout; OFF was `400000`. `iclk` is configured nominal STM32 I2C timing, not a physical SCL measurement.
+- `MPU6050_Init()` probes 400, 300, 200, 100 kHz; it requires both address ACK and WHO_AM_I=0x68. The 296296 value is 48 MHz / (3 * 54), the integer-divider result for the 300-kHz fallback choice.
+- The old 400-kHz host acceptance check is intentionally retained. Successful MPU calibration and zero I2C read errors at ~300 kHz do not prove 400-kHz stability.
+- The encoder-only ON/OFF diagnostic profiles now emit `SYS_IPB` (~1 Hz) with `idx`, `mode`, and each trial's `aN` address status, `wN` WHO read status, and `idN` WHO value (N=0 for 400k, N=1 for 300k). The next sweep will show which 400-kHz initialization probe failed; it is not assumed to be motor EMI because boot/probing precedes the PWM drive.
+- When all 33-stage OFF/ON checks and 50-Hz Encoder records complete but the only system failure is `i2c_400k_nominal`, the wrapper reports `SWEEP_COMPLETE_I2C_RATE_UNQUALIFIED` with encoder measurements retained and an I2C warning. It still returns a nonzero exit status, preserving strict system qualification.
+- Do not force I2C to 400 kHz, change pull-ups or weaken MPU bootstrap recovery solely from this single fallback run. Analyze `SYS_IPB` first.
