@@ -1,0 +1,6 @@
+method,window_ms,steady_mae_pps,steady_rmse_pps,measurement_window_delay_bound_ms
+EMA 1ms,1,82.189,96.159,1
+boxcar,1,288.91,380.049,1
+boxcar,5,75.141,86.677,5
+boxcar,10,31.611,39.761,10
+boxcar,20,16.863,20.532,20
