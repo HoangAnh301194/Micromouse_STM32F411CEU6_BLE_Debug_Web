@@ -78,6 +78,14 @@ def summarise(items, mode):
            latest(pid,"n",0)>=int(180*1000*.95),
        "motor_control_requested_in_live": mode!="LIVE" or any(
            x.get("cmdL",0)>0 or x.get("cmdR",0)>0 for x in pid),
+       "live_encoder_pulses_observed": mode!="LIVE" or (
+           bool(pid) and (
+               max((r.get("encL",0) for r in pid),default=0) -
+               min((r.get("encL",0) for r in pid),default=0) >= 500 or
+               max((r.get("encR",0) for r in pid),default=0) -
+               min((r.get("encR",0) for r in pid),default=0) >= 500)),
+       "gyro_sequence_monotonic":bool(seqs) and all(z>0 for z in seqs),
+       "no_60hz_generator_stalls_over_40ms":bool(gaps) and max(gaps)<=40,
     }
     probes=[{k:v for k,v in x.items() if k not in ("host_elapsed_s","type")}
             for x in items if x.get("type")=="I2CP"]
@@ -89,6 +97,7 @@ def summarise(items, mode):
         "mean_telemetry_gap_ms":round(statistics.mean(gaps),3) if gaps else None,
         "worst_telemetry_gap_ms":max(gaps,default=None),
         "seq_increment_nonpositive":sum(x<=0 for x in seqs),
+        "telemetry_gaps_over_25ms":sum(x>25 for x in gaps),
         "sample_age_max_us":max((x.get("a",0) for x in samples),default=None),
         "yaw_drift":changes,
         "gyro_noise_mean_corrected_dps_mean":round(
