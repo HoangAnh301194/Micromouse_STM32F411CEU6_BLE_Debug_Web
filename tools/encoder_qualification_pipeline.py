@@ -429,6 +429,7 @@ def main(argv=None):
                              "restore_motor_off",path,360)
                 data["restored_motor_off"]=restored
                 if not restored["pass"]:
+                    data["error"]="Motor-off restoration failed; independently disconnect VM and verify firmware"
                     print("WARNING: motor-off restoration failed; disconnect VM and verify firmware.",
                           file=sys.stderr)
 
