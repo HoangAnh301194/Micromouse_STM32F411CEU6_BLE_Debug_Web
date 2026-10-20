@@ -64,6 +64,57 @@ int main(void) {
     near(Encoder_GetLeftSpeedPPS(),0.0f);
     near(Encoder_GetRightSpeedPPS(),0.0f);
 
+#if defined(ENCODER_ALPHA_AB_DIAG)
+    /* The 1-ms IRQ producer must NOT advance the shadow EMA directly. */
+    {
+        Encoder_ShadowSnapshot_t before, after;
+        Encoder_ShadowQueueStats_t q;
+        Encoder_Reset();
+        TIM4->CNT = (uint16_t)(TIM4->CNT - 2U);
+        TIM3->CNT = (uint16_t)(TIM3->CNT - 3U);
+        Encoder_Update(0.001f);
+        Encoder_GetShadowQueueStats(&q);
+        assert(q.produced == 1U && q.consumed == 0U);
+        assert(q.pending == 1U && q.overflow == 0U);
+        Encoder_GetShadowSnapshot(&before);
+        assert(before.ticks == 0U && before.alpha_left[0] == 0);
+        assert(Encoder_ShadowService(1U) == 1U);
+        Encoder_GetShadowSnapshot(&after);
+        assert(after.ticks == 1U && after.alpha_left[0] > 0);
+        Encoder_GetShadowQueueStats(&q);
+        assert(q.pending == 0U && q.consumed == 1U);
+
+        /* Bounded service does not overrun its caller budget. */
+        for (int i = 0; i < 5; ++i) {
+            TIM4->CNT = (uint16_t)(TIM4->CNT - 2U);
+            Encoder_Update(0.001f);
+        }
+        assert(Encoder_ShadowService(2U) == 2U);
+        Encoder_GetShadowQueueStats(&q);
+        assert(q.pending == 3U);
+        Encoder_ShadowMarkStageBoundary();
+        Encoder_GetShadowQueueStats(&q);
+        assert(q.stage_boundary_lag == 1U);
+        assert(Encoder_ShadowService(16U) == 3U);
+
+        /* Never silently overwrite unconsumed encoder samples. */
+        Encoder_Reset();
+        for (int i = 0; i < ENCODER_SHADOW_QUEUE_CAPACITY + 8; ++i) {
+            TIM4->CNT = (uint16_t)(TIM4->CNT - 1U);
+            Encoder_Update(0.001f);
+        }
+        Encoder_GetShadowQueueStats(&q);
+        assert(q.pending == ENCODER_SHADOW_QUEUE_CAPACITY - 1U);
+        assert(q.overflow == 9U);
+        assert(q.produced == ENCODER_SHADOW_QUEUE_CAPACITY - 1U);
+        assert(Encoder_ShadowService(1000U) ==
+               ENCODER_SHADOW_QUEUE_CAPACITY - 1U);
+        Encoder_GetShadowQueueStats(&q);
+        assert(q.pending == 0U);
+        Encoder_Reset();
+    }
+#endif
+
     /* Many wraps with small real per-tick deltas must accumulate correctly. */
     {
         uint16_t ctr=(uint16_t)TIM4->CNT;
@@ -71,6 +122,10 @@ int main(void) {
             ctr=(uint16_t)(ctr-100U);
             TIM4->CNT=ctr;
             Encoder_Update(0.001f);
+#if defined(ENCODER_ALPHA_AB_DIAG)
+            /* Simulates bounded main service after each IRQ tick. */
+            assert(Encoder_ShadowService(1U)==1U);
+#endif
         }
         assert(Encoder_GetLeftCount()==1000000);
     }
