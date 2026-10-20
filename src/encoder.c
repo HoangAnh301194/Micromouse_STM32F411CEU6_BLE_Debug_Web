@@ -18,7 +18,8 @@ static int16_t last_right_raw = 0;
 #error "Encoder alpha A/B requires diagnostic Encoder integration profile"
 #endif
 static const float shadow_alpha[ENCODER_SHADOW_ALPHAS] = {
-    0.05f, 0.10f, 0.20f, 0.30f, 0.40f, 0.60f, 0.80f
+    0.05f, 0.08f, 0.10f, 0.12f, 0.15f,
+    0.20f, 0.30f, 0.40f, 0.60f, 0.80f
 };
 static float shadow_l[ENCODER_SHADOW_ALPHAS];
 static float shadow_r[ENCODER_SHADOW_ALPHAS];
