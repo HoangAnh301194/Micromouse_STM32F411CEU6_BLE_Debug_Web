@@ -408,6 +408,19 @@ int main(void)
                         (unsigned long)Board_GetHsiTrim(),
                         (unsigned long)Board_GetClockFault(),
                         (unsigned long)I2C_GetConfiguredSclHz());
+#if defined(ENCODER_ALPHA_AB_DIAG)
+            {
+                UART_ProfileStats_t diag;
+                UART_GetProfileStats(&diag);
+                UART_Printf("SYS_UR,ms=%lu,err=%lu,ore=%lu,fe=%lu,ne=%lu,ov=%lu\r\n",
+                            (unsigned long)now,
+                            (unsigned long)diag.rx_errors,
+                            (unsigned long)diag.rx_overrun_errors,
+                            (unsigned long)diag.rx_framing_errors,
+                            (unsigned long)diag.rx_noise_errors,
+                            (unsigned long)diag.rx_overflow);
+            }
+#endif
 #if defined(ENCODER_PROFILE_DIAG)
 #if defined(ENCODER_ALPHA_AB_DIAG)
             /* Boot probe is retained, not changing each second. Emit every
