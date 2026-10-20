@@ -234,6 +234,9 @@ class PhaseSession:
         self.name = name
         self.start = time.monotonic()
         self.last_ping = 0.0
+        self.ping_sent_count = 0
+        self.max_ping_gap_ms = 0.0
+        self.max_ping_write_ms = 0.0
         self.rows = []
         self.raw = (outdir / (name.lower() + "_uart.log")).open("w", encoding="utf-8")
 
@@ -243,8 +246,16 @@ class PhaseSession:
 
     def poll(self, heartbeat=False):
         if heartbeat and time.monotonic() - self.last_ping >= 0.15:
+            before = time.monotonic()
+            if self.ping_sent_count:
+                self.max_ping_gap_ms = max(
+                    self.max_ping_gap_ms, (before-self.last_ping)*1000)
             self.send("PING")
-            self.last_ping = time.monotonic()
+            after = time.monotonic()
+            self.max_ping_write_ms = max(
+                self.max_ping_write_ms, (after-before)*1000)
+            self.last_ping = after
+            self.ping_sent_count += 1
         raw = self.ser.readline().decode("utf-8", errors="replace").strip()
         if not raw: return None
         self.raw.write(f"{time.monotonic()-self.start:.4f}\t{raw}\n")
@@ -484,6 +495,14 @@ def main():
                 session=PhaseSession(args.port,args.baud,mode,outdir)
                 session.run_phase()
                 score=evaluate(session.rows,mode)
+                score["host_heartbeat"]={
+                    "ping_sent":session.ping_sent_count,
+                    "ping_ack_received":sum(
+                        row.get("type")=="CMD_PING" for row in session.rows),
+                    "max_inter_ping_gap_ms":round(session.max_ping_gap_ms,2),
+                    "max_ping_write_ms":round(session.max_ping_write_ms,2),
+                    "note":"Measured by Python monotonic clock; an ACK logged "
+                           "does not guarantee MCU processed every ping."}
                 rows[mode]=session.rows
                 results.append(score)
                 print(mode, "PASS" if score["software_pass"] else "UNQUALIFIED",
@@ -498,6 +517,14 @@ def main():
                     # evaluate() will mark the truncated sweep NOT qualified.
                     try:
                         aborted=evaluate(session.rows, mode)
+                        aborted["host_heartbeat"]={
+                            "ping_sent":session.ping_sent_count,
+                            "ping_ack_received":sum(
+                                row.get("type")=="CMD_PING" for row in session.rows),
+                            "max_inter_ping_gap_ms":round(session.max_ping_gap_ms,2),
+                            "max_ping_write_ms":round(session.max_ping_write_ms,2),
+                            "note":"Host-local timing only; link-fault cause "
+                                   "still requires command/ACK correlation."}
                         aborted["host_abort"]={
                             "exception":str(exc),
                             "last_firmware_fault":next(
