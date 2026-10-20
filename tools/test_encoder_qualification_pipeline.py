@@ -65,7 +65,7 @@ class EncoderHostTests(unittest.TestCase):
                 frames=[
                     "0.0\tSYS_M,ms=0,locked=1,i2cerr=0,to=0",
                     "0.0\tSYS_T,ms=0,late=0,gap=0",
-                    "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0",
+                    "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0",
                     "0.0\tSYS_IPB,ms=0,idx=1,mode=2,a0=1,w0=255,id0=255,a1=0,w1=0,id1=104,a2=255,w2=255,id2=255,a3=255,w3=255,id3=255",
                     "0.0\tSYS_STEP,ms=0,id=25,group=2,state=1,duty=700",
                 ]
@@ -80,7 +80,7 @@ class EncoderHostTests(unittest.TestCase):
                                    200 if phase=="on" else 0))
                 frames += [
                     "4.0\tSYS_T,ms=4000,late=0,gap=0",
-                    "4.0\tSYS_U,ms=4000,tx_drop=0,dma_err=0",
+                    "4.0\tSYS_U,ms=4000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0",
                     "4.0\tSYS_M,ms=4000,locked=1,i2cerr=0,to=0",
                 ]
                 (run/(phase+"_uart.log")).write_text("\n".join(frames)+"\n",
@@ -104,7 +104,7 @@ class EncoderHostTests(unittest.TestCase):
                 frames=[
                     "0.0\tSYS_M,ms=0,locked=1,i2cerr=0,to=0",
                     "0.0\tSYS_T,ms=0,late=0,gap=0",
-                    "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0",
+                    "0.0\tSYS_U,ms=0,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0",
                     "0.0\tSYS_STEP,ms=0,id=25,group=2,state=1,duty=700",
                 ]
                 for i in range(160):
@@ -117,7 +117,7 @@ class EncoderHostTests(unittest.TestCase):
                                    200 if phase=="on" else 0))
                 frames+=["4.0\tSYS_T,ms=4000,late=0,gap=0",
                          "4.0\tSYS_M,ms=4000,locked=1,i2cerr=0,to=0",
-                         "4.0\tSYS_U,ms=4000,tx_drop=%d,dma_err=0" %
+                         "4.0\tSYS_U,ms=4000,tx_drop=%d,dma_err=0,rx_err=0,rx_ov=0" %
                          (1 if phase=="on" else 0)]
                 (raw/(phase+"_uart.log")).write_text(
                     "\n".join(frames)+"\n",encoding="utf-8")
