@@ -120,3 +120,12 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
   bảo toàn phân tích alpha khi health UART thất bại, vẫn báo chưa nghiệm thu.
   Có thể chạy lại riêng `tools/encoder_shadow_ab.py` trên log địa phương,
   **không cần chạy lại motor**. Chưa thay `SPEED_LPF_ALPHA=0.30`.
+
+### 2026-10-20 continuation: refined alpha bank and RX isolation
+
+- Ten EMA candidates in diagnostic-only build: `0.05,0.08,0.10,0.12,0.15,0.20,0.30,0.40,0.60,0.80`; source remains `SPEED_LPF_ALPHA=0.30` in production and PID.
+- Emission of optional `SYS_AB` snapshots reduced from 10 to 5 Hz and gated by UART queued-byte watermark; repeated `SYS_IPB/SYS_IB` interval extended to 10 seconds. Required 1kHz bank statistics and safety counters retained, no UART baud/IRQ priority changes.
+- Added `SYS_UR` ORE/FE/NE/RX-ring overflow evidence to distinguish USART hardware error classes; strict RX/TX health acceptance unchanged.
+- Decoder supports historical 7-alpha and refined 10-alpha records, includes invalid frame checks; reports actual alpha ranking separately per wheel and PWM. No alpha is deployed to production.
+- Verified host/native simulation, Encoder OFF/ON build and production build by GitHub Actions run `39354165109` at commit `23694ef5`: PASS. **Physical ten-alpha/UART optimized run not yet performed**; do not claim a hardware pass.
+- Protocol: `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
