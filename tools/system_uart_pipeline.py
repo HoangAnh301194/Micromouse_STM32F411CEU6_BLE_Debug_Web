@@ -182,6 +182,10 @@ def evaluate(logs, mode):
     timer, mpu, uart = last("SYS_T"), last("SYS_M"), last("SYS_U")
     uart_profile = last("SYS_UQ")
     uart_rx_detail = last("SYS_UR")
+    shadow_queue = last("SYS_AQ")
+    shadow_trace_present = any(
+        x.get("type") in ("SYS_AB","SYS_AM") for x in logs
+    )
     profile = last("CLOCK_PROFILE")
     faults = [x for x in logs if x.get("type") == "SYS_STEP" and x.get("state") == 4]
     encoder_review = inspect_encoder_drive(logs, mode)
@@ -194,6 +198,10 @@ def evaluate(logs, mode):
         "uart_no_rx_error": uart.get("rx_err", 0) == 0 and uart.get("rx_ov", 0) == 0,
         "uart_no_tx_drop": uart.get("tx_drop", 0) == 0,
         "uart_dma_no_error": uart.get("dma_err", 0) == 0,
+        "shadow_spsc_no_loss": (not shadow_trace_present or
+                               (bool(shadow_queue) and
+                                shadow_queue.get("lost",1)==0 and
+                                shadow_queue.get("edge",1)==0)),
         "mpu_no_i2c_error": mpu.get("i2cerr", 0) == 0 and mpu.get("to", 0) == 0,
         "no_tim11_gaps": timer.get("gap", 0) == 0,
         "tim11_irq_jitter_under_50us": timer.get("late", 1) == 0,
@@ -216,6 +224,7 @@ def evaluate(logs, mode):
         "clock_profile": profile, "faults": faults, "encoder_review": encoder_review,
         "uart_dma_cpu_profile": uart_profile,
         "uart_rx_error_detail": uart_rx_detail,
+        "encoder_shadow_queue": shadow_queue,
         "uart_cpu_fraction_of_nominal_sysclk": (round(
            100 * (uart_profile.get("prncy",0)+uart_profile.get("dmacy",0)+
                   uart_profile.get("rxcy",0)) /
@@ -363,7 +372,7 @@ def write_output(outdir, results, rows):
     # possible way to recover real alpha A/B data on the remote repository.
     for phase, data in rows.items():
         captured=[item for item in data
-                  if item.get("type") in ("SYS_AB","SYS_AM","SYS_IPB","SYS_IB","SYS_UR")]
+                  if item.get("type") in ("SYS_AB","SYS_AM","SYS_IPB","SYS_IB","SYS_UR","SYS_AQ")]
         if not captured:
             continue
         keys=("type","host_elapsed_s","ms","id","state","w","m","n",
@@ -372,7 +381,8 @@ def write_output(outdir, results, rows):
               "a40","a60","a80","b5","b10","b20",
               "idx","mode","a0","w0","id0","a1","w1","id1",
               "a2","w2","id2","a3","w3","id3","rec","sr1",
-              "sr2","pin","after","err","ore","fe","ne","ov")
+              "sr2","pin","after","err","ore","fe","ne","ov",
+              "in","out","lost","edge","peak","q")
         with (outdir/("encoder_shadow_"+phase.lower()+".csv")).open(
                 "w",newline="",encoding="utf-8") as handle:
             writer=csv.DictWriter(handle,fieldnames=keys,extrasaction="ignore")
