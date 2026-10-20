@@ -263,11 +263,13 @@ def evaluate(logs, mode, limited=False):
 
 
 class PhaseSession:
-    def __init__(self, port, baudrate, name, outdir):
+    def __init__(self, port, baudrate, name, outdir, limited=False):
         import serial
         self.ser = serial.Serial(port=port, baudrate=baudrate,
                                  timeout=0.1, write_timeout=0.4)
         self.name = name
+        self.limited = limited and name == "ON"
+        self.expected_stages = 12 if self.limited else 33
         self.start = time.monotonic()
         self.last_ping = 0.0
         self.ping_sent_count = 0
@@ -326,6 +328,12 @@ class PhaseSession:
 
     def run_phase(self):
         self.calibrate()
+        self.send("STATUS")
+        status=self.wait_response("CMD_STATUS")
+        if self.name=="ON":
+            expected_pwm=30 if self.limited else 100
+            if status.get("max_pwm")!=expected_pwm or status.get("total")!=self.expected_stages:
+                raise RuntimeError("Wrong motor-on firmware safety profile: "+repr(status))
         self.send(f"MODE {self.name}")
         mode_ack = self.wait_response("CMD_MODE")
         if mode_ack.get("accepted") != 1:
@@ -334,7 +342,7 @@ class PhaseSession:
         start_ack = self.wait_response("CMD_START")
         if start_ack.get("accepted") != 1:
             raise RuntimeError("START rejected by firmware: " + repr(start_ack))
-        print(f"{self.name}: started 33 steps; capturing all sensors and timers.")
+        print(f"{self.name}: started {self.expected_stages} steps; capturing all sensors and timers.")
         deadline = time.monotonic() + PHASE_SECONDS
         while time.monotonic() < deadline:
             data = self.poll(heartbeat=True)
@@ -346,8 +354,10 @@ class PhaseSession:
                 step_desc = ("DRIVE" if state == 1 else
                              "COAST" if state == 2 else
                              "DONE" if state == 3 else "FAULT")
-                display_stage=(33 if state==3 else data.get("id",-1)+1)
-                print(f"{self.name} stage {display_stage}/33 | "
+                display_stage=(self.expected_stages if state==3 else data.get("id",-1)+1)
+                if self.limited and (data.get("duty",0)>300 or data.get("id",0)>12):
+                    raise RuntimeError("LIMITED firmware exceeded PWM/stage safety limit: "+repr(data))
+                print(f"{self.name} stage {display_stage}/{self.expected_stages} | "
                       f"{wheel} | PWM={data.get('duty',0)/10:.0f}% | "
                       f"{step_desc}",flush=True)
                 if data.get("state") == 4:
@@ -476,6 +486,8 @@ def main():
                    help="Use encoder-specific OFF/ON builds with ~50Hz SYS_EN logs")
     p.add_argument("--motor-on", action="store_true",
                    help="EXPLICIT consent to physical 0..100%% motor-on phase")
+    p.add_argument("--limited-30", action="store_true",
+                   help="Compile-time 30pct cap, 12 ON stages; requires --flash --motor-on --encoder-telemetry")
     p.add_argument("--mode", choices=["off", "on"], default="off",
                    help="Used when --flash is omitted; selected firmware must already be on MCU")
     p.add_argument("--outdir", type=Path)
@@ -496,6 +508,8 @@ def main():
         p.error("--encoder-telemetry cannot be used with UART-only profile")
     if args.mode == "on" and not args.motor_on:
         p.error("--mode on requires --motor-on")
+    if args.limited_30 and not (args.flash and args.motor_on and args.encoder_telemetry):
+        p.error("--limited-30 requires --flash --motor-on --encoder-telemetry")
     if args.motor_on:
         print("LIVE MOTOR TEST REQUESTED: wheels must be secured off ground, "
               "motor supply independently switchable, no obstructions.")
@@ -522,16 +536,17 @@ def main():
     try:
         for mode in run_modes:
             if args.flash:
-                firmware = (("integration_diag_encoder_motor_on_96m" if mode == "ON"
+                firmware = (("integration_diag_encoder_motor_on_limited_30_96m" if mode == "ON" and args.limited_30
+                             else "integration_diag_encoder_motor_on_96m" if mode == "ON"
                              else "integration_diag_encoder_motor_off_96m")
                             if args.encoder_telemetry
                             else (MOTOR_ON_ENV if mode == "ON" else MOTOR_OFF_ENV))
                 flash(firmware)
             session=None
             try:
-                session=PhaseSession(args.port,args.baud,mode,outdir)
+                session=PhaseSession(args.port,args.baud,mode,outdir,limited=args.limited_30)
                 session.run_phase()
-                score=evaluate(session.rows,mode)
+                score=evaluate(session.rows,mode,limited=args.limited_30)
                 score["host_heartbeat"]={
                     "ping_sent":session.ping_sent_count,
                     "ping_ack_received":sum(
@@ -546,6 +561,9 @@ def main():
                       "steps",score["stages"],
                       "failed_checks",[k for k,v in score["checks"].items() if not v])
                 session.close()
+                if mode=="OFF" and args.motor_on and not score["software_pass"]:
+                    session=None
+                    raise RuntimeError("OFF prerequisite FAILED; refusing MOTOR-ON")
             except BaseException as exc:
                 if session:
                     rows[mode]=session.rows
@@ -553,7 +571,7 @@ def main():
                     # the firmware deliberately stopped before stage 33.
                     # evaluate() will mark the truncated sweep NOT qualified.
                     try:
-                        aborted=evaluate(session.rows, mode)
+                        aborted=evaluate(session.rows, mode,limited=args.limited_30)
                         aborted["host_heartbeat"]={
                             "ping_sent":session.ping_sent_count,
                             "ping_ack_received":sum(
