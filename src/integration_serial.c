@@ -33,7 +33,7 @@ static void PrintStatus(const MPU6050_Handle_t *mpu, uint32_t now)
     Motor_Diagnostics_t motor;
     Sweep_GetSnapshot(&snap);
     Motor_GetDiagnostics(&motor);
-    UART_Printf("CMD_STATUS,ms=%lu,mode=%s,state=%u,fault=%u,armed=%u,stage=%lu,duty=%u,locked=%u,cal=%u,rx_ov=%lu,rx_err=%lu\r\n",
+    UART_Printf("CMD_STATUS,ms=%lu,mode=%s,state=%u,fault=%u,armed=%u,stage=%lu,duty=%u,locked=%u,cal=%u,rx_ov=%lu,rx_err=%lu,max_pwm=%u,total=%u\r\n",
                 (unsigned long)now,
                 snap.motor_enabled ? "ON" : "OFF",
                 (unsigned)snap.state, (unsigned)snap.fault,
@@ -43,7 +43,9 @@ static void PrintStatus(const MPU6050_Handle_t *mpu, uint32_t now)
                 (unsigned)motor.outputs_locked,
                 mpu ? (unsigned)mpu->cal_state : 0U,
                 (unsigned long)UART_GetRxOverflow(),
-                (unsigned long)UART_GetRxErrors());
+                (unsigned long)UART_GetRxErrors(),
+                (unsigned)Sweep_MaxPwmPercent(),
+                (unsigned)Sweep_StageTotal());
 }
 static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
 {
