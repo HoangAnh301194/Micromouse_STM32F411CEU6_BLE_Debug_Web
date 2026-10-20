@@ -26,6 +26,18 @@ def main():
         ]
         subprocess.run(command,cwd=ROOT,check=True,timeout=90)
         subprocess.run([str(exe)],cwd=ROOT,check=True,timeout=90)
+        shadow_exe=Path(directory)/(
+            "encoder_shadow.exe" if os.name=="nt" else "encoder_shadow")
+        shadow_flags=[
+            "-DENCODER_ALPHA_AB_DIAG=1",
+            "-DENCODER_PROFILE_DIAG=1",
+            "-DINTEGRATION_DIAG=1",
+        ]
+        shadow_command=command.copy()
+        shadow_command[1:1]=shadow_flags
+        shadow_command[shadow_command.index(str(exe))]=str(shadow_exe)
+        subprocess.run(shadow_command,cwd=ROOT,check=True,timeout=90)
+        subprocess.run([str(shadow_exe)],cwd=ROOT,check=True,timeout=90)
     return 0
 
 if __name__=="__main__":
