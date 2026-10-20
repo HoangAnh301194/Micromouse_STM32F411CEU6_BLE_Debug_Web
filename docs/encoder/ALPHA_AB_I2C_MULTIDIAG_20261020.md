@@ -252,3 +252,59 @@ repeatability and actual closed-loop response have been assessed.
 **State:** Code and CI are independent of physical hardware. No new
 physical result is claimed by this document. Refer to the Actions
 workflow for latest software test state.
+
+## Run 20261020_083902 — motor-on UART lease safety abort
+
+Source: `results/encoder_qual_20261020_083902/` (captured on
+`0ccea850`), uploaded to `giomuadongbac`. The 14 software/native/build
+gates passed. The OFF sweep finished 33 stages, **ON was interrupted** at
+zero-based stage 13 (RIGHT wheel PWM 20% DRIVE); this is not a passing
+hardware run. Reported `SYS_STEP.state=4,fault=9` corresponds to
+`SWEEP_UART_LINK_LOST` in `include/integration_sweep.h` and occurs when
+the current motor-on diagnostic session receives no valid parsed `PING`
+for more than 750 ms. Firmware called sticky motor output lock, and
+host subsequently reported locked motor-off upload `pass=true`.
+
+Observed counters before termination:
+
+- OFF `SYS_IPB`: 400-kHz probe I2C_BUSY=2 and successful
+  296,296-Hz fallback; PB8 high / PB9 low at BUSY timeout, both high
+  after recovery; one UART ORE error.
+- ON `SYS_IPB`: nominal 400 kHz accepted; 18 UART RX errors, all
+  ORE (FE=NE=0). No TIM11 late/gap or MPU I2C read-time errors in
+  saved phase 50-Hz summary.
+- Encoder A/B `INSUFFICIENT_SHADOW_DATA`: 552/792 metric frames.
+  The first 396 belong to OFF and only 156 to early ON stages.
+  Any ranking, including leading 0.08 in the partial report, is
+  exploratory and **NOT** a full two-wheel 0–100% A/B finding.
+
+**Root cause statement:** confirmed lost UART command-lease;
+not yet confirmed why valid `PING` stopped reaching the MCU.
+USART hardware ORE can corrupt command reception, but frequency
+and causal timing must be established using paired host PING
+and CMD_PING acknowledgement logs. The 750-ms MCU timeout must
+not be enlarged or disabled as a workaround.
+
+**Independent host defects found and corrected after this capture:**
+
+1. `render_plots()` used non-existent `stage` field instead of
+   `id` in `encoder_alpha_samples_10hz.csv`, triggering
+   `KeyError('stage')`; optional plot failures are now nonfatal.
+2. Interrupted ON session formerly dropped its phase-level
+   `evaluate()` result from `system_uart_hardware/summary.json`,
+   leaving the parent report displaying only OFF health failures.
+   Interrupted phase now retains partial health, safety fault and
+   number of stages explicitly as **UNQUALIFIED**.
+3. Host PING instrumentation now saves attempted PING count,
+   CMD_PING acknowledgements, largest host inter-PING send interval,
+   and maximum UART write duration to allow later correlation.
+   Motor control/heartbeat watchdog policy is unchanged.
+
+**Next action:** no immediate motor-on rerun. Preserve
+`system_uart_hardware/off_uart.log` and `on_uart.log`
+(if still present locally and Git-ignored), inspect PING/ACK temporal
+gaps and the UART ORE evolution. Prefer a motor-locked serial
+diagnostic for validating telemetry path first. Only when the
+command-lease path has been verified safe should the supervised
+motor sweep be repeated. Neither I2C nor EMA production parameters
+were changed by the recovery patches.
