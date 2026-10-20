@@ -487,6 +487,8 @@ def main():
                    help="Use encoder-specific OFF/ON builds with ~50Hz SYS_EN logs")
     p.add_argument("--motor-on", action="store_true",
                    help="EXPLICIT consent to physical 0..100%% motor-on phase")
+    p.add_argument("--off-encmaxcy-limit", type=int, default=0,
+                   help="Reject the upcoming ON phase if preceding OFF Encoder IRQ peak exceeds this many CPU cycles")
     p.add_argument("--limited-30", action="store_true",
                    help="Compile-time 30pct cap, 12 ON stages; requires --flash --motor-on --encoder-telemetry")
     p.add_argument("--mode", choices=["off", "on"], default="off",
@@ -562,9 +564,17 @@ def main():
                       "steps",score["stages"],
                       "failed_checks",[k for k,v in score["checks"].items() if not v])
                 session.close()
-                if mode=="OFF" and args.motor_on and not score["software_pass"]:
+                if mode=="OFF" and args.motor_on and (
+                    not score["software_pass"] or
+                    (args.off_encmaxcy_limit > 0 and
+                     score.get("timer",{}).get("encmaxcy",999999) >= args.off_encmaxcy_limit)
+                ):
                     session=None
-                    raise RuntimeError("OFF prerequisite FAILED; refusing MOTOR-ON")
+                    raise RuntimeError(
+                        "OFF prerequisite or Encoder IRQ timing FAILED; refusing MOTOR-ON: "+
+                        repr({"software_pass":score["software_pass"],
+                              "encmaxcy":score.get("timer",{}).get("encmaxcy"),
+                              "limit":args.off_encmaxcy_limit}))
             except BaseException as exc:
                 if session:
                     rows[mode]=session.rows
