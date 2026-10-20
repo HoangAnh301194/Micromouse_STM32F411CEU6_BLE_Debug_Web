@@ -214,6 +214,7 @@ def evaluate(logs, mode, limited=False):
     extended=inspect_extended_schedule(logs, mode, limited=limited_on)
     checks = {
         "expected_unique_pwm_stages": steps == list(range(expected)),
+        "33_unique_pwm_stages": steps == list(range(33)) if not limited_on else True,
         "limited_30pct_no_excess": (not limited_on or
             not any(x.get("type")=="SYS_STEP" and x.get("mode")==1 and
                     x.get("duty",0)>300 for x in logs)),
