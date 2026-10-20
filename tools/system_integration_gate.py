@@ -52,7 +52,9 @@ def audit(files=None):
             ("SWEEP_DRIVE_DEFAULT_MS 2000U","SWEEP_DRIVE_SUSTAIN_MS 3500U",
              "SWEEP_DRIVE_90_MS 1000U","SWEEP_DRIVE_100_MS 750U",
              "SWEEP_COAST_DEFAULT_MS 2000U","SWEEP_COAST_HIGH_MS 3000U",
-             "SWEEP_STEP_TOTAL 33U","SWEEP_HARD_LIMIT_MS 180000U",
+             "SWEEP_STEP_TOTAL (3U * SWEEP_STEPS_PER_GROUP)",
+              "SWEEP_STEPS_PER_GROUP 11U","SWEEP_STEPS_PER_GROUP 4U",
+              "SWEEP_HARD_LIMIT_MS 180000U",
              "DriveDurationMs(state.stage_id)","CoastDurationMs(state.stage_id)",
              "SWEEP_LINK_TIMEOUT_MS 750U","Motor_LockOutputs();",
              "SWEEP_GYRO_MAX_AGE_US 3000U","Command(0U)")):
