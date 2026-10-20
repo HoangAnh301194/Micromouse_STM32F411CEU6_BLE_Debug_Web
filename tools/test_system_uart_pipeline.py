@@ -49,6 +49,20 @@ for mode in ("OFF","ON"):
     good=mod.evaluate(s,mode)
     assert good["software_pass"],good
     assert good["stages"]==33
+    # Diagnostic SPSC acceptance: any dropped/misaligned encoder 1-ms
+    # sample must fail; old non-Encoder profiles remain compatible.
+    shadow=[*s, {"type":"SYS_AB","ms":123},
+            {"type":"SYS_AQ","ms":150000,"in":150000,"out":150000,
+             "lost":0,"edge":0,"q":0,"peak":7}]
+    assert mod.evaluate(shadow,mode)["checks"]["shadow_spsc_no_loss"]
+    assert not mod.evaluate(shadow[:-1],mode)["checks"]["shadow_spsc_no_loss"]
+    lost=[dict(x) for x in shadow]
+    lost[-1]["lost"]=1
+    assert not mod.evaluate(lost,mode)["checks"]["shadow_spsc_no_loss"]
+    misaligned=[dict(x) for x in shadow]
+    misaligned[-1]["edge"]=1
+    assert not mod.evaluate(misaligned,mode)["checks"]["shadow_spsc_no_loss"]
+
     bad=[x for x in s if x.get("id")!=25]
     assert not mod.evaluate(bad,mode)["checks"]["33_unique_pwm_stages"]
     faulty=s+[{"type":"SYS_STEP","state":4,"mode":code,"fault":9}]
