@@ -17,7 +17,7 @@ float Encoder_GetRightSpeedPPS(void);
 
 /* Opt-in 1-kHz shadow estimator bank. Never feeds production motion/PID. */
 #if defined(ENCODER_ALPHA_AB_DIAG)
-#define ENCODER_SHADOW_ALPHAS 7U
+#define ENCODER_SHADOW_ALPHAS 10U
 #define ENCODER_SHADOW_WINDOWS 3U
 typedef struct {
     int32_t alpha_left[ENCODER_SHADOW_ALPHAS];
