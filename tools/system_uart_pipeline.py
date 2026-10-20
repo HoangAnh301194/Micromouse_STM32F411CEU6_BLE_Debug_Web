@@ -243,6 +243,9 @@ def evaluate(logs, mode, limited=False):
             else encoder_review["drive_windows"] == 33,
         "extended_drive_coast_inertia": extended["endurance_pass"],
     }
+    if limited_on:
+        # Never report a misleading 33/33 PASS for the 12-stage profile.
+        checks.pop("33_unique_pwm_stages", None)
     return {
         "mode": mode, "checks": checks,
         "software_pass": all(checks.values()),
