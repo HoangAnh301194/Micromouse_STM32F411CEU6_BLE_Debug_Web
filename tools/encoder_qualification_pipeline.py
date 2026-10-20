@@ -409,9 +409,13 @@ def analyze_sweep_telemetry(run_directory, report_directory):
         health={"tim11_late_delta":counter_delta("SYS_T","late"),
                 "tim11_gap_delta":counter_delta("SYS_T","gap"),
                 "uart_tx_drop_delta":counter_delta("SYS_U","tx_drop"),
+                 "uart_rx_error_delta":counter_delta("SYS_U","rx_err"),
+                 "uart_rx_overflow_delta":counter_delta("SYS_U","rx_ov"),
                 "uart_dma_error_delta":counter_delta("SYS_U","dma_err"),
                 "mpu_i2c_error_delta":counter_delta("SYS_M","i2cerr"),
                 "mpu_timeout_delta":counter_delta("SYS_M","to")}
+        rx_details={key:counter_delta("SYS_UR",key)
+                    for key in ("ore","fe","ne")}
         status="PASS"
         if any(v is None for v in health.values()) or any(v!=0 for v in health.values()):
             status="FAIL_HEALTH"
@@ -464,6 +468,7 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                          "i2c_startup_probe":startup_probe,
                          "i2c_busy_debug":busy_diag,
                          "health":health,
+                         "uart_rx_subtypes":rx_details,
                          "note":"PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."}
     statuses={k:v["status"] for k,v in reports.items()}
     if any(v not in ("PASS","FAIL_HEALTH") for v in statuses.values()):
@@ -471,7 +476,6 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                            repr(statuses))
     # Health failures remain visible but MUST NOT suppress the independent
     # alpha A/B analysis of collected 1-kHz evidence.
-    return reports
     return reports
 
 
