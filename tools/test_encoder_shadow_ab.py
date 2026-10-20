@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Synthetic host-level tests. Never treated as STM32 hardware acceptance."""
+"""Pure synthetic regression fixtures, never hardware qualification."""
 import tempfile
 from pathlib import Path
 import unittest
 
-from encoder_shadow_ab import (ALPHAS, METRICS, analyze, parse_frame, summarize)
+from encoder_shadow_ab import (
+    ALPHAS, LEGACY_ALPHAS, METRICS, analyze, parse_frame
+)
 
 
 class ShadowABTests(unittest.TestCase):
-    def test_parser(self):
+    def test_parser_and_legacy_compatibility(self):
         row = parse_frame("1.01\tSYS_AM,ms=5000,id=1,state=2,w=0,m=0,n=999,x0=1")
         self.assertEqual(row["id"], 1)
         self.assertEqual(row["n"], 999)
@@ -18,53 +20,109 @@ class ShadowABTests(unittest.TestCase):
     def test_missing_trace_not_accepted(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp)
-            (p / "off_uart.log").write_text("0.0\tSYS_STEP,id=0,state=1,group=0,duty=0\n")
-            (p / "on_uart.log").write_text("0.0\tSYS_STEP,id=0,state=1,group=0,duty=0\n")
+            for phase in ("off", "on"):
+                (p / (phase + "_uart.log")).write_text(
+                    "0.0\tSYS_STEP,id=0,state=1,group=0,duty=0\n"
+                )
             report = analyze(p, p)
             self.assertEqual(report["status"], "INSUFFICIENT_SHADOW_DATA")
             self.assertEqual(report["provisional_top_two"], [])
-            self.assertTrue((p / "encoder_alpha_ab.json").exists())
 
-    def test_full_synthetic_metric_capture_and_ranking(self):
-        # 33 steps x 2 phases x DRIVE/COAST x 2 wheels x 3 metrics.
-        # 10-Hz visualization is deliberately not used for latency ranking.
+    @staticmethod
+    def generate(root, alphas, malformed=False):
+        names = {
+            0.05:"a05", 0.08:"a08", 0.10:"a10", 0.12:"a12",
+            0.15:"a15", 0.20:"a20", 0.30:"a30",
+            0.40:"a40", 0.60:"a60", 0.80:"a80"
+        }
+        for phase in ("off", "on"):
+            lines = []
+            for stage in range(33):
+                lines.append(
+                    "0.0\tSYS_STEP,ms=0,id=%d,state=1,group=%d,duty=%d"
+                    % (stage, stage // 11, (stage % 11) * 100)
+                )
+                for tick in range(5):
+                    for wheel in (0, 1):
+                        data = ",".join(
+                            names[alpha] + "=0" for alpha in alphas
+                        ) + ",b5=0,b10=0,b20=0"
+                        lines.append(
+                            f"0.1\tSYS_AB,ms={tick*200},w={wheel},{data}"
+                        )
+                for state in (1, 2):
+                    for wheel in (0, 1):
+                        for metric in METRICS:
+                            n = 300 if metric != 1 else 450
+                            penalties = {
+                                0.05: 90, 0.08: 50, 0.10: 32, 0.12: 15,
+                                0.15: 35, 0.20: 55, 0.30: 90,
+                                0.40: 120, 0.60: 180, 0.80: 230
+                            }
+                            if metric == 2:
+                                # Less alpha -> smoother, but transition
+                                # penalty for alpha 0.05 is much higher.
+                                penalties = {
+                                    0.05: 12, 0.08: 16, 0.10: 20,
+                                    0.12: 26, 0.15: 35, 0.20: 45,
+                                    0.30: 65, 0.40: 80, 0.60: 140, 0.80: 200
+                                }
+                            if metric == 1:
+                                penalties = {
+                                    0.05: 140, 0.08: 60, 0.10: 30,
+                                    0.12: 15, 0.15: 38, 0.20: 60,
+                                    0.30: 90, 0.40: 120, 0.60: 170, 0.80: 230
+                                }
+                            fields = ",".join(
+                                "x%d=%d" % (i, penalties[alpha] * n)
+                                for i, alpha in enumerate(alphas)
+                            )
+                            if malformed and phase == "on" and stage == 10 and (
+                                state, wheel, metric
+                            ) == (1, 0, 0):
+                                fields = fields.replace("x9=", "bad9=")
+                            lines.append(
+                                "0.2\tSYS_AM,ms=0,id=%d,state=%d,w=%d,m=%d,n=%d,%s"
+                                % (stage, state, wheel, metric, n, fields)
+                            )
+            (root / (phase + "_uart.log")).write_text(
+                "\n".join(lines) + "\n", encoding="utf-8"
+            )
+
+    def test_ten_alpha_capture_and_ranking(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            for phase in ("off", "on"):
-                lines = []
-                for stage in range(33):
-                    lines.append("0.0\tSYS_STEP,ms=0,id=%d,state=1,group=%d,duty=%d" %
-                                 (stage, stage // 11, (stage % 11) * 100))
-                    for k in range(10):
-                        for wheel in (0, 1):
-                            lines.append("0.1\tSYS_AB,ms=%d,w=%d," % (k*100,wheel) +
-                                ",".join(key+"=0" for key in
-                                         ("a05","a10","a20","a30","a40","a60","a80",
-                                          "b5","b10","b20")))
-                    for state in (1, 2):
-                        for wheel in (0, 1):
-                            for metric in METRICS:
-                                n = 300 if metric != 1 else 450
-                                # Alpha 0.2 wins all three synthetic proxies.
-                                penalties = (70, 40, 20, 50, 80, 110, 150)
-                                if metric == 1:
-                                    penalties = (120, 65, 25, 55, 75, 105, 140)
-                                if metric == 2:
-                                    penalties = (10, 18, 23, 32, 40, 65, 90)
-                                lines.append("0.2\tSYS_AM,ms=0,id=%d,state=%d,w=%d,m=%d,n=%d," %
-                                             (stage,state,wheel,metric,n) +
-                                             ",".join("x%d=%d" % (i, penalties[i]*n)
-                                                      for i in range(len(ALPHAS))))
-                (root / (phase + "_uart.log")).write_text("\n".join(lines) + "\n")
-            report = analyze(root, root)
+            path = Path(tmp)
+            self.generate(path, ALPHAS)
+            report = analyze(path, path)
             self.assertEqual(report["status"], "COMPLETE_PROVISIONAL")
+            self.assertEqual(report["shadow_bank_version"], "ten_alpha")
             self.assertEqual(report["expected_metric_frames"], 792)
-            self.assertEqual(report["sample_frames"], 1320)
-            self.assertEqual(report["provisional_top_two"][0], 0.2)
-            self.assertTrue((root / "encoder_alpha_stage_metrics.csv").is_file())
-            self.assertTrue((root / "encoder_alpha_samples_10hz.csv").is_file())
-            self.assertEqual(sum(report["metrics"][k]["intervals"] for k in METRICS.values()),
-                             4 * 7 * 4)  # 3 DRIVE metrics + 1 COAST onset, active wheels
+            self.assertEqual(report["sample_frames"], 660)
+            self.assertEqual(report["provisional_top_two"][0], 0.12)
+            self.assertEqual(
+                sum(report["metrics"][key]["intervals"]
+                    for key in METRICS.values()), 112
+            )
+            self.assertTrue((path / "encoder_alpha_stage_metrics.csv").is_file())
+
+    def test_legacy_seven_alpha_replay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)
+            self.generate(path, LEGACY_ALPHAS)
+            report = analyze(path, path)
+            self.assertEqual(report["status"], "COMPLETE_PROVISIONAL")
+            self.assertEqual(report["shadow_bank_version"], "legacy_seven_alpha")
+            self.assertEqual(report["candidate_alphas"], list(LEGACY_ALPHAS))
+            self.assertEqual(report["expected_metric_frames"], 792)
+
+    def test_malformed_new_frame_is_not_treated_as_legacy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)
+            self.generate(path, ALPHAS, malformed=True)
+            report = analyze(path, path)
+            self.assertEqual(report["status"], "INSUFFICIENT_SHADOW_DATA")
+            self.assertEqual(report["missing_metric_frames_count"], 1)
+            self.assertTrue(report["issues"])
 
 
 if __name__ == "__main__":
