@@ -308,3 +308,97 @@ diagnostic for validating telemetry path first. Only when the
 command-lease path has been verified safe should the supervised
 motor sweep be repeated. Neither I2C nor EMA production parameters
 were changed by the recovery patches.
+
+## 2026-10-20: Shadow A/B offloaded from TIM11 IRQ
+
+### Why this optimization exists
+
+Measured baseline before this patch, motor-ON run `083902`:
+TIM11 maximum `11,741` CPU cycles at nominal 96 MHz (~122.3 us),
+of which Encoder consumed `10,999` cycles (~114.6 us). At USART1
+115,200 8N1, an incoming byte takes ~86.8 us. TIM11 uses NVIC
+priority 0; RXNE uses priority 8, so a lengthy TIM11 interrupts UART
+byte servicing. Raw logs confirmed repeated RX overrun (`ORE`),
+corrupted/unknown commands and finally `fault=9`
+(`SWEEP_UART_LINK_LOST`). This is a strong timing hypothesis,
+**not proof** that all ORE events originated from TIM11.
+
+### Implemented mechanism
+
+- The original quadrature TIM3/TIM4 x4 counter read and
+  **production** speed EMA `0.30` remain in the high-priority 1-ms
+  TIM11 ISR, unchanged.
+- The diagnostic-only path no longer computes ten shadow EMAs, 5/10/20
+  ms boxcars or score aggregates inside TIM11. It only writes the
+  signed left/right counts for the 1-ms tick to a static 256-entry
+  single-producer/single-consumer (SPSC) circular FIFO. FIFO uses one
+  reserved slot, so effective capacity is **255 ticks**.
+- Main first polls the bounded USART command parser (PING/STOP), then
+  executes the original unchanged 750-ms sweep heartbeat safety
+  check, then consumes **up to 12 samples** from the FIFO. At the
+  transition snapshot, at most 32 additional samples are drained,
+  then the interval's metrics are emitted in paced background UART
+  messages. This sequencing does not allow the high-priority ISR to
+  block UART per-character reception for the entire EMA calculation.
+- The consumer replays the same two signed counter deltas in FIFO
+  order, calculates raw PPS as `signed_counts * 1000`, and updates
+  the ten existing floating-point EMA and three boxcar estimates.
+  There is no thinning of the 1-kHz measurement timeline;
+  **overflows are counted and NEVER accepted as valid A/B data**.
+- The diagnostic `SYS_AQ` record at 1 Hz includes:
+  `in` (FIFO accepted ticks), `out` (ticks consumed),
+  `lost` (FIFO overflow), `edge` (stage transition backlog
+  greater than two ticks), `q` (current pending), and
+  `peak` (highest pending). Host qualification requires
+  `lost=0` and `edge=0`. The margin of two samples accounts for
+  concurrency near transition sampling; it does not guarantee exact
+  physical transition alignment.
+- No USART DMA RX, NVIC priority, motor PWM/STOP, MPU I2C parameters
+  or heartbeat timeout has been modified by this optimization.
+
+The FIFO makes IRQ runtime short, but **does not reduce total estimator
+CPU work**: it moves that work into a preemptible main context.
+The 12-sample processing budget is deliberately bounded to prevent
+unbounded starvation of motor lease and UART command processing.
+A saturated main loop can still result in `lost>0` or `edge>0`;
+such a run is unqualified rather than silently producing biased data.
+
+### Software validation and acceptance workflow
+
+The existing `tools/encoder_native_test.py` now compiles/runs actual
+`src/encoder.c` in both production and diagnostic configurations.
+The diagnostic native harness checks:
+
+- Producer does not update shadow EMA until main consumes.
+- Two-channel signed 1-ms deltas are consumed in FIFO order.
+- Service respects its budget and tracks stage-boundary backlog.
+- A full FIFO reports exactly how many samples were lost.
+- Normal 10,000-tick quadrature/wrap test still passes when serviced
+  by the consumer.
+
+GitHub Actions executes the host/native suite and both PlatformIO
+diagnostic builds plus production build (CI is not physical acceptance).
+
+**Next physical test MUST be motor-off only first.** Disconnect the
+motor VM independently (do not rely only on firmware locking), keep
+the serial adapter on COM7 and run:
+
+```powershell
+python tools/system_uart_pipeline.py --port COM7 --flash --encoder-telemetry
+```
+
+This flashes the explicit motor-OFF locked diagnostic, exercises all
+33 logical OFF sweep steps while transmitting PING and the normal UART
+telemetry, and records raw UART plus `SYS_AQ/SYS_UR/SYS_T`.
+Do not add `--motor-on` for this first validation.
+
+**Acceptance before motor-on:** `SYS_AQ.lost=edge=0`, all
+33 OFF steps, no `fault=9`, `SYS_U.rx_err=0` and
+`tx_drop=dma_err=0`, zero `SYS_T.late/gap`, and a clearly
+lower measured `SYS_T.encmaxcy` versus the 10-alpha 083902
+baseline. If USART RX ORE persists, investigate ISR priority,
+main-loop command framing, and RX DMA in a separate firmware
+branch rather than weakening the motor watchdog.
+
+Do not claim a new alpha optimum from this OFF-only run, since
+motor speed/PWM response remains unobserved.
