@@ -490,9 +490,30 @@ def main():
                       "steps",score["stages"],
                       "failed_checks",[k for k,v in score["checks"].items() if not v])
                 session.close()
-            except BaseException:
-                if session: 
+            except BaseException as exc:
+                if session:
                     rows[mode]=session.rows
+                    # Do not lose all ON health/fault evidence just because
+                    # the firmware deliberately stopped before stage 33.
+                    # evaluate() will mark the truncated sweep NOT qualified.
+                    try:
+                        aborted=evaluate(session.rows, mode)
+                        aborted["host_abort"]={
+                            "exception":str(exc),
+                            "last_firmware_fault":next(
+                                (item for item in reversed(session.rows)
+                                 if item.get("type")=="SYS_STEP" and
+                                    item.get("state")==4),None),
+                        }
+                        aborted["software_pass"]=False
+                        results.append(aborted)
+                    except Exception as diagnostic_error:
+                        results.append({
+                            "mode":mode,"software_pass":False,
+                            "stages":0,"faults":[],
+                            "host_abort":{"exception":str(exc),
+                                          "diagnostic_error":str(diagnostic_error)}
+                        })
                     session.close(emergency=True)
                 raise
     finally:
