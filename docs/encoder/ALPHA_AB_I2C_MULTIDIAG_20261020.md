@@ -188,3 +188,67 @@ future uploaded results independently analyzable.
 
 No production alpha or motor/PID parameters were changed based on
 this run.
+
+## 2026-10-20 follow-up: UART throttling and refined alpha A/B (source implementation)
+
+**Motivation and measured baseline:** On the first seven-alpha physical sweep,
+`encoder_qual_20261020_030513`, the 2,048-byte diagnostic TX queue reached
+2,010 bytes (ON peak); `SYS_U` reported 24 USART RX errors and one rejected
+TX message. The on-board 1-ms Encoder ISR completed with no missed TIM11 tick,
+but the Encoder max execution duration increased significantly vs no shadow bank.
+This evidence suggests profiling/telemetry pressure, **not proof** that TX
+backpressure caused USART RX error flags or encoder miscounts.
+
+**New ten-candidate shadow bank**, with original production `alpha=0.30`
+unchanged:
+
+`0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.30, 0.40, 0.60, 0.80`.
+
+The previous sweep recommended 0.10 **only according to its dependent
+20-ms window proxy score**, therefore the new sweep densely samples 0.08,
+0.10, 0.12 and 0.15. These extra candidates run at 1 kHz on the same raw
+counter deltas; they do not affect PID inputs or motor commands.
+
+**UART workload protections** only when `ENCODER_ALPHA_AB_DIAG` is enabled:
+
+- `SYS_AB` trace emission reduced from 10 Hz to **5 Hz**; long-view
+  overlay plots retain all ten alphas, 5/10/20-ms boxcars.
+- `SYS_IPB` and `SYS_IB` repeat every **10 seconds**, instead of every
+  second. These are retained boot-probe / BUSY metrics and are not needed
+  for alpha scoring; the host receives them in raw logs.
+- The optional `SYS_AB` trace and mandatory per-stage `SYS_AM` records
+  are queued only if the current DMA TX queue contains **fewer than 768
+  bytes**. Six `SYS_AM` metric frames per interval are retained and
+  gradually emitted; should a frame be missing, the alpha A/B acceptance
+  remains `INSUFFICIENT_SHADOW_DATA`, not silently PASS.
+- `SYS_EN` remains approximately 50 Hz and all safety, motor, MPU, TIM11
+  and other system diagnostics retain their normal health checks.
+
+**USART RX error classification:** `SYS_UR` reports cumulative
+`err` (invalid USART RX IRQ events), `ore` (overrun),
+`fe` (framing error), `ne` (noise error), and `ov` (software RX
+ring overflow). Individual USART SR flags can occur together, so their
+sum need not equal `err`. The original `SYS_U.rx_err` remains the
+authoritative strict acceptance counter. No UART baud, priority, DMA
+driver, RX discard policy, I2C speed or motor driver is changed.
+
+**Data schema and replay:** `SYS_AM` now uses `x0..x9`;
+`SYS_AB` includes `a08`, `a12` and `a15`. The analysis script
+`tools/encoder_shadow_ab.py` distinguishes the historical 7-alpha
+format from the new 10-alpha format. `system_uart_hardware/
+encoder_shadow_{off,on}.csv` and original UART logs preserve the
+additional measurements, including `SYS_UR`. Historical raw logs
+are not rewritten.
+
+**Acceptance criteria for next physical run:** all 14 software/build
+gates PASS; 33 OFF and 33 ON stages completed; 792/792 alpha metric
+frames, zero malformed/duplicate entries; TIM11 late/gap 0;
+MPU I2C runtime errors and timeouts 0; UART TX drops/DMA faults/RX
+errors/RX overflow 0; motor watchdog faults 0; OFF locked restore
+successful. Any failure remains in the report and blocks whole-system
+qualification. Ranking/alpha selection is **provisional** until
+repeatability and actual closed-loop response have been assessed.
+
+**State:** Code and CI are independent of physical hardware. No new
+physical result is claimed by this document. Refer to the Actions
+workflow for latest software test state.
