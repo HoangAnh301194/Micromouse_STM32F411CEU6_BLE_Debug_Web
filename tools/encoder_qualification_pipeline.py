@@ -560,7 +560,10 @@ def render_plots(directory):
                 continue
             t=[(int(x["ms"])-int(section[0]["ms"]))/1000 for x in section]
             fig=plt.figure(figsize=(10,4))
-            for key in ("a05","a10","a20","a30","a40","a60","a80","b20"):
+            for key in ("a05","a08","a10","a12","a15",
+                        "a20","a30","a40","a60","a80","b20"):
+                if key not in section[0] or not all(x.get(key) for x in section):
+                    continue
                 plt.plot(t,[float(x[key]) for x in section],label=key,
                          linewidth=1.0)
             plt.title("Shadow EMA alpha A/B: wheel "+wheel+" at PWM 60%")
