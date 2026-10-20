@@ -46,6 +46,7 @@ static volatile uint32_t p_completed_bytes, p_queue_peak, p_rx_bytes;
 static volatile uint32_t p_printf_calls, p_printf_cycles, p_printf_max_cycles;
 static volatile uint32_t p_dma_irq_cycles, p_dma_irq_max;
 static volatile uint32_t p_rx_irq_cycles, p_rx_irq_max;
+static volatile uint32_t p_rx_ore, p_rx_fe, p_rx_ne;
 #endif
 
 static uint32_t UART_LockIRQ(void)
@@ -115,6 +116,9 @@ void UART_Init(void)
     USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE | USART_CR1_UE;
     rx_head = rx_tail = 0U;
     rx_overflow = rx_errors = 0U;
+#if defined(INTEGRATION_DIAG)
+    p_rx_ore = p_rx_fe = p_rx_ne = 0U;
+#endif
     NVIC_SetPriority(USART1_IRQn, 8U);
     NVIC_EnableIRQ(USART1_IRQn);
 
@@ -294,6 +298,11 @@ void USART1_IRQHandler(void)
         uint8_t value = (uint8_t)USART1->DR; /* read clears RXNE/error */
         if (sr & (USART_SR_ORE | USART_SR_FE | USART_SR_NE)) {
             rx_errors++;
+#if defined(INTEGRATION_DIAG)
+            if (sr & USART_SR_ORE) ++p_rx_ore;
+            if (sr & USART_SR_FE)  ++p_rx_fe;
+            if (sr & USART_SR_NE)  ++p_rx_ne;
+#endif
         } else if (sr & USART_SR_RXNE) {
             uint16_t next = (uint16_t)((rx_head + 1U) % UART_RX_BUFFER_SIZE);
             if (next == rx_tail) {
@@ -347,6 +356,9 @@ void UART_GetProfileStats(UART_ProfileStats_t *out)
     out->rx_bytes = p_rx_bytes;
     out->rx_errors = rx_errors;
     out->rx_overflow = rx_overflow;
+    out->rx_overrun_errors = p_rx_ore;
+    out->rx_framing_errors = p_rx_fe;
+    out->rx_noise_errors = p_rx_ne;
     out->printf_calls = p_printf_calls;
     out->printf_cycles = p_printf_cycles;
     out->printf_max_cycles = p_printf_max_cycles;
