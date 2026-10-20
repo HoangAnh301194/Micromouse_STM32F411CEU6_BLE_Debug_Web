@@ -34,4 +34,6 @@ extern RCC_TypeDef rcc_mock;
 static inline uint32_t __get_PRIMASK(void) {return 0U;}
 static inline void __disable_irq(void) {}
 static inline void __enable_irq(void) {}
+/* Stub barrier for the diagnostic SPSC ring compiler-order contract. */
+static inline void __DMB(void) { __asm__ __volatile__("" ::: "memory"); }
 #endif
