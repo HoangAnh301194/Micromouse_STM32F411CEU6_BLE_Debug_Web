@@ -198,7 +198,9 @@ def summarize(stage_rows, samples, issues):
     }
     def wheel_ranking(wheel):
         summary = by_wheel[wheel]
-        base = {key: summary[key]["0.3"] for key in weights}
+        if not active_alphas or 0.30 not in active_alphas:
+            return []
+        base = {key: summary[key].get("0.3") for key in weights}
         if any(value is None or value <= 0 for value in base.values()):
             return []
         rows = []
