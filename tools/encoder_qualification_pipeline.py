@@ -704,6 +704,13 @@ def main(argv=None):
                 failed={phase.get("mode"): [
                     key for key,ok in phase.get("checks",{}).items() if not ok
                 ] for phase in phases}
+                actual_faults=[
+                    {"mode":phase.get("mode"),"fault":item}
+                    for phase in phases for item in phase.get("faults",[])
+                ]
+                if actual_faults:
+                    data["hardware"]["firmware_faults"]=actual_faults
+                    data["hardware"]["status"]="FIRMWARE_SAFETY_ABORT"
                 all_stages=(len(phases)==2 and
                             all(phase.get("stages")==33 for phase in phases))
                 failures=set(item for items in failed.values() for item in items)
@@ -713,6 +720,10 @@ def main(argv=None):
                 warnings=[]
                 if not runinfo["pass"] or health_failed:
                     allowed={"i2c_400k_nominal","uart_no_rx_error","uart_no_tx_drop"}
+                    if actual_faults:
+                        raise RuntimeError(
+                            "FIRMWARE_SAFETY_ABORT: "+repr(actual_faults)+
+                            "; incomplete sweep; health checks: "+repr(failed))
                     if not all_stages or not failures or not failures.issubset(allowed):
                         raise RuntimeError(
                             "Incomplete/unsafe motor sweep; check raw logs and STOP state: "+
