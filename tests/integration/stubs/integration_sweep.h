@@ -11,6 +11,8 @@ SWEEP_SESSION_TIMEOUT=6,SWEEP_CLOCK_FAULT=7,SWEEP_UART_LINK_LOST=9 } SweepFault;
 typedef struct { uint8_t state,fault,group,step,armed_once,motor_enabled;
 uint16_t duty_permille;uint32_t elapsed_ms,stage_id,deadline_ms; } SweepSnapshot;
 void Sweep_Init(void);
+uint8_t Sweep_MaxPwmPercent(void);
+uint8_t Sweep_StageTotal(void);
 uint8_t Sweep_SelectMode(uint8_t motor_on);
 uint8_t Sweep_Arm(uint32_t now_ms,const MPU6050_Handle_t *,uint8_t host_authorized);
 void Sweep_Heartbeat(uint32_t);
