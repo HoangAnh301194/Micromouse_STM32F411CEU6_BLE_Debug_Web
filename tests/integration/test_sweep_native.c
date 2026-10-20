@@ -32,6 +32,9 @@ uint8_t Motor_OutputsLocked(void) {return motor.outputs_locked;}
 void Motor_SetPairPermille(int16_t left,int16_t right)
 {
     if (motor.outputs_locked) return;
+#if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
+    assert(left <= 300 && right <= 300);
+#endif
     ++set_calls;last_left=left;last_right=right;
     if (left>0 && right==0) observed[0][left/100]=1;
     if (right>0 && left==0) observed[1][right/100]=1;
@@ -87,7 +90,15 @@ static void one_complete_run(void)
     }
     assert(s.state==SWEEP_DONE);
     assert(s.fault==SWEEP_OK);
+#if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
+    assert(Sweep_MaxPwmPercent()==30U);
+    assert(Sweep_StageTotal()==12U);
+    assert(s.stage_id==12U);
+#else
+    assert(Sweep_MaxPwmPercent()==100U);
+    assert(Sweep_StageTotal()==33U);
     assert(s.stage_id==33U);
+#endif
     assert(s.armed_once==1U);
     assert(motor.outputs_locked==1U);
     assert(last_left==0 && last_right==0);
@@ -95,8 +106,19 @@ static void one_complete_run(void)
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
     assert(set_calls>100U);
     for(int group=0;group<3;group++)
-        for(int pct=1;pct<=10;pct++)
+        for(int pct=1;pct<=(
+#if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
+            3
+#else
+            10
+#endif
+        );pct++)
             assert(observed[group][pct]==1U);
+#if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
+    for(int group=0;group<3;group++)
+        for(int pct=4;pct<=10;pct++)
+            assert(observed[group][pct]==0U);
+#endif
 #else
     assert(set_calls==0U);
 #endif
