@@ -91,13 +91,15 @@ static void Encoder_LogShadowMetric(uint32_t now, uint32_t stage,
                              snap->variation_right;
     }
     n = metric == 1U ? snap->valid_reference_ticks : snap->window_ticks;
-    UART_Printf("SYS_AM,ms=%lu,id=%lu,state=%u,w=%u,m=%u,n=%lu,x0=%lu,x1=%lu,x2=%lu,x3=%lu,x4=%lu,x5=%lu,x6=%lu\r\n",
+    UART_Printf("SYS_AM,ms=%lu,id=%lu,state=%u,w=%u,m=%u,n=%lu,x0=%lu,x1=%lu,x2=%lu,x3=%lu,x4=%lu,x5=%lu,x6=%lu,x7=%lu,x8=%lu,x9=%lu\r\n",
                 (unsigned long)now, (unsigned long)stage,
                 (unsigned)state, (unsigned)wheel, (unsigned)metric,
                 (unsigned long)n, (unsigned long)arr[0],
                 (unsigned long)arr[1], (unsigned long)arr[2],
                 (unsigned long)arr[3], (unsigned long)arr[4],
-                (unsigned long)arr[5], (unsigned long)arr[6]);
+                (unsigned long)arr[5], (unsigned long)arr[6],
+                (unsigned long)arr[7], (unsigned long)arr[8],
+                (unsigned long)arr[9]);
 }
 static void Encoder_LogShadowInstant(uint32_t now,
                                      const Encoder_ShadowSnapshot_t *snap)
@@ -106,10 +108,11 @@ static void Encoder_LogShadowInstant(uint32_t now,
     for (w = 0U; w < 2U; ++w) {
         const int32_t *a = w == 0U ? snap->alpha_left : snap->alpha_right;
         const int32_t *box = w == 0U ? snap->box_left : snap->box_right;
-        UART_Printf("SYS_AB,ms=%lu,w=%u,a05=%ld,a10=%ld,a20=%ld,a30=%ld,a40=%ld,a60=%ld,a80=%ld,b5=%ld,b10=%ld,b20=%ld\r\n",
+        UART_Printf("SYS_AB,ms=%lu,w=%u,a05=%ld,a08=%ld,a10=%ld,a12=%ld,a15=%ld,a20=%ld,a30=%ld,a40=%ld,a60=%ld,a80=%ld,b5=%ld,b10=%ld,b20=%ld\r\n",
                     (unsigned long)now, (unsigned)w,
                     (long)a[0], (long)a[1], (long)a[2],
                     (long)a[3], (long)a[4], (long)a[5], (long)a[6],
+                    (long)a[7], (long)a[8], (long)a[9],
                     (long)box[0], (long)box[1], (long)box[2]);
     }
 }
@@ -124,6 +127,7 @@ int main(void)
     uint32_t last_encoder_diag_ms = 0U;
 #if defined(ENCODER_ALPHA_AB_DIAG)
     uint32_t last_shadow_diag_ms = 0U, shadow_last_emit_ms = 0U;
+    uint32_t shadow_last_i2c_diag_ms = 0U;
     uint32_t shadow_completed_stage = 0U;
     uint8_t shadow_completed_state = 0U;
     uint8_t shadow_metric_next = 6U;
@@ -405,7 +409,14 @@ int main(void)
                         (unsigned long)Board_GetClockFault(),
                         (unsigned long)I2C_GetConfiguredSclHz());
 #if defined(ENCODER_PROFILE_DIAG)
-            /* Report retained MPU init probe result once per second.
+#if defined(ENCODER_ALPHA_AB_DIAG)
+            /* Boot probe is retained, not changing each second. Emit every
+             * 10s to prevent an annual 1Hz burst with 50Hz SYS_EN. */
+            if (shadow_last_i2c_diag_ms == 0U ||
+                (uint32_t)(now - shadow_last_i2c_diag_ms) >= 10000U) {
+                shadow_last_i2c_diag_ms = now;
+#endif
+            /* Report retained MPU init probe result periodically.
              * For a 300k fallback, reveals whether 400k failed address ACK,
              * WHO_AM_I read, or WHO_AM_I value. Observation only. */
             UART_Printf("SYS_IPB,ms=%lu,idx=%u,mode=%u,a0=%u,w0=%u,id0=%u,a1=%u,w1=%u,id1=%u,a2=%u,w2=%u,id2=%u,a3=%u,w3=%u,id3=%u\r\n",
@@ -436,6 +447,9 @@ int main(void)
                             (unsigned long)ib.last_pb8_pb9_levels,
                             (unsigned long)ib.last_after_recovery_levels);
             }
+#if defined(ENCODER_ALPHA_AB_DIAG)
+            }
+#endif
 #endif
             /* Optional UART profiling also runs in Motor OFF/ON diagnostics.
              * The production image has no instrumentation or this log. */
@@ -474,21 +488,30 @@ int main(void)
             }
         }
 #if defined(ENCODER_ALPHA_AB_DIAG)
-        /* Optional low-rate snapshots. Underlying seven EMA and three
-         * boxcar candidates advance at EVERY 1ms TIM11 tick. */
-        if ((uint32_t)(now - last_shadow_diag_ms) >= 100U) {
-            Encoder_ShadowSnapshot_t snap;
-            last_shadow_diag_ms = now;
-            Encoder_GetShadowSnapshot(&snap);
-            Encoder_LogShadowInstant(now, &snap);
+        /* Ten candidate EMA filters still run at 1kHz in TIM11. UART
+         * visualization is throttled to 5Hz and not allowed to crowd the
+         * command/health TX queue. Do NOT throttle 1kHz updates themselves. */
+        if ((uint32_t)(now - last_shadow_diag_ms) >= 200U) {
+            UART_ProfileStats_t stats;
+            UART_GetProfileStats(&stats);
+            if (stats.queued_bytes < 768U) {
+                Encoder_ShadowSnapshot_t snap;
+                last_shadow_diag_ms = now;
+                Encoder_GetShadowSnapshot(&snap);
+                Encoder_LogShadowInstant(now, &snap);
+            }
         }
         if (shadow_metric_next < 6U &&
             (uint32_t)(now - shadow_last_emit_ms) >= 25U) {
-            Encoder_LogShadowMetric(now, shadow_completed_stage,
-                                    shadow_completed_state,
-                                    shadow_metric_next, &shadow_completed);
-            shadow_last_emit_ms = now;
-            ++shadow_metric_next;
+            UART_ProfileStats_t stats;
+            UART_GetProfileStats(&stats);
+            if (stats.queued_bytes < 768U) {
+                Encoder_LogShadowMetric(now, shadow_completed_stage,
+                                        shadow_completed_state,
+                                        shadow_metric_next, &shadow_completed);
+                shadow_last_emit_ms = now;
+                ++shadow_metric_next;
+            }
         }
 #endif
 #if defined(ENCODER_PROFILE_DIAG)
