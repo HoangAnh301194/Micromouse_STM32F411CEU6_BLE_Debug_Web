@@ -20,6 +20,8 @@ typedef struct {
     uint32_t elapsed_ms, stage_id, deadline_ms;
 } SweepSnapshot;
 void Sweep_Init(void);
+uint8_t Sweep_MaxPwmPercent(void);
+uint8_t Sweep_StageTotal(void);
 void Sweep_Heartbeat(uint32_t now_ms); /* USART1 PING updates 750ms lease in live mode */
 uint8_t Sweep_SelectMode(uint8_t motor_on); /* Only while DISARMED; 0=shadow,1=live */
 
