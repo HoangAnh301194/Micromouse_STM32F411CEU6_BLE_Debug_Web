@@ -558,7 +558,7 @@ def render_plots(directory):
         for wheel in ("L","R"):
             # Stage 28 is BOTH wheels at 60% PWM, 3.5s DRIVE.
             section=[x for x in alpha_samples if x["phase"]=="ON" and
-                     x["stage"]=="28" and x["state"]=="1" and
+                     x.get("id")=="28" and x.get("state")=="1" and
                      x["wheel"]==wheel]
             if len(section)<8:
                 continue
@@ -767,7 +767,9 @@ def main(argv=None):
         report(path,data)
     try:
         data["plots"]=render_plots(path)
-    except (OSError,ValueError,RuntimeError) as ex:
+    except (OSError,ValueError,RuntimeError,KeyError,TypeError) as ex:
+        # Plotting is best effort. Never suppress an earlier firmware FAULT,
+        # successful locked-OFF restoration or any evidence files.
         data["plots"]="SKIP: "+str(ex)
     (path/"summary.json").write_text(
         json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
