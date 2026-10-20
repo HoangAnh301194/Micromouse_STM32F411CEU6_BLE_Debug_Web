@@ -1,0 +1,136 @@
+{
+  "created": "2026-10-20T08:52:12",
+  "mode": "full",
+  "software": {
+    "git": {
+      "branch": "giomuadongbac",
+      "commit": "426f1715935165af0734c44327a80938912c144b",
+      "tracked_dirty": false
+    },
+    "source": {
+      "checks": {
+        "quadrature_x4": true,
+        "counter_16bit": true,
+        "encoder_on_tim11": true,
+        "motor_off_flag": true,
+        "encoder_motor_off_profile": true,
+        "encoder_telemetry_diagnostic_guard": true,
+        "encoder_motor_on_profile": true,
+        "shadow_alpha_optin": true,
+        "i2c_boot_probe_logged": true,
+        "i2c_busy_status_logged": true,
+        "motor_off_sticky_lock": true,
+        "positive_forward_unchanged": true
+      },
+      "pass": true,
+      "limits": [
+        "No explicit TIM3/TIM4 IC1F/IC2F hardware glitch filter configuration.",
+        "Raw PPS from one-millisecond delta: quantization 1000 counts/s.",
+        "EMA alpha 0.30 at 1 kHz is not equivalent to encoder electrical filtering.",
+        "50 Hz SYS_EN during motor OFF/ON resolves short-term PPS trends but cannot prove zero missed edges."
+      ]
+    },
+    "self_test": {
+      "status": "PASS",
+      "rollover_cases": 3,
+      "parser_cases": 2
+    },
+    "checks": {
+      "integration_audit": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_audit.log"
+      },
+      "integration_negative": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_negative.log"
+      },
+      "encoder_probe_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_probe_parser.log"
+      },
+      "shadow_ab_regression": {
+        "pass": true,
+        "returncode": 0,
+        "log": "shadow_ab_regression.log"
+      },
+      "encoder_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_native.log"
+      },
+      "pipeline_regression": {
+        "pass": true,
+        "returncode": 0,
+        "log": "pipeline_regression.log"
+      },
+      "estimator_selftest": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_selftest.log"
+      },
+      "motor_driver_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "motor_driver_native.log"
+      },
+      "sweep_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "sweep_native.log"
+      },
+      "ir_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_native.log"
+      },
+      "ir_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_parser.log"
+      },
+      "estimator_study": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_study.log"
+      },
+      "build_locked": {
+        "pass": true,
+        "returncode": 0,
+        "log": "build_locked.log"
+      },
+      "build_encoder_on": {
+        "pass": true,
+        "returncode": 0,
+        "log": "build_encoder_on.log"
+      }
+    },
+    "pass": true
+  },
+  "hardware": {
+    "status": "ABORTED_OR_INCOMPLETE",
+    "details": "Encoder motor telemetry incomplete or no response: {'OFF': 'FAIL_HEALTH', 'ON': 'NO_ENCODER_RESPONSE'}"
+  },
+  "sweep": {
+    "status": "REVIEWED",
+    "source": "D:\\Micromouse_STM32F411CEU6_BLE_Debug_Web\\results\\encoder_qual_20261020_085212\\system_uart_hardware\\summary.json",
+    "stage_count": 33,
+    "motor_on_stages": 0,
+    "both_wheels_mismatch_mean_pct": null,
+    "qualified_electrically": false,
+    "note": "Stage-average counts only; not 1ms dynamics or ground-truth RPM."
+  },
+  "restored_motor_off": {
+    "pass": true,
+    "returncode": 0,
+    "log": "restore_motor_off.log"
+  },
+  "error": "Encoder motor telemetry incomplete or no response: {'OFF': 'FAIL_HEALTH', 'ON': 'NO_ENCODER_RESPONSE'}",
+  "plots": [
+    "sweep_response.png",
+    "encoder_motor_off_speed.png",
+    "encoder_motor_on_speed.png"
+  ]
+}
