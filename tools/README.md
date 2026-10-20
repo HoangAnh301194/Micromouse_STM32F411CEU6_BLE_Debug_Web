@@ -78,13 +78,13 @@ See docs/encoder/QUALIFICATION_PIPELINE_20261020.md for test limitations.
 
 `encoder_qualification_pipeline.py` now includes the `shadow_ab_regression`
 gate and a 1-kHz diagnostic-only bank of EMA alpha values
-`0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 0.80` plus 5/10/20-ms boxcars
+`0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.30, 0.40, 0.60, 0.80` plus 5/10/20-ms boxcars
 on both wheels. The PWM/motor and STOP safety controls are unchanged.
 Production speed EMA `alpha=0.30` and PID inputs are untouched.
 
 When `--motor-on-sweep --fixture-ready` is used on a correctly secured
 test rig, the existing 33-stage OFF/ON sweep also records `SYS_AB` at
-10 Hz, per-stage 1-kHz `SYS_AM` aggregates, `SYS_IPB` MPU boot-speed
+5 Hz, per-stage 1-kHz `SYS_AM` aggregates, `SYS_IPB` MPU boot-speed
 status, and `SYS_IB` I2C BUSY/SR1/SR2/PB8/PB9 evidence.
 `encoder_shadow_ab.py` writes `encoder_alpha_ab.json`,
 `encoder_alpha_stage_metrics.csv` and
@@ -106,3 +106,10 @@ Do not use `--skip-build` for a first firmware run.
 
 Detailed test/acceptance contract:
 `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
+
+The ten-alpha follow-up test retains the existing 1-kHz shadow metrics,
+but reduces visualization telemetry to 5 Hz, schedules static I2C boot
+probes every 10 seconds, and counts USART RX ORE/FE/NE flags separately
+in `SYS_UR`. All UART acceptance gates remain strict. The host decoder
+supports both the previous seven-alpha data and the refined ten-alpha
+data. Do not infer a final production filter from one test run.
