@@ -88,6 +88,13 @@ def source_audit():
         "encoder_motor_on_profile": "integration_diag_encoder_motor_on_96m" in cfg,
         "shadow_alpha_optin": "-DENCODER_ALPHA_AB_DIAG=1" in cfg and
             "Encoder_GetShadowSnapshot" in enc and "SYS_AM,ms=" in main,
+        "shadow_ema_offloaded_from_irq": (
+            "ShadowEnqueue((int16_t)" in enc and
+            "void Encoder_ShadowService" not in enc and
+            "uint16_t Encoder_ShadowService" in enc and
+            "Encoder_ShadowService(12U)" in main and
+            "SYS_AQ,ms=" in main),
+
         "i2c_boot_probe_logged": "SYS_IPB,ms=" in main,
         "i2c_busy_status_logged": "SYS_IB,ms=" in main and
             "I2C_GetBusyDiag" in (ROOT/"src/i2c.c").read_text(encoding="utf-8"),
