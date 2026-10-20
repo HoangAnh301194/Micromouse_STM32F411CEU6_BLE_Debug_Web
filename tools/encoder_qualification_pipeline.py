@@ -416,8 +416,13 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                 "mpu_timeout_delta":counter_delta("SYS_M","to")}
         rx_details={key:counter_delta("SYS_UR",key)
                     for key in ("ore","fe","ne")}
+        shadow_queue_entries=[x for x in all_records if x["type"]=="SYS_AQ"]
+        shadow_queue=shadow_queue_entries[-1] if shadow_queue_entries else None
+        shadow_queue_bad=bool(shadow_queue and (
+            shadow_queue.get("lost",0)!=0 or shadow_queue.get("edge",0)!=0))
         status="PASS"
-        if any(v is None for v in health.values()) or any(v!=0 for v in health.values()):
+        if (shadow_queue_bad or any(v is None for v in health.values())
+                or any(v!=0 for v in health.values())):
             status="FAIL_HEALTH"
         if not drive or any(x["steady_drive_samples"]<50 for x in results):
             status="INSUFFICIENT_DRIVE_SAMPLES"
@@ -469,6 +474,8 @@ def analyze_sweep_telemetry(run_directory, report_directory):
                          "i2c_busy_debug":busy_diag,
                          "health":health,
                          "uart_rx_subtypes":rx_details,
+                         "shadow_queue":shadow_queue,
+                         "shadow_queue_bad":shadow_queue_bad,
                          "note":"PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."}
     statuses={k:v["status"] for k,v in reports.items()}
     if any(v not in ("PASS","FAIL_HEALTH") for v in statuses.values()):
