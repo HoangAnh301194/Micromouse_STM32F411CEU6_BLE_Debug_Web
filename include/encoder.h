@@ -19,6 +19,21 @@ float Encoder_GetRightSpeedPPS(void);
 #if defined(ENCODER_ALPHA_AB_DIAG)
 #define ENCODER_SHADOW_ALPHAS 10U
 #define ENCODER_SHADOW_WINDOWS 3U
+#define ENCODER_SHADOW_QUEUE_CAPACITY 256U
+/* SPSC queue: TIM11 only produces; main loop only consumes. */
+typedef struct {
+    uint32_t produced;
+    uint32_t consumed;
+    uint32_t overflow;
+    uint32_t stage_boundary_lag;
+    uint16_t pending;
+    uint16_t peak_pending;
+} Encoder_ShadowQueueStats_t;
+/* Bounded processing; never run the ten shadow filters in TIM11. */
+uint16_t Encoder_ShadowService(uint16_t budget);
+void Encoder_GetShadowQueueStats(Encoder_ShadowQueueStats_t *out);
+void Encoder_ShadowMarkStageBoundary(void);
+
 typedef struct {
     int32_t alpha_left[ENCODER_SHADOW_ALPHAS];
     int32_t alpha_right[ENCODER_SHADOW_ALPHAS];
