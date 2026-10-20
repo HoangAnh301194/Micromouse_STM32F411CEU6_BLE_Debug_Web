@@ -231,9 +231,6 @@ int main(void)
     while (1) {
         uint32_t now = millis();
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
-#if defined(INTEGRATION_DIAG)
-        Sweep_Update(now, &mpu);
-#endif
 
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());
@@ -241,6 +238,12 @@ int main(void)
 #if defined(INTEGRATION_DIAG)
         /* RX IRQ only queues bytes; command parsing is budgeted in main. */
         IntegrationSerial_Poll(&mpu, now);
+        /* Accept any already-buffered PING before the unchanged 750-ms lease. */
+        Sweep_Update(now, &mpu);
+#if defined(ENCODER_ALPHA_AB_DIAG)
+        /* No shadow EMA operations run at high interrupt priority. */
+        Encoder_ShadowService(12U);
+#endif
 #if defined(UART_PROFILE_DIAG)
         /* Main-only TX generator, never in TIM11 or USART ISR. */
         UART_Bench_Poll(now, &mpu);
@@ -276,6 +279,9 @@ int main(void)
                     (uint32_t)(now - last_sweep_log_ms) : 0U;
                 Motor_GetAppliedPairPermille(&applied_l, &applied_r);
 #if defined(ENCODER_ALPHA_AB_DIAG)
+                /* Consume queued 1-ms deltas before stage metric snapshot. */
+                Encoder_ShadowService(32U);
+                Encoder_ShadowMarkStageBoundary();
                 if (last_sweep_stage != 0xFFFFFFFFUL) {
                     Encoder_GetShadowSnapshot(&shadow_completed);
                     shadow_completed_stage = last_sweep_stage;
@@ -409,6 +415,17 @@ int main(void)
                         (unsigned long)Board_GetClockFault(),
                         (unsigned long)I2C_GetConfiguredSclHz());
 #if defined(ENCODER_ALPHA_AB_DIAG)
+            {
+                Encoder_ShadowQueueStats_t q;
+                Encoder_GetShadowQueueStats(&q);
+                UART_Printf("SYS_AQ,ms=%lu,in=%lu,out=%lu,lost=%lu,edge=%lu,q=%u,peak=%u\r\n",
+                            (unsigned long)now,
+                            (unsigned long)q.produced,
+                            (unsigned long)q.consumed,
+                            (unsigned long)q.overflow,
+                            (unsigned long)q.stage_boundary_lag,
+                            (unsigned)q.pending, (unsigned)q.peak_pending);
+            }
             {
                 UART_ProfileStats_t diag;
                 UART_GetProfileStats(&diag);
