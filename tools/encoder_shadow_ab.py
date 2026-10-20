@@ -3,7 +3,7 @@
 
 Never treat the trailing 20-ms count window as independent speed ground truth.
 The six stage-level SYS_AM frames are generated from 1-kHz measurements on MCU;
-SYS_AB samples at 10 Hz are for visualization only, not alpha-lag qualification.
+SYS_AB samples at 5 Hz (legacy 10 Hz) visualize only, not 1-ms lag.
 """
 from __future__ import annotations
 
@@ -14,12 +14,14 @@ from collections import defaultdict
 from pathlib import Path
 import statistics
 
-ALPHAS = (0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 0.80)
-KEYS = tuple("x" + str(i) for i in range(7))
+ALPHAS = (0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.30, 0.40, 0.60, 0.80)
+LEGACY_ALPHAS = (0.05, 0.10, 0.20, 0.30, 0.40, 0.60, 0.80)
 METRICS = {0: "steady_abs_error_vs_box20", 1: "first_500ms_abs_error_vs_box20",
            2: "steady_total_variation"}
-SAMPLE_KEYS = ("a05", "a10", "a20", "a30", "a40", "a60", "a80",
-               "b5", "b10", "b20")
+SAMPLE_KEYS = ("a05", "a08", "a10", "a12", "a15", "a20", "a30",
+               "a40", "a60", "a80", "b5", "b10", "b20")
+LEGACY_SAMPLES = ("a05", "a10", "a20", "a30", "a40", "a60", "a80",
+                  "b5", "b10", "b20")
 
 
 def parse_frame(line):
@@ -46,46 +48,54 @@ def load_shadow(run_directory):
         if not path.is_file():
             raise ValueError("Missing raw UART evidence: " + str(path))
         stage = {"id": -1, "state": 0, "group": -1, "pwm_percent": 0}
-        for line in path.open(encoding="utf-8", errors="replace"):
-            row = parse_frame(line)
-            if row is None:
-                continue
-            if row["type"] == "SYS_STEP":
-                if all(isinstance(row.get(key), int) for key in
-                       ("id", "state", "group", "duty")):
-                    stage = {"id": row["id"], "state": row["state"],
-                             "group": row["group"],
-                             "pwm_percent": row["duty"] // 10}
-            elif row["type"] == "SYS_AB":
-                if (row.get("w") in (0, 1)
-                        and all(isinstance(row.get(k), int) for k in
-                                ("ms", *SAMPLE_KEYS))):
-                    samples.append({"phase": phase, **stage,
-                                    "wheel": "L" if row["w"] == 0 else "R",
-                                    "ms": row["ms"],
-                                    **{key: row[key] for key in SAMPLE_KEYS}})
-            elif row["type"] == "SYS_AM":
-                if (not all(isinstance(row.get(k), int)
-                            for k in ("id", "state", "w", "m", "n", *KEYS))
+        with path.open(encoding="utf-8", errors="replace") as stream:
+            for line in stream:
+                row = parse_frame(line)
+                if row is None:
+                    continue
+                if row["type"] == "SYS_STEP":
+                    if all(isinstance(row.get(key), int) for key in
+                           ("id", "state", "group", "duty")):
+                        stage = {"id": row["id"], "state": row["state"],
+                                 "group": row["group"],
+                                 "pwm_percent": row["duty"] // 10}
+                elif row["type"] == "SYS_AB":
+                    if (row.get("w") in (0, 1) and
+                        all(isinstance(row.get(k), int)
+                            for k in ("ms", *LEGACY_SAMPLES))):
+                        samples.append({"phase": phase, **stage,
+                                        "wheel": "L" if row["w"] == 0 else "R",
+                                        "ms": row["ms"],
+                                        **{key: row.get(key, "") for key in SAMPLE_KEYS}})
+                elif row["type"] == "SYS_AM":
+                    new_keys = tuple("x" + str(i) for i in range(len(ALPHAS)))
+                    old_keys = tuple("x" + str(i) for i in range(len(LEGACY_ALPHAS)))
+                    has_new = any(k in row for k in new_keys[len(old_keys):])
+                    keys = new_keys if has_new else old_keys
+                    active = ALPHAS if has_new else LEGACY_ALPHAS
+                    if (not all(isinstance(row.get(k), int)
+                                for k in ("id", "state", "w", "m", "n", *keys))
                         or row["w"] not in (0, 1)
                         or row["m"] not in METRICS or not 0 <= row["id"] < 33
                         or row["state"] not in (1, 2)
                         or row["n"] < 0
-                        or any(row[key] < 0 for key in KEYS)):
-                    issues.append({"phase": phase, "issue": "malformed_SYS_AM"})
-                    continue
-                stage_rows.append({
-                    "phase": phase, "stage": row["id"],
-                    "group": row["id"] // 11, "pwm_percent": (row["id"] % 11) * 10,
-                    "state": row["state"], "wheel": "L" if row["w"] == 0 else "R",
-                    "metric": METRICS[row["m"]], "n": row["n"],
-                    **{f"alpha_{str(alpha).replace('.', '_')}":
-                       round(row[key] / row["n"], 5)
-                       if row["n"] > 0 else None
-                       for alpha, key in zip(ALPHAS, KEYS)}
-                })
+                        or any(row[k] < 0 for k in keys)):
+                        issues.append({"phase": phase, "issue": "malformed_SYS_AM"})
+                        continue
+                    stage_rows.append({
+                        "phase": phase, "stage": row["id"],
+                        "group": row["id"] // 11,
+                        "pwm_percent": (row["id"] % 11) * 10,
+                        "state": row["state"],
+                        "wheel": "L" if row["w"] == 0 else "R",
+                        "metric": METRICS[row["m"]], "n": row["n"],
+                        "alpha_count": len(active),
+                        **{"alpha_" + str(alpha).replace(".", "_"):
+                           round(row[key] / row["n"], 5)
+                           if row["n"] > 0 else None
+                           for alpha, key in zip(active, keys)}
+                    })
     return stage_rows, samples, issues
-
 
 def candidate_rows(stage_rows, phase="ON"):
     # Only active motor and middle PWM steps; 90-100% runs are deliberately
@@ -121,12 +131,17 @@ def summarize(stage_rows, samples, issues):
         for metric in METRICS.values()
     }
     missing = sorted(expected - seen)
+    counts = set(row["alpha_count"] for row in stage_rows)
+    if len(counts) > 1:
+        issues.append({"issue": "mixed_shadow_bank_versions", "counts": sorted(counts)})
+    active_alphas = (ALPHAS if counts == {len(ALPHAS)} else
+                     LEGACY_ALPHAS if counts == {len(LEGACY_ALPHAS)} else ())
     points = candidate_rows(stage_rows)
     per_metric = {}
     for metric in METRICS.values():
         basis = [row for row in points if row["metric"] == metric]
         totals = {}
-        for idx, alpha in enumerate(ALPHAS):
+        for alpha in active_alphas:
             name = "alpha_" + str(alpha).replace(".", "_")
             used = [row for row in basis
                     if row[name] is not None and row["n"] > 0]
@@ -140,7 +155,7 @@ def summarize(stage_rows, samples, issues):
     base_name = "alpha_0_3"
     weights = {METRICS[0]: 0.50, METRICS[1]: 0.35, METRICS[2]: 0.15}
     ranking = []
-    for alpha in ALPHAS:
+    for alpha in active_alphas:
         name = "alpha_" + str(alpha).replace(".", "_")
         terms = {}
         for metric, weight in weights.items():
@@ -167,7 +182,7 @@ def summarize(stage_rows, samples, issues):
                 **{str(alpha): round(
                     sum(row["alpha_" + str(alpha).replace(".", "_")] * row["n"]
                         for row in target) / n, 5) if n else None
-                   for alpha in ALPHAS}
+                   for alpha in active_alphas}
             }
         return out
     by_wheel = {wheel: region_summary([row for row in points
@@ -187,7 +202,7 @@ def summarize(stage_rows, samples, issues):
         if any(value is None or value <= 0 for value in base.values()):
             return []
         rows = []
-        for alpha in ALPHAS:
+        for alpha in active_alphas:
             terms = [summary[key][str(alpha)] / base[key] for key in weights]
             if any(v is None for v in terms):
                 continue
@@ -206,9 +221,11 @@ def summarize(stage_rows, samples, issues):
         "duplicated_frames_count": len(duplicated),
         "issues": issues[:20],
         "sample_frames": len(samples),
-        "candidate_alphas": list(ALPHAS),
+        "candidate_alphas": list(active_alphas),
+        "shadow_bank_version": ("ten_alpha" if len(active_alphas) == 10 else
+                                "legacy_seven_alpha" if len(active_alphas) == 7 else "unknown"),
         "reference": "Trailing 20-ms integrated encoder counts, not external truth.",
-        "sampling": "Metrics accumulated at 1 kHz; SYS_AB visualization at 10 Hz.",
+        "sampling": "Metrics accumulated at 1 kHz; SYS_AB visualization 5 Hz (legacy 10 Hz).",
         "optimization_scope": "ON active wheels PWM 20-80%; steady noise/tracking from DRIVE only, early transient from DRIVE and COAST; 90-100% reserved for separate risk analysis.",
         "metrics": per_metric,
         "by_wheel": by_wheel,
