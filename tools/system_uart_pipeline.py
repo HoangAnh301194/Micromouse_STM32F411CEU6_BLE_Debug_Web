@@ -106,7 +106,7 @@ def planned_stage_times_ms(stage):
     return drive, coast
 
 
-def inspect_extended_schedule(logs, mode):
+def inspect_extended_schedule(logs, mode, limited=False):
     """Validate drive/coast timing and capture residual inertia 500ms traces.
 
     SYS_STEP state=2 is the END of the current DRIVE interval.
@@ -118,13 +118,16 @@ def inspect_extended_schedule(logs, mode):
              and r.get("mode") == mode_num]
     problems, summary = [], []
     coasts = [r for r in logs if r.get("type") == "SYS_COAST"]
-    for stage in range(33):
+    total=12 if limited and mode=="ON" else 33
+    per_group=4 if limited and mode=="ON" else 11
+    for stage in range(total):
         drive = next((r for r in steps if r.get("id") == stage
                       and r.get("state") == 2), None)
         coast = next((r for r in steps
                       if r.get("id") == stage + 1
-                      and r.get("state") == (3 if stage == 32 else 1)), None)
-        planned_drive, planned_coast = planned_stage_times_ms(stage)
+                      and r.get("state") == (3 if stage == total-1 else 1)), None)
+        planned_drive, planned_coast = planned_stage_times_ms(
+            (stage // per_group) * 11 + stage % per_group)
         if not drive or not coast:
             problems.append({"stage": stage, "reason": "missing_interval"})
             continue
@@ -144,8 +147,8 @@ def inspect_extended_schedule(logs, mode):
             problems.append({"stage": stage, "reason": "missing_500ms_coast_samples",
                              "samples": len(series)})
         summary.append({
-            "stage": stage, "wheel_group": stage // 11,
-            "pwm_percent": (stage % 11) * 10,
+            "stage": stage, "wheel_group": stage // per_group,
+            "pwm_percent": (stage % per_group) * 10,
             "drive_ms": observed_drive, "coast_ms": observed_coast,
             "drive_left_counts": drive.get("dl"),
             "drive_right_counts": drive.get("dr"),
@@ -161,8 +164,8 @@ def inspect_extended_schedule(logs, mode):
     # Positive forward encoder sign applies to the NEW integrated firmware only.
     if mode == "ON":
         for group, axis in ((0,"dl"),(1,"dr"),(2,"dl"),(2,"dr")):
-            for step in (6,7):
-                stage = group * 11 + step
+            for step in ((2,3) if limited else (6,7)):
+                stage = group * per_group + step
                 candidate = next((x for x in summary if x["stage"] == stage),None)
                 if candidate and candidate.get("drive_"+("left" if axis=="dl" else "right")+"_counts",0) < 0:
                     problems.append({"stage": stage, "reason": "forward_encoder_sign_negative",
@@ -172,7 +175,23 @@ def inspect_extended_schedule(logs, mode):
             "coast_intervals": len(coasts)}
 
 
-def evaluate(logs, mode):
+def inspect_limited_drive(logs):
+    """Strict 12-stage motor-on response for PWM<=30%, three wheel groups."""
+    points={x.get("id"):x for x in logs
+            if x.get("type")=="SYS_STEP" and x.get("mode")==1 and x.get("state")==2}
+    anomalies=[]
+    for group in range(3):
+        for step in (2,3):
+            row=points.get(group*4+step)
+            for wheel in ((0,) if group==0 else (1,) if group==1 else (0,1)):
+                field="dl" if wheel==0 else "dr"
+                if row is None or row.get(field,0)<20:
+                    anomalies.append({"group":group,"step":step,"wheel":wheel,
+                        "reason":"missing_or_weak_encoder_response"})
+    return {"drive_windows":len(points),"high_pwm_anomalies":anomalies,
+            "qualified":len(points)==12 and not anomalies}
+
+def evaluate(logs, mode, limited=False):
     steps = sorted(set(int(x["id"]) for x in logs
                        if x.get("type") == "SYS_STEP" and x.get("state") == 1
                        and x.get("mode") == (1 if mode == "ON" else 0)))
@@ -188,10 +207,16 @@ def evaluate(logs, mode):
     )
     profile = last("CLOCK_PROFILE")
     faults = [x for x in logs if x.get("type") == "SYS_STEP" and x.get("state") == 4]
-    encoder_review = inspect_encoder_drive(logs, mode)
-    extended = inspect_extended_schedule(logs, mode)
+    limited_on = limited and mode=="ON"
+    expected=12 if limited_on else 33
+    encoder_review = (inspect_limited_drive(logs) if limited_on
+                      else inspect_encoder_drive(logs, mode))
+    extended=inspect_extended_schedule(logs, mode, limited=limited_on)
     checks = {
-        "33_unique_pwm_stages": steps == list(range(33)),
+        "expected_unique_pwm_stages": steps == list(range(expected)),
+        "limited_30pct_no_excess": (not limited_on or
+            not any(x.get("type")=="SYS_STEP" and x.get("mode")==1 and
+                    x.get("duty",0)>300 for x in logs)),
         "finished_and_locked": completed and mpu.get("locked") == 1,
         "clock_trim25": uart.get("trim") == 25 and uart.get("clkfault") == 0,
         "i2c_400k_nominal": uart.get("iclk") == 400000,
@@ -220,7 +245,9 @@ def evaluate(logs, mode):
     return {
         "mode": mode, "checks": checks,
         "software_pass": all(checks.values()),
-        "stages": len(steps), "timer": timer, "mpu": mpu, "uart": uart,
+        "stages": len(steps), "expected_stages":expected,
+        "max_pwm":30 if limited_on else 100,
+        "timer": timer, "mpu": mpu, "uart": uart,
         "clock_profile": profile, "faults": faults, "encoder_review": encoder_review,
         "uart_dma_cpu_profile": uart_profile,
         "uart_rx_error_detail": uart_rx_detail,
