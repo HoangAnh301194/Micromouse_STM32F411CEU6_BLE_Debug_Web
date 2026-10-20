@@ -17,6 +17,91 @@ static int16_t last_right_raw = 0;
 #if !defined(ENCODER_PROFILE_DIAG) || !defined(INTEGRATION_DIAG)
 #error "Encoder alpha A/B requires diagnostic Encoder integration profile"
 #endif
+/* Producer TIM11 only: fixed bounded O(1) write of two signed deltas.
+ * Consumer main loop performs all EMA, boxcar and error calculations.
+ * Producer publishes head only after both delta fields are visible. */
+typedef struct {
+    int16_t l;
+    int16_t r;
+} ShadowSample;
+static ShadowSample shadow_samples[ENCODER_SHADOW_QUEUE_CAPACITY];
+static volatile uint16_t shadow_qhead, shadow_qtail, shadow_peak_pending;
+static volatile uint32_t shadow_produced, shadow_consumed;
+static volatile uint32_t shadow_overflow, shadow_stage_lag;
+
+static void ShadowUpdate(int16_t dl, int16_t dr, float raw_l, float raw_r);
+
+static void ShadowEnqueue(int16_t dl, int16_t dr)
+{
+    uint16_t head = shadow_qhead;
+    uint16_t next = (uint16_t)((head + 1U) &
+                               (ENCODER_SHADOW_QUEUE_CAPACITY - 1U));
+    if (next == shadow_qtail) {
+        ++shadow_overflow; /* Never overwrite unread real 1ms evidence. */
+        return;
+    }
+    shadow_samples[head].l = dl;
+    shadow_samples[head].r = dr;
+    __DMB();
+    shadow_qhead = next;
+    ++shadow_produced;
+    {
+        uint16_t depth = (uint16_t)((next - shadow_qtail) &
+                                    (ENCODER_SHADOW_QUEUE_CAPACITY - 1U));
+        if (depth > shadow_peak_pending) shadow_peak_pending = depth;
+    }
+}
+
+static uint16_t ShadowPending(void)
+{
+    return (uint16_t)((shadow_qhead - shadow_qtail) &
+                      (ENCODER_SHADOW_QUEUE_CAPACITY - 1U));
+}
+
+uint16_t Encoder_ShadowService(uint16_t budget)
+{
+    uint16_t processed = 0U;
+    while (processed < budget) {
+        uint16_t tail = shadow_qtail;
+        ShadowSample sample;
+        if (tail == shadow_qhead) break;
+        sample = shadow_samples[tail];
+        __DMB();
+        shadow_qtail = (uint16_t)((tail + 1U) &
+                                 (ENCODER_SHADOW_QUEUE_CAPACITY - 1U));
+        ++shadow_consumed;
+        /* Same signed count changes as the 1-kHz production estimator. */
+        ShadowUpdate(sample.l, sample.r,
+                     (float)sample.l * 1000.0f,
+                     (float)sample.r * 1000.0f);
+        ++processed;
+    }
+    return processed;
+}
+
+void Encoder_GetShadowQueueStats(Encoder_ShadowQueueStats_t *out)
+{
+    uint32_t primask;
+    if (!out) return;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    out->produced = shadow_produced;
+    out->consumed = shadow_consumed;
+    out->overflow = shadow_overflow;
+    out->stage_boundary_lag = shadow_stage_lag;
+    out->pending = ShadowPending();
+    out->peak_pending = shadow_peak_pending;
+    if (!primask) __enable_irq();
+}
+
+/* Invoked only after an ordinary bounded service pass at a stage edge.
+ * If a backlog remains, flag that stage's measurements as unqualified.
+ * Never extend the motor heartbeat timeout to hide main-loop congestion. */
+void Encoder_ShadowMarkStageBoundary(void)
+{
+    if (ShadowPending() != 0U) ++shadow_stage_lag;
+}
+
 static const float shadow_alpha[ENCODER_SHADOW_ALPHAS] = {
     0.05f, 0.08f, 0.10f, 0.12f, 0.15f,
     0.20f, 0.30f, 0.40f, 0.60f, 0.80f
@@ -212,9 +297,8 @@ void Encoder_Update(float dt_s)
     speed_left_pps += SPEED_LPF_ALPHA * (raw_left_pps - speed_left_pps);
     speed_right_pps += SPEED_LPF_ALPHA * (raw_right_pps - speed_right_pps);
 #if defined(ENCODER_ALPHA_AB_DIAG)
-    ShadowUpdate((int16_t)(delta_left * ENCODER_LEFT_DIRECTION),
-                 (int16_t)(delta_right * ENCODER_RIGHT_DIRECTION),
-                 raw_left_pps, raw_right_pps);
+    ShadowEnqueue((int16_t)(delta_left * ENCODER_LEFT_DIRECTION),
+                  (int16_t)(delta_right * ENCODER_RIGHT_DIRECTION));
 #endif
 }
 
@@ -233,6 +317,9 @@ void Encoder_Reset(void)
     {
         uint8_t i;
         shadow_pos = shadow_filled = 0U;
+        shadow_qhead = shadow_qtail = shadow_peak_pending = 0U;
+        shadow_produced = shadow_consumed = 0U;
+        shadow_overflow = shadow_stage_lag = 0U;
         for (i = 0U; i < 20U; ++i) {
             shadow_ring_l[i] = shadow_ring_r[i] = 0;
         }
