@@ -227,6 +227,7 @@ def main(argv=None):
             [sys.executable, "tools/system_uart_pipeline.py",
              "--port", args.port, "--flash", "--motor-on",
              "--limited-30", "--encoder-telemetry",
+             "--off-encmaxcy-limit", "2000",
              "--outdir", out / "P0_P1_limited"],
             out, out / "P0_P1_limited.log", report["commands"])
         file1 = out / "P0_P1_limited" / "summary.json"
@@ -240,6 +241,7 @@ def main(argv=None):
         subprocess_live("P2_full",
             [sys.executable, "tools/system_uart_pipeline.py",
              "--port", args.port, "--flash", "--motor-on", "--encoder-telemetry",
+             "--off-encmaxcy-limit", "2000",
              "--outdir", out / "P2_full"],
             out, out / "P2_full.log", report["commands"])
         file2 = out / "P2_full" / "summary.json"
