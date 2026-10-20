@@ -29,6 +29,8 @@ typedef struct {
     uint32_t accepted_msgs, accepted_bytes, rejected_bytes;
     uint32_t completed_bytes, dropped_msgs;
     uint32_t queued_bytes, queue_peak, rx_bytes, rx_errors, rx_overflow;
+    /* USART SR flags may co-occur; separately count each on IRQ read. */
+    uint32_t rx_overrun_errors, rx_framing_errors, rx_noise_errors;
     uint32_t printf_calls, printf_cycles, printf_max_cycles;
     uint32_t tx_dma_isr_cycles, tx_dma_isr_max_cycles;
     uint32_t rx_isr_cycles, rx_isr_max_cycles;
