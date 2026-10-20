@@ -113,3 +113,33 @@ probes every 10 seconds, and counts USART RX ORE/FE/NE flags separately
 in `SYS_UR`. All UART acceptance gates remain strict. The host decoder
 supports both the previous seven-alpha data and the refined ten-alpha
 data. Do not infer a final production filter from one test run.
+
+## P0→P3 single-command gated qualification (2026-10-20)
+
+`tools/encoder_p0_p3_pipeline.py` now coordinates the entire process:
+**software preflight + P0 real Motor-OFF timing/UART/FIFO gate → P1
+compile-limited 0–30% 12-stage Motor-ON gate → P2 full 0–100% 33 OFF
++ 33 ON stages → P3 ten-alpha comparison and provisional PID alpha candidate**.
+Every stage is fail-closed; firmware production alpha and PID remain unchanged.
+
+Software and capped-profile build only (no MCU/COM/motor):
+```powershell
+python tools/encoder_p0_p3_pipeline.py --offline-only
+```
+
+Actual physical motor run with secured raised wheels, operator present
+and a hardware-independent power cutoff:
+```powershell
+python tools/encoder_p0_p3_pipeline.py --port COM7 --fixture-ready --independent-vm-cutoff --allow-100-percent
+```
+
+The last flag explicitly authorizes the **full 100% PWM sweep after P1
+passes**. The script verifies the firmware-advertised maximum PWM/stage
+count before START, captures original UART logs and restores locked
+OFF firmware on exit when flashing remains possible.
+Inspect `results/encoder_p0_p3_*/summary.json` and
+`alpha_pid_decision.json`; any P3 alpha is only a **candidate** pending
+repeatability and closed-loop PID response tests.
+
+See `docs/encoder/ENCODER_P0_P3_SEQUENTIAL_20261020.md` for complete
+strict safety/acceptance conditions.
