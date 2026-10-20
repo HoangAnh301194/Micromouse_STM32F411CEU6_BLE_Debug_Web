@@ -1,0 +1,1295 @@
+{
+  "created": "2026-10-20T08:39:02",
+  "mode": "full",
+  "software": {
+    "git": {
+      "branch": "giomuadongbac",
+      "commit": "0ccea850aa796a4aad277e7fd86636dfb47c2755",
+      "tracked_dirty": false
+    },
+    "source": {
+      "checks": {
+        "quadrature_x4": true,
+        "counter_16bit": true,
+        "encoder_on_tim11": true,
+        "motor_off_flag": true,
+        "encoder_motor_off_profile": true,
+        "encoder_telemetry_diagnostic_guard": true,
+        "encoder_motor_on_profile": true,
+        "shadow_alpha_optin": true,
+        "i2c_boot_probe_logged": true,
+        "i2c_busy_status_logged": true,
+        "motor_off_sticky_lock": true,
+        "positive_forward_unchanged": true
+      },
+      "pass": true,
+      "limits": [
+        "No explicit TIM3/TIM4 IC1F/IC2F hardware glitch filter configuration.",
+        "Raw PPS from one-millisecond delta: quantization 1000 counts/s.",
+        "EMA alpha 0.30 at 1 kHz is not equivalent to encoder electrical filtering.",
+        "50 Hz SYS_EN during motor OFF/ON resolves short-term PPS trends but cannot prove zero missed edges."
+      ]
+    },
+    "self_test": {
+      "status": "PASS",
+      "rollover_cases": 3,
+      "parser_cases": 2
+    },
+    "checks": {
+      "integration_audit": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_audit.log"
+      },
+      "integration_negative": {
+        "pass": true,
+        "returncode": 0,
+        "log": "integration_negative.log"
+      },
+      "encoder_probe_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_probe_parser.log"
+      },
+      "shadow_ab_regression": {
+        "pass": true,
+        "returncode": 0,
+        "log": "shadow_ab_regression.log"
+      },
+      "encoder_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "encoder_native.log"
+      },
+      "pipeline_regression": {
+        "pass": true,
+        "returncode": 0,
+        "log": "pipeline_regression.log"
+      },
+      "estimator_selftest": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_selftest.log"
+      },
+      "motor_driver_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "motor_driver_native.log"
+      },
+      "sweep_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "sweep_native.log"
+      },
+      "ir_native": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_native.log"
+      },
+      "ir_parser": {
+        "pass": true,
+        "returncode": 0,
+        "log": "ir_parser.log"
+      },
+      "estimator_study": {
+        "pass": true,
+        "returncode": 0,
+        "log": "estimator_study.log"
+      },
+      "build_locked": {
+        "pass": true,
+        "returncode": 0,
+        "log": "build_locked.log"
+      },
+      "build_encoder_on": {
+        "pass": true,
+        "returncode": 0,
+        "log": "build_encoder_on.log"
+      }
+    },
+    "pass": true
+  },
+  "hardware": {
+    "status": "ABORTED_OR_INCOMPLETE",
+    "details": "Incomplete/unsafe motor sweep; check raw logs and STOP state: {'OFF': ['i2c_400k_nominal', 'uart_no_rx_error']}"
+  },
+  "sweep": {
+    "status": "REVIEWED",
+    "source": "D:\\Micromouse_STM32F411CEU6_BLE_Debug_Web\\results\\encoder_qual_20261020_083902\\system_uart_hardware\\summary.json",
+    "stage_count": 33,
+    "motor_on_stages": 0,
+    "both_wheels_mismatch_mean_pct": null,
+    "qualified_electrically": false,
+    "note": "Stage-average counts only; not 1ms dynamics or ground-truth RPM."
+  },
+  "encoder_motor_on": {
+    "OFF": {
+      "status": "FAIL_HEALTH",
+      "samples": 7786,
+      "steady_drive_samples": 2633,
+      "wheels": [
+        {
+          "wheel": "L",
+          "steady_drive_samples": 2633,
+          "mean_20ms_pps": 0.0,
+          "std_20ms_pps": 0.0,
+          "mae_pps_vs_1ms_ema": 0.0
+        },
+        {
+          "wheel": "R",
+          "steady_drive_samples": 2633,
+          "mean_20ms_pps": 0.0,
+          "std_20ms_pps": 0.0,
+          "mae_pps_vs_1ms_ema": 0.0
+        }
+      ],
+      "i2c_startup_probe": {
+        "selected_speed_index": 1,
+        "selected_speed_mode": 2,
+        "configured_scl_hz": 296296,
+        "attempt_400k": {
+          "address_status": 2,
+          "who_read_status": 255,
+          "who_am_i": 255
+        },
+        "attempt_300k": {
+          "address_status": 0,
+          "who_read_status": 0,
+          "who_am_i": 104
+        },
+        "fallback_occurred": true,
+        "explanation": "Status 255 means unattempted. Probe status 0 indicates driver success; WHO_AM_I must equal 0x68. The configured clock is nominal, not an SCL oscilloscope measurement."
+      },
+      "i2c_busy_debug": {
+        "busy_timeouts": 1,
+        "bus_recoveries": 1,
+        "sr1_at_last_timeout": 0,
+        "sr2_at_last_timeout": 2,
+        "PB8_SCL_high_at_timeout": true,
+        "PB9_SDA_high_at_timeout": false,
+        "PB8_SCL_high_after_recovery": true,
+        "PB9_SDA_high_after_recovery": true,
+        "caveat": "GPIO input register sampled during/after recovery, not an oscilloscope waveform."
+      },
+      "health": {
+        "tim11_late_delta": 0,
+        "tim11_gap_delta": 0,
+        "uart_tx_drop_delta": 0,
+        "uart_rx_error_delta": 1,
+        "uart_rx_overflow_delta": 0,
+        "uart_dma_error_delta": 0,
+        "mpu_i2c_error_delta": 0,
+        "mpu_timeout_delta": 0
+      },
+      "uart_rx_subtypes": {
+        "ore": 1,
+        "fe": 0,
+        "ne": 0
+      },
+      "note": "PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."
+    },
+    "ON": {
+      "status": "FAIL_HEALTH",
+      "samples": 3334,
+      "steady_drive_samples": 937,
+      "wheels": [
+        {
+          "wheel": "L",
+          "steady_drive_samples": 937,
+          "mean_20ms_pps": 4210.09,
+          "std_20ms_pps": 2118.74,
+          "mae_pps_vs_1ms_ema": 62.9
+        },
+        {
+          "wheel": "R",
+          "steady_drive_samples": 937,
+          "mean_20ms_pps": 94.56,
+          "std_20ms_pps": 361.56,
+          "mae_pps_vs_1ms_ema": 4.51
+        }
+      ],
+      "i2c_startup_probe": {
+        "selected_speed_index": 0,
+        "selected_speed_mode": 1,
+        "configured_scl_hz": 400000,
+        "attempt_400k": {
+          "address_status": 0,
+          "who_read_status": 0,
+          "who_am_i": 104
+        },
+        "attempt_300k": {
+          "address_status": 255,
+          "who_read_status": 255,
+          "who_am_i": 255
+        },
+        "fallback_occurred": false,
+        "explanation": "Status 255 means unattempted. Probe status 0 indicates driver success; WHO_AM_I must equal 0x68. The configured clock is nominal, not an SCL oscilloscope measurement."
+      },
+      "i2c_busy_debug": {
+        "busy_timeouts": 0,
+        "bus_recoveries": 0,
+        "sr1_at_last_timeout": 0,
+        "sr2_at_last_timeout": 0,
+        "PB8_SCL_high_at_timeout": false,
+        "PB9_SDA_high_at_timeout": false,
+        "PB8_SCL_high_after_recovery": false,
+        "PB9_SDA_high_after_recovery": false,
+        "caveat": "GPIO input register sampled during/after recovery, not an oscilloscope waveform."
+      },
+      "health": {
+        "tim11_late_delta": 0,
+        "tim11_gap_delta": 0,
+        "uart_tx_drop_delta": 0,
+        "uart_rx_error_delta": 18,
+        "uart_rx_overflow_delta": 0,
+        "uart_dma_error_delta": 0,
+        "mpu_i2c_error_delta": 0,
+        "mpu_timeout_delta": 0
+      },
+      "uart_rx_subtypes": {
+        "ore": 18,
+        "fe": 0,
+        "ne": 0
+      },
+      "note": "PWM-to-count response, not an independent proof of encoder accuracy/no missed edges."
+    }
+  },
+  "alpha_ab": {
+    "status": "INSUFFICIENT_SHADOW_DATA",
+    "expected_metric_frames": 792,
+    "observed_metric_frames": 552,
+    "missing_metric_frames_count": 240,
+    "missing_first_12": [
+      [
+        "ON",
+        13,
+        1,
+        "L",
+        "first_500ms_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        1,
+        "L",
+        "steady_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        1,
+        "L",
+        "steady_total_variation"
+      ],
+      [
+        "ON",
+        13,
+        1,
+        "R",
+        "first_500ms_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        1,
+        "R",
+        "steady_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        1,
+        "R",
+        "steady_total_variation"
+      ],
+      [
+        "ON",
+        13,
+        2,
+        "L",
+        "first_500ms_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        2,
+        "L",
+        "steady_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        2,
+        "L",
+        "steady_total_variation"
+      ],
+      [
+        "ON",
+        13,
+        2,
+        "R",
+        "first_500ms_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        2,
+        "R",
+        "steady_abs_error_vs_box20"
+      ],
+      [
+        "ON",
+        13,
+        2,
+        "R",
+        "steady_total_variation"
+      ]
+    ],
+    "duplicated_frames_count": 0,
+    "issues": [],
+    "sample_frames": 2222,
+    "candidate_alphas": [
+      0.05,
+      0.08,
+      0.1,
+      0.12,
+      0.15,
+      0.2,
+      0.3,
+      0.4,
+      0.6,
+      0.8
+    ],
+    "shadow_bank_version": "ten_alpha",
+    "reference": "Trailing 20-ms integrated encoder counts, not external truth.",
+    "sampling": "Metrics accumulated at 1 kHz; SYS_AB visualization 5 Hz (legacy 10 Hz).",
+    "optimization_scope": "ON active wheels PWM 20-80%; steady noise/tracking from DRIVE only, early transient from DRIVE and COAST; 90-100% reserved for separate risk analysis.",
+    "metrics": {
+      "steady_abs_error_vs_box20": {
+        "intervals": 7,
+        "weighted_ticks": 15000,
+        "values": {
+          "alpha_0_05": 11.50047,
+          "alpha_0_08": 13.2494,
+          "alpha_0_1": 16.2394,
+          "alpha_0_12": 20.31033,
+          "alpha_0_15": 27.20867,
+          "alpha_0_2": 39.8772,
+          "alpha_0_3": 68.02033,
+          "alpha_0_4": 99.15547,
+          "alpha_0_6": 171.97387,
+          "alpha_0_8": 258.38533
+        }
+      },
+      "first_500ms_abs_error_vs_box20": {
+        "intervals": 14,
+        "weighted_ticks": 7000,
+        "values": {
+          "alpha_0_05": 75.37271,
+          "alpha_0_08": 22.455,
+          "alpha_0_1": 18.58714,
+          "alpha_0_12": 28.31957,
+          "alpha_0_15": 42.904,
+          "alpha_0_2": 61.81443,
+          "alpha_0_3": 91.81743,
+          "alpha_0_4": 119.53257,
+          "alpha_0_6": 178.46314,
+          "alpha_0_8": 246.96357
+        }
+      },
+      "steady_total_variation": {
+        "intervals": 7,
+        "weighted_ticks": 15000,
+        "values": {
+          "alpha_0_05": 18.8826,
+          "alpha_0_08": 30.95473,
+          "alpha_0_1": 39.19127,
+          "alpha_0_12": 47.57373,
+          "alpha_0_15": 60.46287,
+          "alpha_0_2": 82.76547,
+          "alpha_0_3": 130.49413,
+          "alpha_0_4": 182.58407,
+          "alpha_0_6": 300.782,
+          "alpha_0_8": 439.8322
+        }
+      }
+    },
+    "by_wheel": {
+      "L": {
+        "steady_abs_error_vs_box20": {
+          "intervals": 7,
+          "ticks": 15000,
+          "0.05": 11.50047,
+          "0.08": 13.2494,
+          "0.1": 16.2394,
+          "0.12": 20.31033,
+          "0.15": 27.20867,
+          "0.2": 39.8772,
+          "0.3": 68.02033,
+          "0.4": 99.15547,
+          "0.6": 171.97387,
+          "0.8": 258.38533
+        },
+        "first_500ms_abs_error_vs_box20": {
+          "intervals": 14,
+          "ticks": 7000,
+          "0.05": 75.37271,
+          "0.08": 22.455,
+          "0.1": 18.58714,
+          "0.12": 28.31957,
+          "0.15": 42.904,
+          "0.2": 61.81443,
+          "0.3": 91.81743,
+          "0.4": 119.53257,
+          "0.6": 178.46314,
+          "0.8": 246.96357
+        },
+        "steady_total_variation": {
+          "intervals": 7,
+          "ticks": 15000,
+          "0.05": 18.8826,
+          "0.08": 30.95473,
+          "0.1": 39.19127,
+          "0.12": 47.57373,
+          "0.15": 60.46287,
+          "0.2": 82.76547,
+          "0.3": 130.49413,
+          "0.4": 182.58407,
+          "0.6": 300.782,
+          "0.8": 439.8322
+        }
+      },
+      "R": {
+        "steady_abs_error_vs_box20": {
+          "intervals": 0,
+          "ticks": 0,
+          "0.05": null,
+          "0.08": null,
+          "0.1": null,
+          "0.12": null,
+          "0.15": null,
+          "0.2": null,
+          "0.3": null,
+          "0.4": null,
+          "0.6": null,
+          "0.8": null
+        },
+        "first_500ms_abs_error_vs_box20": {
+          "intervals": 0,
+          "ticks": 0,
+          "0.05": null,
+          "0.08": null,
+          "0.1": null,
+          "0.12": null,
+          "0.15": null,
+          "0.2": null,
+          "0.3": null,
+          "0.4": null,
+          "0.6": null,
+          "0.8": null
+        },
+        "steady_total_variation": {
+          "intervals": 0,
+          "ticks": 0,
+          "0.05": null,
+          "0.08": null,
+          "0.1": null,
+          "0.12": null,
+          "0.15": null,
+          "0.2": null,
+          "0.3": null,
+          "0.4": null,
+          "0.6": null,
+          "0.8": null
+        }
+      }
+    },
+    "by_pwm": {
+      "20": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 12.45067,
+            "0.08": 15.61933,
+            "0.1": 19.08133,
+            "0.12": 24.116,
+            "0.15": 32.888,
+            "0.2": 48.70867,
+            "0.3": 83.12467,
+            "0.4": 122.83267,
+            "0.6": 218.584,
+            "0.8": 338.1
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 33.082,
+            "0.08": 13.537,
+            "0.1": 13.969,
+            "0.12": 19.13,
+            "0.15": 27.125,
+            "0.2": 39.456,
+            "0.3": 62.936,
+            "0.4": 87.919,
+            "0.6": 146.366,
+            "0.8": 219.11
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 24.936,
+            "0.08": 40.82667,
+            "0.1": 51.69933,
+            "0.12": 62.76,
+            "0.15": 79.74867,
+            "0.2": 109.19067,
+            "0.3": 172.414,
+            "0.4": 241.82533,
+            "0.6": 400.90333,
+            "0.8": 592.36933
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      },
+      "30": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 3000,
+            "0.05": 12.288,
+            "0.08": 12.99533,
+            "0.1": 15.70967,
+            "0.12": 19.81,
+            "0.15": 26.83167,
+            "0.2": 40.11467,
+            "0.3": 72.15633,
+            "0.4": 110.57133,
+            "0.6": 203.07767,
+            "0.8": 320.00833
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 49.423,
+            "0.08": 17.445,
+            "0.1": 16.198,
+            "0.12": 22.433,
+            "0.15": 32.555,
+            "0.2": 47.087,
+            "0.3": 73.545,
+            "0.4": 100.612,
+            "0.6": 161.854,
+            "0.8": 236.379
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 3000,
+            "0.05": 24.385,
+            "0.08": 39.93833,
+            "0.1": 50.56167,
+            "0.12": 61.425,
+            "0.15": 77.99167,
+            "0.2": 106.88533,
+            "0.3": 168.99633,
+            "0.4": 237.30933,
+            "0.6": 395.564,
+            "0.8": 587.81567
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      },
+      "40": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 12.45333,
+            "0.08": 15.058,
+            "0.1": 18.50733,
+            "0.12": 23.16933,
+            "0.15": 31.17533,
+            "0.2": 45.78067,
+            "0.3": 76.33333,
+            "0.4": 108.28667,
+            "0.6": 190.31667,
+            "0.8": 291.256
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 66.417,
+            "0.08": 22.046,
+            "0.1": 19.666,
+            "0.12": 28.516,
+            "0.15": 41.912,
+            "0.2": 60.409,
+            "0.3": 91.034,
+            "0.4": 119.552,
+            "0.6": 181.778,
+            "0.8": 256.704
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 20.564,
+            "0.08": 33.772,
+            "0.1": 42.74533,
+            "0.12": 51.82267,
+            "0.15": 65.838,
+            "0.2": 90.068,
+            "0.3": 141.73,
+            "0.4": 197.74867,
+            "0.6": 320.88533,
+            "0.8": 452.93333
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      },
+      "50": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 12.09467,
+            "0.08": 13.498,
+            "0.1": 16.80667,
+            "0.12": 21.38267,
+            "0.15": 29.048,
+            "0.2": 42.874,
+            "0.3": 72.11533,
+            "0.4": 100.146,
+            "0.6": 155.69733,
+            "0.8": 200.15133
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 79.026,
+            "0.08": 23.825,
+            "0.1": 20.26,
+            "0.12": 30.437,
+            "0.15": 45.882,
+            "0.2": 65.902,
+            "0.3": 97.159,
+            "0.4": 124.518,
+            "0.6": 179.063,
+            "0.8": 233.993
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 13.49867,
+            "0.08": 22.232,
+            "0.1": 28.156,
+            "0.12": 34.16133,
+            "0.15": 43.386,
+            "0.2": 59.15667,
+            "0.3": 91.894,
+            "0.4": 125.69533,
+            "0.6": 194.236,
+            "0.8": 261.37067
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      },
+      "60": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 3000,
+            "0.05": 8.24967,
+            "0.08": 9.28267,
+            "0.1": 11.088,
+            "0.12": 13.21967,
+            "0.15": 16.72,
+            "0.2": 23.00967,
+            "0.3": 36.74933,
+            "0.4": 51.916,
+            "0.6": 87.41433,
+            "0.8": 132.46433
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 88.323,
+            "0.08": 22.964,
+            "0.1": 16.947,
+            "0.12": 27.517,
+            "0.15": 42.871,
+            "0.2": 61.226,
+            "0.3": 87.103,
+            "0.4": 109.209,
+            "0.6": 153.978,
+            "0.8": 205.511
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 3000,
+            "0.05": 9.83933,
+            "0.08": 16.13033,
+            "0.1": 20.44367,
+            "0.12": 24.81733,
+            "0.15": 31.606,
+            "0.2": 43.39033,
+            "0.3": 69.00967,
+            "0.4": 97.93,
+            "0.6": 167.64233,
+            "0.8": 258.78833
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      },
+      "70": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 12.018,
+            "0.08": 13.01133,
+            "0.1": 16.12867,
+            "0.12": 20.55467,
+            "0.15": 28.104,
+            "0.2": 41.91667,
+            "0.3": 71.07267,
+            "0.4": 99.07667,
+            "0.6": 154.942,
+            "0.8": 200.40467
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 100.71,
+            "0.08": 27.518,
+            "0.1": 21.003,
+            "0.12": 33.952,
+            "0.15": 52.97,
+            "0.2": 76.542,
+            "0.3": 111.948,
+            "0.4": 142.619,
+            "0.6": 203.594,
+            "0.8": 270.719
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 1500,
+            "0.05": 13.588,
+            "0.08": 22.35267,
+            "0.1": 28.30867,
+            "0.12": 34.35667,
+            "0.15": 43.638,
+            "0.2": 59.514,
+            "0.3": 92.472,
+            "0.4": 126.50133,
+            "0.6": 195.47267,
+            "0.8": 262.98867
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      },
+      "80": {
+        "L": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 1,
+            "ticks": 3000,
+            "0.05": 12.45633,
+            "0.08": 15.37567,
+            "0.1": 19.13733,
+            "0.12": 23.91067,
+            "0.15": 31.884,
+            "0.2": 46.62167,
+            "0.3": 79.873,
+            "0.4": 118.119,
+            "0.6": 209.60733,
+            "0.8": 324.498
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 2,
+            "ticks": 1000,
+            "0.05": 110.628,
+            "0.08": 29.85,
+            "0.1": 22.067,
+            "0.12": 36.252,
+            "0.15": 57.013,
+            "0.2": 82.079,
+            "0.3": 118.997,
+            "0.4": 152.299,
+            "0.6": 222.609,
+            "0.8": 306.329
+          },
+          "steady_total_variation": {
+            "intervals": 1,
+            "ticks": 3000,
+            "0.05": 23.89533,
+            "0.08": 39.11333,
+            "0.1": 49.49633,
+            "0.12": 60.076,
+            "0.15": 76.41133,
+            "0.2": 104.587,
+            "0.3": 165.20967,
+            "0.4": 231.79567,
+            "0.6": 384.955,
+            "0.8": 567.726
+          }
+        },
+        "R": {
+          "steady_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "first_500ms_abs_error_vs_box20": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          },
+          "steady_total_variation": {
+            "intervals": 0,
+            "ticks": 0,
+            "0.05": null,
+            "0.08": null,
+            "0.1": null,
+            "0.12": null,
+            "0.15": null,
+            "0.2": null,
+            "0.3": null,
+            "0.4": null,
+            "0.6": null,
+            "0.8": null
+          }
+        }
+      }
+    },
+    "ranking_by_wheel": {
+      "L": [
+        {
+          "alpha": 0.08,
+          "score": 0.21857
+        },
+        {
+          "alpha": 0.1,
+          "score": 0.23527
+        },
+        {
+          "alpha": 0.12,
+          "score": 0.31193
+        },
+        {
+          "alpha": 0.05,
+          "score": 0.39356
+        },
+        {
+          "alpha": 0.15,
+          "score": 0.43305
+        },
+        {
+          "alpha": 0.2,
+          "score": 0.6239
+        },
+        {
+          "alpha": 0.3,
+          "score": 1.0
+        },
+        {
+          "alpha": 0.4,
+          "score": 1.39439
+        },
+        {
+          "alpha": 0.6,
+          "score": 2.29016
+        },
+        {
+          "alpha": 0.8,
+          "score": 3.3463
+        }
+      ],
+      "R": []
+    },
+    "ranking": [
+      {
+        "alpha": 0.08,
+        "heuristic_score_vs_alpha_0_30": 0.21857,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.19479,
+          "first_500ms_abs_error_vs_box20": 0.24456,
+          "steady_total_variation": 0.23721
+        }
+      },
+      {
+        "alpha": 0.1,
+        "heuristic_score_vs_alpha_0_30": 0.23527,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.23874,
+          "first_500ms_abs_error_vs_box20": 0.20244,
+          "steady_total_variation": 0.30033
+        }
+      },
+      {
+        "alpha": 0.12,
+        "heuristic_score_vs_alpha_0_30": 0.31193,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.29859,
+          "first_500ms_abs_error_vs_box20": 0.30843,
+          "steady_total_variation": 0.36457
+        }
+      },
+      {
+        "alpha": 0.05,
+        "heuristic_score_vs_alpha_0_30": 0.39356,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.16907,
+          "first_500ms_abs_error_vs_box20": 0.8209,
+          "steady_total_variation": 0.1447
+        }
+      },
+      {
+        "alpha": 0.15,
+        "heuristic_score_vs_alpha_0_30": 0.43305,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.40001,
+          "first_500ms_abs_error_vs_box20": 0.46728,
+          "steady_total_variation": 0.46334
+        }
+      },
+      {
+        "alpha": 0.2,
+        "heuristic_score_vs_alpha_0_30": 0.6239,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.58625,
+          "first_500ms_abs_error_vs_box20": 0.67323,
+          "steady_total_variation": 0.63425
+        }
+      },
+      {
+        "alpha": 0.3,
+        "heuristic_score_vs_alpha_0_30": 1.0,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 1.0,
+          "first_500ms_abs_error_vs_box20": 1.0,
+          "steady_total_variation": 1.0
+        }
+      },
+      {
+        "alpha": 0.4,
+        "heuristic_score_vs_alpha_0_30": 1.39439,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 1.45773,
+          "first_500ms_abs_error_vs_box20": 1.30185,
+          "steady_total_variation": 1.39917
+        }
+      },
+      {
+        "alpha": 0.6,
+        "heuristic_score_vs_alpha_0_30": 2.29016,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 2.52827,
+          "first_500ms_abs_error_vs_box20": 1.94367,
+          "steady_total_variation": 2.30495
+        }
+      },
+      {
+        "alpha": 0.8,
+        "heuristic_score_vs_alpha_0_30": 3.3463,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 3.79865,
+          "first_500ms_abs_error_vs_box20": 2.68972,
+          "steady_total_variation": 3.37051
+        }
+      }
+    ],
+    "provisional_top_two": [
+      0.08,
+      0.1
+    ],
+    "decision": "Shortlist only; do not change production alpha without repeatability and independent velocity/plant assessment.",
+    "caveats": [
+      "A lower score means closer to the SAME ENCODER's trailing 20ms count proxy; it does not prove true RPM accuracy.",
+      "The speed response and inertia of the physical motor affect step and coast error.",
+      "Per-interval first 500ms errors are cumulative signed-magnitude errors, not time-to-settle.",
+      "High-PWM runs are short. Independent rpm and mechanical load remain unqualified.",
+      "UART timing and ISR overhead must be compared to historical baseline."
+    ]
+  },
+  "restored_motor_off": {
+    "pass": true,
+    "returncode": 0,
+    "log": "restore_motor_off.log"
+  },
+  "error": "Incomplete/unsafe motor sweep; check raw logs and STOP state: {'OFF': ['i2c_400k_nominal', 'uart_no_rx_error']}"
+}
