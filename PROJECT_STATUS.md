@@ -163,3 +163,35 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
   Inspect `SYS_T.encmaxcy`, `SYS_UR.ore`, `SYS_AQ`,
   and firmware heartbeat before considering any live motor sweep.
 - Full protocol: `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
+
+### 2026-10-20 — P0→P3 sequential Encoder qualification (source/CI qualified; physical pending)
+
+- Added `tools/encoder_p0_p3_pipeline.py` as **one gated command**: offline/native
+  tests + capped profile build, **P0 Motor-OFF** real TIM11/Encoder/FIFO/UART
+  acceptance, **P1 12-stage LEFT/RIGHT/BOTH 0–30%** motor response,
+  **P2 original 33+33-stage 0–100%** OFF/ON benchmark, **P3 ten-alpha** A/B
+  shortlist (no PID/production alpha modifications).
+- New `integration_diag_encoder_motor_on_limited_30_96m` uses a compile-time
+  `SWEEP_STEPS_PER_GROUP=4` vs default 11, is motor-ON/Encoder-diagnostic
+  only, and never emits duty above 30%. `CMD_STATUS.max_pwm/total` is
+  checked before START; host halts on wrong profile.
+- Before flashing ANY motor-ON firmware, the OFF phase must PASS its 33
+  normal health gates *and* measured Encoder TIM11 max under 2,000 cycles.
+  P1 must then PASS all 12 stages, zero UART RX/TX faults, no heartbeat
+  degradation, zero FIFO loss/edge and sensor/clock/watchdog faults.
+- P2 full-range is enabled **only after P0/P1**, and requires the operator's
+  explicit `--fixture-ready --independent-vm-cutoff --allow-100-percent`
+  acknowledgement. This is a real 100%-PWM test after limited gate, not
+  automatically physically safe.
+- P3 is an **open-loop 20-ms count-proxy** recommendation from the P2
+  `792/792` ten-alpha shadow metrics and per-wheel rank consensus. It
+  intentionally **does not** alter `SPEED_LPF_ALPHA=0.30` or PID
+  coefficients without a separate closed-loop validation.
+- Per-step logs, raw UART, shadow CSV, summary, shortlist and attempted
+  motor-OFF firmware restoration are saved under a new
+  `results/encoder_p0_p3_YYYYMMDD_HHMMSS` directory.
+- CI run `39360810947` verified host/orchestrator tests, limited-profile
+  build and production build; motor integration workflow `39360810939`
+  verified native state-machine tests. **No physical P1/P2 rerun is
+  claimed by these checks.**
+- Operational protocol: `docs/encoder/ENCODER_P0_P3_SEQUENTIAL_20261020.md`.
