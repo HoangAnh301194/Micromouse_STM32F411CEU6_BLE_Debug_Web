@@ -129,3 +129,37 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 - Decoder supports historical 7-alpha and refined 10-alpha records, includes invalid frame checks; reports actual alpha ranking separately per wheel and PWM. No alpha is deployed to production.
 - Verified host/native simulation, Encoder OFF/ON build and production build by GitHub Actions run `39354165109` at commit `23694ef5`: PASS. **Physical ten-alpha/UART optimized run not yet performed**; do not claim a hardware pass.
 - Protocol: `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
+
+### 2026-10-20 — TIM11 Encoder shadow A/B IRQ offload (software ready)
+
+- Last captured full 10-alpha implementation: `083902` (and partial `085212`);
+  `083902` Motor-ON stopped after stage 14 with
+  `SWEEP_UART_LINK_LOST=9`, and 18 hardware UART RX ORE flags.
+  Measured ON `TIM11 maxcy=11741`, Encoder `encmaxcy=10999`
+  at nominal 96 MHz (~122.3/114.6 us), both longer than one
+  115200-8N1 byte (~86.8 us). TIM11 NVIC priority 0 can delay
+  RXNE IRQ at priority 8. This remains a causal **hypothesis**, not
+  a measured proof of when RXNE was delayed.
+- Moved ten diagnostic-only EMA and boxcar calculations out of TIM11:
+  1-ms ISR now enqueues signed left/right count deltas in a static
+  256-slot SPSC ring (255 effective slots); main processes maximum
+  12 ticks each iteration and up to 32 at stage telemetry boundaries.
+  Production Encoder raw counts and `SPEED_LPF_ALPHA=0.30f`
+  are unchanged.
+- UART PING parser executes before unchanged 750-ms sweep lease
+  enforcement. No watchdog timeout inflation, UART baud/NVIC rewrite,
+  Motor Driver changes or MPU speed policy changes.
+- Per-second `SYS_AQ` records accepted/consumed/overflow/backlog/
+  stage edge alignment; hardware PASS requires zero `lost` and
+  zero `edge`. Host retains these in raw/CSV and reports.
+- Native regression extended to compile **both** regular Encoder and
+  diagnostic Encoder source and exercise FIFO overflow, delayed
+  consumer, bounded service and 10k quadrature updates.
+  Host audit/diagnostic builds/production build are validated by
+  CI; **real TIM11 runtime reduction and UART zero-ORE are NOT
+  yet hardware-qualified.**
+- Motor-OFF-only next test (physically disconnect VM):
+  `python tools/system_uart_pipeline.py --port COM7 --flash --encoder-telemetry`.
+  Inspect `SYS_T.encmaxcy`, `SYS_UR.ore`, `SYS_AQ`,
+  and firmware heartbeat before considering any live motor sweep.
+- Full protocol: `docs/encoder/ALPHA_AB_I2C_MULTIDIAG_20261020.md`.
