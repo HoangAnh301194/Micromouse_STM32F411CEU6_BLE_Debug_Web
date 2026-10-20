@@ -99,7 +99,9 @@ void Encoder_GetShadowQueueStats(Encoder_ShadowQueueStats_t *out)
  * Never extend the motor heartbeat timeout to hide main-loop congestion. */
 void Encoder_ShadowMarkStageBoundary(void)
 {
-    if (ShadowPending() != 0U) ++shadow_stage_lag;
+    /* One or two ticks may legitimately arrive during stage snapshots.
+     * Larger backlogs imply a meaningful stage-boundary misclassification. */
+    if (ShadowPending() > 2U) ++shadow_stage_lag;
 }
 
 static const float shadow_alpha[ENCODER_SHADOW_ALPHAS] = {
