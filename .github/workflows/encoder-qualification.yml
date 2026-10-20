@@ -4,6 +4,10 @@ on:
     branches: [giomuadongbac]
     paths:
       - "src/encoder.c"
+      - "src/integration_sweep.c"
+      - "src/integration_serial.c"
+      - "include/integration_sweep.h"
+      - "tools/system_integration_gate.py"
       - "src/i2c.c"
       - "include/i2c.h"
       - "tools/test_encoder_shadow_ab.py"
@@ -32,6 +36,10 @@ jobs:
         run: python -m pip install platformio
       - name: Native, simulator, and locked diagnostic firmware build (no hardware)
         run: python tools/encoder_qualification_pipeline.py --mode offline
+      - name: Test P0-P3 orchestrator offline and compile capped firmware
+        run: |
+          python tools/test_encoder_p0_p3_pipeline.py
+          python tools/encoder_p0_p3_pipeline.py --offline-only
       - name: Verify production firmware still builds
         run: python -m platformio run -e genericSTM32F411CE
       - name: Upload evidence even on failure
