@@ -99,7 +99,7 @@ int main(void) {
 
         /* Never silently overwrite unconsumed encoder samples. */
         Encoder_Reset();
-        for (int i = 0; i < ENCODER_SHADOW_QUEUE_CAPACITY + 8; ++i) {
+        for (uint32_t i = 0U; i < ENCODER_SHADOW_QUEUE_CAPACITY + 8U; ++i) {
             TIM4->CNT = (uint16_t)(TIM4->CNT - 1U);
             Encoder_Update(0.001f);
         }
