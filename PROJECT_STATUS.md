@@ -34,7 +34,7 @@
 | **TIM11 và PID** | 1 kHz ổn định trong bài thử; PID giả lập chạy đủ tải không mất chu kỳ | Chưa nghiệm thu bộ PID tốc độ bánh, điều khiển bám tường, thời gian đáp ứng/quá độ khi di chuyển tốc độ cao |
 | **IR 6 kênh** | **Acquisition/timing phase đạt trên board**: ADC1/DMA2 Stream0 async, 1 kHz scan trong 30 giây; TIM11 nhận mẫu mới 100%; zero DMA/ADC errors/timeouts, TIM11 late/gap, MPU I2C errors/timeouts, UART drops | Chưa đánh giá độ chính xác/khoảng cách, nhiễu, nhiễu chéo hay phản hồi theo tường; phase này chỉ xác nhận acquisition, nhịp và tải |
 | **BLE USART2 PA2/PA3** | Đã có TXE IRQ + 4096B buffer, RX polling | Chưa đo thông lượng, RX overflow, mất bản tin, khi TX queue đầy hàm có thể bỏ phần đuôi mà không có thống kê |
-| **OLED** | Có địa chỉ định nghĩa 0x3C, **chưa có driver OLED trong core đã rà soát** | Cần phân xử I2C1 với MPU, làm mới hạn chế và truyền không chặn |
+| **OLED SSD1306** | Đã đưa driver và font từ `main` vào `giomuadongbac` (`include/ssd1306.h`, `src/ssd1306.c`, `include/fonts.h`, `src/fonts.c`); các profile PlatformIO hiện tại build được | Chưa gọi init/đưa vào runtime, chưa thử phần cứng; cần rà soát chia sẻ I2C1 với MPU, tránh API blocking trong đường điều khiển và đo ảnh hưởng lên MPU trước khi enable |
 | **Wall-follow, flood-fill, fast-run** | Core tối giản có trạng thái IDLE/STRAIGHT/TURN và lệnh F/L/R/S/Z | Chưa có nghiệm thu điều khiển mê cung và chạy tốc độ cao; UI BLE cũ không chứng minh tính năng firmware đang hoạt động |
 
 **Tài liệu bàn giao MPU/I2C có giá trị chi tiết nhất:** [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md). API tích hợp tại `include/mpu6050_i2c_module.h`; giữ `src/i2c.c` và `src/mpu6050.c` ở vị trí gốc, tránh tạo thêm bộ chủ I2C.

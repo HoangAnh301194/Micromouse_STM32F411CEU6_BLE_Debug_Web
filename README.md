@@ -4,7 +4,7 @@
 
 This branch (`giomuadongbac`) is the STM32F411CEU6 RC2 baseline with opt-in 96 MHz system integration and UART PA9/PA10 diagnostic profiles; the default production build does not run a stress benchmark.
 
-The PCB pin mapping is intentionally unchanged. The goal is to keep the real-time path small, explicit and testable before maze solving, OLED, calibration workflows and advanced motion features are added back.
+The PCB pin mapping is intentionally unchanged. The goal is to keep the real-time path small, explicit and testable before maze solving, OLED activation, calibration workflows and advanced motion features are enabled.
 
 ## Active runtime
 
@@ -32,6 +32,11 @@ motion.c     = motion state machine + controller
 pid.c        = reusable PID mathematics
 drivers      = peripheral-specific register configuration
 ```
+
+The SSD1306 driver and font sources are present in `src/ssd1306.c`,
+`src/fonts.c`, `include/ssd1306.h`, and `include/fonts.h`, but are not
+initialized by the active runtime. I2C1 remains owned by `i2c.c`; the OLED
+must be integrated as a non-blocking shared-bus client with MPU priority.
 
 The real-time path is:
 
