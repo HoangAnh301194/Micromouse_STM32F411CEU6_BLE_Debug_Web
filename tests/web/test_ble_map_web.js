@@ -6,8 +6,8 @@ const html=fs.readFileSync(path.join(__dirname,'..','..','web','ble_debug_consol
 const script=html.split('<script>')[1].split('</script>')[0];
 // Regression: a past accidental merge appended ~10KB of raw JS after </html>,
 // which Chromium rendered visibly below the BLE map.
-if ((html.match(/<\\/html>/g) || []).length !== 1 ||
-    !/^\\s*$/.test(html.slice(html.indexOf('</html>') + 7))) {
+if (html.split('</html>').length !== 2 ||
+    html.slice(html.indexOf('</html>') + 7).trim().length !== 0) {
     throw Error('HTML has duplicate closing tag or source text after </html>');
 }
 const sourceClassify=script.slice(script.indexOf('function classifyBLE('),
