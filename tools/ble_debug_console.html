@@ -1260,56 +1260,88 @@ function onBLEData(event) {
 ═══════════════════════════════════════════════ */
 
 
-/* Versioned Flash map protocol. Do not render incomplete/corrupt frames.
- * MAPCFG,w=N,h=N,fmt=1,len=8+N*N,crc=XXXXXXXX,src=FLASH|RAM|LEGACY
- * MAPROW,y=Y,hex=wall_nibbles
- * MAPEND,crc=XXXXXXXX,rows=N
- * CRC32/IEEE over the exact MAP1 payload bytes (8-byte header + wall bytes).
- */
+/* Versioned map protocol: MAPCFG → MAPROW × N → MAPEND with CRC32. */
 let pendingFlashMap = null;
 let lastFlashMap = null;
 function parseMapFields(line) {
-    const data = {};
-    for (const field of line.split(',').slice(1)) {
-        const i = field.indexOf('=');
-        if (i > 0) data[field.slice(0,i)] = field.slice(i+1);
+    const fields = {};
+    for (const item of line.split(',').slice(1)) {
+        const i = item.indexOf('=');
+        if (i > 0) fields[item.slice(0,i)] = item.slice(i+1);
     }
-    return data;
+    return fields;
 }
 function mapStatus(message) {
     document.getElementById('mapVerifyStatus').textContent = message;
 }
 function mapError(message) {
     mapStatus('Map: FAIL — ' + message);
-    addBLEEntry('MAP VERIFY FAIL: ' + message, 'err');
+    addBLEEntry('MAP VERIFY FAIL: ' + message,'err');
     pendingFlashMap = null;
 }
 function mapCrc32(bytes) {
-    let crc = 0xFFFFFFFF;
-    for (const v of bytes) {
-        crc ^= v;
-        for (let j=0;j<8;j++)
-            crc = (crc>>>1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+    let c=0xFFFFFFFF;
+    for (const b of bytes) {
+        c ^= b;
+        for (let i=0;i<8;i++) c=(c>>>1)^((c&1)?0xEDB88320:0);
     }
-    return (crc ^ 0xFFFFFFFF)>>>0;
+    return (c^0xFFFFFFFF)>>>0;
 }
 function parseFlashMapConfig(line) {
-    const c = parseMapFields(line), n = Number(c.w), h = Number(c.h);
-    const len = Number(c.len);
-    if (c.fmt !== '1' || !Number.isInteger(n) || n < 2 || n > 16 ||
-        h !== n || len !== 8 + n*n || !/^[0-9a-fA-F]{8}$/.test(c.crc || '')) {
+    const v=parseMapFields(line),n=Number(v.w);
+    if (v.fmt!=='1' || !Number.isInteger(n) || n<2 || n>16 ||
+        Number(v.h)!==n || Number(v.len)!==8+n*n ||
+        !/^[A-Fa-f0-9]{8}$/.test(v.crc||'')) {
         mapError('invalid MAPCFG'); return;
     }
-    pendingFlashMap = {n, len, crc:parseInt(c.crc,16)>>>0,
-                       src:c.src || 'UNKNOWN', rows:new Array(n)};
+    pendingFlashMap={n,crc:parseInt(v.crc,16)>>>0,
+                     src:v.src||'UNKNOWN',rows:new Array(n)};
     setMazeSize(n);
-    mapStatus('Map: receiving ' + n + '×' + n + ', source=' + pendingFlashMap.src);
+    mapStatus('Map: receiving '+n+'×'+n+' from '+pendingFlashMap.src);
 }
 function parseFlashMapRow(line) {
     if (!pendingFlashMap) return;
-    const c = parseMapFields(line), n=pendingFlashMap.n, y=Number(c.y);
-    if (!Number.isInteger(y) || y < 0 || y >= n ||
-        !new RegExp('^[0-9a-fA-F]{' + n + '}
+    const v=parseMapFields(line),n=pendingFlashMap.n,y=Number(v.y);
+    const pattern=new RegExp('^[0-9A-Fa-f]{'+n+'}'+'$');
+    if (!Number.isInteger(y) || y<0 || y>=n || !pattern.test(v.hex||'')) {
+        mapError('invalid MAPROW'); return;
+    }
+    const hex=v.hex.toUpperCase();
+    if (pendingFlashMap.rows[y] && pendingFlashMap.rows[y]!==hex) {
+        mapError('conflicting row '+y); return;
+    }
+    pendingFlashMap.rows[y]=hex;
+}
+function parseFlashMapEnd(line) {
+    if (!pendingFlashMap) return;
+    const p=pendingFlashMap,v=parseMapFields(line);
+    if (Number(v.rows)!==p.n || !/^[0-9a-fA-F]{8}$/.test(v.crc||'') ||
+        (parseInt(v.crc,16)>>>0)!==p.crc ||
+        p.rows.filter(row=>typeof row==='string').length!==p.n) {
+        mapError('missing rows or MAPEND CRC'); return;
+    }
+    const b=new Uint8Array(8+p.n*p.n);
+    b.set([77,65,80,49,p.n,p.n,0,0]);
+    for(let y=0;y<p.n;y++) for(let x=0;x<p.n;x++)
+        b[8+y*p.n+x]=parseInt(p.rows[y][x],16);
+    if(mapCrc32(b)!==p.crc) {
+        mapError('payload CRC mismatch'); return;
+    }
+    mazeWalls=Array.from({length:p.n},(_,y)=>
+        Array.from({length:p.n},(_,x)=>b[8+y*p.n+x]));
+    mazeFlood=calcFlood(mazeWalls,GOAL_CELLS);
+    visitedCells.clear(); // Map wall nibble does not prove cell was visited.
+    setRobotPosition({x:0,y:0,dir:0});
+    lastFlashMap={size:p.n,crc:p.crc,source:p.src,rows:p.n,status:'PASS'};
+    pendingFlashMap=null;
+    document.getElementById('mazeOverlay').style.display='none';
+    const hex=p.crc.toString(16).toUpperCase().padStart(8,'0');
+    mapStatus('Map: PASS '+p.n+'×'+p.n+' CRC='+hex+' source='+p.src);
+    addBLEEntry('MAP VERIFY PASS size='+p.n+' CRC='+hex,'sys');
+    renderMaze();
+}
+
+/* Chunked protocol: MZ0..MZ7 reassembly buffer */
 let mzChunks = {};
 let mzTimeout = null;
 
