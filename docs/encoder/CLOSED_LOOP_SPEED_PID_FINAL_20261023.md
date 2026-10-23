@@ -139,3 +139,34 @@ check motion regression with the chosen EMA on the actual robot.
 
 If `.log` files are ignored by Git, use `git add -f` on the
 result directory's UART logs when publishing evidence.
+
+## 2026-10-24 — physical run fault 9 and host heartbeat fix
+
+Source evidence: `results/speed_pid_final_20261024_001113/`.
+The 33-stage Motor-OFF prerequisite qualified. First physical speed-PID
+trial (alpha 0.30, LEFT 0/800/1600/2400 PPS) reached the COAST after
+the 2400-PPS step, then halted with `SWEEP_UART_LINK_LOST` (fault 9).
+The last acknowledged UART `CMD_PING` was at MCU ms=39533 and the
+fault was at ms=40284, **751ms later**. The latest available
+`SYS_T` showed zero late/gap and UART counters showed zero errors.
+That supports a host heartbeat delivery/scheduling problem, NOT a
+demonstrated Encoder/PID execution fault.
+
+Previously, the Python host's PING scheduler ran exclusively inside
+the same polling thread that reads UART, flushes a .log on every line,
+and prints progress. One unexpectedly blocked operation can therefore
+miss the unchanged firmware 750ms safety lease. The speed-PID
+`PhaseSession` now starts a dedicated **120ms host PING writer thread**
+after `CMD_START` acknowledgment; TX commands are serialized by
+a lock and the PING path does not flush the UART/file on each send.
+A synthetic host regression deliberately blocks the main reader for
+620ms while checking that PINGs continue. Standard non-PID profiles
+retain their original host behavior. The firmware 750ms watchdog is
+NOT disabled, bypassed or increased.
+
+This removes one host software coupling but cannot guarantee recovery
+from USB/Windows process-wide stalls. An independent VM cutoff and
+supervised, elevated-wheel fixture remain mandatory. The abort
+evidence now also includes measured host PING gaps and thread errors.
+**No alpha is chosen by this interrupted run**. Retest all nine
+real repetitions and check the updated UART heartbeat diagnostics.
