@@ -82,13 +82,13 @@ class ProductionAlphaSelectionTests(unittest.TestCase):
         # Guard only the non-diagnostic branch; the historical alpha=0.30
         # diagnostic baseline remains compiled for A/B comparisons.
         self.assertIn(
-            "#else\\n/* Production encoder speed estimator, 1-kHz TIM11 update. */\\n"
-            "#define SPEED_LPF_ALPHA 0.10f\\n#endif", firmware)
-        self.assertIn("#if ENCODER_PID_ALPHA_PCT == 8\\n"
+            "#else\n/* Production encoder speed estimator, 1-kHz TIM11 update. */\n"
+            "#define SPEED_LPF_ALPHA 0.10f\n#endif", firmware)
+        self.assertIn("#if ENCODER_PID_ALPHA_PCT == 8\n"
                       "#define SPEED_LPF_ALPHA 0.08f", firmware)
-        self.assertIn("#elif ENCODER_PID_ALPHA_PCT == 10\\n"
+        self.assertIn("#elif ENCODER_PID_ALPHA_PCT == 10\n"
                       "#define SPEED_LPF_ALPHA 0.10f", firmware)
-        self.assertIn("#elif ENCODER_PID_ALPHA_PCT == 30\\n"
+        self.assertIn("#elif ENCODER_PID_ALPHA_PCT == 30\n"
                       "#define SPEED_LPF_ALPHA 0.30f", firmware)
 
 
