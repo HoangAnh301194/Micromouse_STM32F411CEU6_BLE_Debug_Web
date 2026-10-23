@@ -28,5 +28,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check platformio
       - name: Build production firmware (no hardware)
         run: python -m platformio run -e genericSTM32F411CE
+      - name: Build six-sensor IR OLED test firmware (no hardware)
+        run: python -m platformio run -e ir_oled_test_96m
       - name: Build optional motor-locked Flash-map firmware (no hardware)
         run: python -m platformio run -e flash_map_diag_96m
