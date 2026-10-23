@@ -30,5 +30,9 @@ jobs:
         run: python -m platformio run -e genericSTM32F411CE
       - name: Build six-sensor IR OLED test firmware (no hardware)
         run: python -m platformio run -e ir_oled_test_96m
+      - name: Test OLED-MPU host parser and verdict (synthetic)
+        run: python tools/oled_mpu_pipeline.py --self-test
+      - name: Build motor-locked OLED MPU diagnostic (no hardware)
+        run: python -m platformio run -e oled_mpu_diag_96m
       - name: Build optional motor-locked Flash-map firmware (no hardware)
         run: python -m platformio run -e flash_map_diag_96m

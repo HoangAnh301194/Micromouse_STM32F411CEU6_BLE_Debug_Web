@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 static MPU6050_Handle_t mpu;
+static uint32_t metric_seq;
 static void Draw(void) {
     MPU6050_Snapshot_t snap;
     char line[24];
@@ -49,30 +50,33 @@ static void Emit(void) {
     I2C_OledGetStats(&bus);
     age=MPU6050_GetSnapshot(&mpu,&snap)?
       (uint32_t)(micros()-snap.completed_us):999999UL;
-    UART_Printf("OLED_METRIC,ms=%lu,on=%u,ready=%u,cal=%u,locked=%u,"
-      "tick=%lu,late=%lu,gap=%lu,valid=%lu,invalid=%lu,"
-      "good=%lu,err=%lu,to=%lu,mpubusy=%lu,age=%lu,"
-      "cmd=%lu,chunks=%lu,frames=%lu,bytes=%lu,"
-      "skip=%lu,wait=%lu,oled_err=%lu,"
-      "tx_start=%lu,tx_done=%lu,tx_err=%lu,tx_to=%lu,tx_max=%lu,"
-      "uart_drop=%lu\r\n",
-      (unsigned long)millis(),(unsigned)OLED_SharedEnabled(),
-      (unsigned)OLED_SharedReady(),(unsigned)mpu.calibrated,
-      (unsigned)Motor_OutputsLocked(),
+    ++metric_seq;
+    /* Split into three short frames; UART_Printf buffer is 256 bytes.
+     * Host accepts only identical seq across OLED_C/G/O. */
+    UART_Printf("OLED_C,seq=%lu,ms=%lu,on=%u,ready=%u,cal=%u,locked=%u,"
+      "tick=%lu,late=%lu,gap=%lu,valid=%lu,invalid=%lu,uart_drop=%lu\r\n",
+      (unsigned long)metric_seq,(unsigned long)millis(),
+      (unsigned)OLED_SharedEnabled(),(unsigned)OLED_SharedReady(),
+      (unsigned)mpu.calibrated,(unsigned)Motor_OutputsLocked(),
       (unsigned long)ctl.ticks,(unsigned long)ctl.late_gt50us,
       (unsigned long)ctl.gaps_gt1500us,
       (unsigned long)ctl.gyro_valid_ticks,
       (unsigned long)ctl.gyro_invalid_after_first_valid,
-      (unsigned long)mpu.good_reads,(unsigned long)mpu.error_reads,
-      (unsigned long)mpu.timeout_reads,(unsigned long)mpu.busy_retries,
-      (unsigned long)age,(unsigned long)oled.commands,
+      (unsigned long)UART_GetDroppedMessages());
+    UART_Printf("OLED_G,seq=%lu,good=%lu,err=%lu,to=%lu,mpubusy=%lu,age=%lu\r\n",
+      (unsigned long)metric_seq,(unsigned long)mpu.good_reads,
+      (unsigned long)mpu.error_reads,(unsigned long)mpu.timeout_reads,
+      (unsigned long)mpu.busy_retries,(unsigned long)age);
+    UART_Printf("OLED_O,seq=%lu,cmd=%lu,chunks=%lu,frames=%lu,bytes=%lu,"
+      "skip=%lu,wait=%lu,oled_err=%lu,tx_start=%lu,tx_done=%lu,"
+      "tx_err=%lu,tx_to=%lu,tx_max=%lu\r\n",
+      (unsigned long)metric_seq,(unsigned long)oled.commands,
       (unsigned long)oled.chunks,(unsigned long)oled.frames,
       (unsigned long)oled.data_bytes,(unsigned long)oled.admission_skips,
       (unsigned long)oled.busy_skips,(unsigned long)oled.errors,
       (unsigned long)bus.started,(unsigned long)bus.completed,
       (unsigned long)bus.errors,(unsigned long)bus.timeouts,
-      (unsigned long)bus.max_duration_us,
-      (unsigned long)UART_GetDroppedMessages());
+      (unsigned long)bus.max_duration_us);
 }
 int OLED_MPU_DiagMain(void) {
     MPU6050_Status init;
