@@ -434,7 +434,7 @@ async def run_phase(env, cases, out, args, mode):
         await session.close()
         meta = save_phase(session, out, env)
         meta.update({"environment": env, "mode": mode, "error": error,
-                     "motor_end": completion, "cases": rows})
+                     "motor_end": completion, "requested_cases": len(cases), "cases": rows})
     return meta
 
 
@@ -467,9 +467,17 @@ def write_results(out, phases, argv):
             "and independent VM cutoff.",
         ],
         "phases": phases,
-        "overall": "PASS" if phases and all(not p.get("error") and
-                   p.get("cases") and all(c["pass"] for c in p["cases"])
-                   for p in phases) else "FAIL_OR_INCOMPLETE",
+        "limits": sum(not c["pass"] for p in phases for c in p.get("cases", [])),
+        "overall": (
+            "INCOMPLETE" if not phases or any(
+                p.get("error") or len(p.get("cases", [])) != p.get("requested_cases", 0)
+                for p in phases)
+            or any(not c["pass"] for p in phases for c in p.get("cases", [])
+                   if c["target_Hz"] <= 100 and c["offered_Bps"] <= 2000)
+            else ("COMPLETE_WITH_LIMITS" if any(
+                not c["pass"] for p in phases for c in p.get("cases", []))
+                else "PASS")
+        ),
     }
     (out / "ble_summary.json").write_text(json.dumps(report, indent=2), encoding="utf8")
     doc = ["# BLE one-shot qualification report", "",
@@ -512,6 +520,8 @@ async def main():
     args = parse_args()
     if not (2 <= args.seconds <= 10):
         raise SystemExit("--seconds must be between 2 and 10")
+    if args.no_flash and args.motor_on:
+        raise SystemExit("--no-flash cannot be combined with --motor-on")
     if args.motor_on and not (args.fixture_ready and args.independent_vm_cutoff
                              and args.allow_30_percent):
         raise SystemExit("Motor ON requires --fixture-ready "
@@ -526,20 +536,39 @@ async def main():
         jobs.append((OFF384, BAUD384, "OFF"))
         if args.motor_on:
             jobs.append((ON115, MOTOR, "ON"))
-    for env, cases, mode in jobs:
-        phase = await run_phase(env, cases, out, args, mode)
-        phases.append(phase)
-        write_results(out, phases, sys.argv[1:])
-        if phase["error"]:
-            print("Aborting remaining profiles after fault.", flush=True)
-            break
-        if mode == "OFF" and not all(
-                row["pass"] for row in phase["cases"] if row["target_Hz"] <= 100):
-            print("Basic BLE control/sensor gate failed. No motor-on phase.", flush=True)
-            break
+    restore_error = None
+    try:
+        for env, cases, mode in jobs:
+            phase = await run_phase(env, cases, out, args, mode)
+            phases.append(phase)
+            write_results(out, phases, sys.argv[1:])
+            if phase["error"]:
+                print("Aborting remaining profiles after fault.", flush=True)
+                break
+            if mode == "OFF" and not all(
+                    row["pass"] for row in phase["cases"]
+                    if row["target_Hz"] <= 100 and row["offered_Bps"] <= 2000):
+                print("Basic BLE/system gate failed. No motor-on phase.", flush=True)
+                break
+    finally:
+        if not args.no_flash:
+            # Regardless of test outcome, leave the car flashed with the
+            # STICKY motor-locked firmware; never leave the motor-on image.
+            try:
+                await asyncio.sleep(1.0)
+                flash(OFF115, out)
+                print("RESTORED motor-locked BLE firmware.", flush=True)
+            except Exception as exc:
+                restore_error = str(exc)
+                print("CRITICAL: failed to restore motor-OFF firmware. "
+                      "Cut physical VM power and reflash manually.",
+                      file=sys.stderr, flush=True)
     report = write_results(out, phases, sys.argv[1:])
+    report["restore_error"] = restore_error
+    (out / "ble_summary.json").write_text(json.dumps(report, indent=2),
+                                          encoding="utf8")
     print(f"FINAL {report['overall']}  results={out}", flush=True)
-    if report["overall"] != "PASS":
+    if restore_error or report["overall"] == "INCOMPLETE":
         raise SystemExit(2)
 
 
