@@ -2,7 +2,24 @@
 #include "pinout.h"
 #include "stm32f4xx.h"
 
+/* Physical speed-PID A/B varies ONLY this diagnostic estimator gain.
+ * Production retains the original fixed alpha=0.30. */
+#if defined(ENCODER_SPEED_PID_DIAG)
+#if !defined(INTEGRATION_DIAG_MOTOR_ON) || !defined(INTEGRATION_DIAG_LIMITED_PWM_30)
+#error "Speed PID alpha override permitted only in supervised limited motor-on diagnostic"
+#endif
+#if ENCODER_PID_ALPHA_PCT == 8
+#define SPEED_LPF_ALPHA 0.08f
+#elif ENCODER_PID_ALPHA_PCT == 10
+#define SPEED_LPF_ALPHA 0.10f
+#elif ENCODER_PID_ALPHA_PCT == 30
 #define SPEED_LPF_ALPHA 0.30f
+#else
+#error "Only 0.08, 0.10 and 0.30 speed PID diagnostic alphas are allowed"
+#endif
+#else
+#define SPEED_LPF_ALPHA 0.30f
+#endif
 
 static volatile int32_t total_left = 0;
 static volatile int32_t total_right = 0;
