@@ -192,7 +192,7 @@ def summarize(trials):
         "ranked":ranked,"margin_to_runner_up":round(winning_margin,4),
         "repeat_winners_pct":by_trial,
         "candidate_alpha":chosen,
-        "production_alpha_unchanged":0.30,
+        "production_alpha_unchanged":0.10,
         "pid_gains_unchanged":{"kp":.05,"ki":.08,"kd":0},
         "conditions":"At least 5% score advantage and winner in >=2/3 repeats",
         "limits":"Same encoder 50ms count reference, no external RPM/torque/slip; "
