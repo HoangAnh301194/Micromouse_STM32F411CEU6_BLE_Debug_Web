@@ -1,0 +1,25 @@
+[
+  {
+    "host_monotonic_ns": 18636709024400,
+    "type": "!S",
+    "s": 0,
+    "ms": 22000,
+    "cal": 3,
+    "tick": 21846,
+    "late": 0,
+    "gap": 0,
+    "maxcy": 1040,
+    "ir": 21846,
+    "irfail": 0,
+    "valid": 12846,
+    "stale": 0,
+    "i2cerr": 0,
+    "i2cto": 0,
+    "txdrop": 0,
+    "q": 0,
+    "peak": 170,
+    "txcy": 234139,
+    "rxerr": 64,
+    "locked": 1
+  }
+]

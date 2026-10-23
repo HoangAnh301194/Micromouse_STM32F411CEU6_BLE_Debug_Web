@@ -1,0 +1,42 @@
+{
+  "provisional_motor_off_candidate": null,
+  "utc_timestamp": "2026-10-23T20:54:00.276889+00:00",
+  "argv": [
+    "--name",
+    "Nezumi_Chan",
+    "--motor-on",
+    "--fixture-ready",
+    "--independent-vm-cutoff",
+    "--allow-30-percent"
+  ],
+  "clock_hz_nominal": 96000000,
+  "hardware_verified": false,
+  "notes": [
+    "PASS requires actual board + JDY-33 GATT notifications; not CI.",
+    "UART DR writes do not prove over-air delivery.",
+    "Arrival gaps and Ping RTT include host/OS BLE scheduling.",
+    "One-way sensor-to-PC latency is NOT measured without clock sync.",
+    "Speed PID in motor-on integration sweep is 10ms, TIM11 is 1ms.",
+    "motor-on remains subject to 30pct PWM firmware + 750ms BLE lease and independent VM cutoff."
+  ],
+  "phases": [
+    {
+      "ble_notifications": 9,
+      "received_raw_B": 164,
+      "crc_failures": 0,
+      "desync_discarded_B": 0,
+      "rtt_p50_ms": null,
+      "rtt_p95_ms": null,
+      "rtt_p99_ms": null,
+      "environment": "ble_profile_motor_off_115200_96m",
+      "mode": "OFF",
+      "error": "TimeoutError: No !H within 6s; device may have dropped BLE output",
+      "motor_end": {},
+      "requested_cases": 19,
+      "cases": []
+    }
+  ],
+  "limits": 0,
+  "overall": "INCOMPLETE",
+  "restore_error": null
+}

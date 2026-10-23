@@ -1,0 +1,12 @@
+[
+  {
+    "host_monotonic_ns": 18697210706200,
+    "type": "!ERR",
+    "reason": "UNKNOWN_COMMAND"
+  },
+  {
+    "host_monotonic_ns": 18697256138800,
+    "type": "!STOP",
+    "ok": 1
+  }
+]
