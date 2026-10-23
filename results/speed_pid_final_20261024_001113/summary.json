@@ -1,0 +1,8 @@
+{
+  "status": "ABORTED_UNQUALIFIED",
+  "trials": [],
+  "production_alpha_modified": false,
+  "p0": "PASS",
+  "restored_motor_off": true,
+  "error": "ON firmware abort: {'type': 'SYS_STEP', 'ms': 40284, 'state': 4, 'fault': 9, 'mode': 1, 'id': 3, 'group': 0, 'step': 3, 'duty': 300, 'dt': 1097, 'dl': 383, 'dr': 0, 'vL': 0, 'vR': 0, 'appL': 0, 'appR': 0, 'host_elapsed_s': 40.3299}"
+}

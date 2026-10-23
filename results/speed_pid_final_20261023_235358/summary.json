@@ -1,0 +1,8 @@
+{
+  "status": "ABORTED_UNQUALIFIED",
+  "trials": [],
+  "production_alpha_modified": false,
+  "p0": "PASS",
+  "restored_motor_off": true,
+  "error": "Operator did not confirm independent VM cutoff"
+}
