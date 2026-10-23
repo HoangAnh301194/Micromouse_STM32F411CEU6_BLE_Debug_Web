@@ -100,6 +100,30 @@ S  immediate stop
 Z  zero gyro yaw (idle only)
 ```
 
+## OLED + MPU6050 shared-I2C diagnostic (motor locked)
+
+The default production build intentionally keeps OLED disabled. The new
+`oled_mpu_diag_96m` build is an **opt-in, motor-locked hardware qualification**
+profile that retains the same 1 kHz TIM11, IR and MPU acquisition workload.
+
+The cooperative renderer `src/oled_shared.c` sends only changed pixels with
+short DMA transactions through the single I2C1 owner in `src/i2c.c`.
+MPU gyro always has priority. A bus below nominal 300 kHz suppresses OLED
+refresh rather than risking sensor freshness. Do not use legacy blocking
+`SSD1306_UpdateScreen()` or full-page DMA after MPU sampling begins.
+
+```powershell
+python -m platformio run -e oled_mpu_diag_96m -t upload
+python -m pip install pyserial
+python tools/oled_mpu_pipeline.py --port COM5 --baseline-seconds 15 --oled-seconds 15
+```
+
+The pipeline compares OLED OFF/ON using USART1 PA9/PA10 and generates raw
+UART, CSV and JSON evidence under `results/oled_mpu_YYYYMMDD_HHMMSS`.
+`--self-test` verifies host parsing only; no build or synthetic test is
+equivalent to MCU/hardware acceptance. For measured criteria and wiring,
+see [OLED/MPU shared-I2C acceptance](docs/system_debug/OLED_MPU_SHARED_20261024.md).
+
 ## IR sensor + OLED 128x64 bench mode (motor locked)
 
 Six IR channels can be displayed using existing TIM10/ADC1 DMA and SSD1306
