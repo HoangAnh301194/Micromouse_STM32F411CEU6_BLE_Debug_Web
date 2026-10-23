@@ -9,6 +9,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import time
+import types
+from unittest.mock import patch
+from system_uart_pipeline import PhaseSession
 
 ROOT=Path(__file__).resolve().parents[1]
 from speed_pid_final_pipeline import (
@@ -105,6 +109,60 @@ class AnalysisTests(unittest.TestCase):
         phase["host_heartbeat"]["max_inter_ping_gap_ms"]=170
         phase["uart"]["rx_err"]=1
         with self.assertRaises(RuntimeError):qgate(phase,12)
+
+
+class HeartbeatIndependenceTests(unittest.TestCase):
+    def test_ping_continues_during_blocked_main_serial_read(self):
+        class FakeSerial:
+            def __init__(self):
+                self.writes=[]
+                self.closed=False
+            def write(self, payload):
+                self.writes.append((time.monotonic(),payload))
+                return len(payload)
+            def flush(self):
+                pass
+            def readline(self):
+                # Reproduces a host read/log stall near the historical 750ms
+                # MCU heartbeat lease. Main thread alone cannot emit PING.
+                time.sleep(.62)
+                return b""
+            def close(self):
+                self.closed=True
+
+        fake=FakeSerial()
+        serial_module=types.SimpleNamespace(Serial=lambda **kwargs: fake)
+        with tempfile.TemporaryDirectory() as folder:
+            with patch.dict(sys.modules,{"serial":serial_module}):
+                session=PhaseSession("FAKE",115200,"ON",Path(folder),
+                                     limited=True,expected_alpha_pct=30)
+                try:
+                    session.start_heartbeat()
+                    session.poll()
+                    pings=[(t,b) for t,b in fake.writes if b==b"PING\\n"]
+                    self.assertGreaterEqual(len(pings),3)
+                    self.assertLess(session.max_ping_gap_ms,500.0)
+                    self.assertIsNone(session._hb_error)
+                finally:
+                    session.close()
+        self.assertTrue(fake.closed)
+        self.assertFalse(session._hb_thread.is_alive())
+
+    def test_plain_pipeline_does_not_spawn_heartbeat(self):
+        class FakeSerial:
+            def write(self,payload): return len(payload)
+            def flush(self): pass
+            def readline(self): return b""
+            def close(self): pass
+        with tempfile.TemporaryDirectory() as folder:
+            with patch.dict(sys.modules,{"serial":types.SimpleNamespace(
+                    Serial=lambda **kwargs:FakeSerial())}):
+                session=PhaseSession("FAKE",115200,"OFF",Path(folder))
+                try:
+                    session.start_heartbeat()
+                    self.assertIsNone(session._hb_thread)
+                finally:
+                    session.close()
 
 
 if __name__=="__main__":
