@@ -195,3 +195,31 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
   verified native state-machine tests. **No physical P1/P2 rerun is
   claimed by these checks.**
 - Operational protocol: `docs/encoder/ENCODER_P0_P3_SEQUENTIAL_20261020.md`.
+
+### 2026-10-23 — Final Encoder EMA test uses a TRUE diagnostic closed-loop speed PID
+
+- Audited `src/motion.c`: existing Motion PID controls heading and turn,
+  not wheel speed; prior PWM/alpha P0–P3 comparison was open-loop.
+  Treating the old A/B score as final PID speed proof would be incorrect.
+- Added three strictly isolated opt-in builds `speed_pid_alpha_008_96m`,
+  `speed_pid_alpha_010_96m`, `speed_pid_alpha_030_96m` with the same
+  `PID_Compute`, fixed exploratory gains Kp 0.050 / Ki 0.080 / Kd 0,
+  10ms main-context speed control and 800/1600/2400 PPS targets.
+  Firmware limits commanded PWM to 30%, retains 750ms PING/STOP/FAULT
+  sticky lock, Motor Driver 300ms lease and MPU/TIM11/I2C safety.
+- Diagnostic-only compile-time Encoder `SPEED_LPF_ALPHA` is 0.08, 0.10
+  or 0.30; **production remains 0.30** and its heading/turn PID code
+  and gains are untouched.
+- `tools/speed_pid_final_pipeline.py`: 3 counterbalanced repeats each,
+  9 total supervised real closed-loop runs. Per-run exact STM32
+  `CMD_PIDCFG` firmware alpha/gains/PWM ceiling validation before
+  `START`, 20Hz `SYS_PID` target/EMA/50ms count-delta/commanded+applied
+  PWM, strict UART/TIM11/heartbeat/Encoder stage gating, independent
+  motor power cutoff prompts before/after each firmware flash.
+- Decision based on fixed normalized tracking MAE, overshoot, settling
+  and ripple metrics. Requires >=5% score advantage and winning >=2/3
+  repeats, otherwise `INCONCLUSIVE`. No automatic production update.
+  This test cannot establish external shaft RPM or traction under load.
+- Offline CI tests and builds pass in Encoder Actions run `39989165294`;
+  **new 9-run physical trial NOT yet performed**. Source audit,
+  protocol and commands: `docs/encoder/CLOSED_LOOP_SPEED_PID_FINAL_20261023.md`.
