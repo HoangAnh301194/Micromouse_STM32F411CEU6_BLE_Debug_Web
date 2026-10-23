@@ -250,24 +250,25 @@ def main(argv=None):
             (off.get("encoder_shadow_queue") or {}).get("lost",1)!=0):
             raise RuntimeError("P0 motor-off encoder timing/FIFO gate failed")
         record["p0"]="PASS"
-        # Three counterbalanced blocks; 9 fresh firmware boots and 9 live trials.
+        # The explicit CLI flags are one-time authorization for the
+        # complete experiment. NO interactive input between repeats.
+        # Operator must remain present at the independent VM cutoff.
+        print("LIVE RUN: 9 motor-enabled repeats, each capped at 30% PWM. "
+              "Next run starts automatically after firmware profile check. "
+              "Keep wheels elevated and stay at the physical VM cutoff.",
+              flush=True)
         for repetition,block in enumerate(ORDER,1):
             for alpha in block:
                 directory=out/f"repeat_{repetition}_alpha_{alpha:03d}"
                 directory.mkdir()
-                # Human verifies independent VM disconnect for EACH ST-Link flash.
-                confirmation=input(
-                    f"VM supply physically OFF, stand guarded, ready to flash alpha "
-                    f"{alpha/100:.2f} repetition {repetition}? Type VM_OFF: ")
-                if confirmation.strip()!="VM_OFF":
-                    raise RuntimeError("Operator did not confirm independent VM cutoff")
+                print(f"RUN {len(record['trials'])+1}/9: "
+                      f"alpha={alpha/100:.2f}, repetition={repetition}; "
+                      "flashing dedicated guarded diagnostic firmware",
+                      flush=True)
                 run_cmd([sys.executable,"-m","platformio","run",
                          "-e",ENV[alpha],"-t","upload"],directory/"flash.log")
-                confirmation=input(
-                    "Enable VM on guarded lifted wheels, stay at cutoff; "
-                    "type MOTOR_READY to authorize this capped 30% test: ")
-                if confirmation.strip()!="MOTOR_READY":
-                    raise RuntimeError("Motor run was not authorized")
+                # PhaseSession verifies max PWM, stage count, exact alpha
+                # and fixed PID gains BEFORE sending MODE ON or START.
                 session=None
                 try:
                     session=PhaseSession(args.port,115200,"ON",directory,
@@ -308,16 +309,17 @@ def main(argv=None):
                 finally:
                     if session is not None:
                         session.close(emergency=True)
-                # Motor is latched off after DONE, but turn VM off before
-                # changing/reflashing motor-capable firmware.
-                confirmation=input("Physically disconnect VM now; type VM_OFF: ")
-                if confirmation.strip()!="VM_OFF":
-                    raise RuntimeError("Operator did not confirm VM was disconnected")
+                # Firmware latches motor outputs OFF after DONE. The
+                # operator is still responsible for independent VM cutoff,
+                # particularly during reflashing/MCU resets.
+                print(f"PASS trial: alpha={alpha/100:.2f}, "
+                      f"repetition={repetition}; next run is automatic.",
+                      flush=True)
                 (out/"partial_summary.json").write_text(
                     json.dumps(record,indent=2)+"\n",encoding="utf-8")
         record["decision"]=summarize(record["trials"])
         record["status"]=record["decision"]["status"]
-    except (RuntimeError, OSError, ValueError, KeyboardInterrupt, EOFError) as exc:
+    except (RuntimeError, OSError, ValueError, KeyboardInterrupt) as exc:
         fault=True
         record["status"]="ABORTED_UNQUALIFIED"
         record["error"]=str(exc)
@@ -325,7 +327,8 @@ def main(argv=None):
     finally:
         if not args.offline_only:
             try:
-                # Restoration attempts only; hardware VM must be physically off.
+                # Restoration attempt, even after interrupted motor trials.
+                # Requires the physically accessible independent VM cutoff.
                 run_cmd([sys.executable,"-m","platformio","run","-e",MOTOR_OFF_ENV,
                          "-t","upload"],out/"restore_motor_off.log")
                 record["restored_motor_off"]=True
