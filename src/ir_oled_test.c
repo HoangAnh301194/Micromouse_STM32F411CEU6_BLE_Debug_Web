@@ -71,10 +71,6 @@ int IR_OLED_TestMain(void)
 
     Board_Init();
     SystemTimer_Init();
-    /* Motor OFF is latched before initializing any sensors. There is no
-       caller of Motor_SetPair in this diagnostic main. */
-    Motor_Init();
-    Motor_LockOutputs();
     UART_Init(); /* Optional PA9/PA10 record even if OLED is not detected. */
 
     if (Board_GetClockFault() != 0U) {
@@ -83,6 +79,11 @@ int IR_OLED_TestMain(void)
         Board_StatusLed(1U);
         while (1) { /* Fail closed; never start the IR/OLED peripherals. */ }
     }
+
+    /* Motor OFF is latched before initializing any sensors. There is no
+       caller of Motor_SetPair in this diagnostic main. */
+    Motor_Init();
+    Motor_LockOutputs();
 
     /* MPU6050_Init() must NOT run here: it owns I2C1 in production.
        The OLED is the only I2C1 client in this isolated test image. */
