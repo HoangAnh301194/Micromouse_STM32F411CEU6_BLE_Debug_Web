@@ -353,14 +353,16 @@ int main(void)
         if ((uint32_t)(now - last_pid_log_ms) >= 50U) {
             SweepSnapshot sw;
             SpeedPidDiagSnapshot pid;
+            int16_t applied_l = 0, applied_r = 0;
             int32_t count_l = Encoder_GetLeftCount();
             int32_t count_r = Encoder_GetRightCount();
             uint32_t dt = last_pid_log_ms ?
                           (uint32_t)(now - last_pid_log_ms) : 0U;
             Sweep_GetSnapshot(&sw);
             SpeedPidDiag_Get(&pid);
+            Motor_GetAppliedPairPermille(&applied_l, &applied_r);
             if (last_pid_log_ms && sw.state == SWEEP_DRIVE && dt > 0U) {
-                UART_Printf("SYS_PID,ms=%lu,id=%lu,group=%u,step=%u,target=%u,dt=%lu,refL=%ld,refR=%ld,emaL=%ld,emaR=%ld,pwmL=%u,pwmR=%u\r\n",
+                UART_Printf("SYS_PID,ms=%lu,id=%lu,group=%u,step=%u,target=%u,dt=%lu,refL=%ld,refR=%ld,emaL=%ld,emaR=%ld,pwmL=%u,pwmR=%u,appL=%d,appR=%d\r\n",
                     (unsigned long)now, (unsigned long)sw.stage_id,
                     (unsigned)sw.group, (unsigned)sw.step,
                     (unsigned)pid.target_pps, (unsigned long)dt,
@@ -368,7 +370,8 @@ int main(void)
                     (long)((count_r-last_pid_count_r)*1000L/(int32_t)dt),
                     (long)Encoder_GetLeftSpeedPPS(),
                     (long)Encoder_GetRightSpeedPPS(),
-                    (unsigned)pid.last_pwm_left, (unsigned)pid.last_pwm_right);
+                    (unsigned)pid.last_pwm_left, (unsigned)pid.last_pwm_right,
+                    (int)applied_l, (int)applied_r);
             }
             last_pid_log_ms = now;
             last_pid_count_l = count_l;
