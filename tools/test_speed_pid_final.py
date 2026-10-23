@@ -139,7 +139,7 @@ class HeartbeatIndependenceTests(unittest.TestCase):
                 try:
                     session.start_heartbeat()
                     session.poll()
-                    pings=[(t,b) for t,b in fake.writes if b==b"PING\\n"]
+                    pings=[(t,b) for t,b in fake.writes if b==b"PING\n"]
                     self.assertGreaterEqual(len(pings),3)
                     self.assertLess(session.max_ping_gap_ms,500.0)
                     self.assertIsNone(session._hb_error)
