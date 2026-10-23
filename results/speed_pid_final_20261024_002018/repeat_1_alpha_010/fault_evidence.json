@@ -1,0 +1,27 @@
+{
+  "alpha_pct": 10,
+  "repeat": 1,
+  "reason": "ON firmware abort: {'type': 'SYS_STEP', 'ms': 60763, 'state': 4, 'fault': 9, 'mode': 1, 'id': 11, 'group': 2, 'step': 3, 'duty': 300, 'dt': 471, 'dl': 340, 'dr': 336, 'vL': 0, 'vR': 0, 'appL': 0, 'appR': 0, 'host_elapsed_s': 60.9294}",
+  "received_frames": 1466,
+  "host_ping_sent": 267,
+  "host_ping_ack": 266,
+  "last_fault": {
+    "type": "SYS_STEP",
+    "ms": 60763,
+    "state": 4,
+    "fault": 9,
+    "mode": 1,
+    "id": 11,
+    "group": 2,
+    "step": 3,
+    "duty": 300,
+    "dt": 471,
+    "dl": 340,
+    "dr": 336,
+    "vL": 0,
+    "vR": 0,
+    "appL": 0,
+    "appR": 0,
+    "host_elapsed_s": 60.9294
+  }
+}
