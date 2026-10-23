@@ -12,7 +12,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle);
 void Control_Start(void);
 void Control_Stop(void);
 uint8_t Control_IsRunning(void);
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
 typedef struct {
     uint32_t ticks;
     uint32_t late_gt50us;

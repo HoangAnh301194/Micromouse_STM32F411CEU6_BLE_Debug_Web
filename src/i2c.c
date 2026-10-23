@@ -628,6 +628,10 @@ I2C_Status I2C_Write_DMA(I2C_Instance instance, uint8_t slave_addr,
 I2C_Status I2C_Write(I2C_Instance instance, uint8_t slave_addr, 
                      uint8_t *data, uint16_t len) {
     uint32_t i2c_base = I2C_GetBase(instance);
+#if defined(OLED_SHARED_I2C)
+    /* Never reset I2C1 or busy-wait from a blocking caller while MPU owns it. */
+    if (bus_owner != OWNER_NONE) return I2C_BUSY;
+#endif
     uint32_t start_time;
     uint16_t i;
     I2C_Status status;

@@ -7,14 +7,14 @@
 #include "motor.h"
 #include "stm32f4xx.h"
 #include "system_timer.h"
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
 #include "integration_sweep.h"
 #endif
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile IR_Data_t ir_latest;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
 static volatile Control_DebugStats_t di_stats;
 static volatile uint32_t di_prev_irq_us;
 static volatile uint8_t di_seen_valid;
@@ -62,7 +62,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     control_mpu = mpu_handle;
     control_running = 0;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     di_stats = (Control_DebugStats_t){0};
     di_prev_irq_us = 0U;
     di_seen_valid = 0U;
@@ -131,7 +131,7 @@ uint8_t Control_IsRunning(void)
 void TIM1_TRG_COM_TIM11_IRQHandler(void)
 {
     IR_Data_t sample;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     uint32_t entry_us, start_cycles, period, section_cycles;
 #endif
 
@@ -145,7 +145,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         return;
     }
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     start_cycles = DWT->CYCCNT;
     entry_us = micros();
     di_stats.ticks++;
@@ -164,11 +164,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * 4. Consume a completed IR scan and immediately schedule the next scan.
      * 5. Execute the motion controller using one coherent sensor snapshot.
      */
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     section_cycles = DWT->CYCCNT;
 #endif
     Encoder_Update(CONTROL_DT_S);
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - section_cycles;
         if (cycles > di_stats.max_encoder_cycles)
@@ -180,7 +180,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * The fresh Motion_SetPair on valid feedback renews the 300-tick lease.
      * Do NOT use Motor_KeepAlive here; a stalled Motion must time out. */
     Motor_Update1ms();
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - section_cycles;
         if (cycles > di_stats.max_motor_service_cycles)
@@ -195,7 +195,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 
     if (IR_GetLatest(&sample)) {
         uint8_t i;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
         uint32_t age_us = micros() - sample.completed_us;
 #endif
 
@@ -204,14 +204,14 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         }
         ir_latest.scan_count = sample.scan_count;
         ir_latest.completed_us = sample.completed_us;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
         di_stats.ir_scan_count = sample.scan_count;
         di_stats.ir_fresh_ticks++;
         di_stats.ir_last_age_us = age_us;
         if (age_us > di_stats.ir_max_age_us)
             di_stats.ir_max_age_us = age_us;
 #endif
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     } else {
         uint32_t age_us = (ir_latest.scan_count != 0U) ?
                           (uint32_t)(micros() - ir_latest.completed_us) : 0U;
@@ -229,14 +229,14 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         MPU6050_Snapshot_t gyro;
         if (MPU6050_GetSnapshot(control_mpu, &gyro) &&
             (uint32_t)(micros() - gyro.completed_us) <= 3000U) {
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
             di_seen_valid = 1U;
             di_stats.gyro_valid_ticks++;
 #endif
             Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
                           Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
         } else {
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
             if (di_seen_valid) di_stats.gyro_invalid_after_first_valid++;
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
             Sweep_ImuFaultFromISR();
@@ -245,7 +245,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
         }
     }
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - start_cycles;
         uint8_t bucket;
