@@ -1,4 +1,7 @@
-#if defined(FLASH_MAP_DIAG)
+#if defined(BLE_PROFILE_DIAG)
+int BleBenchmark_Main(void);
+int main(void) { return BleBenchmark_Main(); }
+#elif defined(FLASH_MAP_DIAG)
 #include "flash_map_diag.h"
 int main(void) { return FlashMapDiag_Main(); }
 #else
@@ -701,4 +704,4 @@ int main(void)
     }
 }
 
-#endif /* FLASH_MAP_DIAG */
+#endif /* BLE_PROFILE_DIAG / FLASH_MAP_DIAG */
