@@ -226,6 +226,30 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
   protocol and commands: `docs/encoder/CLOSED_LOOP_SPEED_PID_FINAL_20261023.md`.
 
 
+### Flash map 5×5/16×16 USART1 / WebBLE diagnostic
+
+Source added: dedicated motor-locked `flash_map_diag_96m` profile, deterministic fake maps, UART `FM_*` read/write/read-back telemetry, BLE `MAPCFG/MAPROW/MAPEND` auto-size and CRC32 gate, serial operator pipeline. Write requires `SAVE N CONFIRM`, no sector erase or boot-time writes. On-board Flash/JDY-33 tests remain pending; see `docs/system_debug/FLASH_MAP_WEB_PIPELINE.md`.
+
+### 2026-10-24 — Encoder acceptance on lifted-wheel fixture; production EMA selected
+
+- **Accepted on fixture:** Encoder 1kHz sampling/counts/PPS estimate and
+  bounded TIM11 integration, based on `results/speed_pid_final_20261024_003343`.
+  9/9 live closed-loop speed-PID diagnostic runs PASS; 12/12 stages each;
+  zero hardware UART, TIM11-gap and loss-of-link faults; P0 Motor-OFF PASS.
+- **Engineering selection:** default `src/encoder.c` production
+  `SPEED_LPF_ALPHA=0.10f` (previously 0.30f). Retain the three isolated
+  A/B diagnostic overrides 0.08, 0.10, 0.30; no production wheel-speed
+  PID has been implemented or tuned here.
+- Original score: 0.10=0.03224, 0.08=0.03270, 0.30=0.03383.
+  The best-vs-runner-up margin is **1.41%, below the predefined 5%**:
+  machine decision correctly remains `INCONCLUSIVE`.
+  Thus acceptance covers Encoder operation, **not proof of a
+  unique EMA optimum**; alpha 0.10 is an explicit engineering choice.
+- Bench raised-wheel scope only: ground-distance metrology, slip,
+  production motion control and loaded validation still pending.
+  Follow full acceptance record
+  `docs/encoder/ENCODER_ACCEPTANCE_20261024.md`.
+
 ## 2026-10-24 — BLE USART2 one-shot profiler (software handoff; hardware PENDING)
 
 - Created isolated `BLE_PROFILE_DIAG` builds and a one-command `tools/ble_full_pipeline.py` harness on feature branch. The host connects JDY-33 directly by Bleak FFE1, runs 18 packet/rate tests at 115200, six at 38400, and optionally six during a guarded 30%-PWM real 10ms speed-PID integration sweep. It restores the motor-locked image after automated bench phases.

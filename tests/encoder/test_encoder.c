@@ -30,18 +30,18 @@ int main(void) {
     assert((GPIOB->MODER & (3U<<(4*2)))==(2U<<(4*2)));
     assert(Encoder_GetLeftCount()==0 && Encoder_GetRightCount()==0);
 
-    /* Forward counting already established on real board: raw timer decrements. */
+    /* Production alpha=0.10: first 1-ms sample uses 10% of instantaneous PPS.\n     * Forward counting already established on real board: timer decrements. */
     TIM4->CNT=65526U; TIM3->CNT=65516U;
     Encoder_Update(0.001f);
     assert(Encoder_GetLeftCount()==10 && Encoder_GetRightCount()==20);
-    near(Encoder_GetLeftSpeedPPS(),3000.0f);
-    near(Encoder_GetRightSpeedPPS(),6000.0f);
+    near(Encoder_GetLeftSpeedPPS(),1000.0f);
+    near(Encoder_GetRightSpeedPPS(),2000.0f);
 
     /* No edges; EMA should decay. */
     Encoder_Update(0.001f);
     assert(Encoder_GetLeftCount()==10 && Encoder_GetRightCount()==20);
-    near(Encoder_GetLeftSpeedPPS(),2100.0f);
-    near(Encoder_GetRightSpeedPPS(),4200.0f);
+    near(Encoder_GetLeftSpeedPPS(),900.0f);
+    near(Encoder_GetRightSpeedPPS(),1800.0f);
 
     /* Wrap 0xffff->0 when delta is positive; in current wiring this means reverse. */
     TIM4->CNT=65530U; Encoder_Reset();
@@ -54,7 +54,7 @@ int main(void) {
     TIM4->CNT=65530U;
     Encoder_Update(0.001f);
     assert(Encoder_GetLeftCount()==6);
-    near(Encoder_GetLeftSpeedPPS(),1800.0f);
+    near(Encoder_GetLeftSpeedPPS(),600.0f);
 
     /* Bad dt is ignored; reset eliminates accumulated speed & counts. */
     Encoder_Update(0.0f);

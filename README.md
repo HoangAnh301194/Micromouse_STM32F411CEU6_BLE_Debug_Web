@@ -192,6 +192,9 @@ The 104529 Motor-ON endurance phase passed 33 software stages with zero TIM11 ga
 
 The MPU6050 gyro, asynchronous temperature measurement and I2C1 driver are maintained as one logical module without relocating validated source files. Public include: [`mpu6050_i2c_module.h`](include/mpu6050_i2c_module.h). The **[module README](docs/mpu_i2c_rc2/README.md)** records integration, measured acceptance (STILL, SHADOW and 80–100% motor LIVE), constraints and future optimization. Raw evidence in `results/` is retained unchanged. The completed MPU 180-second test pipeline has been retired; other modules' motor/UART/clock tools remain available.
 
+### Flash map WebBLE diagnostic
+
+Opt-in motor-locked 5×5/16×16 Flash mock-map pipeline over UART1 PA9/PA10 and JDY-33 BLE PA2/PA3: [operator guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
 
 ### One-command JDY-33 BLE PA2/PA3 qualification (new, hardware pending)
 

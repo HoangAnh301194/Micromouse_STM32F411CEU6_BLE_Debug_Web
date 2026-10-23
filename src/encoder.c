@@ -2,8 +2,11 @@
 #include "pinout.h"
 #include "stm32f4xx.h"
 
-/* Physical speed-PID A/B varies ONLY this diagnostic estimator gain.
- * Production retains the original fixed alpha=0.30. */
+/* Closed-loop speed-PID A/B overrides this gain ONLY in guarded
+ * diagnostics. Encoder production EMA alpha=0.10 is an engineering
+ * acceptance choice after 9/9 successful physical trials (2026-10-24).
+ * The 0.10-vs-0.08 score gap was 1.41% (<5% superiority criterion);
+ * do not claim statistically proven optimality. */
 #if defined(ENCODER_SPEED_PID_DIAG)
 #if !defined(INTEGRATION_DIAG_MOTOR_ON) || !defined(INTEGRATION_DIAG_LIMITED_PWM_30)
 #error "Speed PID alpha override permitted only in supervised limited motor-on diagnostic"
@@ -18,7 +21,8 @@
 #error "Only 0.08, 0.10 and 0.30 speed PID diagnostic alphas are allowed"
 #endif
 #else
-#define SPEED_LPF_ALPHA 0.30f
+/* Production encoder speed estimator, 1-kHz TIM11 update. */
+#define SPEED_LPF_ALPHA 0.10f
 #endif
 
 static volatile int32_t total_left = 0;
