@@ -244,16 +244,36 @@ def flash(env: str, output: Path):
         raise RuntimeError(f"Firmware flash FAILED: {env}\n" + "\n".join(tail))
 
 
+async def scan_devices(timeout=15.0):
+    """Print host-visible advertising data, including unnamed BLE devices."""
+    from bleak import BleakScanner
+    found = await BleakScanner.discover(timeout=timeout, return_adv=True)
+    print(f"SCAN: {len(found)} BLE advertisements; no firmware flashing", flush=True)
+    for addr, (device, adv) in sorted(found.items()):
+        name = adv.local_name or device.name or "(no advertised name)"
+        uuids = ",".join(adv.service_uuids or []) or "(not advertised)"
+        print(f"  name={name!r}  address={device.address}  services={uuids}"
+              f"  rssi={adv.rssi}", flush=True)
+    print("Use --address <address> only after identifying YOUR JDY-33; "
+          "unknown addresses alone cannot identify the correct device.", flush=True)
+    return found
+
+
 async def discover(name: str, address: str | None):
     from bleak import BleakScanner
-    devices = await BleakScanner.discover(timeout=12.0)
+    found = await BleakScanner.discover(timeout=15.0, return_adv=True)
+    devices = [pair[0] for pair in found.values()]
     if address:
         selected = [d for d in devices if d.address.lower() == address.lower()]
     else:
-        selected = [d for d in devices if d.name and name.lower() in d.name.lower()]
+        selected = [d for d, adv in found.values()
+                    if name.lower() in (adv.local_name or d.name or "").lower()]
     if not selected:
-        names = ", ".join(f"{d.name or '?'} ({d.address})" for d in devices)
-        raise RuntimeError(f"BLE device not found: {name or address}. Scanned: {names}")
+        listing = ", ".join(f"{(a.local_name or d.name or '?')} ({d.address})"
+                            for d, a in found.values())
+        raise RuntimeError(f"No BLE match for {address or name!r}; scanned: {listing}. "
+                           "Run python tools/ble_full_pipeline.py --scan; "
+                           "verify the JDY-33 name/ID, power and other connections.")
     if len(selected) > 1:
         raise RuntimeError("Multiple matching BLE devices; specify --address: " +
                            ", ".join(d.address for d in selected))
@@ -261,8 +281,9 @@ async def discover(name: str, address: str | None):
 
 
 class Session:
-    def __init__(self, raw_file: Path):
+    def __init__(self, raw_file: Path, verbose=False):
         self.decoder = Decoder()
+        self.verbose = verbose
         self.raw = raw_file.open("wb")
         self.client = None
         self.rx_exc = None
@@ -275,6 +296,10 @@ class Session:
         try:
             chunk = bytes(data)
             self.raw.write(chunk)
+            if self.verbose:
+                printable = "".join(chr(x) if 32 <= x < 127 else "." for x in chunk[:64])
+                print(f"RX notify {len(chunk)}B: HEX={chunk[:64].hex(' ')}"
+                      f" ASCII={printable!r}", flush=True)
             before = len(self.decoder.events)
             self.decoder.feed(chunk, now)
             for event in self.decoder.events[before:]:
@@ -298,6 +323,9 @@ class Session:
         else:
             raise RuntimeError("JDY-33 FFE1 has no GATT write permission")
         await self.client.start_notify(UUID, self.on_notify)
+        if self.verbose:
+            print(f"GATT CONNECTED: FFE1 properties={list(char.properties)} "
+                  f"write_response={self.with_response}", flush=True)
 
     async def send(self, command: str):
         if self.rx_exc:
@@ -305,6 +333,8 @@ class Session:
         if not self.client or not self.client.is_connected:
             raise RuntimeError("BLE disconnected")
         value = (command + "\n").encode("ascii")
+        if self.verbose:
+            print(f"TX command {command!r}: HEX={value.hex(' ')}", flush=True)
         if len(value) > 20:
             raise ValueError(f"Control write >20B (default GATT payload): {command}")
         async with self.write_lock:
@@ -397,6 +427,50 @@ class Session:
         self.raw.close()
 
 
+async def probe_link(args, output: Path):
+    """Raw FFE1 UART link diagnostic. Motor OFF only, no RUN or ARM commands."""
+    if not args.no_flash:
+        flash(OFF115, output)
+    session = Session(output / "ble_probe_raw.bin", verbose=True)
+    report = {"mode": "LINK_PROBE", "pass": False, "error": None}
+    try:
+        device = await discover(args.name, args.address)
+        print(f"PROBE target: {device.name or '(unnamed)'} ({device.address})",
+              flush=True)
+        await session.connect(device)
+        await asyncio.sleep(1.0)
+        for command in ("HELLO", "PING", "STATUS", "HELLO"):
+            await session.send(command)
+            await asyncio.sleep(1.3)
+        types = [e.get("type") for e in session.decoder.events]
+        report.update({"target_name": device.name, "address": device.address,
+                       "event_types": types,
+                       "hello_received": "!H" in types,
+                       "ping_received": "!P" in types,
+                       "uart_status_received": "!S" in types,
+                       "uart_rx_details_received": "!U" in types})
+        report["pass"] = report["hello_received"] and report["ping_received"]
+        for event in session.decoder.events:
+            print("EVENT:", json.dumps(event, ensure_ascii=False), flush=True)
+    except Exception as exc:
+        report["error"] = f"{type(exc).__name__}: {exc}"
+        print("PROBE ERROR:", report["error"], file=sys.stderr, flush=True)
+    finally:
+        await session.close()
+        report.update({"raw_received_bytes": session.decoder.raw_bytes,
+                       "notifications": session.decoder.notifications,
+                       "decoder_discarded_bytes": session.decoder.discarded,
+                       "parser_crc_failures": session.decoder.crc_failures})
+        (output / "ble_probe_events.json").write_text(
+            json.dumps(session.decoder.events, indent=2), encoding="utf8")
+        (output / "ble_probe_summary.json").write_text(
+            json.dumps(report, indent=2), encoding="utf8")
+    print(f"PROBE {'PASS' if report['pass'] else 'FAIL'}; "
+          f"logs={output}", flush=True)
+    if not report["pass"]:
+        raise SystemExit(2)
+
+
 def save_phase(session: Session, output: Path, phase_name: str):
     with (output / f"{phase_name}_events.json").open("w", encoding="utf8") as f:
         json.dump(session.decoder.events, f, indent=2)
@@ -419,13 +493,13 @@ def save_phase(session: Session, output: Path, phase_name: str):
 async def run_phase(env, cases, out, args, mode):
     if not args.no_flash:
         flash(env, out)
-    device = await discover(args.name, args.address)
     session = Session(out / f"{env}_raw.bin")
     rows = []
     error = None
     hb_task = None
     completion = {}
     try:
+        device = await discover(args.name, args.address)
         await session.connect(device)
         hello = await session.ready(mode)
         print(f"CONNECTED {device.name} mode={mode} baud={hello.get('baud')}", flush=True)
@@ -550,6 +624,10 @@ def write_results(out, phases, argv):
 
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--scan", action="store_true",
+                   help="Scan BLE advertisements, no ST-Link flashing")
+    p.add_argument("--probe", action="store_true",
+                   help="Run motor-locked FFE1 raw link handshake only, no stress")
     p.add_argument("--name", default="Nezumi_Chan",
                    help="BLE advertised name substring; default Nezumi_Chan")
     p.add_argument("--address", help="BLE adapter-specific address/identifier")
@@ -577,9 +655,17 @@ async def main():
         raise SystemExit("Motor ON requires --fixture-ready "
                          "--independent-vm-cutoff --allow-30-percent")
     ensure_module("bleak")
+    if args.scan:
+        await scan_devices()
+        return
+    if args.probe and args.motor_on:
+        raise SystemExit("--probe is motor-OFF-only; omit --motor-on")
     out = args.output or ROOT / "results" / (
         "ble_one_shot_" + datetime.now().strftime("%Y%m%d_%H%M%S"))
     out.mkdir(parents=True, exist_ok=True)
+    if args.probe:
+        await probe_link(args, out)
+        return
     phases = []
     jobs = [(OFF115, [("BASE", 16, 0)] + MATRIX, "OFF")]
     if not args.no_flash:
