@@ -1,0 +1,740 @@
+{
+  "alpha_pct": 30,
+  "repeat": 3,
+  "qualification": "PASS",
+  "metrics": [
+    {
+      "stage": 1,
+      "wheel": "L",
+      "target_pps": 800,
+      "sample_count": 40,
+      "mean_actual_pps": 800,
+      "mean_absolute_error_pps": 12.86,
+      "normalized_mae": 0.01607,
+      "overshoot_fraction": 0.05,
+      "settling_ms": 150,
+      "rise_ms": 50,
+      "normalized_variation": 0.02778,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 2,
+      "wheel": "L",
+      "target_pps": 1600,
+      "sample_count": 40,
+      "mean_actual_pps": 1655.71,
+      "mean_absolute_error_pps": 55.71,
+      "normalized_mae": 0.03482,
+      "overshoot_fraction": 0.0625,
+      "settling_ms": 150,
+      "rise_ms": 50,
+      "normalized_variation": 0.00833,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 3,
+      "wheel": "L",
+      "target_pps": 2400,
+      "sample_count": 70,
+      "mean_actual_pps": 2495.52,
+      "mean_absolute_error_pps": 95.52,
+      "normalized_mae": 0.0398,
+      "overshoot_fraction": 0.09167,
+      "settling_ms": 150,
+      "rise_ms": 100,
+      "normalized_variation": 0.00614,
+      "pwm_saturation_fraction": 0.01724,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 5,
+      "wheel": "R",
+      "target_pps": 800,
+      "sample_count": 40,
+      "mean_actual_pps": 765.71,
+      "mean_absolute_error_pps": 34.29,
+      "normalized_mae": 0.04286,
+      "overshoot_fraction": 0.0,
+      "settling_ms": 150,
+      "rise_ms": 150,
+      "normalized_variation": 0.01852,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 6,
+      "wheel": "R",
+      "target_pps": 1600,
+      "sample_count": 40,
+      "mean_actual_pps": 1637.14,
+      "mean_absolute_error_pps": 37.14,
+      "normalized_mae": 0.02321,
+      "overshoot_fraction": 0.05,
+      "settling_ms": 150,
+      "rise_ms": 50,
+      "normalized_variation": 0.01019,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 7,
+      "wheel": "R",
+      "target_pps": 2400,
+      "sample_count": 70,
+      "mean_actual_pps": 2482.76,
+      "mean_absolute_error_pps": 82.76,
+      "normalized_mae": 0.03448,
+      "overshoot_fraction": 0.08333,
+      "settling_ms": 150,
+      "rise_ms": 100,
+      "normalized_variation": 0.00614,
+      "pwm_saturation_fraction": 0.01724,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 9,
+      "wheel": "L",
+      "target_pps": 800,
+      "sample_count": 40,
+      "mean_actual_pps": 779.29,
+      "mean_absolute_error_pps": 23.57,
+      "normalized_mae": 0.02946,
+      "overshoot_fraction": 0.025,
+      "settling_ms": 150,
+      "rise_ms": 100,
+      "normalized_variation": 0.02593,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 9,
+      "wheel": "R",
+      "target_pps": 800,
+      "sample_count": 40,
+      "mean_actual_pps": 779.29,
+      "mean_absolute_error_pps": 23.57,
+      "normalized_mae": 0.02946,
+      "overshoot_fraction": 0.025,
+      "settling_ms": 150,
+      "rise_ms": 50,
+      "normalized_variation": 0.02222,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 10,
+      "wheel": "L",
+      "target_pps": 1600,
+      "sample_count": 40,
+      "mean_actual_pps": 1643.57,
+      "mean_absolute_error_pps": 43.57,
+      "normalized_mae": 0.02723,
+      "overshoot_fraction": 0.05,
+      "settling_ms": 150,
+      "rise_ms": 50,
+      "normalized_variation": 0.00694,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 10,
+      "wheel": "R",
+      "target_pps": 1600,
+      "sample_count": 40,
+      "mean_actual_pps": 1643.57,
+      "mean_absolute_error_pps": 43.57,
+      "normalized_mae": 0.02723,
+      "overshoot_fraction": 0.05,
+      "settling_ms": 150,
+      "rise_ms": 50,
+      "normalized_variation": 0.00694,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 11,
+      "wheel": "L",
+      "target_pps": 2400,
+      "sample_count": 70,
+      "mean_actual_pps": 2491.72,
+      "mean_absolute_error_pps": 91.72,
+      "normalized_mae": 0.03822,
+      "overshoot_fraction": 0.09167,
+      "settling_ms": 150,
+      "rise_ms": 100,
+      "normalized_variation": 0.00541,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    },
+    {
+      "stage": 11,
+      "wheel": "R",
+      "target_pps": 2400,
+      "sample_count": 70,
+      "mean_actual_pps": 2491.72,
+      "mean_absolute_error_pps": 91.72,
+      "normalized_mae": 0.03822,
+      "overshoot_fraction": 0.09167,
+      "settling_ms": 150,
+      "rise_ms": 100,
+      "normalized_variation": 0.00512,
+      "pwm_saturation_fraction": 0.0,
+      "closed_loop": true,
+      "reference": "50ms encoder count delta, not external RPM reference"
+    }
+  ],
+  "health": {
+    "mode": "ON",
+    "checks": {
+      "expected_unique_pwm_stages": true,
+      "limited_30pct_no_excess": true,
+      "finished_and_locked": true,
+      "clock_trim25": true,
+      "i2c_400k_nominal": true,
+      "uart_no_rx_error": true,
+      "uart_no_tx_drop": true,
+      "uart_dma_no_error": true,
+      "shadow_spsc_no_loss": true,
+      "mpu_no_i2c_error": true,
+      "no_tim11_gaps": true,
+      "tim11_irq_jitter_under_50us": true,
+      "no_tim11_excess_duration": true,
+      "motor_service_every_tick": true,
+      "ir_scans_progress": true,
+      "gyro_fresh_after_calibration": true,
+      "no_motor_watchdog": true,
+      "no_sweep_fault": true,
+      "encoder_drive_response_consistent": true,
+      "extended_drive_coast_inertia": true
+    },
+    "software_pass": true,
+    "stages": 12,
+    "expected_stages": 12,
+    "max_pwm": 30,
+    "timer": {
+      "type": "SYS_T",
+      "ms": 63000,
+      "ticks": 62846,
+      "late": 0,
+      "gap": 0,
+      "maxcy": 1896,
+      "encmaxcy": 965,
+      "motmaxcy": 444,
+      "motticks": 62846,
+      "valid": 53846,
+      "stale": 0,
+      "ir": 62846,
+      "host_elapsed_s": 62.9234
+    },
+    "mpu": {
+      "type": "SYS_M",
+      "ms": 63000,
+      "cal": 3,
+      "n": 4000,
+      "seq": 53834,
+      "age": 980,
+      "i2cok": 62831,
+      "i2cerr": 0,
+      "to": 0,
+      "nr": 3870,
+      "busy": 0,
+      "locked": 1,
+      "wd": 0,
+      "host_elapsed_s": 62.9648
+    },
+    "uart": {
+      "type": "SYS_U",
+      "ms": 63000,
+      "tx_drop": 0,
+      "dma_err": 0,
+      "rx_err": 0,
+      "rx_ov": 0,
+      "trim": 25,
+      "clkfault": 0,
+      "iclk": 400000,
+      "host_elapsed_s": 62.9707
+    },
+    "clock_profile": {},
+    "faults": [],
+    "encoder_review": {
+      "drive_windows": 12,
+      "high_pwm_anomalies": [],
+      "qualified": true
+    },
+    "uart_dma_cpu_profile": {
+      "type": "SYS_UQ",
+      "ms": 63000,
+      "q": 663,
+      "peak": 1424,
+      "accb": 150167,
+      "doneb": 149504,
+      "prncy": 17077500,
+      "dmacy": 188353,
+      "rxcy": 151610,
+      "rxb": 2205,
+      "host_elapsed_s": 62.9815
+    },
+    "uart_rx_error_detail": {},
+    "encoder_shadow_queue": {},
+    "uart_cpu_fraction_of_nominal_sysclk": 0.288,
+    "extended": {
+      "endurance_pass": true,
+      "problems": [],
+      "stages": [
+        {
+          "stage": 0,
+          "wheel_group": 0,
+          "pwm_percent": 0,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 0,
+          "drive_right_counts": 0,
+          "coast_left_counts": 0,
+          "coast_right_counts": 0,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            }
+          ]
+        },
+        {
+          "stage": 1,
+          "wheel_group": 0,
+          "pwm_percent": 10,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 1576,
+          "drive_right_counts": 0,
+          "coast_left_counts": 44,
+          "coast_right_counts": 0,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 44,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 44,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 44,
+              "right_counts": 0
+            }
+          ]
+        },
+        {
+          "stage": 2,
+          "wheel_group": 0,
+          "pwm_percent": 20,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 3281,
+          "drive_right_counts": 0,
+          "coast_left_counts": 188,
+          "coast_right_counts": 0,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 188,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 188,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 188,
+              "right_counts": 0
+            }
+          ]
+        },
+        {
+          "stage": 3,
+          "wheel_group": 0,
+          "pwm_percent": 30,
+          "drive_ms": 3500,
+          "coast_ms": 2000,
+          "drive_left_counts": 8696,
+          "drive_right_counts": 0,
+          "coast_left_counts": 383,
+          "coast_right_counts": 0,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 383,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 383,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 383,
+              "right_counts": 0
+            }
+          ]
+        },
+        {
+          "stage": 4,
+          "wheel_group": 1,
+          "pwm_percent": 0,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 0,
+          "drive_right_counts": 0,
+          "coast_left_counts": 0,
+          "coast_right_counts": 0,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            }
+          ]
+        },
+        {
+          "stage": 5,
+          "wheel_group": 1,
+          "pwm_percent": 10,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 0,
+          "drive_right_counts": 1496,
+          "coast_left_counts": 0,
+          "coast_right_counts": 35,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 35
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 35
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 35
+            }
+          ]
+        },
+        {
+          "stage": 6,
+          "wheel_group": 1,
+          "pwm_percent": 20,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 0,
+          "drive_right_counts": 3241,
+          "coast_left_counts": 0,
+          "coast_right_counts": 156,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 156
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 156
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 156
+            }
+          ]
+        },
+        {
+          "stage": 7,
+          "wheel_group": 1,
+          "pwm_percent": 30,
+          "drive_ms": 3500,
+          "coast_ms": 2000,
+          "drive_left_counts": 0,
+          "drive_right_counts": 8639,
+          "coast_left_counts": 0,
+          "coast_right_counts": 316,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 316
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 316
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 316
+            }
+          ]
+        },
+        {
+          "stage": 8,
+          "wheel_group": 2,
+          "pwm_percent": 0,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 0,
+          "drive_right_counts": 0,
+          "coast_left_counts": 0,
+          "coast_right_counts": 0,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 0,
+              "right_counts": 0
+            }
+          ]
+        },
+        {
+          "stage": 9,
+          "wheel_group": 2,
+          "pwm_percent": 10,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 1530,
+          "drive_right_counts": 1530,
+          "coast_left_counts": 37,
+          "coast_right_counts": 40,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 37,
+              "right_counts": 40
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 37,
+              "right_counts": 40
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 37,
+              "right_counts": 40
+            }
+          ]
+        },
+        {
+          "stage": 10,
+          "wheel_group": 2,
+          "pwm_percent": 20,
+          "drive_ms": 2000,
+          "coast_ms": 2000,
+          "drive_left_counts": 3258,
+          "drive_right_counts": 3259,
+          "coast_left_counts": 163,
+          "coast_right_counts": 162,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 163,
+              "right_counts": 162
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 163,
+              "right_counts": 162
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 163,
+              "right_counts": 162
+            }
+          ]
+        },
+        {
+          "stage": 11,
+          "wheel_group": 2,
+          "pwm_percent": 30,
+          "drive_ms": 3500,
+          "coast_ms": 2000,
+          "drive_left_counts": 8671,
+          "drive_right_counts": 8672,
+          "coast_left_counts": 341,
+          "coast_right_counts": 341,
+          "coast_end_left_pps": 0,
+          "coast_end_right_pps": 0,
+          "coast_trace": [
+            {
+              "dt_ms": 500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 341,
+              "right_counts": 341
+            },
+            {
+              "dt_ms": 1000,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 341,
+              "right_counts": 341
+            },
+            {
+              "dt_ms": 1500,
+              "left_pps": 0,
+              "right_pps": 0,
+              "left_counts": 341,
+              "right_counts": 341
+            }
+          ]
+        }
+      ],
+      "coast_intervals": 36
+    },
+    "limits": "RCC nominal frequency only; no oscilloscope or current measurement",
+    "host_heartbeat": {
+      "ping_sent": 423,
+      "ping_ack_received": 423,
+      "max_inter_ping_gap_ms": 150.74,
+      "max_ping_write_ms": 1.06
+    }
+  }
+}
