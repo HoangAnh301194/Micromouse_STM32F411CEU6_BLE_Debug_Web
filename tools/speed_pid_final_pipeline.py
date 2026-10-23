@@ -299,6 +299,10 @@ def main(argv=None):
                                  "host_ping_sent":session.ping_sent_count,
                                  "host_ping_ack":sum(
                                     row.get("type")=="CMD_PING" for row in session.rows),
+                                 "max_host_ping_gap_ms":round(session.max_ping_gap_ms,2),
+                                 "max_host_ping_write_ms":round(session.max_ping_write_ms,2),
+                                 "independent_host_heartbeat":session._hb_thread_enabled,
+                                 "host_heartbeat_thread_error":session._hb_error,
                                  "last_fault":next((
                                     row for row in reversed(session.rows)
                                     if row.get("type")=="SYS_STEP" and
