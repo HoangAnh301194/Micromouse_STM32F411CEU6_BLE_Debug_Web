@@ -4,6 +4,12 @@ on:
     branches: [giomuadongbac]
     paths:
       - "src/encoder.c"
+      - "src/speed_pid_diag.c"
+      - "src/pid.c"
+      - "include/speed_pid_diag.h"
+      - "tests/speed_pid/**"
+      - "tools/speed_pid*.py"
+      - "tools/test_speed_pid*.py"
       - "src/integration_sweep.c"
       - "src/integration_serial.c"
       - "include/integration_sweep.h"
@@ -40,6 +46,8 @@ jobs:
         run: |
           python tools/test_encoder_p0_p3_pipeline.py
           python tools/encoder_p0_p3_pipeline.py --offline-only
+      - name: Native closed-loop PID tests and three isolated alpha builds
+        run: python tools/speed_pid_final_pipeline.py --offline-only
       - name: Verify production firmware still builds
         run: python -m platformio run -e genericSTM32F411CE
       - name: Upload evidence even on failure
