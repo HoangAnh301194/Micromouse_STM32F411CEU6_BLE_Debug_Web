@@ -5,7 +5,7 @@ const fs = require('fs'), path = require('path'), vm=require('vm');
 const html=fs.readFileSync(path.join(__dirname,'ble_debug_console.html'),'utf8');
 const script=html.split('<script>')[1].split('</script>')[0];
 new vm.Script(script);  // Validate entire browser source syntax.
-const start=script.indexOf('/* Versioned Flash map protocol.');
+const start=script.indexOf('/* Versioned map protocol:');
 const end=script.indexOf('/* Chunked protocol:',start);
 if(start<0||end<start) throw Error('Missing dynamic Flash map parser');
 const elements={};
