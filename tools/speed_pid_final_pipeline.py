@@ -212,6 +212,15 @@ def main(argv=None):
     if args.offline_only and (args.fixture_ready or args.allow_30_percent
                                or args.independent_vm_cutoff):
         p.error("--offline-only forbids motor-on flags")
+    if not args.offline_only:
+        branch=subprocess.run(["git","branch","--show-current"],cwd=ROOT,
+                              capture_output=True,text=True,check=False)
+        tracked=subprocess.run(["git","status","--porcelain","--untracked-files=no"],
+                               cwd=ROOT,capture_output=True,text=True,check=False)
+        if (branch.returncode or branch.stdout.strip()!="giomuadongbac" or
+            tracked.returncode or tracked.stdout.strip()):
+            p.error("Physical Motor-ON blocked: must use clean tracked "
+                    "giomuadongbac checkout; commit/reconcile local changes first")
     if not args.offline_only and not (args.fixture_ready and
                        args.independent_vm_cutoff and args.allow_30_percent):
         p.error("Live run requires --fixture-ready --independent-vm-cutoff "
@@ -281,6 +290,21 @@ def main(argv=None):
                         json.dumps(trial,indent=2)+"\n",encoding="utf-8")
                     session.close()
                     session=None
+                except BaseException as exc:
+                    if session is not None:
+                        partial={"alpha_pct":alpha,"repeat":repetition,
+                                 "reason":str(exc),
+                                 "received_frames":len(session.rows),
+                                 "host_ping_sent":session.ping_sent_count,
+                                 "host_ping_ack":sum(
+                                    row.get("type")=="CMD_PING" for row in session.rows),
+                                 "last_fault":next((
+                                    row for row in reversed(session.rows)
+                                    if row.get("type")=="SYS_STEP" and
+                                       row.get("state")==4),None)}
+                        (directory/"fault_evidence.json").write_text(
+                            json.dumps(partial,indent=2)+"\n",encoding="utf-8")
+                    raise
                 finally:
                     if session is not None:
                         session.close(emergency=True)
