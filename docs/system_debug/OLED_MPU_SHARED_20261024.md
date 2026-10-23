@@ -47,6 +47,8 @@ Artifacts: `results/oled_mpu_YYYYMMDD_HHMMSS/uart_raw.log`, `telemetry.csv`, `re
 | OLED progress | `chunks`, `frames`, `bytes` and DMA completions increase when enabled |
 | OLED bus/DMA faults | `oled_err`, `tx_err`, `tx_to` increments = 0 |
 | OLED burst | MCU-recorded maximum < 900 us |
+| TIM11 ISR worst case | `maxirq` < 48000 core cycles (< 500 us at nominal 96 MHz) |
+| Shared I2C recovery | `recoveries` increment = 0 throughout both phases |
 | UART integrity | `uart_drop` increment = 0 and no missing/corrupt 3-part sample |
 
 These are conservative *initial* gates, not proof that PWM/IMU latency on a moving robot is safe. Physical 400 kHz SCL waveform, clock rise time, actual OLED FPS, worst-case latency under display churn, sustained long-duration errors and power/noise still require direct hardware investigation. Timeouts without an actual ST-Link + UART + OLED + MPU test are **NOT PASSED**.
@@ -58,4 +60,4 @@ python tools/oled_mpu_pipeline.py --self-test
 python -m platformio run -e oled_mpu_diag_96m
 ```
 
-Build validates toolchain compatibility. Synthetic self-test validates parser and PASS/FAIL logic. Only serial evidence captured from the STM32 may be classified as hardware PASS.
+Build validates toolchain compatibility. Synthetic self-test validates parser and PASS/FAIL logic. Only serial evidence captured from the STM32 may be classified as hardware PASS. Visually confirm OLED characters are correct and stable during the ON phase; a TX completion counter does not prove pixel correctness.
