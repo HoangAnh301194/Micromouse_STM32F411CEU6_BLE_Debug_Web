@@ -266,6 +266,7 @@ class Session:
         self.raw = raw_file.open("wb")
         self.client = None
         self.rx_exc = None
+        self.write_lock = asyncio.Lock()  # serialize heartbeat and RUN writes
         self.rtts_ms = []
         self.last_ping_ns = None
 
@@ -306,7 +307,9 @@ class Session:
         value = (command + "\n").encode("ascii")
         if len(value) > 20:
             raise ValueError(f"Control write >20B (default GATT payload): {command}")
-        await self.client.write_gatt_char(UUID, value, response=self.with_response)
+        async with self.write_lock:
+            await self.client.write_gatt_char(UUID, value,
+                                               response=self.with_response)
 
     async def wait(self, kind: str, after: int, timeout: float = 10.0):
         deadline = time.monotonic() + timeout
@@ -382,7 +385,9 @@ class Session:
     async def close(self):
         if self.client and self.client.is_connected:
             try:
-                await self.client.write_gatt_char(UUID, b"!", response=self.with_response)
+                async with self.write_lock:
+                    await self.client.write_gatt_char(UUID, b"!",
+                                                      response=self.with_response)
             except Exception:
                 pass
             try:
