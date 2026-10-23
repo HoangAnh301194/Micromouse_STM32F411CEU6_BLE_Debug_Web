@@ -48,7 +48,7 @@ checks Flash status errors and uses a 3-second busy timeout. These guards do
 not eliminate rare hardware stuck-bus states or a supply collapse during
 programming; power-loss testing on real hardware is still required.
 
-The compatibility `void Flash_Save*/Load*` functions remain; prefer the
+CRC calculation lives in `src/flash_record_format.c` and has an independent native C regression (`tools/flash_record_native_test.py`) cross-checked against Python zlib. This is not an on-board memory-write test.\n\nThe compatibility `void Flash_Save*/Load*` functions remain; prefer the
 `Flash_*Checked` APIs because they return a precise status.
 
 ### Remaining limitations

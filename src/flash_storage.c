@@ -1,4 +1,5 @@
 #include "flash_storage.h"
+#include "flash_record_format.h"
 #include "control.h"
 #include "motor.h"
 #include "stm32f4xx.h"
@@ -12,12 +13,12 @@
  * Program the final commit word ONLY after data+CRC have been verified.
  * Never erase a sector as part of a normal Save operation.
  * Note: firmware image MUST be linked below 0x08040000. */
-#define REC_MAGIC 0x4D4D4631UL /* MMF1 */
-#define REC_VERSION 1U
+#define REC_MAGIC FLASH_REC_MAGIC
+#define REC_VERSION FLASH_REC_VERSION
 #define REC_MAP 1U
 #define REC_IR 2U
 #define REC_MPU 3U
-#define REC_COMMIT 0xA53C69F0UL
+#define REC_COMMIT FLASH_REC_COMMIT
 #define REC_HEADER_BYTES 20U
 #define REC_COMMIT_OFFSET (FLASH_RECORD_SLOT_BYTES - 4U)
 #define REC_SLOT_COUNT (FLASH_DATA_SECTOR_BYTES / FLASH_RECORD_SLOT_BYTES)
@@ -26,37 +27,6 @@
 #define FLASH_PSIZE_WORD (2UL << 8)
 #define FLASH_ERR_MASK (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR | FLASH_SR_WRPERR)
 #define FLASH_WAIT_US 3000000UL
-
-typedef struct {
-  uint32_t magic;
-  uint32_t version_type;
-  uint32_t sequence;
-  uint32_t length;
-  uint32_t crc;
-} Flash_RecordHeader_t;
-typedef char Flash_Header_Must_Be_20_Bytes[(sizeof(Flash_RecordHeader_t) == REC_HEADER_BYTES) ? 1 : -1];
-
-static uint32_t Flash_CrcFeed(uint32_t crc, uint8_t byte)
-{
-  uint32_t bit;
-  crc ^= byte;
-  for (bit = 0; bit < 8U; ++bit)
-    crc = (crc >> 1U) ^ ((crc & 1U) ? 0xEDB88320UL : 0U);
-  return crc;
-}
-
-static uint32_t Flash_Crc(const Flash_RecordHeader_t *h, const void *data)
-{
-  uint32_t crc = 0xFFFFFFFFUL;
-  const uint8_t *p = (const uint8_t *)h;
-  const uint8_t *d = (const uint8_t *)data;
-  uint32_t i;
-  for (i = 0; i < offsetof(Flash_RecordHeader_t, crc); ++i)
-    crc = Flash_CrcFeed(crc, p[i]);
-  for (i = 0; i < h->length; ++i)
-    crc = Flash_CrcFeed(crc, d[i]);
-  return ~crc;
-}
 
 static uint32_t Flash_SectorBase(uint32_t type)
 {
@@ -86,7 +56,7 @@ static uint8_t Flash_Valid(uint32_t address, uint32_t expected_type)
       h->length > FLASH_RECORD_PAYLOAD_MAX) return 0U;
   if (type != REC_MAP && type != REC_IR && type != REC_MPU) return 0U;
   if (expected_type != 0U && type != expected_type) return 0U;
-  return h->crc == Flash_Crc(h, (const void *)(address + REC_HEADER_BYTES));
+  return h->crc == Flash_RecordCrc32(h, (const void *)(address + REC_HEADER_BYTES));
 }
 
 static Flash_Status_t Flash_FindLatest(uint32_t type, uint32_t *location,
@@ -133,7 +103,7 @@ static Flash_Status_t Flash_WaitReady(void)
     if ((uint32_t)(micros() - start) >= FLASH_WAIT_US)
       return FLASH_ERR_TIMEOUT;
   }
-  return (FLASH->SR & FLASH_ERR_MASK) ? FLASH_ERR_CONTROLLER : FLASH_OK;
+  return FLASH_OK; /* Preexisting error flags are cleared before programming. */
 }
 
 static Flash_Status_t Flash_ProgramWord(uint32_t address, uint32_t word)
@@ -148,6 +118,7 @@ static Flash_Status_t Flash_ProgramWord(uint32_t address, uint32_t word)
   status = Flash_WaitReady();
   FLASH->CR &= ~FLASH_CR_PG; /* CRITICAL: do not leave PG set. */
   if (status != FLASH_OK) return status;
+  if (FLASH->SR & FLASH_ERR_MASK) return FLASH_ERR_CONTROLLER;
   return (*(const volatile uint32_t *)address == word) ? FLASH_OK : FLASH_ERR_VERIFY;
 }
 
@@ -190,7 +161,7 @@ static Flash_Status_t Flash_Append(uint32_t type, const void *data, uint32_t len
   h.version_type = (REC_VERSION << 16U) | type;
   h.sequence = Flash_NextSequence(base);
   h.length = length;
-  h.crc = Flash_Crc(&h, data);
+  h.crc = Flash_RecordCrc32(&h, data);
 
   if (FLASH->CR & FLASH_CR_LOCK) {
     FLASH->KEYR = FLASH_KEY1;
@@ -203,7 +174,7 @@ static Flash_Status_t Flash_Append(uint32_t type, const void *data, uint32_t len
     status = Flash_WriteBytes(addr + REC_HEADER_BYTES, data, length);
   if (status == FLASH_OK && memcmp((const void *)(addr + REC_HEADER_BYTES), data, length))
     status = FLASH_ERR_VERIFY;
-  if (status == FLASH_OK && h.crc != Flash_Crc((const Flash_RecordHeader_t *)addr,
+  if (status == FLASH_OK && h.crc != Flash_RecordCrc32((const Flash_RecordHeader_t *)addr,
                                      (const void *)(addr + REC_HEADER_BYTES)))
     status = FLASH_ERR_VERIFY;
 
