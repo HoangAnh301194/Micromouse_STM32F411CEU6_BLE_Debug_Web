@@ -18,6 +18,7 @@ const sandbox={
     addBLEEntry:(s,t)=>state.log.push({s,t}),
     renderMaze:()=>{state.rendered++},
     calcFlood:()=>[[0]],
+    GOAL_CELLS:[[7,7],[8,7],[7,8],[8,8]],
     setRobotPosition:()=>{},
     mazeWalls:null, mazeFlood:null,
     visitedCells:new Set(),
