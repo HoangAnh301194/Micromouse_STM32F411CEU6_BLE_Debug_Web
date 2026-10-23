@@ -347,7 +347,7 @@ class PhaseSession:
                     profile.get("ki_milli") != 80 or
                     profile.get("kd_milli") != 0 or
                     profile.get("pwm_max") != 300 or
-                    profile.get("target_step") != 900):
+                    profile.get("target_step") != 800):
                     raise RuntimeError("Wrong PID/EMA compiled profile; refusing START: "+
                                        repr(profile))
         self.send(f"MODE {self.name}")
