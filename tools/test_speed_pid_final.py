@@ -76,6 +76,22 @@ def synth_trial(alpha,repetition,delta=0.0):
     return {"alpha_pct":alpha,"repeat":repetition,"metrics":metrics}
 
 
+class ProductionAlphaSelectionTests(unittest.TestCase):
+    def test_production_encoder_gain_and_diagnostic_baselines(self):
+        firmware=(ROOT/"src"/"encoder.c").read_text(encoding="utf-8")
+        # Guard only the non-diagnostic branch; the historical alpha=0.30
+        # diagnostic baseline remains compiled for A/B comparisons.
+        self.assertIn(
+            "#else\\n/* Production encoder speed estimator, 1-kHz TIM11 update. */\\n"
+            "#define SPEED_LPF_ALPHA 0.10f\\n#endif", firmware)
+        self.assertIn("#if ENCODER_PID_ALPHA_PCT == 8\\n"
+                      "#define SPEED_LPF_ALPHA 0.08f", firmware)
+        self.assertIn("#elif ENCODER_PID_ALPHA_PCT == 10\\n"
+                      "#define SPEED_LPF_ALPHA 0.10f", firmware)
+        self.assertIn("#elif ENCODER_PID_ALPHA_PCT == 30\\n"
+                      "#define SPEED_LPF_ALPHA 0.30f", firmware)
+
+
 class AnalysisTests(unittest.TestCase):
     def test_reference_and_repeats(self):
         data=[synth_trial(a,n,d) for n in range(1,4)
@@ -84,7 +100,7 @@ class AnalysisTests(unittest.TestCase):
         result=summarize(data)
         self.assertEqual(result["status"],"CLOSED_LOOP_CANDIDATE")
         self.assertEqual(result["candidate_alpha"],.08)
-        self.assertEqual(result["production_alpha_unchanged"],.30)
+        self.assertEqual(result["production_alpha_unchanged"],.10)
         with self.assertRaises(RuntimeError):summarize(data[:8])
     def test_inconclusive(self):
         data=[synth_trial(a,n,.015) for n in range(1,4) for a in (8,10,30)]
