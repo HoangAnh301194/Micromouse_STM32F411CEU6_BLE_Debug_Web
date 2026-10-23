@@ -311,6 +311,12 @@ static void PumpCommands(void)
                 Handle(command);
             }
             cmd_len=0U; cmd_overflow=0U;
+        } else if (byte=='?' && cmd_len==0U) {
+            /* Legacy Web map viewer sends bare '?' after GATT connect.
+             * It is not a BLE benchmark command. Do not let this
+             * byte prefix a later HELLO/PING and cause UNKNOWN_COMMAND.
+             * Flash-map firmware is a separate build, unaffected. */
+            continue;
         } else if (byte=='!') {
             /* Emergency STOP can be sent as a single byte. */
             cmd_len=0U; cmd_overflow=0U;
