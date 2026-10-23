@@ -55,10 +55,14 @@ def synth_trial(alpha,repetition,delta=0.0):
     for f in frames:
         key=(f["id"],f["ms"])
         if key in unique:
-            unique[key]["refL"]=f["refL"]
-            unique[key]["refR"]=f["refR"]
-            unique[key]["pwmL"]=f["pwmL"]
-            unique[key]["pwmR"]=f["pwmR"]
+            # A BOTH-stage has two independent wheel measurements at
+            # the same timestamp; do not erase wheel L with wheel R zeros.
+            if f["refL"] or f["pwmL"]:
+                unique[key]["refL"]=f["refL"]
+                unique[key]["pwmL"]=f["pwmL"]
+            if f["refR"] or f["pwmR"]:
+                unique[key]["refR"]=f["refR"]
+                unique[key]["pwmR"]=f["pwmR"]
         else: unique[key]=dict(f)
     metrics=analyze_trial(list(unique.values()))
     return {"alpha_pct":alpha,"repeat":repetition,"metrics":metrics}
