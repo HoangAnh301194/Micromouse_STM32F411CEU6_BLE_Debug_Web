@@ -159,6 +159,7 @@ def run_serial(args) -> dict:
             lines = capture(ser, "PREVIEW "+str(n), "FM_DONE,", 12, all_lines)
             assert any(x.startswith("FM_PREVIEW,size=%d,flash_written=0" % n) for x in lines)
             report["phases"].append(verify_uart(lines, n, "RAM"))
+            time.sleep(args.web_hold_seconds)
 
         if args.write_size:
             n = args.write_size
@@ -198,6 +199,8 @@ def main():
     p.add_argument("--backup-confirmed", action="store_true",
                    help="Confirm important prior calibration/map contents were backed up")
     p.add_argument("--ble-log", type=Path, help="Audit a separately exported web BLE log")
+    p.add_argument("--web-hold-seconds", type=float, default=3.0,
+                   help="Pause after each preview for WebBLE visual inspection")
     p.add_argument("--output", type=Path, default=ROOT/"results"/"flash_map_diag",
                    help="Output folder for results JSON and raw UART log")
     a = p.parse_args()

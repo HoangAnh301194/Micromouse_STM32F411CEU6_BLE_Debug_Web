@@ -224,3 +224,8 @@ MPU: kiểm tra góc quay thật ±90/180/360 độ, drift theo nhiệt độ c�
 - Offline CI tests and builds pass in Encoder Actions run `39989165294`;
   **new 9-run physical trial NOT yet performed**. Source audit,
   protocol and commands: `docs/encoder/CLOSED_LOOP_SPEED_PID_FINAL_20261023.md`.
+
+
+### Flash map 5×5/16×16 USART1 / WebBLE diagnostic
+
+Source added: dedicated motor-locked `flash_map_diag_96m` profile, deterministic fake maps, UART `FM_*` read/write/read-back telemetry, BLE `MAPCFG/MAPROW/MAPEND` auto-size and CRC32 gate, serial operator pipeline. Write requires `SAVE N CONFIRM`, no sector erase or boot-time writes. On-board Flash/JDY-33 tests remain pending; see `docs/system_debug/FLASH_MAP_WEB_PIPELINE.md`.
