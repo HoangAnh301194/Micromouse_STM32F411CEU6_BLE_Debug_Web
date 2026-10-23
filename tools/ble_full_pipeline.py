@@ -98,7 +98,7 @@ class Decoder:
         self.raw_bytes += len(data)
         self.pending.extend(data)
         while self.pending:
-            if self.pending.startswith(b"\\xb5\\x62"):
+            if self.pending.startswith(b"\xb5\x62"):
                 if len(self.pending) < 16:
                     break
                 size = self.pending[4]
@@ -123,8 +123,8 @@ class Decoder:
                 })
                 continue
             if self.pending[0] == ord("!"):
-                eol = self.pending.find(b"\\n")
-                sof = self.pending.find(b"\\xb5\\x62")
+                eol = self.pending.find(b"\n")
+                sof = self.pending.find(b"\xb5\x62")
                 if 0 <= sof < eol or (eol < 0 and sof >= 0):
                     self.discarded += sof
                     del self.pending[:sof]
@@ -222,7 +222,7 @@ def flash(env: str, output: Path):
     if proc.returncode:
         tail = (output / f"flash_{env}.log").read_text(
             encoding="utf8", errors="replace").splitlines()[-45:]
-        raise RuntimeError(f"Firmware flash FAILED: {env}\\n" + "\\n".join(tail))
+        raise RuntimeError(f"Firmware flash FAILED: {env}\n" + "\n".join(tail))
 
 
 async def discover(name: str, address: str | None):
@@ -284,7 +284,7 @@ class Session:
             raise RuntimeError(f"BLE data receive failed: {self.rx_exc}")
         if not self.client or not self.client.is_connected:
             raise RuntimeError("BLE disconnected")
-        value = (command + "\\n").encode("ascii")
+        value = (command + "\n").encode("ascii")
         if len(value) > 20:
             raise ValueError(f"Control write >20B (default GATT payload): {command}")
         await self.client.write_gatt_char(UUID, value, response=self.with_response)
@@ -486,7 +486,7 @@ def write_results(out, phases, argv):
                        f"{t['tim11_late_delta']} | "
                        f"{'PASS' if t['pass'] else 'LIMIT'} |")
         doc.append("")
-    (out / "ble_qualification.md").write_text("\\n".join(doc), encoding="utf8")
+    (out / "ble_qualification.md").write_text("\n".join(doc), encoding="utf8")
     return report
 
 
