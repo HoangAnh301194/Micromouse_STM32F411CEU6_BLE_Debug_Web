@@ -1,0 +1,289 @@
+{
+  "pipeline": "P0 software+OFF / P1 <=30% / P2 full / P3 ten-alpha",
+  "mode": "PHYSICAL_SUPERVISED",
+  "status": "ALL_GATES_PASS_PID_VALIDATION_PENDING",
+  "P0": {
+    "status": "PASS",
+    "max_encoder_cycles": 517,
+    "max_irq_cycles": 1119,
+    "baseline_encoder_cycles": 7211,
+    "improvement_percent": 92.83,
+    "queue": {
+      "type": "SYS_AQ",
+      "ms": 155000,
+      "in": 154846,
+      "out": 154846,
+      "lost": 0,
+      "edge": 0,
+      "q": 0,
+      "peak": 1,
+      "host_elapsed_s": 155.0596
+    },
+    "heartbeat": {
+      "ping_sent": 906,
+      "ping_ack_received": 906,
+      "max_inter_ping_gap_ms": 169.76,
+      "max_ping_write_ms": 0.41,
+      "note": "Measured by Python monotonic clock; an ACK logged does not guarantee MCU processed every ping."
+    }
+  },
+  "P1": {
+    "status": "PASS",
+    "stages": 12,
+    "compiled_max_pwm_percent": 30,
+    "timer": {
+      "type": "SYS_T",
+      "ms": 63000,
+      "ticks": 62846,
+      "late": 0,
+      "gap": 0,
+      "maxcy": 1873,
+      "encmaxcy": 1022,
+      "motmaxcy": 444,
+      "motticks": 62846,
+      "valid": 53847,
+      "stale": 0,
+      "ir": 62846,
+      "host_elapsed_s": 62.8233
+    },
+    "uart": {
+      "type": "SYS_U",
+      "ms": 63000,
+      "tx_drop": 0,
+      "dma_err": 0,
+      "rx_err": 0,
+      "rx_ov": 0,
+      "trim": 25,
+      "clkfault": 0,
+      "iclk": 400000,
+      "host_elapsed_s": 62.8705
+    },
+    "queue": {
+      "type": "SYS_AQ",
+      "ms": 63000,
+      "in": 62846,
+      "out": 62846,
+      "lost": 0,
+      "edge": 0,
+      "q": 0,
+      "peak": 1,
+      "host_elapsed_s": 62.876
+    },
+    "heartbeat": {
+      "ping_sent": 329,
+      "ping_ack_received": 329,
+      "max_inter_ping_gap_ms": 350.66,
+      "max_ping_write_ms": 3.55,
+      "note": "Measured by Python monotonic clock; an ACK logged does not guarantee MCU processed every ping."
+    }
+  },
+  "P2": {
+    "status": "PASS",
+    "off_stages": 33,
+    "on_stages": 33,
+    "timer": {
+      "type": "SYS_T",
+      "ms": 155000,
+      "ticks": 154846,
+      "late": 0,
+      "gap": 0,
+      "maxcy": 1947,
+      "encmaxcy": 1022,
+      "motmaxcy": 447,
+      "motticks": 154846,
+      "valid": 145846,
+      "stale": 0,
+      "ir": 154846,
+      "host_elapsed_s": 154.8752
+    },
+    "uart": {
+      "type": "SYS_U",
+      "ms": 155000,
+      "tx_drop": 0,
+      "dma_err": 0,
+      "rx_err": 0,
+      "rx_ov": 0,
+      "trim": 25,
+      "clkfault": 0,
+      "iclk": 400000,
+      "host_elapsed_s": 154.9251
+    },
+    "queue": {
+      "type": "SYS_AQ",
+      "ms": 155000,
+      "in": 154846,
+      "out": 154846,
+      "lost": 0,
+      "edge": 0,
+      "q": 0,
+      "peak": 1,
+      "host_elapsed_s": 154.9305
+    },
+    "heartbeat": {
+      "ping_sent": 910,
+      "ping_ack_received": 910,
+      "max_inter_ping_gap_ms": 169.76,
+      "max_ping_write_ms": 0.47,
+      "note": "Measured by Python monotonic clock; an ACK logged does not guarantee MCU processed every ping."
+    }
+  },
+  "P3": {
+    "status": "PROVISIONAL_FOR_PID_FOLLOWUP",
+    "candidate_alpha": 0.08,
+    "alternate_alpha": 0.1,
+    "production_alpha": 0.3,
+    "wheel_top3": {
+      "L": [
+        {
+          "alpha": 0.08,
+          "score": 0.21747
+        },
+        {
+          "alpha": 0.1,
+          "score": 0.23269
+        },
+        {
+          "alpha": 0.12,
+          "score": 0.31093
+        }
+      ],
+      "R": [
+        {
+          "alpha": 0.08,
+          "score": 0.21476
+        },
+        {
+          "alpha": 0.1,
+          "score": 0.22701
+        },
+        {
+          "alpha": 0.12,
+          "score": 0.30631
+        }
+      ]
+    },
+    "comparison": [
+      {
+        "alpha": 0.08,
+        "heuristic_score_vs_alpha_0_30": 0.21614,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.18736,
+          "first_500ms_abs_error_vs_box20": 0.24846,
+          "steady_total_variation": 0.23663
+        }
+      },
+      {
+        "alpha": 0.1,
+        "heuristic_score_vs_alpha_0_30": 0.22989,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.23132,
+          "first_500ms_abs_error_vs_box20": 0.19795,
+          "steady_total_variation": 0.29966
+        }
+      },
+      {
+        "alpha": 0.12,
+        "heuristic_score_vs_alpha_0_30": 0.30866,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.29259,
+          "first_500ms_abs_error_vs_box20": 0.30797,
+          "steady_total_variation": 0.36384
+        }
+      },
+      {
+        "alpha": 0.05,
+        "heuristic_score_vs_alpha_0_30": 0.39879,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.15989,
+          "first_500ms_abs_error_vs_box20": 0.84903,
+          "steady_total_variation": 0.14453
+        }
+      },
+      {
+        "alpha": 0.15,
+        "heuristic_score_vs_alpha_0_30": 0.43204,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.3954,
+          "first_500ms_abs_error_vs_box20": 0.47134,
+          "steady_total_variation": 0.46248
+        }
+      },
+      {
+        "alpha": 0.2,
+        "heuristic_score_vs_alpha_0_30": 0.62429,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 0.58345,
+          "first_500ms_abs_error_vs_box20": 0.6788,
+          "steady_total_variation": 0.63322
+        }
+      },
+      {
+        "alpha": 0.3,
+        "heuristic_score_vs_alpha_0_30": 1.0,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 1.0,
+          "first_500ms_abs_error_vs_box20": 1.0,
+          "steady_total_variation": 1.0
+        }
+      },
+      {
+        "alpha": 0.4,
+        "heuristic_score_vs_alpha_0_30": 1.39787,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 1.46655,
+          "first_500ms_abs_error_vs_box20": 1.2978,
+          "steady_total_variation": 1.4024
+        }
+      },
+      {
+        "alpha": 0.6,
+        "heuristic_score_vs_alpha_0_30": 2.34405,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 2.6231,
+          "first_500ms_abs_error_vs_box20": 1.95621,
+          "steady_total_variation": 2.31884
+        }
+      },
+      {
+        "alpha": 0.8,
+        "heuristic_score_vs_alpha_0_30": 3.51253,
+        "relative_metrics": {
+          "steady_abs_error_vs_box20": 4.08116,
+          "first_500ms_abs_error_vs_box20": 2.75271,
+          "steady_total_variation": 3.39
+        }
+      }
+    ],
+    "decision": "Selected using the SAME ENCODER's 20ms count proxy. A separate controlled closed-loop speed/PID test and repeatability evidence are required BEFORE firmware changes.",
+    "automatic_pid_changes": false
+  },
+  "commands": {
+    "preflight": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "preflight.log"
+    },
+    "build_limited": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "build_limited.log"
+    },
+    "P0_P1_limited": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "P0_P1_limited.log"
+    },
+    "P2_full": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "P2_full.log"
+    },
+    "restore_motor_off": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "restore_motor_off.log"
+    }
+  },
+  "production_alpha_changed": false,
+  "restored_motor_off": true
+}

@@ -1,0 +1,2836 @@
+{
+  "results": [
+    {
+      "mode": "OFF",
+      "checks": {
+        "expected_unique_pwm_stages": true,
+        "33_unique_pwm_stages": true,
+        "limited_30pct_no_excess": true,
+        "finished_and_locked": true,
+        "clock_trim25": true,
+        "i2c_400k_nominal": true,
+        "uart_no_rx_error": true,
+        "uart_no_tx_drop": true,
+        "uart_dma_no_error": true,
+        "shadow_spsc_no_loss": true,
+        "mpu_no_i2c_error": true,
+        "no_tim11_gaps": true,
+        "tim11_irq_jitter_under_50us": true,
+        "no_tim11_excess_duration": true,
+        "motor_service_every_tick": true,
+        "ir_scans_progress": true,
+        "gyro_fresh_after_calibration": true,
+        "no_motor_watchdog": true,
+        "no_sweep_fault": true,
+        "encoder_drive_response_consistent": true,
+        "extended_drive_coast_inertia": true
+      },
+      "software_pass": true,
+      "stages": 33,
+      "expected_stages": 33,
+      "max_pwm": 100,
+      "timer": {
+        "type": "SYS_T",
+        "ms": 155000,
+        "ticks": 154846,
+        "late": 0,
+        "gap": 0,
+        "maxcy": 1119,
+        "encmaxcy": 517,
+        "motmaxcy": 46,
+        "motticks": 154846,
+        "valid": 145844,
+        "stale": 0,
+        "ir": 154846,
+        "host_elapsed_s": 154.9283
+      },
+      "mpu": {
+        "type": "SYS_M",
+        "ms": 155000,
+        "cal": 3,
+        "n": 4000,
+        "seq": 145796,
+        "age": 982,
+        "i2cok": 154791,
+        "i2cerr": 0,
+        "to": 0,
+        "nr": 12273,
+        "busy": 0,
+        "locked": 1,
+        "wd": 0,
+        "host_elapsed_s": 154.9701
+      },
+      "uart": {
+        "type": "SYS_U",
+        "ms": 155000,
+        "tx_drop": 0,
+        "dma_err": 0,
+        "rx_err": 0,
+        "rx_ov": 0,
+        "trim": 25,
+        "clkfault": 0,
+        "iclk": 400000,
+        "host_elapsed_s": 154.9782
+      },
+      "clock_profile": {},
+      "faults": [],
+      "encoder_review": {
+        "drive_windows": 33,
+        "high_pwm_anomalies": [],
+        "encoder_direction_observations": [],
+        "qualified": true
+      },
+      "uart_dma_cpu_profile": {
+        "type": "SYS_UQ",
+        "ms": 155000,
+        "q": 800,
+        "peak": 1555,
+        "accb": 677813,
+        "doneb": 677013,
+        "prncy": 93858774,
+        "dmacy": 1720609,
+        "rxcy": 323558,
+        "rxb": 4658,
+        "host_elapsed_s": 154.9975
+      },
+      "uart_rx_error_detail": {
+        "type": "SYS_UR",
+        "ms": 155000,
+        "err": 0,
+        "ore": 0,
+        "fe": 0,
+        "ne": 0,
+        "ov": 0,
+        "host_elapsed_s": 154.9868
+      },
+      "encoder_shadow_queue": {
+        "type": "SYS_AQ",
+        "ms": 155000,
+        "in": 154846,
+        "out": 154846,
+        "lost": 0,
+        "edge": 0,
+        "q": 0,
+        "peak": 1,
+        "host_elapsed_s": 154.9838
+      },
+      "uart_cpu_fraction_of_nominal_sysclk": 0.645,
+      "extended": {
+        "endurance_pass": true,
+        "problems": [],
+        "stages": [
+          {
+            "stage": 0,
+            "wheel_group": 0,
+            "pwm_percent": 0,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 1,
+            "wheel_group": 0,
+            "pwm_percent": 10,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 2,
+            "wheel_group": 0,
+            "pwm_percent": 20,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 3,
+            "wheel_group": 0,
+            "pwm_percent": 30,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 4,
+            "wheel_group": 0,
+            "pwm_percent": 40,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 5,
+            "wheel_group": 0,
+            "pwm_percent": 50,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 6,
+            "wheel_group": 0,
+            "pwm_percent": 60,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 7,
+            "wheel_group": 0,
+            "pwm_percent": 70,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 8,
+            "wheel_group": 0,
+            "pwm_percent": 80,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 9,
+            "wheel_group": 0,
+            "pwm_percent": 90,
+            "drive_ms": 1000,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 10,
+            "wheel_group": 0,
+            "pwm_percent": 100,
+            "drive_ms": 750,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 11,
+            "wheel_group": 1,
+            "pwm_percent": 0,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 12,
+            "wheel_group": 1,
+            "pwm_percent": 10,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 13,
+            "wheel_group": 1,
+            "pwm_percent": 20,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 14,
+            "wheel_group": 1,
+            "pwm_percent": 30,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 15,
+            "wheel_group": 1,
+            "pwm_percent": 40,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 16,
+            "wheel_group": 1,
+            "pwm_percent": 50,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 17,
+            "wheel_group": 1,
+            "pwm_percent": 60,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 18,
+            "wheel_group": 1,
+            "pwm_percent": 70,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 19,
+            "wheel_group": 1,
+            "pwm_percent": 80,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 20,
+            "wheel_group": 1,
+            "pwm_percent": 90,
+            "drive_ms": 1000,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 21,
+            "wheel_group": 1,
+            "pwm_percent": 100,
+            "drive_ms": 750,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 22,
+            "wheel_group": 2,
+            "pwm_percent": 0,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 23,
+            "wheel_group": 2,
+            "pwm_percent": 10,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 24,
+            "wheel_group": 2,
+            "pwm_percent": 20,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 25,
+            "wheel_group": 2,
+            "pwm_percent": 30,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 26,
+            "wheel_group": 2,
+            "pwm_percent": 40,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 27,
+            "wheel_group": 2,
+            "pwm_percent": 50,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 28,
+            "wheel_group": 2,
+            "pwm_percent": 60,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 29,
+            "wheel_group": 2,
+            "pwm_percent": 70,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 30,
+            "wheel_group": 2,
+            "pwm_percent": 80,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 31,
+            "wheel_group": 2,
+            "pwm_percent": 90,
+            "drive_ms": 1000,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 32,
+            "wheel_group": 2,
+            "pwm_percent": 100,
+            "drive_ms": 750,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          }
+        ],
+        "coast_intervals": 111
+      },
+      "limits": "RCC nominal frequency only; no oscilloscope or current measurement",
+      "host_heartbeat": {
+        "ping_sent": 908,
+        "ping_ack_received": 908,
+        "max_inter_ping_gap_ms": 169.61,
+        "max_ping_write_ms": 0.57,
+        "note": "Measured by Python monotonic clock; an ACK logged does not guarantee MCU processed every ping."
+      }
+    },
+    {
+      "mode": "ON",
+      "checks": {
+        "expected_unique_pwm_stages": true,
+        "33_unique_pwm_stages": true,
+        "limited_30pct_no_excess": true,
+        "finished_and_locked": true,
+        "clock_trim25": true,
+        "i2c_400k_nominal": true,
+        "uart_no_rx_error": true,
+        "uart_no_tx_drop": true,
+        "uart_dma_no_error": true,
+        "shadow_spsc_no_loss": true,
+        "mpu_no_i2c_error": true,
+        "no_tim11_gaps": true,
+        "tim11_irq_jitter_under_50us": true,
+        "no_tim11_excess_duration": true,
+        "motor_service_every_tick": true,
+        "ir_scans_progress": true,
+        "gyro_fresh_after_calibration": true,
+        "no_motor_watchdog": true,
+        "no_sweep_fault": true,
+        "encoder_drive_response_consistent": true,
+        "extended_drive_coast_inertia": true
+      },
+      "software_pass": true,
+      "stages": 33,
+      "expected_stages": 33,
+      "max_pwm": 100,
+      "timer": {
+        "type": "SYS_T",
+        "ms": 155000,
+        "ticks": 154846,
+        "late": 0,
+        "gap": 0,
+        "maxcy": 1947,
+        "encmaxcy": 1022,
+        "motmaxcy": 447,
+        "motticks": 154846,
+        "valid": 145846,
+        "stale": 0,
+        "ir": 154846,
+        "host_elapsed_s": 154.8752
+      },
+      "mpu": {
+        "type": "SYS_M",
+        "ms": 155000,
+        "cal": 3,
+        "n": 4000,
+        "seq": 145772,
+        "age": 976,
+        "i2cok": 154768,
+        "i2cerr": 0,
+        "to": 0,
+        "nr": 14046,
+        "busy": 0,
+        "locked": 1,
+        "wd": 0,
+        "host_elapsed_s": 154.9168
+      },
+      "uart": {
+        "type": "SYS_U",
+        "ms": 155000,
+        "tx_drop": 0,
+        "dma_err": 0,
+        "rx_err": 0,
+        "rx_ov": 0,
+        "trim": 25,
+        "clkfault": 0,
+        "iclk": 400000,
+        "host_elapsed_s": 154.9251
+      },
+      "clock_profile": {},
+      "faults": [],
+      "encoder_review": {
+        "drive_windows": 33,
+        "high_pwm_anomalies": [],
+        "encoder_direction_observations": [
+          {
+            "group": 0,
+            "wheel": "L",
+            "sign_60pct": 1,
+            "sign_70pct": 1
+          },
+          {
+            "group": 1,
+            "wheel": "R",
+            "sign_60pct": 1,
+            "sign_70pct": 1
+          },
+          {
+            "group": 2,
+            "wheel": "L",
+            "sign_60pct": 1,
+            "sign_70pct": 1
+          },
+          {
+            "group": 2,
+            "wheel": "R",
+            "sign_60pct": 1,
+            "sign_70pct": 1
+          }
+        ],
+        "qualified": true
+      },
+      "uart_dma_cpu_profile": {
+        "type": "SYS_UQ",
+        "ms": 155000,
+        "q": 802,
+        "peak": 1654,
+        "accb": 782209,
+        "doneb": 781407,
+        "prncy": 96358404,
+        "dmacy": 1596394,
+        "rxcy": 320052,
+        "rxb": 4667,
+        "host_elapsed_s": 154.9448
+      },
+      "uart_rx_error_detail": {
+        "type": "SYS_UR",
+        "ms": 155000,
+        "err": 0,
+        "ore": 0,
+        "fe": 0,
+        "ne": 0,
+        "ov": 0,
+        "host_elapsed_s": 154.9357
+      },
+      "encoder_shadow_queue": {
+        "type": "SYS_AQ",
+        "ms": 155000,
+        "in": 154846,
+        "out": 154846,
+        "lost": 0,
+        "edge": 0,
+        "q": 0,
+        "peak": 1,
+        "host_elapsed_s": 154.9305
+      },
+      "uart_cpu_fraction_of_nominal_sysclk": 0.66,
+      "extended": {
+        "endurance_pass": true,
+        "problems": [],
+        "stages": [
+          {
+            "stage": 0,
+            "wheel_group": 0,
+            "pwm_percent": 0,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 1,
+            "wheel_group": 0,
+            "pwm_percent": 10,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 1500,
+            "drive_right_counts": 0,
+            "coast_left_counts": 40,
+            "coast_right_counts": -3,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 40,
+                "right_counts": -3
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 40,
+                "right_counts": -3
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 40,
+                "right_counts": -3
+              }
+            ]
+          },
+          {
+            "stage": 2,
+            "wheel_group": 0,
+            "pwm_percent": 20,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 3415,
+            "drive_right_counts": 0,
+            "coast_left_counts": 202,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 202,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 202,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 202,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 3,
+            "wheel_group": 0,
+            "pwm_percent": 30,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 9388,
+            "drive_right_counts": 0,
+            "coast_left_counts": 461,
+            "coast_right_counts": 1,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 461,
+                "right_counts": 1
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 461,
+                "right_counts": 1
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 461,
+                "right_counts": 1
+              }
+            ]
+          },
+          {
+            "stage": 4,
+            "wheel_group": 0,
+            "pwm_percent": 40,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 7218,
+            "drive_right_counts": 0,
+            "coast_left_counts": 784,
+            "coast_right_counts": -1,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 1,
+                "right_pps": 0,
+                "left_counts": 785,
+                "right_counts": -1
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 784,
+                "right_counts": -1
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 784,
+                "right_counts": -1
+              }
+            ]
+          },
+          {
+            "stage": 5,
+            "wheel_group": 0,
+            "pwm_percent": 50,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 9102,
+            "drive_right_counts": 0,
+            "coast_left_counts": 1174,
+            "coast_right_counts": -1,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 376,
+                "right_pps": 0,
+                "left_counts": 1166,
+                "right_counts": -1
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1174,
+                "right_counts": -1
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1174,
+                "right_counts": -1
+              }
+            ]
+          },
+          {
+            "stage": 6,
+            "wheel_group": 0,
+            "pwm_percent": 60,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 19319,
+            "drive_right_counts": 0,
+            "coast_left_counts": 1602,
+            "coast_right_counts": 1,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 1000,
+                "right_pps": 0,
+                "left_counts": 1540,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1602,
+                "right_counts": 1
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1602,
+                "right_counts": 1
+              }
+            ]
+          },
+          {
+            "stage": 7,
+            "wheel_group": 0,
+            "pwm_percent": 70,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 12618,
+            "drive_right_counts": -1,
+            "coast_left_counts": 2021,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 1504,
+                "right_pps": 0,
+                "left_counts": 1877,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2021,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2021,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 8,
+            "wheel_group": 0,
+            "pwm_percent": 80,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 25472,
+            "drive_right_counts": 0,
+            "coast_left_counts": 2552,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 2160,
+                "right_pps": 0,
+                "left_counts": 2272,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2552,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2552,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 9,
+            "wheel_group": 0,
+            "pwm_percent": 90,
+            "drive_ms": 1000,
+            "coast_ms": 3000,
+            "drive_left_counts": 7804,
+            "drive_right_counts": 0,
+            "coast_left_counts": 3184,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 2948,
+                "right_pps": 0,
+                "left_counts": 2699,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3184,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3184,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3184,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3184,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 10,
+            "wheel_group": 0,
+            "pwm_percent": 100,
+            "drive_ms": 750,
+            "coast_ms": 3000,
+            "drive_left_counts": 6370,
+            "drive_right_counts": 0,
+            "coast_left_counts": 3711,
+            "coast_right_counts": 1,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 3341,
+                "right_pps": 0,
+                "left_counts": 3052,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3711,
+                "right_counts": 1
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3711,
+                "right_counts": 1
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3711,
+                "right_counts": 1
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3711,
+                "right_counts": 1
+              }
+            ]
+          },
+          {
+            "stage": 11,
+            "wheel_group": 1,
+            "pwm_percent": 0,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 12,
+            "wheel_group": 1,
+            "pwm_percent": 10,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 1355,
+            "coast_left_counts": 1,
+            "coast_right_counts": 34,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 34
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 34
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 34
+              }
+            ]
+          },
+          {
+            "stage": 13,
+            "wheel_group": 1,
+            "pwm_percent": 20,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 3303,
+            "coast_left_counts": 0,
+            "coast_right_counts": 165,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 165
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 165
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 165
+              }
+            ]
+          },
+          {
+            "stage": 14,
+            "wheel_group": 1,
+            "pwm_percent": 30,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 9241,
+            "coast_left_counts": -1,
+            "coast_right_counts": 382,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 382
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 382
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 382
+              }
+            ]
+          },
+          {
+            "stage": 15,
+            "wheel_group": 1,
+            "pwm_percent": 40,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 7153,
+            "coast_left_counts": 0,
+            "coast_right_counts": 663,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 663
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 663
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 663
+              }
+            ]
+          },
+          {
+            "stage": 16,
+            "wheel_group": 1,
+            "pwm_percent": 50,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 9054,
+            "coast_left_counts": 1,
+            "coast_right_counts": 1007,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 1007
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 1007
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 1007
+              }
+            ]
+          },
+          {
+            "stage": 17,
+            "wheel_group": 1,
+            "pwm_percent": 60,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 19404,
+            "coast_left_counts": -1,
+            "coast_right_counts": 1383,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 487,
+                "left_counts": 0,
+                "right_counts": 1377
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 1383
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 1383
+              }
+            ]
+          },
+          {
+            "stage": 18,
+            "wheel_group": 1,
+            "pwm_percent": 70,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 12863,
+            "coast_left_counts": 1,
+            "coast_right_counts": 1826,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 992,
+                "left_counts": 0,
+                "right_counts": 1771
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 1826
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1,
+                "right_counts": 1826
+              }
+            ]
+          },
+          {
+            "stage": 19,
+            "wheel_group": 1,
+            "pwm_percent": 80,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 26144,
+            "coast_left_counts": -2,
+            "coast_right_counts": 2280,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 1463,
+                "left_counts": 0,
+                "right_counts": 2150
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -2,
+                "right_counts": 2280
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -2,
+                "right_counts": 2280
+              }
+            ]
+          },
+          {
+            "stage": 20,
+            "wheel_group": 1,
+            "pwm_percent": 90,
+            "drive_ms": 1000,
+            "coast_ms": 3000,
+            "drive_left_counts": 1,
+            "drive_right_counts": 8171,
+            "coast_left_counts": -1,
+            "coast_right_counts": 2756,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 2030,
+                "left_counts": 0,
+                "right_counts": 2515
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 2756
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 2756
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 2756
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": -1,
+                "right_counts": 2756
+              }
+            ]
+          },
+          {
+            "stage": 21,
+            "wheel_group": 1,
+            "pwm_percent": 100,
+            "drive_ms": 750,
+            "coast_ms": 3000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 6506,
+            "coast_left_counts": 0,
+            "coast_right_counts": 3184,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 2681,
+                "left_counts": 0,
+                "right_counts": 2834
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 3184
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 3184
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 3184
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 3184
+              }
+            ]
+          },
+          {
+            "stage": 22,
+            "wheel_group": 2,
+            "pwm_percent": 0,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 0,
+            "drive_right_counts": 0,
+            "coast_left_counts": 0,
+            "coast_right_counts": 0,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 0,
+                "right_counts": 0
+              }
+            ]
+          },
+          {
+            "stage": 23,
+            "wheel_group": 2,
+            "pwm_percent": 10,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 1424,
+            "drive_right_counts": 1424,
+            "coast_left_counts": 32,
+            "coast_right_counts": 33,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 32,
+                "right_counts": 33
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 32,
+                "right_counts": 33
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 32,
+                "right_counts": 33
+              }
+            ]
+          },
+          {
+            "stage": 24,
+            "wheel_group": 2,
+            "pwm_percent": 20,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 3338,
+            "drive_right_counts": 3337,
+            "coast_left_counts": 174,
+            "coast_right_counts": 171,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 174,
+                "right_counts": 171
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 174,
+                "right_counts": 171
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 174,
+                "right_counts": 171
+              }
+            ]
+          },
+          {
+            "stage": 25,
+            "wheel_group": 2,
+            "pwm_percent": 30,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 9266,
+            "drive_right_counts": 9266,
+            "coast_left_counts": 394,
+            "coast_right_counts": 394,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 394,
+                "right_counts": 394
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 394,
+                "right_counts": 394
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 394,
+                "right_counts": 394
+              }
+            ]
+          },
+          {
+            "stage": 26,
+            "wheel_group": 2,
+            "pwm_percent": 40,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 7142,
+            "drive_right_counts": 7142,
+            "coast_left_counts": 688,
+            "coast_right_counts": 688,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 688,
+                "right_counts": 688
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 688,
+                "right_counts": 688
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 688,
+                "right_counts": 688
+              }
+            ]
+          },
+          {
+            "stage": 27,
+            "wheel_group": 2,
+            "pwm_percent": 50,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 9038,
+            "drive_right_counts": 9037,
+            "coast_left_counts": 1042,
+            "coast_right_counts": 1043,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": -49,
+                "right_pps": -102,
+                "left_counts": 1042,
+                "right_counts": 1043
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1042,
+                "right_counts": 1043
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1042,
+                "right_counts": 1043
+              }
+            ]
+          },
+          {
+            "stage": 28,
+            "wheel_group": 2,
+            "pwm_percent": 60,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 19270,
+            "drive_right_counts": 19270,
+            "coast_left_counts": 1418,
+            "coast_right_counts": 1418,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 413,
+                "right_pps": 414,
+                "left_counts": 1403,
+                "right_counts": 1403
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1418,
+                "right_counts": 1418
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1418,
+                "right_counts": 1418
+              }
+            ]
+          },
+          {
+            "stage": 29,
+            "wheel_group": 2,
+            "pwm_percent": 70,
+            "drive_ms": 2000,
+            "coast_ms": 2000,
+            "drive_left_counts": 12683,
+            "drive_right_counts": 12683,
+            "coast_left_counts": 1839,
+            "coast_right_counts": 1839,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 1122,
+                "right_pps": 1153,
+                "left_counts": 1771,
+                "right_counts": 1771
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1839,
+                "right_counts": 1839
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 1839,
+                "right_counts": 1839
+              }
+            ]
+          },
+          {
+            "stage": 30,
+            "wheel_group": 2,
+            "pwm_percent": 80,
+            "drive_ms": 3500,
+            "coast_ms": 2000,
+            "drive_left_counts": 25642,
+            "drive_right_counts": 25676,
+            "coast_left_counts": 2302,
+            "coast_right_counts": 2302,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 1822,
+                "right_pps": 1785,
+                "left_counts": 2144,
+                "right_counts": 2144
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2302,
+                "right_counts": 2302
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2302,
+                "right_counts": 2302
+              }
+            ]
+          },
+          {
+            "stage": 31,
+            "wheel_group": 2,
+            "pwm_percent": 90,
+            "drive_ms": 1000,
+            "coast_ms": 3000,
+            "drive_left_counts": 7887,
+            "drive_right_counts": 7984,
+            "coast_left_counts": 2781,
+            "coast_right_counts": 2779,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 2273,
+                "right_pps": 2278,
+                "left_counts": 2507,
+                "right_counts": 2506
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2781,
+                "right_counts": 2779
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2781,
+                "right_counts": 2779
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2781,
+                "right_counts": 2779
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 2781,
+                "right_counts": 2779
+              }
+            ]
+          },
+          {
+            "stage": 32,
+            "wheel_group": 2,
+            "pwm_percent": 100,
+            "drive_ms": 750,
+            "coast_ms": 3000,
+            "drive_left_counts": 6428,
+            "drive_right_counts": 6457,
+            "coast_left_counts": 3378,
+            "coast_right_counts": 3378,
+            "coast_end_left_pps": 0,
+            "coast_end_right_pps": 0,
+            "coast_trace": [
+              {
+                "dt_ms": 500,
+                "left_pps": 2897,
+                "right_pps": 2960,
+                "left_counts": 2931,
+                "right_counts": 2931
+              },
+              {
+                "dt_ms": 1000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3378,
+                "right_counts": 3378
+              },
+              {
+                "dt_ms": 1500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3378,
+                "right_counts": 3378
+              },
+              {
+                "dt_ms": 2000,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3378,
+                "right_counts": 3378
+              },
+              {
+                "dt_ms": 2500,
+                "left_pps": 0,
+                "right_pps": 0,
+                "left_counts": 3378,
+                "right_counts": 3378
+              }
+            ]
+          }
+        ],
+        "coast_intervals": 111
+      },
+      "limits": "RCC nominal frequency only; no oscilloscope or current measurement",
+      "host_heartbeat": {
+        "ping_sent": 910,
+        "ping_ack_received": 910,
+        "max_inter_ping_gap_ms": 169.76,
+        "max_ping_write_ms": 0.47,
+        "note": "Measured by Python monotonic clock; an ACK logged does not guarantee MCU processed every ping."
+      }
+    }
+  ],
+  "physically_qualified": false
+}

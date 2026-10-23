@@ -1,0 +1,130 @@
+{
+  "status": "PROVISIONAL_FOR_PID_FOLLOWUP",
+  "candidate_alpha": 0.08,
+  "alternate_alpha": 0.1,
+  "production_alpha": 0.3,
+  "wheel_top3": {
+    "L": [
+      {
+        "alpha": 0.08,
+        "score": 0.21747
+      },
+      {
+        "alpha": 0.1,
+        "score": 0.23269
+      },
+      {
+        "alpha": 0.12,
+        "score": 0.31093
+      }
+    ],
+    "R": [
+      {
+        "alpha": 0.08,
+        "score": 0.21476
+      },
+      {
+        "alpha": 0.1,
+        "score": 0.22701
+      },
+      {
+        "alpha": 0.12,
+        "score": 0.30631
+      }
+    ]
+  },
+  "comparison": [
+    {
+      "alpha": 0.08,
+      "heuristic_score_vs_alpha_0_30": 0.21614,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 0.18736,
+        "first_500ms_abs_error_vs_box20": 0.24846,
+        "steady_total_variation": 0.23663
+      }
+    },
+    {
+      "alpha": 0.1,
+      "heuristic_score_vs_alpha_0_30": 0.22989,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 0.23132,
+        "first_500ms_abs_error_vs_box20": 0.19795,
+        "steady_total_variation": 0.29966
+      }
+    },
+    {
+      "alpha": 0.12,
+      "heuristic_score_vs_alpha_0_30": 0.30866,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 0.29259,
+        "first_500ms_abs_error_vs_box20": 0.30797,
+        "steady_total_variation": 0.36384
+      }
+    },
+    {
+      "alpha": 0.05,
+      "heuristic_score_vs_alpha_0_30": 0.39879,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 0.15989,
+        "first_500ms_abs_error_vs_box20": 0.84903,
+        "steady_total_variation": 0.14453
+      }
+    },
+    {
+      "alpha": 0.15,
+      "heuristic_score_vs_alpha_0_30": 0.43204,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 0.3954,
+        "first_500ms_abs_error_vs_box20": 0.47134,
+        "steady_total_variation": 0.46248
+      }
+    },
+    {
+      "alpha": 0.2,
+      "heuristic_score_vs_alpha_0_30": 0.62429,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 0.58345,
+        "first_500ms_abs_error_vs_box20": 0.6788,
+        "steady_total_variation": 0.63322
+      }
+    },
+    {
+      "alpha": 0.3,
+      "heuristic_score_vs_alpha_0_30": 1.0,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 1.0,
+        "first_500ms_abs_error_vs_box20": 1.0,
+        "steady_total_variation": 1.0
+      }
+    },
+    {
+      "alpha": 0.4,
+      "heuristic_score_vs_alpha_0_30": 1.39787,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 1.46655,
+        "first_500ms_abs_error_vs_box20": 1.2978,
+        "steady_total_variation": 1.4024
+      }
+    },
+    {
+      "alpha": 0.6,
+      "heuristic_score_vs_alpha_0_30": 2.34405,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 2.6231,
+        "first_500ms_abs_error_vs_box20": 1.95621,
+        "steady_total_variation": 2.31884
+      }
+    },
+    {
+      "alpha": 0.8,
+      "heuristic_score_vs_alpha_0_30": 3.51253,
+      "relative_metrics": {
+        "steady_abs_error_vs_box20": 4.08116,
+        "first_500ms_abs_error_vs_box20": 2.75271,
+        "steady_total_variation": 3.39
+      }
+    }
+  ],
+  "decision": "Selected using the SAME ENCODER's 20ms count proxy. A separate controlled closed-loop speed/PID test and repeatability evidence are required BEFORE firmware changes.",
+  "automatic_pid_changes": false
+}
