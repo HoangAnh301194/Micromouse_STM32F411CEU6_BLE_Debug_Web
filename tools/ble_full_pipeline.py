@@ -316,10 +316,12 @@ class Session:
         char = self.client.services.get_characteristic(UUID)
         if not char or "notify" not in char.properties:
             raise RuntimeError("JDY-33 FFE1 notify characteristic not found")
-        if "write" in char.properties:
-            self.with_response = True
-        elif "write-without-response" in char.properties:
+        # Match the working Web Bluetooth viewer: JDY-33 transparent UART
+        # normally expects Write Without Response when both are advertised.
+        if "write-without-response" in char.properties:
             self.with_response = False
+        elif "write" in char.properties:
+            self.with_response = True
         else:
             raise RuntimeError("JDY-33 FFE1 has no GATT write permission")
         await self.client.start_notify(UUID, self.on_notify)
@@ -338,8 +340,16 @@ class Session:
         if len(value) > 20:
             raise ValueError(f"Control write >20B (default GATT payload): {command}")
         async with self.write_lock:
-            await self.client.write_gatt_char(UUID, value,
-                                               response=self.with_response)
+            try:
+                await self.client.write_gatt_char(UUID, value,
+                                                  response=self.with_response)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"FFE1 GATT write failed for {command!r}: {exc}. "
+                    "Close/disconnect the browser WebBLE console and all "
+                    "other JDY-33 connections; power-cycle JDY-33, "
+                    "then repeat --probe with motor OFF."
+                ) from exc
 
     async def wait(self, kind: str, after: int, timeout: float = 10.0):
         deadline = time.monotonic() + timeout
