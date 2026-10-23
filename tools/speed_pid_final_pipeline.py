@@ -40,6 +40,8 @@ def run_cmd(cmd, logfile):
                                 stdout=f, stderr=subprocess.STDOUT,
                                 check=False)
     if result.returncode:
+        tail=logfile.read_text(encoding="utf-8",errors="replace").splitlines()[-45:]
+        print("\n".join(tail),file=sys.stderr)
         raise RuntimeError("Command failed with rc=%d: %s (log %s)" %
                            (result.returncode, " ".join(map(str, cmd)), logfile))
 
