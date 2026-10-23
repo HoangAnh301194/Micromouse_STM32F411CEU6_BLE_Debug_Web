@@ -328,4 +328,6 @@ void SSD1306_ToggleInvert(void);
  */
 SSD1306_Status_t SSD1306_IsConnected(void);
 
+/* Framebuffer borrowed by a cooperative, main-context shared-bus client. */
+const uint8_t *SSD1306_GetFramebuffer(void);
 #endif /* SSD1306_H */

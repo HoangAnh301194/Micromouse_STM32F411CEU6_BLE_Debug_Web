@@ -210,4 +210,15 @@ uint32_t I2C_AsyncGetLastCompletionUs(void);
 
 uint32_t I2C_GetConfiguredSclHz(void);
 
+#if defined(OLED_SHARED_I2C)
+/* Nonblocking OLED DMA transport: main starts/polls; completion by IRQ. */
+typedef struct {
+    uint32_t started, completed, bytes, busy_rejects, errors, timeouts;
+    uint32_t max_duration_us;
+} I2C_OledStats_t;
+void I2C_OledAsync_Init(void);
+I2C_Status I2C_OledAsync_Start(uint8_t addr, const uint8_t *buffer, uint8_t len);
+I2C_Status I2C_OledAsync_Poll(uint32_t *duration_us);
+void I2C_OledGetStats(I2C_OledStats_t *out);
+#endif
 #endif /* I2C_H */

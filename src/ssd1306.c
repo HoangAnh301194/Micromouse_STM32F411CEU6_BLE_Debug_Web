@@ -221,6 +221,10 @@ SSD1306_Status_t SSD1306_Init(void) {
  * @brief Initialize SSD1306 with DMA support
  */
 SSD1306_Status_t SSD1306_Init_DMA(void) {
+#if defined(OLED_SHARED_I2C)
+    /* Legacy DMA sends blocking page commands. Forbidden with live MPU. */
+    return SSD1306_ERROR;
+#else
     SSD1306_Status_t status;
     
     /* First do normal initialization */
@@ -241,6 +245,7 @@ SSD1306_Status_t SSD1306_Init_DMA(void) {
     ssd1306_dma_busy = 0;
     
     return SSD1306_OK;
+#endif
 }
 
 /* ========================================================================== */
@@ -271,6 +276,9 @@ void SSD1306_UpdateScreen(void) {
  * @note Returns IMMEDIATELY (< 1ms), update happens in background
  */
 uint8_t SSD1306_UpdateScreen_DMA(void) {
+#if defined(OLED_SHARED_I2C)
+    return 0U; /* Use OLED_Shared_Service. */
+#endif
     if (!ssd1306_dma_enabled) {
         return 0;  /* DMA not initialized */
     }
@@ -302,6 +310,9 @@ uint8_t SSD1306_UpdateScreen_DMA(void) {
  * @note MUST BE CALLED IN MAIN LOOP!
  */
 void SSD1306_Process_DMA(void) {
+#if defined(OLED_SHARED_I2C)
+    return;
+#endif
     uint16_t i;
     I2C_Status dma_result;
     static uint32_t last_refresh_time = 0;
@@ -875,3 +886,6 @@ SSD1306_Status_t SSD1306_IsConnected(void) {
     }
     return SSD1306_NOT_FOUND;
 }
+
+/* No pixel write from interrupts. */
+const uint8_t *SSD1306_GetFramebuffer(void) { return ssd1306_buffer; }

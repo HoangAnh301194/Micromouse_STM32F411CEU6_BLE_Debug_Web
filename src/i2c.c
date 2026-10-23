@@ -10,6 +10,9 @@
 #include "system_timer.h"
 #include "stm32f4xx.h"
 #include <stdint.h>
+#if defined(OLED_SHARED_I2C)
+#include <string.h>
+#endif
 
 /* ========================================================================== */
 /* HARDWARE REGISTER DEFINITIONS                                              */
@@ -56,6 +59,24 @@
 /* ========================================================================== */
 
 static volatile uint8_t i2c_dma_busy = 0;
+#if defined(OLED_SHARED_I2C)
+#define OWNER_NONE 0U
+#define OWNER_MPU  1U
+#define OWNER_OLED 2U
+static volatile uint8_t bus_owner = OWNER_NONE;
+typedef enum {
+    OLED_IDLE=0, OLED_START, OLED_ADDR, OLED_DMA, OLED_DRAIN, OLED_DONE
+} OLED_Phase;
+static volatile OLED_Phase oled_phase = OLED_IDLE;
+static volatile I2C_Status oled_result = I2C_IDLE;
+static volatile uint32_t oled_start_us, oled_duration_us;
+static volatile uint8_t oled_address;
+static I2C_OledStats_t oled_stats;
+#define OLED_DMA_FLAGS (0x3FUL << 16)
+#define OLED_DMA_TC (1UL << 21)
+#define OLED_DMA_FAIL ((1UL << 16) | (1UL << 18) | (1UL << 19))
+#define OLED_TX_TIMEOUT_US 2000U
+#endif
 static uint32_t i2c_nominal_scl_hz = 0;
 /* 1=400 kHz, 2=300 kHz, 3=200 kHz, 0=100 kHz. */
 static uint8_t i2c_current_speed_mode = 1U;
@@ -128,6 +149,9 @@ static void I2C_BusRecovery(void) {
 
 static I2C_Status I2C_WaitBusFree(uint32_t i2c_base) {
     uint32_t start_time = millis();
+#if defined(OLED_SHARED_I2C)
+    if (bus_owner != OWNER_NONE) return I2C_BUSY;
+#endif
     
     while ((*(volatile uint32_t *)(i2c_base + I2C_SR2)) & I2C_SR2_BUSY) {
         if (delay_elapsed_ms(start_time, I2C_TIMEOUT_MS)) {
@@ -258,6 +282,10 @@ uint32_t I2C_GetConfiguredSclHz(void) { return i2c_nominal_scl_hz; }
 /* ========================================================================== */
 
 void I2C_DMA_Init(I2C_Instance instance) {
+#if defined(OLED_SHARED_I2C)
+    (void)instance;
+    return; /* Legacy full-page DMA cannot share bus with gyro EV IRQ. */
+#endif
     if (instance != I2C_1) return;
     
     RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
@@ -396,8 +424,112 @@ void I2C_ReadReg_DMA(I2C_TypeDef *I2Cx, uint8_t addr, uint8_t reg,
 /* DMA INTERRUPT HANDLERS - FIXED                                             */
 /* ========================================================================== */
 
+
+#if defined(OLED_SHARED_I2C)
+/* All transfers have bounded length (<=16 bytes), no waits in IRQ/main. */
+static void OLED_Finish(I2C_Status status)
+{
+    I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN |
+                   I2C_CR2_ITERREN | I2C_CR2_DMAEN);
+    I2C1->CR1 |= I2C_CR1_STOP;
+    oled_duration_us = micros() - oled_start_us;
+    oled_result = status;
+    oled_phase = OLED_DONE;
+    if (status != I2C_OK) ++oled_stats.errors;
+}
+void I2C_OledAsync_Init(void)
+{
+    RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    DMA1_Stream6->CR &= ~DMA_SxCR_EN;
+    DMA1->HIFCR = OLED_DMA_FLAGS;
+    DMA1_Stream6->CR = (1UL << 25) | (2UL << 16) | DMA_SxCR_MINC |
+                       (1UL << 6) | DMA_SxCR_TCIE |
+                       DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
+    DMA1_Stream6->PAR = (uint32_t)&I2C1->DR;
+    NVIC_SetPriority(DMA1_Stream6_IRQn, 4U);
+    NVIC_ClearPendingIRQ(DMA1_Stream6_IRQn);
+    NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+    oled_phase = OLED_IDLE;
+    oled_result = I2C_IDLE;
+    memset(&oled_stats, 0, sizeof(oled_stats));
+}
+I2C_Status I2C_OledAsync_Start(uint8_t addr, const uint8_t *buffer, uint8_t len)
+{
+    if (!buffer || len == 0U || len > 16U || addr >= 128U) return I2C_ERROR;
+    if (oled_phase != OLED_IDLE || bus_owner != OWNER_NONE ||
+        i2c_dma_busy || (DMA1_Stream6->CR & DMA_SxCR_EN) ||
+        (I2C1->SR2 & I2C_SR2_BUSY)) {
+        ++oled_stats.busy_rejects;
+        return I2C_BUSY;
+    }
+    /* Only main starts I2C; TIM11 never touches the peripheral. */
+    bus_owner = OWNER_OLED;
+    DMA1->HIFCR = OLED_DMA_FLAGS;
+    DMA1_Stream6->M0AR = (uint32_t)buffer;
+    DMA1_Stream6->NDTR = len;
+    oled_address = addr;
+    oled_start_us = micros();
+    oled_result = I2C_BUSY;
+    oled_phase = OLED_START;
+    ++oled_stats.started;
+    oled_stats.bytes += len;
+    NVIC_SetPriority(I2C1_EV_IRQn, 5U);
+    NVIC_SetPriority(I2C1_ER_IRQn, 5U);
+    NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
+    NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
+    NVIC_EnableIRQ(I2C1_EV_IRQn);
+    NVIC_EnableIRQ(I2C1_ER_IRQn);
+    I2C_ClearErrors(I2C1_BASE);
+    I2C1->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
+    I2C1->CR1 |= I2C_CR1_START;
+    return I2C_OK;
+}
+I2C_Status I2C_OledAsync_Poll(uint32_t *duration_us)
+{
+    I2C_Status s;
+    if (oled_phase == OLED_IDLE) return I2C_IDLE;
+    if (oled_phase != OLED_DONE &&
+        (uint32_t)(micros() - oled_start_us) > OLED_TX_TIMEOUT_US) {
+        ++oled_stats.timeouts;
+        DMA1_Stream6->CR &= ~DMA_SxCR_EN;
+        DMA1->HIFCR = OLED_DMA_FLAGS;
+        OLED_Finish(I2C_TIMEOUT);
+    }
+    if (oled_phase != OLED_DONE) return I2C_BUSY;
+    s = oled_result;
+    if (duration_us) *duration_us = oled_duration_us;
+    if (oled_duration_us > oled_stats.max_duration_us)
+        oled_stats.max_duration_us = oled_duration_us;
+    if (s == I2C_OK) ++oled_stats.completed;
+    oled_result = I2C_IDLE;
+    oled_phase = OLED_IDLE;
+    bus_owner = OWNER_NONE;
+    return s;
+}
+void I2C_OledGetStats(I2C_OledStats_t *out) {
+    if (out) *out = oled_stats; /* Main-only stats, no torn concurrent read. */
+}
+#endif
+
 void DMA1_Stream6_IRQHandler(void) {
     uint32_t counter;
+#if defined(OLED_SHARED_I2C)
+    if (bus_owner == OWNER_OLED) {
+        uint32_t flags = DMA1->HISR & OLED_DMA_FLAGS;
+        if (!flags) return;
+        DMA1->HIFCR = OLED_DMA_FLAGS;
+        DMA1_Stream6->CR &= ~DMA_SxCR_EN;
+        I2C1->CR2 &= ~I2C_CR2_DMAEN;
+        if (flags & OLED_DMA_FAIL) {
+            OLED_Finish(I2C_ERROR);
+        } else if ((flags & OLED_DMA_TC) && oled_phase == OLED_DMA) {
+            oled_phase = OLED_DRAIN;
+            /* Event interrupt, not an ISR busy-spin, waits for final BTF. */
+            I2C1->CR2 |= I2C_CR2_ITEVTEN;
+        }
+        return;
+    }
+#endif
     
     if (DMA1->HISR & (1 << 21)) {
         DMA1->HIFCR = (1 << 21);
@@ -443,6 +575,9 @@ I2C_Status I2C_Write_DMA(I2C_Instance instance, uint8_t slave_addr,
     
     if (instance != I2C_1) return I2C_ERROR;
     if (i2c_dma_busy) return I2C_BUSY;
+#if defined(OLED_SHARED_I2C)
+    return I2C_ERROR; /* Legacy unbounded transfer forbidden in shared build. */
+#endif
     if (I2C_WaitBusFree(i2c_base) != I2C_OK) return I2C_BUSY;
     
     i2c_dma_busy = 1;
@@ -758,6 +893,9 @@ I2C_Status I2C_ReadRegAsync_Start(uint8_t addr, uint8_t reg, uint8_t count)
 {
     if (count != 1U && count != 2U) return I2C_ERROR;
     if (i2c2_phase != I2C2_IDLE) return I2C_BUSY;
+#if defined(OLED_SHARED_I2C)
+    if (bus_owner == OWNER_OLED) return I2C_BUSY; /* No bus stealing. */
+#endif
     if (i2c_dma_busy || (I2C1->SR2 & I2C_SR2_BUSY)) {
         uint32_t now = micros();
         if (!i2c2_busy_since_us) i2c2_busy_since_us = now;
@@ -772,6 +910,9 @@ I2C_Status I2C_ReadRegAsync_Start(uint8_t addr, uint8_t reg, uint8_t count)
     i2c2_busy_since_us = 0U;
     if (addr >= 0x80U) return I2C_ERROR;
 
+    #if defined(OLED_SHARED_I2C)
+    bus_owner = OWNER_MPU;
+#endif
     i2c2_addr = addr;
     i2c2_reg = reg;
     i2c2_count = count;
@@ -794,6 +935,32 @@ I2C_Status I2C_ReadRegAsync_Start(uint8_t addr, uint8_t reg, uint8_t count)
 void I2C1_EV_IRQHandler(void)
 {
     uint32_t sr1 = I2C1->SR1;
+#if defined(OLED_SHARED_I2C)
+    if (bus_owner == OWNER_OLED) {
+        switch (oled_phase) {
+        case OLED_START:
+            if (sr1 & I2C_SR1_SB) {
+                I2C1->DR = ((uint32_t)oled_address << 1);
+                oled_phase = OLED_ADDR;
+            }
+            break;
+        case OLED_ADDR:
+            if (sr1 & I2C_SR1_ADDR) {
+                /* Configure DMA before clearing ADDR. */
+                I2C1->CR2 |= I2C_CR2_DMAEN;
+                DMA1_Stream6->CR |= DMA_SxCR_EN;
+                (void)I2C1->SR2;
+                oled_phase = OLED_DMA;
+            }
+            break;
+        case OLED_DRAIN:
+            if (sr1 & I2C_SR1_BTF) OLED_Finish(I2C_OK);
+            break;
+        default: break;
+        }
+        return;
+    }
+#endif
     switch (i2c2_phase) {
     case I2C2_START_W:
         if (sr1 & I2C_SR1_SB) {
@@ -868,6 +1035,15 @@ void I2C1_ER_IRQHandler(void)
     uint32_t flags = I2C1->SR1 & (I2C_SR1_BERR | I2C_SR1_ARLO |
                                     I2C_SR1_AF | I2C_SR1_OVR | I2C_SR1_TIMEOUT);
     if (flags) {
+#if defined(OLED_SHARED_I2C)
+        if (bus_owner == OWNER_OLED) {
+            I2C1->SR1 &= ~flags;
+            DMA1_Stream6->CR &= ~DMA_SxCR_EN;
+            DMA1->HIFCR = OLED_DMA_FLAGS;
+            OLED_Finish((flags & I2C_SR1_AF) ? I2C_NACK : I2C_ERROR);
+            return;
+        }
+#endif
         /* Only write error bits back as 0; do not clear the event flags. */
         I2C1->SR1 &= ~flags;
         if (i2c2_phase != I2C2_IDLE && i2c2_phase != I2C2_DONE) {
@@ -908,5 +1084,8 @@ I2C_Status I2C_Read2Async_Poll(uint8_t out[2], uint32_t *duration_us)
     }
     i2c2_result = I2C_IDLE;
     i2c2_phase = I2C2_IDLE;
+#if defined(OLED_SHARED_I2C)
+    bus_owner = OWNER_NONE;
+#endif
     return status;
 }
