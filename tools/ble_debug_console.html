@@ -474,7 +474,8 @@
         </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-        <span class="maze-size-badge">16×16</span>
+        <span class="maze-size-badge" id="mazeSizeBadge">16×16</span>
+        <button class="btn" id="btnRequestMap" onclick="requestCurrentMap()" disabled>Request map</button>
         <button class="btn btn-ble" id="btnBLE" onclick="bleConnect()">Connect</button>
         <button class="btn" id="btnReconnect" onclick="reconnectBLE()" disabled>Reconnect</button>
         <button class="btn" id="btnDisconnect" onclick="bleDisconnect()" disabled>Disconnect</button>
@@ -500,6 +501,7 @@
                 <button class="toggle-btn on" id="tglVisit" onclick="toggleDisplay('visit', this)">Explored</button>
             </div>
         </div>
+        <div style="font-size:11px;color:var(--text-sec);padding:4px 10px;" id="mapVerifyStatus">Map: waiting for data</div>
         <div class="maze-canvas-wrap" id="mazeCanvasWrap">
             <canvas id="mazeCanvas"></canvas>
             <div class="maze-overlay-msg" id="mazeOverlay">
@@ -512,7 +514,7 @@
             <span><span class="mib-lbl">Robot </span><span class="mib-val" id="mibPos">(0,0)</span></span>
             <span><span class="mib-lbl">Dir </span><span class="mib-val" id="mibDir">N</span></span>
             <span><span class="mib-lbl">Flood </span><span class="mib-val" id="mibDist">—</span></span>
-            <span><span class="mib-lbl">Visited </span><span class="mib-val" id="mibVisit">0</span><span class="mib-lbl">/256</span></span>
+            <span><span class="mib-lbl">Visited </span><span class="mib-val" id="mibVisit">0</span><span class="mib-lbl" id="mibTotal">/256</span></span>
             <span><span class="mib-lbl">Steps </span><span class="mib-val" id="mibSteps">0</span></span>
             <span id="mibPhase" style="color:var(--purple);font-size:10px;"></span>
         </div>
@@ -556,9 +558,9 @@
 /* ═══════════════════════════════════════════════
    CONSTANTS
 ═══════════════════════════════════════════════ */
-const MAZE_SIZE    = 16;
+let MAZE_SIZE = 16;
 const WALL_N = 0x1, WALL_E = 0x2, WALL_S = 0x4, WALL_W = 0x8;
-const GOAL_CELLS   = [[7,7],[8,7],[7,8],[8,8]]; // [x,y]
+let GOAL_CELLS = [[7,7],[8,7],[7,8],[8,8]]; // dynamic [x,y]
 const DIR_LABELS   = ['N','E','S','W'];
 const DIR_DX       = [0, 1, 0, -1];
 const DIR_DY       = [1, 0,-1,  0];
@@ -938,6 +940,18 @@ const mazeResizeObserver = new ResizeObserver(() => {
 });
 mazeResizeObserver.observe(document.getElementById('mazeCanvasWrap'));
 
+function setMazeSize(n) {
+    if (!Number.isInteger(n) || n < 2 || n > 16 || MAZE_SIZE === n) return;
+    MAZE_SIZE = n;
+    const lower = Math.floor((n-1)/2), upper = Math.floor(n/2);
+    GOAL_CELLS = Array.from(new Set([lower, upper]), y => y).flatMap(y =>
+        Array.from(new Set([lower, upper]), x => [x,y]));
+    document.getElementById("mazeSizeBadge").textContent = n + "×" + n;
+    document.getElementById("mibTotal").textContent = "/" + (n*n);
+    sizeCanvas();
+    initMazeDisplay();
+}
+
 function initMazeDisplay() {
     mazeWalls   = initKnownWalls();
     robotPos    = { x:0, y:0, dir:0 };
@@ -1167,11 +1181,26 @@ async function connectSelectedDevice() {
         const deviceName = bleDevice.name || 'BLE device';
         setStatus('connected', deviceName);
         addBLEEntry(`✅ Connected to ${deviceName}`, 'sys');
+        await requestCurrentMap();
     } catch(err) {
         bleChar = null;
         setStatus('disconnected', 'Disconnected');
         addBLEEntry(`❌ Connection failed: ${err.message}`, 'err');
         if (bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+    }
+}
+
+async function requestCurrentMap() {
+    if (!bleChar) return;
+    try {
+        const command = new Uint8Array([63]); // '?' requests the latest Flash map.
+        if (bleChar.properties.writeWithoutResponse)
+            await bleChar.writeValueWithoutResponse(command);
+        else if (bleChar.properties.write)
+            await bleChar.writeValueWithResponse(command);
+        else addBLEEntry('BLE characteristic is not writable; send READ on UART PA9/PA10.', 'warn');
+    } catch (err) {
+        addBLEEntry('Map request unavailable: ' + err.message + '; send READ on UART PA9/PA10.', 'warn');
     }
 }
 
@@ -1195,6 +1224,7 @@ function updateConnectionControls() {
     document.getElementById('btnReconnect').disabled =
         bleConnecting || connected || !bleDevice || !navigator.bluetooth;
     document.getElementById('btnDisconnect').disabled = bleConnecting || !connected;
+    document.getElementById('btnRequestMap').disabled = !connected;
 }
 
 function onBLEData(event) {
@@ -1207,13 +1237,17 @@ function onBLEData(event) {
     lineBuffer = lineBuffer.replace(/(?<!\n)(MZ[0-7]:)/g, '\n$1');
     /* Same fix for CELL: frames that may be concatenated */
     lineBuffer = lineBuffer.replace(/(?<!\n)(CELL:)/g, '\n$1');
+    lineBuffer = lineBuffer.replace(/(?<!\n)(MAPCFG,|MAPROW,|MAPEND,)/g, '\n$1');
 
     const lines = lineBuffer.split(/\r?\n/);
     lineBuffer = lines.pop();
 
     for (const line of lines) {
         if (!line.trim()) continue;
-        if (line.startsWith('MAZE:'))      { parseMazeData(line); addBLEEntry(line, 'maze'); }
+        if (line.startsWith('MAPCFG,')) { parseFlashMapConfig(line); addBLEEntry(line, 'maze'); }
+        else if (line.startsWith('MAPROW,')) { parseFlashMapRow(line); addBLEEntry(line, 'maze'); }
+        else if (line.startsWith('MAPEND,')) { parseFlashMapEnd(line); addBLEEntry(line, 'maze'); }
+        else if (line.startsWith('MAZE:'))      { parseMazeData(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('CELL:')) { parseCellUpdate(line); addBLEEntry(line, 'maze'); }
         else if (/^MZ[0-7]:/.test(line))   { parseMZChunk(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('MAZE_RESET')) { initMazeDisplay(); addBLEEntry('🗑 Maze reset by robot', 'sys'); }
@@ -1224,6 +1258,334 @@ function onBLEData(event) {
 /* ═══════════════════════════════════════════════
    BLE MAZE PROTOCOL PARSING
 ═══════════════════════════════════════════════ */
+
+
+/* Versioned Flash map protocol. Do not render incomplete/corrupt frames.
+ * MAPCFG,w=N,h=N,fmt=1,len=8+N*N,crc=XXXXXXXX,src=FLASH|RAM|LEGACY
+ * MAPROW,y=Y,hex=wall_nibbles
+ * MAPEND,crc=XXXXXXXX,rows=N
+ * CRC32/IEEE over the exact MAP1 payload bytes (8-byte header + wall bytes).
+ */
+let pendingFlashMap = null;
+let lastFlashMap = null;
+function parseMapFields(line) {
+    const data = {};
+    for (const field of line.split(',').slice(1)) {
+        const i = field.indexOf('=');
+        if (i > 0) data[field.slice(0,i)] = field.slice(i+1);
+    }
+    return data;
+}
+function mapStatus(message) {
+    document.getElementById('mapVerifyStatus').textContent = message;
+}
+function mapError(message) {
+    mapStatus('Map: FAIL — ' + message);
+    addBLEEntry('MAP VERIFY FAIL: ' + message, 'err');
+    pendingFlashMap = null;
+}
+function mapCrc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (const v of bytes) {
+        crc ^= v;
+        for (let j=0;j<8;j++)
+            crc = (crc>>>1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+    }
+    return (crc ^ 0xFFFFFFFF)>>>0;
+}
+function parseFlashMapConfig(line) {
+    const c = parseMapFields(line), n = Number(c.w), h = Number(c.h);
+    const len = Number(c.len);
+    if (c.fmt !== '1' || !Number.isInteger(n) || n < 2 || n > 16 ||
+        h !== n || len !== 8 + n*n || !/^[0-9a-fA-F]{8}$/.test(c.crc || '')) {
+        mapError('invalid MAPCFG'); return;
+    }
+    pendingFlashMap = {n, len, crc:parseInt(c.crc,16)>>>0,
+                       src:c.src || 'UNKNOWN', rows:new Array(n)};
+    setMazeSize(n);
+    mapStatus('Map: receiving ' + n + '×' + n + ', source=' + pendingFlashMap.src);
+}
+function parseFlashMapRow(line) {
+    if (!pendingFlashMap) return;
+    const c = parseMapFields(line), n=pendingFlashMap.n, y=Number(c.y);
+    if (!Number.isInteger(y) || y < 0 || y >= n ||
+        !new RegExp('^[0-9a-fA-F]{' + n + '}
+let mzChunks = {};
+let mzTimeout = null;
+
+function parseMZChunk(line) {
+    const idx = parseInt(line[2]);
+    const payload = line.substring(line.indexOf(':') + 1).trim();
+
+    if (idx === 0) {
+        setMazeSize(16); // Legacy MZ0..MZ7 always encodes 16x16.
+        /* MZ0:RX,RY,RD:WALLS_ROW0-3 — reset buffer, parse header */
+        mzChunks = {};
+        const colonPos = payload.indexOf(':');
+        if (colonPos < 0) return;
+        const rp = payload.substring(0, colonPos).split(',');
+        const nextPosition = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+        if (!isValidRobotPosition(nextPosition)) return;
+        setRobotPosition(nextPosition);
+        mzChunks[0] = payload.substring(colonPos + 1);
+    } else {
+        mzChunks[idx] = payload;
+    }
+
+    /* Clear any pending timeout */
+    if (mzTimeout) { clearTimeout(mzTimeout); mzTimeout = null; }
+
+    /* Check if wall chunks (0-3) are complete */
+    let hasWalls = true;
+    for (let i = 0; i < 4; i++) {
+        if (!mzChunks[i]) { hasWalls = false; break; }
+    }
+
+    /* Check if flood chunks (4-7) are also complete */
+    let hasFlood = true;
+    for (let i = 4; i < 8; i++) {
+        if (!mzChunks[i]) { hasFlood = false; break; }
+    }
+
+    if (hasWalls && hasFlood) {
+        /* Full data available — render immediately */
+        applyMZData(true);
+    } else if (hasWalls) {
+        /* Walls ready but flood missing — wait briefly then render with local flood */
+        mzTimeout = setTimeout(() => applyMZData(false), 500);
+    } else {
+        /* Still waiting for wall chunks — set timeout to render partial if chunks lost */
+        mzTimeout = setTimeout(() => applyMZData(false), 3000);
+    }
+}
+
+function applyMZData(hasFlood) {
+    mzTimeout = null;
+
+    /* Assemble walls from chunks 0-3 (64 hex chars each = 4 rows of 16) */
+    let wallsHex = '';
+    for (let i = 0; i < 4; i++) wallsHex += (mzChunks[i] || '0'.repeat(64));
+    if (wallsHex.length >= 256) {
+        mazeWalls = Array.from({length:MAZE_SIZE}, (_,y) =>
+            Array.from({length:MAZE_SIZE}, (_,x) => parseInt(wallsHex[y*MAZE_SIZE+x],16))
+        );
+    }
+
+    if (hasFlood) {
+        /* Assemble flood from chunks 4-7 */
+        const floodHex = mzChunks[4] + mzChunks[5] + mzChunks[6] + mzChunks[7];
+        if (floodHex.length >= 512) {
+            mazeFlood = Array.from({length:MAZE_SIZE}, (_,y) =>
+                Array.from({length:MAZE_SIZE}, (_,x) =>
+                    parseInt(floodHex.substring((y*MAZE_SIZE+x)*2, (y*MAZE_SIZE+x)*2+2), 16))
+            );
+        }
+    } else {
+        /* Compute flood locally from walls */
+        if (mazeWalls) mazeFlood = calcFlood(mazeWalls, GOAL_CELLS);
+    }
+
+    /* Update visited cells and render */
+    visitedCells.clear();
+    if (mazeWalls) {
+        for (let y=0; y<MAZE_SIZE; y++)
+            for (let x=0; x<MAZE_SIZE; x++)
+                if (mazeWalls[y][x] !== 0) visitedCells.add(`${x},${y}`);
+    }
+
+    mzChunks = {};
+    document.getElementById('mazeOverlay').style.display = 'none';
+    renderMaze();
+}
+
+function parseMazeData(line) {
+    setMazeSize(16); // Legacy MAZE frame is a fixed 16x16 shape.
+    // Legacy format: MAZE:RX,RY,RD:WALLS_256H:FLOOD_512H
+    const parts = line.split(':');
+    if (parts.length < 3) return;
+    const rp = parts[1].split(',');
+    const nextPosition = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+    if (!isValidRobotPosition(nextPosition)) return;
+    setRobotPosition(nextPosition);
+
+    const wh = parts[2];
+    if (wh.length < 256) return;
+    mazeWalls = Array.from({length:MAZE_SIZE}, (_,y) =>
+        Array.from({length:MAZE_SIZE}, (_,x) => parseInt(wh[y*MAZE_SIZE+x],16))
+    );
+
+    if (parts.length >= 4 && parts[3].length >= 512) {
+        const fh = parts[3];
+        mazeFlood = Array.from({length:MAZE_SIZE}, (_,y) =>
+            Array.from({length:MAZE_SIZE}, (_,x) => parseInt(fh.substring((y*MAZE_SIZE+x)*2, (y*MAZE_SIZE+x)*2+2), 16))
+        );
+    }
+
+    visitedCells.clear();
+    for (let y=0; y<MAZE_SIZE; y++)
+        for (let x=0; x<MAZE_SIZE; x++)
+            if (mazeWalls[y][x] !== 0) visitedCells.add(`${x},${y}`);
+
+    document.getElementById('mazeOverlay').style.display = 'none';
+    renderMaze();
+}
+
+function parseCellUpdate(line) {
+    // Format: CELL:X,Y,W,RD,FF
+    const parts = line.substring(5).split(',');
+    if (parts.length < 4) return;
+    const x=parseInt(parts[0]), y=parseInt(parts[1]);
+    const w=parseInt(parts[2],16), rd=parseInt(parts[3]);
+    const ff=parts.length>=5 ? parseInt(parts[4],16) : 255;
+    const nextPosition = { x, y, dir: rd };
+    if (!isValidRobotPosition(nextPosition) || !Number.isFinite(w) || !Number.isFinite(ff)) return;
+
+    if (!mazeWalls) {
+        mazeWalls = initKnownWalls();
+        mazeFlood = Array.from({length:MAZE_SIZE}, ()=>new Array(MAZE_SIZE).fill(255));
+    }
+    mazeWalls[y][x] = w;
+    if (!mazeFlood) mazeFlood = Array.from({length:MAZE_SIZE},()=>new Array(MAZE_SIZE).fill(255));
+    mazeFlood[y][x] = ff;
+    setRobotPosition(nextPosition);
+    visitedCells.add(`${x},${y}`);
+    propagateWalls(x, y, w);
+    document.getElementById('mazeOverlay').style.display = 'none';
+    renderMaze();
+}
+
+function isValidRobotPosition(position) {
+    return Number.isInteger(position.x) && position.x >= 0 && position.x < MAZE_SIZE &&
+           Number.isInteger(position.y) && position.y >= 0 && position.y < MAZE_SIZE &&
+           Number.isInteger(position.dir) && position.dir >= 0 && position.dir < DIR_LABELS.length;
+}
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════ */
+function setStatus(state, text) {
+    const b = document.getElementById('statusBadge');
+    b.className = `status-badge ${state}`;
+    document.getElementById('statusText').textContent = text;
+}
+
+/* ─── BLE check ─────────────────────────────── */
+const mazeSide = document.getElementById('mazeSide');
+const resizeHandle = document.getElementById('resizeHandle');
+let resizePointerId = null;
+let resizeOrientation = null;
+
+function isVerticalLayout() {
+    return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function updateResizeHandleOrientation() {
+    const orientation = isVerticalLayout() ? 'horizontal' : 'vertical';
+    if (resizeOrientation && resizeOrientation !== orientation) {
+        mazeSide.style.flexBasis = '';
+    }
+    resizeOrientation = orientation;
+    resizeHandle.setAttribute('aria-orientation', orientation);
+}
+
+function resizeMazePanel(position) {
+    const workspace = document.querySelector('.workspace');
+    const vertical = isVerticalLayout();
+    const total = vertical ? workspace.clientHeight : workspace.clientWidth;
+    const handleSize = vertical ? resizeHandle.offsetHeight : resizeHandle.offsetWidth;
+    const mazeMinimum = vertical ? 180 : 260;
+    const terminalMinimum = vertical ? 160 : 300;
+    const maximum = total - handleSize - terminalMinimum;
+    const nextSize = Math.max(mazeMinimum, Math.min(maximum, position));
+    mazeSide.style.flexBasis = `${nextSize}px`;
+    resizeHandle.setAttribute('aria-valuemin', String(mazeMinimum));
+    resizeHandle.setAttribute('aria-valuemax', String(Math.max(mazeMinimum, maximum)));
+    resizeHandle.setAttribute('aria-valuenow', String(nextSize));
+}
+
+resizeHandle.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    resizePointerId = event.pointerId;
+    resizeHandle.setPointerCapture(event.pointerId);
+    document.body.style.userSelect = 'none';
+    event.preventDefault();
+});
+
+resizeHandle.addEventListener('pointermove', event => {
+    if (event.pointerId !== resizePointerId) return;
+    const bounds = document.querySelector('.workspace').getBoundingClientRect();
+    resizeMazePanel(isVerticalLayout() ? event.clientY - bounds.top : event.clientX - bounds.left);
+});
+
+function stopPanelResize(event) {
+    if (event.pointerId !== resizePointerId) return;
+    resizePointerId = null;
+    document.body.style.userSelect = '';
+}
+
+resizeHandle.addEventListener('pointerup', stopPanelResize);
+resizeHandle.addEventListener('pointercancel', stopPanelResize);
+resizeHandle.addEventListener('keydown', event => {
+    const vertical = isVerticalLayout();
+    const negative = vertical ? 'ArrowUp' : 'ArrowLeft';
+    const positive = vertical ? 'ArrowDown' : 'ArrowRight';
+    if (event.key !== negative && event.key !== positive) return;
+    event.preventDefault();
+    const currentSize = vertical ? mazeSide.offsetHeight : mazeSide.offsetWidth;
+    resizeMazePanel(currentSize + (event.key === positive ? 24 : -24));
+});
+
+updateResizeHandleOrientation();
+
+if (!navigator.bluetooth) {
+    addBLEEntry('❌ Web Bluetooth NOT supported in this browser!', 'err');
+    addBLEEntry('💡 Use Chrome/Edge desktop, or Chrome on Android', 'sys');
+    updateConnectionControls();
+} else {
+    addBLEEntry('✅ Web Bluetooth ready. Connect your Nezumi_Chan!', 'sys');
+}
+</script>
+</body>
+</html>
+).test(c.hex || '')) {
+        mapError('invalid MAPROW'); return;
+    }
+    if (pendingFlashMap.rows[y] && pendingFlashMap.rows[y] !== c.hex.toUpperCase()) {
+        mapError('conflicting duplicate row ' + y); return;
+    }
+    pendingFlashMap.rows[y] = c.hex.toUpperCase();
+}
+function parseFlashMapEnd(line) {
+    if (!pendingFlashMap) return;
+    const p=pendingFlashMap, c=parseMapFields(line);
+    if (Number(c.rows) !== p.n || !/^[0-9a-fA-F]{8}$/.test(c.crc || '') ||
+        (parseInt(c.crc,16)>>>0) !== p.crc ||
+        p.rows.some(row => typeof row !== 'string')) {
+        mapError('missing rows or end CRC mismatch'); return;
+    }
+    const b=new Uint8Array(p.len);
+    b.set([77,65,80,49,p.n,p.n,0,0]);
+    for (let y=0;y<p.n;y++) for (let x=0;x<p.n;x++)
+        b[8+y*p.n+x]=parseInt(p.rows[y][x],16);
+    const actual=mapCrc32(b);
+    if (actual !== p.crc) {
+        mapError('payload CRC mismatch expected=' + p.crc.toString(16) +
+                 ' actual=' + actual.toString(16)); return;
+    }
+    mazeWalls = Array.from({length:p.n},(_,y) =>
+        Array.from({length:p.n},(_,x) => b[8+y*p.n+x]));
+    mazeFlood = calcFlood(mazeWalls, GOAL_CELLS);
+    visitedCells.clear(); // Wall bitmask does not encode explored/visited state.
+    setRobotPosition({x:0,y:0,dir:0});
+    lastFlashMap = {size:p.n,crc:p.crc,source:p.src,rows:p.n,status:'PASS'};
+    pendingFlashMap=null;
+    document.getElementById('mazeOverlay').style.display = 'none';
+    mapStatus('Map: PASS ' + p.n + '×' + p.n + ' CRC=' +
+              p.crc.toString(16).toUpperCase().padStart(8,'0') + ' source=' + p.src);
+    addBLEEntry('MAP VERIFY PASS size=' + p.n + ' CRC=' +
+                p.crc.toString(16).toUpperCase().padStart(8,'0'), 'sys');
+    renderMaze();
+}
 
 /* Chunked protocol: MZ0..MZ7 reassembly buffer */
 let mzChunks = {};
