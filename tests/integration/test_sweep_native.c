@@ -18,6 +18,10 @@ static Control_DebugStats_t ctrl;
 static uint32_t set_calls, lock_calls;
 static uint8_t observed[3][11];
 static int16_t last_left,last_right;
+/* Native speed-PID integration test provides deterministic encoder feedback;
+ * motion physics is not simulated or physically qualified. */
+float Encoder_GetLeftSpeedPPS(void) { return 800.0f; }
+float Encoder_GetRightSpeedPPS(void) { return 800.0f; }
 
 uint32_t micros(void) { return fake_us; }
 uint8_t MPU6050_GetSnapshot(const MPU6050_Handle_t *h, MPU6050_Snapshot_t *out)
@@ -105,6 +109,9 @@ static void one_complete_run(void)
     assert(Sweep_Arm(t+1U,&imu,1U)==0U);
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
     assert(set_calls>100U);
+#if !defined(ENCODER_SPEED_PID_DIAG)
+    /* Open-loop PWM commands land exactly at 10/20/30%. Closed-loop
+     * speed-PID outputs necessarily deviate from those exact reference PWM. */
     for(int group=0;group<3;group++)
         for(int pct=1;pct<=(
 #if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
@@ -114,6 +121,7 @@ static void one_complete_run(void)
 #endif
         );pct++)
             assert(observed[group][pct]==1U);
+#endif
 #if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
     for(int group=0;group<3;group++)
         for(int pct=4;pct<=10;pct++)
