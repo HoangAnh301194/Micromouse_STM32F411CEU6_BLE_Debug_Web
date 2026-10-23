@@ -67,7 +67,9 @@ jobs:
       - name: Browser JavaScript map resize and CRC regression
         run: node tools/test_ble_map_web.js
       - name: Build opt-in locked map Flash diagnostic
-        run: python -m platformio run -e flash_map_diag_96m
+        run: |
+          python -m pip install --disable-pip-version-check platformio
+          python -m platformio run -e flash_map_diag_96m
       - name: Build default production firmware (Flash API inactive)
         run: |
           python -m pip install --disable-pip-version-check platformio
