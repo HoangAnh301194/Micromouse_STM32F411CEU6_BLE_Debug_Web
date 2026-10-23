@@ -98,6 +98,9 @@ class Decoder:
         self.raw_bytes += len(data)
         self.pending.extend(data)
         while self.pending:
+            # Preserve a single-byte magic prefix across BLE notifications.
+            if len(self.pending) == 1 and self.pending[0] == 0xB5:
+                break
             if self.pending.startswith(b"\xb5\x62"):
                 if len(self.pending) < 16:
                     break
