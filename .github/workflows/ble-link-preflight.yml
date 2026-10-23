@@ -1,0 +1,40 @@
+name: BLE link preflight regression
+on:
+  push:
+    branches: ['fix/ble-link-preflight-20261024']
+  pull_request:
+    branches: [giomuadongbac]
+    paths:
+      - tools/ble_full_pipeline.py
+      - tools/test_ble_full_pipeline.py
+      - src/ble_benchmark.c
+      - web/ble_debug_console.html
+      - tools/ble_debug_console.html
+      - tests/web/test_ble_map_web.js
+      - .github/workflows/ble-link-preflight.yml
+  workflow_dispatch:
+jobs:
+  link-preflight:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check host Python syntax and packet decoder
+        run: |
+          python -m py_compile tools/ble_full_pipeline.py
+          python tools/test_ble_full_pipeline.py
+      - name: Verify Web Bluetooth maze HTML and parser
+        run: node tests/web/test_ble_map_web.js
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Build motor-locked 115200 BLE diagnostic
+        run: python -m platformio run -e ble_profile_motor_off_115200_96m
+      - name: Build motor-locked 38400 BLE diagnostic
+        run: python -m platformio run -e ble_profile_motor_off_38400_96m
+      - name: Build guarded speed PID motor-ON diagnostic
+        run: python -m platformio run -e ble_profile_motor_on_pid_115200_96m
+      - name: Build unchanged production firmware
+        run: python -m platformio run -e genericSTM32F411CE

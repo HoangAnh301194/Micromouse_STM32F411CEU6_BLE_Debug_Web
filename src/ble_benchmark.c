@@ -285,7 +285,20 @@ static void Handle(const char *cmd)
         }
 #endif
     } else {
-        BT_SendString("!ERR,reason=UNKNOWN_COMMAND\n");
+        /* Diagnose corruption/baud mismatch/misframing on PA3. Hex encoding
+         * escapes control/non-ASCII bytes; never execute unknown commands. */
+        char hex[2U * RX_CMD + 1U];
+        static const char digits[] = "0123456789ABCDEF";
+        uint8_t n = 0U;
+        while (cmd[n] && n < RX_CMD - 1U) {
+            uint8_t v = (uint8_t)cmd[n];
+            hex[2U*n] = digits[v >> 4];
+            hex[2U*n + 1U] = digits[v & 15U];
+            n++;
+        }
+        hex[2U*n] = '\0';
+        BT_Printf("!ERR,reason=UNKNOWN_COMMAND,rxhex=%s,rxlen=%u\n",
+                  hex, (unsigned)n);
     }
 }
 static void PumpCommands(void)
@@ -298,6 +311,12 @@ static void PumpCommands(void)
                 Handle(command);
             }
             cmd_len=0U; cmd_overflow=0U;
+        } else if (byte=='?' && cmd_len==0U) {
+            /* Legacy Web map viewer sends bare '?' after GATT connect.
+             * It is not a BLE benchmark command. Do not let this
+             * byte prefix a later HELLO/PING and cause UNKNOWN_COMMAND.
+             * Flash-map firmware is a separate build, unaffected. */
+            continue;
         } else if (byte=='!') {
             /* Emergency STOP can be sent as a single byte. */
             cmd_len=0U; cmd_overflow=0U;
