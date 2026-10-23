@@ -277,3 +277,9 @@ the active branch; retrieve them from the archive as needed.
 ### Phục hồi pipeline map Flash theo yêu cầu người dùng (2026-10-24)
 
 `tools/flash_map_pipeline.py` đã được lấy lại từ `archive/debug-tools-precleanup-20261024` về `giomuadongbac`, còn giao diện BLE vẫn ở `web/ble_debug_console.html`, test chạy ở `tests/regression/flash_map_protocol_test.py`. Pipeline mặc định chỉ preview RAM/đọc Flash; ghi thử yêu cầu `--write-size`, `--allow-flash-write` và `--backup-confirmed`. Việc kiểm thử UART/BLE/Flash trên MCU thực tế vẫn chưa nghiệm thu. Các tool debug khác vẫn ở archive.
+
+### 2026-10-24 — Full debug tool suite restored at user request
+
+- 33/33 host files under `tools/` are present again on `giomuadongbac`, from immutable `archive/debug-tools-precleanup-20261024`. The initial two Flash-map-related files were preserved, and the remaining 31 were restored by PR #8. The previous cleanup entries above are historical; the statement that only Flash-map is restored is superseded.
+- Available pipelines include `tools/ble_full_pipeline.py`, `tools/system_uart_pipeline.py`, `tools/speed_pid_final_pipeline.py`, `tools/flash_map_pipeline.py`, encoder/IR benchmarks and host tests. Production firmware, IR OLED changes, current WebBLE viewer, newer regression tests, CI and historical results have not been reverted.
+- This is a source restoration; **no real BLE/STM32 qualification** has been performed by the restoration itself. Follow each benchmark's hardware safety preconditions.
