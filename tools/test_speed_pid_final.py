@@ -24,6 +24,10 @@ def native_test():
         exe=Path(tmp)/("speed_pid.exe" if os.name=="nt" else "speed_pid")
         cmd=[cc,"-std=c11","-O2","-Wall","-Wextra","-Werror",
              "-DENCODER_SPEED_PID_DIAG=1",
+             "-DINTEGRATION_DIAG=1",
+             "-DINTEGRATION_DIAG_MOTOR_ON=1",
+             "-DINTEGRATION_DIAG_LIMITED_PWM_30=1",
+             "-DENCODER_PID_ALPHA_PCT=8",
              "-I",str(ROOT/"tests"/"speed_pid"/"stubs"),
              "-I",str(ROOT/"include"),
              str(ROOT/"src"/"pid.c"),str(ROOT/"src"/"speed_pid_diag.c"),
