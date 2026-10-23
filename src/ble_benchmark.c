@@ -96,7 +96,7 @@ static void PrintStatus(uint8_t detailed)
     BT_GetProfile(&b);
     IR_GetDiagnostics(&ir);
     Motor_GetDiagnostics(&m);
-    BT_Printf("!S,s=%u,ms=%lu,cal=%u,tick=%lu,late=%lu,gap=%lu,maxcy=%lu,ir=%lu,irfail=%lu,valid=%lu,stale=%lu,i2cerr=%lu,i2cto=%lu,txdrop=%lu,q=%u,peak=%u,txcy=%lu,rxerr=%lu,locked=%u\\n",
+    BT_Printf("!S,s=%u,ms=%lu,cal=%u,tick=%lu,late=%lu,gap=%lu,maxcy=%lu,ir=%lu,irfail=%lu,valid=%lu,stale=%lu,i2cerr=%lu,i2cto=%lu,txdrop=%lu,q=%u,peak=%u,txcy=%lu,rxerr=%lu,locked=%u\n",
         (unsigned)session,(unsigned long)millis(),(unsigned)mpu.cal_state,
         (unsigned long)c.ticks,(unsigned long)c.late_gt50us,
         (unsigned long)c.gaps_gt1500us,(unsigned long)c.max_irq_cycles,
@@ -112,7 +112,7 @@ static void PrintStatus(uint8_t detailed)
         SweepSnapshot sw;
         Motor_GetAppliedPairPermille(&applied_l,&applied_r);
         Sweep_GetSnapshot(&sw);
-        BT_Printf("!D,s=%u,encL=%ld,encR=%ld,ppsL=%ld,ppsR=%ld,appL=%d,appR=%d,sweep=%u,step=%lu,fault=%u,gen=%lu,accepted=%lu,reject=%lu,skip=%lu,ecy=%lu,emax=%lu\\n",
+        BT_Printf("!D,s=%u,encL=%ld,encR=%ld,ppsL=%ld,ppsR=%ld,appL=%d,appR=%d,sweep=%u,step=%lu,fault=%u,gen=%lu,accepted=%lu,reject=%lu,skip=%lu,ecy=%lu,emax=%lu\n",
             (unsigned)session,(long)Encoder_GetLeftCount(),
             (long)Encoder_GetRightCount(),
             (long)Encoder_GetLeftSpeedPPS(),(long)Encoder_GetRightSpeedPPS(),
@@ -129,7 +129,7 @@ static void EndRun(void)
     BT_Profile_t b;
     BT_GetProfile(&b);
     running=0U;
-    BT_Printf("!E,s=%u,gen=%lu,ok=%lu,reject=%lu,skip=%lu,size=%u,hz=%u,ms=%lu,ecy=%lu,emax=%lu,scy=%lu,q=%u,peak=%u,drop=%lu,rxerr=%lu\\n",
+    BT_Printf("!E,s=%u,gen=%lu,ok=%lu,reject=%lu,skip=%lu,size=%u,hz=%u,ms=%lu,ecy=%lu,emax=%lu,scy=%lu,q=%u,peak=%u,drop=%lu,rxerr=%lu\n",
          (unsigned)session,(unsigned long)generated,
          (unsigned long)accepted,(unsigned long)rejected,
          (unsigned long)skipped,(unsigned)packet_size,
@@ -202,18 +202,18 @@ static void StartRun(uint8_t size, uint16_t hz, uint32_t duration_ms)
          size!=64U && size!=128U) ||
         hz>400U || duration_ms<1000U || duration_ms>MAX_RUN_MS ||
         !SensorsReady()) {
-        BT_SendString("!ERR,reason=RUN_REJECTED\\n");
+        BT_SendString("!ERR,reason=RUN_REJECTED\n");
         return;
     }
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
     /* Motor-on samples only while host-authorized guarded sweep is active. */
     if (!Sweep_IsActive()) {
-        BT_SendString("!ERR,reason=NOT_ARMED\\n");
+        BT_SendString("!ERR,reason=NOT_ARMED\n");
         return;
     }
 #else
     if (!Motor_OutputsLocked()) {
-        BT_SendString("!ERR,reason=NOT_LOCKED\\n");
+        BT_SendString("!ERR,reason=NOT_LOCKED\n");
         return;
     }
 #endif
@@ -229,7 +229,7 @@ static void StartRun(uint8_t size, uint16_t hz, uint32_t duration_ms)
     base_tx_drop=b.tx_drop;
     base_rx_error=RxErrors(&b);
     running=1U;
-    BT_Printf("!B,s=%u,size=%u,hz=%u,ms=%lu\\n",
+    BT_Printf("!B,s=%u,size=%u,hz=%u,ms=%lu\n",
         (unsigned)session,(unsigned)size,(unsigned)hz,
         (unsigned long)duration_ms);
 }
@@ -238,7 +238,7 @@ static void Handle(const char *cmd)
     unsigned int size=0U,hz=0U,ms=0U;
     char extra;
     if (strcmp(cmd,"HELLO")==0 || strcmp(cmd,"STATUS")==0) {
-        BT_Printf("!H,ver=1,mode=%s,cal=%u,baud=%lu,ready=%u,maxpkt=128\\n",
+        BT_Printf("!H,ver=1,mode=%s,cal=%u,baud=%lu,ready=%u,maxpkt=128\n",
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
             "ON",
 #else
@@ -251,29 +251,29 @@ static void Handle(const char *cmd)
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
         Sweep_Heartbeat(millis());
 #endif
-        BT_SendString("!P,ok=1\\n");
+        BT_SendString("!P,ok=1\n");
     } else if (strcmp(cmd,"STOP")==0 || strcmp(cmd,"!")==0) {
         if (running) EndRun();
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
         Sweep_Abort(SWEEP_STOP_REQUEST);
 #endif
-        BT_SendString("!STOP,ok=1\\n");
+        BT_SendString("!STOP,ok=1\n");
     } else if (sscanf(cmd,"RUN %u %u %u %c",&size,&hz,&ms,&extra)==3) {
-        if (size>255U || hz>65535U) BT_SendString("!ERR,reason=RUN_RANGE\\n");
+        if (size>255U || hz>65535U) BT_SendString("!ERR,reason=RUN_RANGE\n");
         else StartRun((uint8_t)size,(uint16_t)hz,(uint32_t)ms);
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
     } else if (strcmp(cmd,"ARM")==0) {
         if (!SensorsReady() || Motor_OutputsLocked() ||
             !Sweep_SelectMode(1U) || !Sweep_Arm(millis(),&mpu,1U)) {
-            BT_SendString("!ERR,reason=ARM_DENIED\\n");
+            BT_SendString("!ERR,reason=ARM_DENIED\n");
         } else {
-            BT_Printf("!ARM,ok=1,pwm_max=%u,stages=%u\\n",
+            BT_Printf("!ARM,ok=1,pwm_max=%u,stages=%u\n",
                        (unsigned)Sweep_MaxPwmPercent(),
                        (unsigned)Sweep_StageTotal());
         }
 #endif
     } else {
-        BT_SendString("!ERR,reason=UNKNOWN_COMMAND\\n");
+        BT_SendString("!ERR,reason=UNKNOWN_COMMAND\n");
     }
 }
 static void PumpCommands(void)
@@ -335,13 +335,13 @@ int BleBenchmark_Main(void)
     Sweep_Init();
     if (init!=MPU6050_OK) {
         Motor_LockOutputs();
-        BT_SendString("!ERR,reason=MPU_BOOT\\n");
+        BT_SendString("!ERR,reason=MPU_BOOT\n");
         for (;;) { __WFI(); }
     }
     IR_StartScan();
     Control_Init(&mpu);
     Control_Start();
-    BT_Printf("!BOOT,ver=1,mode=%s,baud=%lu\\n",
+    BT_Printf("!BOOT,ver=1,mode=%s,baud=%lu\n",
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
             "ON",
 #else
