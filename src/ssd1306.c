@@ -55,6 +55,8 @@ static uint8_t ssd1306_buffer[SSD1306_BUFFER_SIZE];
 static uint16_t ssd1306_cursor_x = 0;
 static uint16_t ssd1306_cursor_y = 0;
 static uint8_t ssd1306_inverted = 0;
+/* Boot-only I2C error latch: Init cannot claim success after dropped writes. */
+static uint8_t ssd1306_io_error = 0U;
 
 /* DMA state variables */
 static volatile uint8_t ssd1306_dma_enabled = 0;
@@ -81,7 +83,8 @@ static void SSD1306_WriteCommand(uint8_t cmd) {
     uint8_t data[2];
     data[0] = 0x00;  /* Control byte: Co=0, D/C=0 (command) */
     data[1] = cmd;
-    I2C_Write(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR, data, 2);
+    if (I2C_Write(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR, data, 2) != I2C_OK)
+        ssd1306_io_error = 1U;
 }
 
 /**
@@ -102,6 +105,7 @@ static void SSD1306_WriteData(uint8_t *data, uint16_t len) {
         
         /* Send and check error */
         if (I2C_Write(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR, buffer, chunk + 1) != I2C_OK) {
+            ssd1306_io_error = 1U;
             /* If error, short delay and continue */
             delay_us_blocking(50);
         }
@@ -132,6 +136,7 @@ static void SSD1306_DMA_Callback(void) {
  * @brief Initialize SSD1306 OLED (blocking mode)
  */
 SSD1306_Status_t SSD1306_Init(void) {
+    ssd1306_io_error = 0U;
     /* Check if device is connected */
     if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR) != I2C_OK) {
         return SSD1306_NOT_FOUND;
@@ -214,7 +219,7 @@ SSD1306_Status_t SSD1306_Init(void) {
     ssd1306_cursor_x = 0;
     ssd1306_cursor_y = 0;
     
-    return SSD1306_OK;
+    return ssd1306_io_error ? SSD1306_ERROR : SSD1306_OK;
 }
 
 /**
