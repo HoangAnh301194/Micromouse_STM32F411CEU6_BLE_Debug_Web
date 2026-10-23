@@ -22,6 +22,9 @@
 #endif
 
 #include "stm32f4xx.h"
+#if defined(ENCODER_SPEED_PID_DIAG)
+#include "speed_pid_diag.h"
+#endif
 
 #define DEBUG_PERIOD_MS 100UL
 
@@ -142,6 +145,10 @@ int main(void)
     int32_t last_sweep_enc_l = 0, last_sweep_enc_r = 0;
     uint32_t last_sweep_log_ms = 0U;
     uint32_t coast_start_ms = 0U, coast_last_ms = 0U;
+#if defined(ENCODER_SPEED_PID_DIAG)
+    uint32_t last_pid_log_ms = 0U;
+    int32_t last_pid_count_l = 0, last_pid_count_r = 0;
+#endif
     int32_t coast_start_l = 0, coast_start_r = 0;
 #endif
     MPU6050_Status mpu_status;
@@ -225,7 +232,11 @@ int main(void)
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
     UART_SendString("INTEGRATION_DIAG,MOTOR_OFF_SHADOW,OUTPUTS_LOCKED\r\n");
 #elif defined(INTEGRATION_DIAG_MOTOR_ON)
+#if defined(ENCODER_SPEED_PID_DIAG)
+    UART_SendString("INTEGRATION_DIAG,SPEED_PID_LIVE,MAX_PWM_30_PERCENT,HOST_LEASE_750MS\r\n");
+#else
     UART_SendString("INTEGRATION_DIAG,MOTOR_ON,UART_MODE_ON_AND_START,0_TO_100_PERCENT\r\n");
+#endif
 #endif
 
     while (1) {
@@ -336,6 +347,34 @@ int main(void)
                             (long)Encoder_GetRightSpeedPPS());
             }
         }
+#if defined(ENCODER_SPEED_PID_DIAG)
+        /* 20Hz log, discrete encoder count delta is a separate temporal
+         * measurement from the 1-kHz EMA used by the PID feedback. */
+        if ((uint32_t)(now - last_pid_log_ms) >= 50U) {
+            SweepSnapshot sw;
+            SpeedPidDiagSnapshot pid;
+            int32_t count_l = Encoder_GetLeftCount();
+            int32_t count_r = Encoder_GetRightCount();
+            uint32_t dt = last_pid_log_ms ?
+                          (uint32_t)(now - last_pid_log_ms) : 0U;
+            Sweep_GetSnapshot(&sw);
+            SpeedPidDiag_Get(&pid);
+            if (last_pid_log_ms && sw.state == SWEEP_DRIVE && dt > 0U) {
+                UART_Printf("SYS_PID,ms=%lu,id=%lu,group=%u,step=%u,target=%u,dt=%lu,refL=%ld,refR=%ld,emaL=%ld,emaR=%ld,pwmL=%u,pwmR=%u\r\n",
+                    (unsigned long)now, (unsigned long)sw.stage_id,
+                    (unsigned)sw.group, (unsigned)sw.step,
+                    (unsigned)pid.target_pps, (unsigned long)dt,
+                    (long)((count_l-last_pid_count_l)*1000L/(int32_t)dt),
+                    (long)((count_r-last_pid_count_r)*1000L/(int32_t)dt),
+                    (long)Encoder_GetLeftSpeedPPS(),
+                    (long)Encoder_GetRightSpeedPPS(),
+                    (unsigned)pid.last_pwm_left, (unsigned)pid.last_pwm_right);
+            }
+            last_pid_log_ms = now;
+            last_pid_count_l = count_l;
+            last_pid_count_r = count_r;
+        }
+#endif
         if ((uint32_t)(now - last_system_diag_ms) >= 1000U) {
             Control_DebugStats_t sd;
             Motor_Diagnostics_t md;
