@@ -1,314 +1,357 @@
 #include "flash_storage.h"
+#include "control.h"
+#include "motor.h"
 #include "stm32f4xx.h"
+#include "system_timer.h"
 #include "uart.h"
-#include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 
-/* Helper to get Flash sector from address if not defined */
-#ifndef FLASH_SECTOR_7
-#define FLASH_SECTOR_7 7
-#endif
-#ifndef FLASH_SECTOR_6
-#define FLASH_SECTOR_6 6
-#endif
+/* Append-only v1 records. One reserved 1 KiB legacy region followed by
+ * 127 individually programmable 1 KiB slots per 128 KiB sector.
+ * Program the final commit word ONLY after data+CRC have been verified.
+ * Never erase a sector as part of a normal Save operation.
+ * Note: firmware image MUST be linked below 0x08040000. */
+#define REC_MAGIC 0x4D4D4631UL /* MMF1 */
+#define REC_VERSION 1U
+#define REC_MAP 1U
+#define REC_IR 2U
+#define REC_MPU 3U
+#define REC_COMMIT 0xA53C69F0UL
+#define REC_HEADER_BYTES 20U
+#define REC_COMMIT_OFFSET (FLASH_RECORD_SLOT_BYTES - 4U)
+#define REC_SLOT_COUNT (FLASH_DATA_SECTOR_BYTES / FLASH_RECORD_SLOT_BYTES)
+#define FLASH_KEY1 0x45670123UL
+#define FLASH_KEY2 0xCDEF89ABUL
+#define FLASH_PSIZE_WORD (2UL << 8)
+#define FLASH_ERR_MASK (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR | FLASH_SR_WRPERR)
+#define FLASH_WAIT_US 3000000UL
 
-/* Flash key values for unlocking */
-#define FLASH_KEY1  0x45670123UL
-#define FLASH_KEY2  0xCDEF89ABUL
+typedef struct {
+  uint32_t magic;
+  uint32_t version_type;
+  uint32_t sequence;
+  uint32_t length;
+  uint32_t crc;
+} Flash_RecordHeader_t;
+typedef char Flash_Header_Must_Be_20_Bytes[(sizeof(Flash_RecordHeader_t) == REC_HEADER_BYTES) ? 1 : -1];
 
-/* Flash program size: x32 (2 << 8) for 3.3V operation */
-#define FLASH_PSIZE_WORD  (2UL << 8)
+static uint32_t Flash_CrcFeed(uint32_t crc, uint8_t byte)
+{
+  uint32_t bit;
+  crc ^= byte;
+  for (bit = 0; bit < 8U; ++bit)
+    crc = (crc >> 1U) ^ ((crc & 1U) ? 0xEDB88320UL : 0U);
+  return crc;
+}
 
-/* ========================================================================== */
-/* Low-level Flash helpers (CMSIS register access)                            */
-/* ========================================================================== */
+static uint32_t Flash_Crc(const Flash_RecordHeader_t *h, const void *data)
+{
+  uint32_t crc = 0xFFFFFFFFUL;
+  const uint8_t *p = (const uint8_t *)h;
+  const uint8_t *d = (const uint8_t *)data;
+  uint32_t i;
+  for (i = 0; i < offsetof(Flash_RecordHeader_t, crc); ++i)
+    crc = Flash_CrcFeed(crc, p[i]);
+  for (i = 0; i < h->length; ++i)
+    crc = Flash_CrcFeed(crc, d[i]);
+  return ~crc;
+}
 
-static void Flash_Unlock(void) {
+static uint32_t Flash_SectorBase(uint32_t type)
+{
+  return (type == REC_MAP) ? FLASH_STORAGE_ADDR : FLASH_IR_CALIB_ADDR;
+}
+
+static uint32_t Flash_SlotAddr(uint32_t base, uint32_t slot)
+{
+  return base + slot * (uint32_t)FLASH_RECORD_SLOT_BYTES;
+}
+
+static uint8_t Flash_IsErased(uint32_t address)
+{
+  uint32_t i;
+  for (i = 0; i < FLASH_RECORD_SLOT_BYTES; i += 4U)
+    if (*(const volatile uint32_t *)(address + i) != 0xFFFFFFFFUL) return 0U;
+  return 1U;
+}
+
+static uint8_t Flash_Valid(uint32_t address, uint32_t expected_type)
+{
+  const Flash_RecordHeader_t *h = (const Flash_RecordHeader_t *)address;
+  uint32_t type = h->version_type & 0xFFFFU;
+  if (*(const volatile uint32_t *)(address + REC_COMMIT_OFFSET) != REC_COMMIT) return 0U;
+  if (h->magic != REC_MAGIC || (h->version_type >> 16U) != REC_VERSION ||
+      h->sequence == 0U || h->length == 0U ||
+      h->length > FLASH_RECORD_PAYLOAD_MAX) return 0U;
+  if (type != REC_MAP && type != REC_IR && type != REC_MPU) return 0U;
+  if (expected_type != 0U && type != expected_type) return 0U;
+  return h->crc == Flash_Crc(h, (const void *)(address + REC_HEADER_BYTES));
+}
+
+static Flash_Status_t Flash_FindLatest(uint32_t type, uint32_t *location,
+                                       uint32_t *highest_sequence)
+{
+  uint32_t base = Flash_SectorBase(type), i;
+  uint32_t best = 0U, seq = 0U;
+  for (i = 1U; i < REC_SLOT_COUNT; ++i) {
+    uint32_t addr = Flash_SlotAddr(base, i);
+    if (Flash_Valid(addr, type)) {
+      const Flash_RecordHeader_t *h = (const Flash_RecordHeader_t *)addr;
+      if (best == 0U || (int32_t)(h->sequence - seq) > 0) {
+        best = addr;
+        seq = h->sequence;
+      }
+    }
+  }
+  if (location) *location = best;
+  if (highest_sequence) *highest_sequence = seq;
+  return best ? FLASH_OK : FLASH_ERR_NOT_FOUND;
+}
+
+static uint32_t Flash_NextSequence(uint32_t base)
+{
+  uint32_t i, next = 1U;
+  for (i = 1U; i < REC_SLOT_COUNT; ++i) {
+    uint32_t addr = Flash_SlotAddr(base, i);
+    if (Flash_Valid(addr, 0U)) {
+      const Flash_RecordHeader_t *h = (const Flash_RecordHeader_t *)addr;
+      if (h->sequence >= next && h->sequence != 0xFFFFFFFFUL)
+        next = h->sequence + 1U;
+    }
+  }
+  return next;
+}
+
+static Flash_Status_t Flash_WaitReady(void)
+{
+  uint32_t start;
+  if ((RCC->APB1ENR & RCC_APB1ENR_TIM5EN) == 0U ||
+      (TIM5->CR1 & TIM_CR1_CEN) == 0U) return FLASH_ERR_NOT_READY;
+  start = micros();
+  while (FLASH->SR & FLASH_SR_BSY) {
+    if ((uint32_t)(micros() - start) >= FLASH_WAIT_US)
+      return FLASH_ERR_TIMEOUT;
+  }
+  return (FLASH->SR & FLASH_ERR_MASK) ? FLASH_ERR_CONTROLLER : FLASH_OK;
+}
+
+static Flash_Status_t Flash_ProgramWord(uint32_t address, uint32_t word)
+{
+  Flash_Status_t status = Flash_WaitReady();
+  if (status != FLASH_OK) return status;
+  /* W1C: clear errors, then enable only 32-bit programming. */
+  FLASH->SR = FLASH_ERR_MASK | FLASH_SR_EOP;
+  FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_SER | FLASH_CR_SNB | FLASH_CR_PSIZE);
+  FLASH->CR |= FLASH_PSIZE_WORD | FLASH_CR_PG;
+  *(volatile uint32_t *)address = word;
+  status = Flash_WaitReady();
+  FLASH->CR &= ~FLASH_CR_PG; /* CRITICAL: do not leave PG set. */
+  if (status != FLASH_OK) return status;
+  return (*(const volatile uint32_t *)address == word) ? FLASH_OK : FLASH_ERR_VERIFY;
+}
+
+static Flash_Status_t Flash_WriteBytes(uint32_t address, const void *src, uint32_t length)
+{
+  const uint8_t *p = (const uint8_t *)src;
+  uint32_t i;
+  for (i = 0U; i < length; i += 4U) {
+    uint32_t word = 0xFFFFFFFFUL;
+    uint32_t n = length - i;
+    Flash_Status_t status;
+    if (n > 4U) n = 4U;
+    memcpy(&word, p + i, n);
+    status = Flash_ProgramWord(address + i, word);
+    if (status != FLASH_OK) return status;
+  }
+  return FLASH_OK;
+}
+
+static Flash_Status_t Flash_Append(uint32_t type, const void *data, uint32_t length)
+{
+  Flash_RecordHeader_t h;
+  uint32_t base, addr = 0U, i;
+  Flash_Status_t status;
+  if (!data || length == 0U || length > FLASH_RECORD_PAYLOAD_MAX)
+    return FLASH_ERR_ARG;
+  if (Control_IsRunning() || !Motor_OutputsLocked())
+    return FLASH_ERR_UNSAFE_STATE;
+  if ((RCC->APB1ENR & RCC_APB1ENR_TIM5EN) == 0U ||
+      (TIM5->CR1 & TIM_CR1_CEN) == 0U)
+    return FLASH_ERR_NOT_READY;
+  base = Flash_SectorBase(type);
+  for (i = 1U; i < REC_SLOT_COUNT; ++i) {
+    uint32_t candidate = Flash_SlotAddr(base, i);
+    if (Flash_IsErased(candidate)) { addr = candidate; break; }
+  }
+  if (addr == 0U) return FLASH_ERR_FULL;
+
+  h.magic = REC_MAGIC;
+  h.version_type = (REC_VERSION << 16U) | type;
+  h.sequence = Flash_NextSequence(base);
+  h.length = length;
+  h.crc = Flash_Crc(&h, data);
+
   if (FLASH->CR & FLASH_CR_LOCK) {
     FLASH->KEYR = FLASH_KEY1;
     FLASH->KEYR = FLASH_KEY2;
   }
-}
+  if (FLASH->CR & FLASH_CR_LOCK) return FLASH_ERR_CONTROLLER;
 
-static void Flash_Lock(void) {
-  FLASH->CR |= FLASH_CR_LOCK;
-}
+  status = Flash_WriteBytes(addr, &h, sizeof(h));
+  if (status == FLASH_OK)
+    status = Flash_WriteBytes(addr + REC_HEADER_BYTES, data, length);
+  if (status == FLASH_OK && memcmp((const void *)(addr + REC_HEADER_BYTES), data, length))
+    status = FLASH_ERR_VERIFY;
+  if (status == FLASH_OK && h.crc != Flash_Crc((const Flash_RecordHeader_t *)addr,
+                                     (const void *)(addr + REC_HEADER_BYTES)))
+    status = FLASH_ERR_VERIFY;
 
-static void Flash_WaitBusy(void) {
-  while (FLASH->SR & FLASH_SR_BSY);
-}
-
-/**
- * @brief Erase a flash sector (0-7)
- * @return 0 on success, non-zero on error
- */
-static int Flash_EraseSector(uint32_t sector) {
-  Flash_WaitBusy();
-
-  /* Clear any previous errors */
-  FLASH->SR = (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR |
-               FLASH_SR_WRPERR | FLASH_SR_SOP | FLASH_SR_EOP);
-
-  /* Set sector erase, sector number, voltage range 3 (x32) */
-  FLASH->CR &= ~(FLASH_CR_SNB | FLASH_CR_PSIZE);
-  FLASH->CR |= (sector << 3) | FLASH_PSIZE_WORD | FLASH_CR_SER;
-
-  /* Start erase */
-  FLASH->CR |= FLASH_CR_STRT;
-
-  Flash_WaitBusy();
-
-  /* Clear SER bit */
-  FLASH->CR &= ~FLASH_CR_SER;
-
-  /* Check for errors */
-  if (FLASH->SR & (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR |
-                   FLASH_SR_WRPERR)) {
-    return -1;
-  }
-  return 0;
-}
-
-/**
- * @brief Program a 32-bit word to flash
- * @return 0 on success, non-zero on error
- */
-static int Flash_ProgramWord(uint32_t address, uint32_t data) {
-  Flash_WaitBusy();
-
-  /* Clear any previous errors */
-  FLASH->SR = (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR |
-               FLASH_SR_WRPERR | FLASH_SR_SOP | FLASH_SR_EOP);
-
-  /* Set program mode, word size */
-  FLASH->CR &= ~FLASH_CR_PSIZE;
-  FLASH->CR |= FLASH_PSIZE_WORD | FLASH_CR_PG;
-
-  /* Write data */
-  *(volatile uint32_t *)address = data;
-
-  Flash_WaitBusy();
-
-  /* Clear PG bit */
+  /* Commit marker is written only after all bytes and CRC read-back pass. */
+  if (status == FLASH_OK)
+    status = Flash_ProgramWord(addr + REC_COMMIT_OFFSET, REC_COMMIT);
   FLASH->CR &= ~FLASH_CR_PG;
-
-  /* Check for errors */
-  if (FLASH->SR & (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR |
-                   FLASH_SR_WRPERR)) {
-    return -1;
-  }
-  return 0;
+  FLASH->CR |= FLASH_CR_LOCK;
+  if (status == FLASH_OK && !Flash_Valid(addr, type))
+    status = FLASH_ERR_VERIFY;
+  return status;
 }
 
-/**
- * @brief Write multiple words to flash
- * @return 0 on success, non-zero on error
- */
-static int Flash_WriteWords(uint32_t addr, const void *data,
-                            uint32_t byte_count) {
-  const uint8_t *src = (const uint8_t *)data;
-  uint32_t offset;
-
-  /* The final partial word must be padded, not read beyond the object. */
-  for (offset = 0U; offset < byte_count; offset += 4U) {
-    uint32_t word = 0xFFFFFFFFUL;
-    uint32_t n = byte_count - offset;
-    if (n > 4U) n = 4U;
-    memcpy(&word, src + offset, n);
-    if (Flash_ProgramWord(addr + offset, word) != 0)
-      return -1;
-  }
-  return 0;
+static Flash_Status_t Flash_Load(uint32_t type, void *data,
+                                 uint32_t capacity, uint32_t *actual)
+{
+  uint32_t addr;
+  const Flash_RecordHeader_t *h;
+  Flash_Status_t status;
+  if (!data || capacity == 0U) return FLASH_ERR_ARG;
+  status = Flash_FindLatest(type, &addr, 0);
+  if (status != FLASH_OK) return status;
+  h = (const Flash_RecordHeader_t *)addr;
+  if (h->length > capacity) return FLASH_ERR_FORMAT;
+  memcpy(data, (const void *)(addr + REC_HEADER_BYTES), h->length);
+  if (actual) *actual = h->length;
+  return FLASH_OK;
 }
 
-/* ========================================================================== */
-/* MAZE — Sector 7                                                            */
-/* ========================================================================== */
+Flash_Status_t Flash_SaveMapData(const void *data, uint16_t length)
+{
+  return Flash_Append(REC_MAP, data, length);
+}
+
+Flash_Status_t Flash_LoadMapData(void *data, uint16_t capacity, uint16_t *actual_length)
+{
+  uint32_t actual = 0U;
+  Flash_Status_t status = Flash_Load(REC_MAP, data, capacity, &actual);
+  if (status == FLASH_OK && actual_length) *actual_length = (uint16_t)actual;
+  return status;
+}
+
+Flash_Status_t Flash_SaveMazeChecked(const Maze_Persistent_t *pm)
+{
+  Maze_Persistent_t copy;
+  if (!pm) return FLASH_ERR_ARG;
+  copy = *pm;
+  copy.is_valid = MAZE_PERSISTENT_MAGIC;
+  return Flash_Append(REC_MAP, &copy, sizeof(copy));
+}
+
+Flash_Status_t Flash_LoadMazeChecked(Maze_Persistent_t *pm)
+{
+  Maze_Persistent_t copy;
+  uint32_t actual = 0U;
+  Flash_Status_t status;
+  if (!pm) return FLASH_ERR_ARG;
+  status = Flash_Load(REC_MAP, &copy, sizeof(copy), &actual);
+  if (status == FLASH_OK)
+    return (actual == sizeof(copy) && copy.is_valid == MAZE_PERSISTENT_MAGIC)
+        ? (*pm = copy, FLASH_OK) : FLASH_ERR_FORMAT;
+  if (status != FLASH_ERR_NOT_FOUND) return status;
+
+  /* Read old main-branch map only if no new-format record exists. The
+   * 1 KiB legacy zone is never erased/programmed by Flash_Append. */
+  memcpy(&copy, (const void *)FLASH_STORAGE_ADDR, sizeof(copy));
+  if (copy.is_valid != MAZE_PERSISTENT_MAGIC) return FLASH_ERR_NOT_FOUND;
+  *pm = copy;
+  return FLASH_OK; /* Legacy: magic only; no integrity guarantee. */
+}
+
+Flash_Status_t Flash_SaveIRCalibChecked(const IR_Simple_Calib_t *calib)
+{
+  IR_Simple_Calib_t copy;
+  if (!calib) return FLASH_ERR_ARG;
+  copy = *calib;
+  copy.is_calibrated = IR_CALIB_MAGIC;
+  return Flash_Append(REC_IR, &copy, sizeof(copy));
+}
+
+Flash_Status_t Flash_LoadIRCalibChecked(IR_Simple_Calib_t *calib)
+{
+  IR_Simple_Calib_t copy;
+  uint32_t actual = 0U;
+  Flash_Status_t status;
+  if (!calib) return FLASH_ERR_ARG;
+  status = Flash_Load(REC_IR, &copy, sizeof(copy), &actual);
+  if (status == FLASH_OK)
+    return (actual == sizeof(copy) && copy.is_calibrated == IR_CALIB_MAGIC)
+        ? (*calib = copy, FLASH_OK) : FLASH_ERR_FORMAT;
+  if (status != FLASH_ERR_NOT_FOUND) return status;
+  memcpy(&copy, (const void *)FLASH_IR_CALIB_ADDR, sizeof(copy));
+  if (copy.is_calibrated != IR_CALIB_MAGIC) return FLASH_ERR_NOT_FOUND;
+  *calib = copy;
+  return FLASH_OK;
+}
+
+Flash_Status_t Flash_SaveMPUCalibChecked(const MPU_Calib_Flash_t *mcalib)
+{
+  MPU_Calib_Flash_t copy;
+  if (!mcalib) return FLASH_ERR_ARG;
+  copy = *mcalib;
+  copy.is_valid = MPU_CALIB_MAGIC;
+  return Flash_Append(REC_MPU, &copy, sizeof(copy));
+}
+
+Flash_Status_t Flash_LoadMPUCalibChecked(MPU_Calib_Flash_t *mcalib)
+{
+  MPU_Calib_Flash_t copy;
+  uint32_t actual = 0U;
+  Flash_Status_t status;
+  if (!mcalib) return FLASH_ERR_ARG;
+  status = Flash_Load(REC_MPU, &copy, sizeof(copy), &actual);
+  if (status == FLASH_OK)
+    return (actual == sizeof(copy) && copy.is_valid == MPU_CALIB_MAGIC)
+        ? (*mcalib = copy, FLASH_OK) : FLASH_ERR_FORMAT;
+  if (status != FLASH_ERR_NOT_FOUND) return status;
+  memcpy(&copy, (const void *)FLASH_MPU_CALIB_ADDR, sizeof(copy));
+  if (copy.is_valid != MPU_CALIB_MAGIC) return FLASH_ERR_NOT_FOUND;
+  *mcalib = copy;
+  return FLASH_OK;
+}
+
+static void Flash_Report(const char *name, Flash_Status_t status)
+{
+  UART_Printf("FLASH,%s,status=%u\r\n", name, (unsigned)status);
+}
 
 void Flash_SaveMaze(Maze_Persistent_t *pm) {
-  /* Legacy data layout: caller must stop the control loop / disconnect VM
-   * before any blocking erase/program operation. Do not invoke from ISR. */
-  pm->is_valid = MAZE_PERSISTENT_MAGIC;
-  UART_SendString("Flash: Saving persistent maze map...\r\n");
-
-  Flash_Unlock();
-  if (Flash_EraseSector(FLASH_SECTOR_7) != 0) {
-    UART_SendString("Flash: Erase FAILED\r\n");
-    Flash_Lock();
-    return;
-  }
-  if (Flash_WriteWords(FLASH_STORAGE_ADDR, pm, sizeof(*pm)) != 0) {
-    UART_SendString("Flash: Maze Write FAILED\r\n");
-    Flash_Lock();
-    return;
-  }
-  Flash_Lock();
-  UART_SendString("Flash: Maze Map Save SUCCESS\r\n");
+  Flash_Report("SAVE_MAP", Flash_SaveMazeChecked(pm));
 }
-
 void Flash_LoadMaze(Maze_Persistent_t *pm) {
-  Maze_Persistent_t temp;
-
-  /* Read from Flash into temp first to verify magic byte */
-  memcpy(&temp, (void *)FLASH_STORAGE_ADDR, sizeof(Maze_Persistent_t));
-
-  if (temp.is_valid == MAZE_PERSISTENT_MAGIC) {
-    memcpy(pm, &temp, sizeof(Maze_Persistent_t));
-    UART_SendString("Flash: Persistent Maze Map LOADED\r\n");
-  } else {
-    UART_SendString(
-        "Flash: No valid maze map found in Flash (Magic mismatch)\r\n");
-  }
+  Flash_Report("LOAD_MAP", Flash_LoadMazeChecked(pm));
 }
-
-/* ========================================================================== */
-/* SECTOR 6 SHARED HELPER — IR + MPU calib coexist in same sector             */
-/* Erasing Sector 6 wipes both, so we must read-backup-erase-write-both.      */
-/* ========================================================================== */
-
-static int Flash_EraseSector6(void) {
-  return Flash_EraseSector(FLASH_SECTOR_6);
-}
-
-/* ========================================================================== */
-/* IR CALIBRATION — Sector 6 @ offset 0                                       */
-/* ========================================================================== */
-
 void Flash_SaveIRCalib(IR_Simple_Calib_t *calib) {
-  MPU_Calib_Flash_t mpu_backup;
-  char buf[64];
-
-  /* Backup MPU calib before erasing sector */
-  memcpy(&mpu_backup, (void *)FLASH_MPU_CALIB_ADDR, sizeof(MPU_Calib_Flash_t));
-
-  /* Mark as valid before saving */
-  calib->is_calibrated = IR_CALIB_MAGIC;
-
-  UART_SendString("Flash: Saving IR calibration...\r\n");
-
-  Flash_Unlock();
-
-  if (Flash_EraseSector6() != 0) {
-    UART_SendString("Flash: IR Erase FAILED\r\n");
-    Flash_Lock();
-    return;
-  }
-
-  /* Write IR calib */
-  if (Flash_WriteWords(FLASH_IR_CALIB_ADDR, calib,
-                       sizeof(IR_Simple_Calib_t)) != 0) {
-    UART_SendString("Flash: IR Write FAILED\r\n");
-    Flash_Lock();
-    return;
-  }
-
-  /* Restore MPU calib if it was valid */
-  if (mpu_backup.is_valid == MPU_CALIB_MAGIC) {
-    Flash_WriteWords(FLASH_MPU_CALIB_ADDR, &mpu_backup,
-                     sizeof(MPU_Calib_Flash_t));
-  }
-
-  Flash_Lock();
-
-  UART_SendString("Flash: IR Calib Save OK\r\n");
-  sprintf(buf, "  L90=%d L45=%d L0=%d\r\n", calib->wall_threshold_left,
-          calib->wall_threshold_l45, calib->wall_threshold_front_left);
-  UART_SendString(buf);
-  sprintf(buf, "  R0=%d R45=%d R90=%d\r\n", calib->wall_threshold_front_right,
-          calib->wall_threshold_r45, calib->wall_threshold_right);
-  UART_SendString(buf);
-  sprintf(buf, "  CenterL90=%d CenterR90=%d Fsum=%lu\r\n", calib->center_l90,
-          calib->center_r90, calib->front_fsum_target);
-  UART_SendString(buf);
-  sprintf(buf, "  CenterL0=%d CenterR0=%d\r\n", calib->center_l0,
-          calib->center_r0);
-  UART_SendString(buf);
+  Flash_Report("SAVE_IR", Flash_SaveIRCalibChecked(calib));
 }
-
 void Flash_LoadIRCalib(IR_Simple_Calib_t *calib) {
-  IR_Simple_Calib_t temp;
-  char buf[64];
-
-  memcpy(&temp, (void *)FLASH_IR_CALIB_ADDR, sizeof(IR_Simple_Calib_t));
-
-  if (temp.is_calibrated == IR_CALIB_MAGIC) {
-    memcpy(calib, &temp, sizeof(IR_Simple_Calib_t));
-    UART_SendString("Flash: IR Calib LOADED\r\n");
-    sprintf(buf, "  L90=%d L45=%d L0=%d\r\n", calib->wall_threshold_left,
-            calib->wall_threshold_l45, calib->wall_threshold_front_left);
-    UART_SendString(buf);
-    sprintf(buf, "  R0=%d R45=%d R90=%d\r\n", calib->wall_threshold_front_right,
-            calib->wall_threshold_r45, calib->wall_threshold_right);
-    UART_SendString(buf);
-    sprintf(buf, "  CenterL90=%d CenterR90=%d Fsum=%lu\r\n", calib->center_l90,
-            calib->center_r90, calib->front_fsum_target);
-    UART_SendString(buf);
-    sprintf(buf, "  CenterL0=%d CenterR0=%d\r\n", calib->center_l0,
-            calib->center_r0);
-    UART_SendString(buf);
-  } else {
-    UART_SendString("Flash: No valid IR calib found (using defaults)\r\n");
-  }
+  Flash_Report("LOAD_IR", Flash_LoadIRCalibChecked(calib));
 }
-
-/* ========================================================================== */
-/* MPU CALIBRATION — Sector 6 @ offset 256                                    */
-/* ========================================================================== */
-
 void Flash_SaveMPUCalib(MPU_Calib_Flash_t *mcalib) {
-  IR_Simple_Calib_t ir_backup;
-  char buf[64];
-
-  /* Backup IR calib before erasing sector */
-  memcpy(&ir_backup, (void *)FLASH_IR_CALIB_ADDR, sizeof(IR_Simple_Calib_t));
-
-  mcalib->is_valid = MPU_CALIB_MAGIC;
-
-  UART_SendString("Flash: Saving MPU calibration...\r\n");
-
-  Flash_Unlock();
-
-  if (Flash_EraseSector6() != 0) {
-    UART_SendString("Flash: MPU Erase FAILED\r\n");
-    Flash_Lock();
-    return;
-  }
-
-  /* Restore IR calib if it was valid */
-  if (ir_backup.is_calibrated == IR_CALIB_MAGIC) {
-    Flash_WriteWords(FLASH_IR_CALIB_ADDR, &ir_backup,
-                     sizeof(IR_Simple_Calib_t));
-  }
-
-  /* Write MPU calib */
-  if (Flash_WriteWords(FLASH_MPU_CALIB_ADDR, mcalib,
-                       sizeof(MPU_Calib_Flash_t)) != 0) {
-    UART_SendString("Flash: MPU Write FAILED\r\n");
-    Flash_Lock();
-    return;
-  }
-
-  Flash_Lock();
-
-  sprintf(buf, "Flash: MPU Calib Save OK (offset=%.3f)\r\n",
-          mcalib->gyro_z_offset);
-  UART_SendString(buf);
+  Flash_Report("SAVE_MPU", Flash_SaveMPUCalibChecked(mcalib));
 }
-
 void Flash_LoadMPUCalib(MPU_Calib_Flash_t *mcalib) {
-  MPU_Calib_Flash_t temp;
-  char buf[64];
-
-  memcpy(&temp, (void *)FLASH_MPU_CALIB_ADDR, sizeof(MPU_Calib_Flash_t));
-
-  if (temp.is_valid == MPU_CALIB_MAGIC) {
-    memcpy(mcalib, &temp, sizeof(MPU_Calib_Flash_t));
-    sprintf(buf, "Flash: MPU Calib LOADED (offset=%.3f)\r\n",
-            mcalib->gyro_z_offset);
-    UART_SendString(buf);
-  } else {
-    mcalib->is_valid = 0;
+  Flash_Status_t status = Flash_LoadMPUCalibChecked(mcalib);
+  if (mcalib && status != FLASH_OK) {
     mcalib->gyro_z_offset = 0.0f;
-    UART_SendString("Flash: No valid MPU calib found\r\n");
+    mcalib->is_valid = 0U;
   }
+  Flash_Report("LOAD_MPU", status);
 }

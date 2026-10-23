@@ -1,36 +1,62 @@
 #ifndef FLASH_STORAGE_H
 #define FLASH_STORAGE_H
-
 #include <stdint.h>
 #include "flash_legacy_types.h"
 
-/* STM32F411 Flash Sector 7 starts at 0x08060000 (128KB) — Maze data */
-#define FLASH_STORAGE_ADDR 0x08060000UL
-
-/* STM32F411 Flash Sector 6 starts at 0x08040000 (128KB) — IR + MPU calibration */
-#define FLASH_IR_CALIB_ADDR 0x08040000UL
-#define IR_CALIB_MAGIC 0xCA
-
-/* MPU6050 gyro calibration — stored in Sector 6 at offset 256 */
+/* F411CEUx 512 KiB flash; Sectors 0..5 = app (linker 256 KiB),
+ * 6 = calibration data, 7 = maze data. The first 1024 bytes of
+ * each data sector are reserved for the original main-branch layout. */
+#define FLASH_IR_CALIB_ADDR  0x08040000UL
 #define FLASH_MPU_CALIB_ADDR (FLASH_IR_CALIB_ADDR + 256UL)
-#define MPU_CALIB_MAGIC 0xEB
+#define FLASH_STORAGE_ADDR   0x08060000UL
+#define FLASH_DATA_SECTOR_BYTES (128UL * 1024UL)
+#define FLASH_RECORD_SLOT_BYTES 1024U
+#define FLASH_RECORD_PAYLOAD_MAX (FLASH_RECORD_SLOT_BYTES - 24U)
+#define IR_CALIB_MAGIC 0xCAU
+#define MPU_CALIB_MAGIC 0xEBU
 
 typedef struct {
-  float gyro_z_offset;  /* Calibrated gyro Z offset (deg/s) */
-  uint8_t is_valid;     /* MPU_CALIB_MAGIC if valid */
+  float gyro_z_offset;
+  uint8_t is_valid;
 } MPU_Calib_Flash_t;
 
-/* Save and load Persistent Maze Map to Flash (Sector 7) */
+typedef enum {
+  FLASH_OK = 0,
+  FLASH_ERR_ARG,
+  FLASH_ERR_NOT_FOUND,
+  FLASH_ERR_UNSAFE_STATE,
+  FLASH_ERR_NOT_READY,
+  FLASH_ERR_FULL,
+  FLASH_ERR_TIMEOUT,
+  FLASH_ERR_CONTROLLER,
+  FLASH_ERR_VERIFY,
+  FLASH_ERR_FORMAT
+} Flash_Status_t;
+
+/* Versioned binary map payload, independent of 5x5 legacy layout.
+ * The entire payload is verified by CRC32 before returning.
+ * Calling Save requires Control_Stop(), Motor_LockOutputs(), then IR_Stop().
+ * No automatic sector erase: FLASH_ERR_FULL requires explicit backup/maintenance. */
+Flash_Status_t Flash_SaveMapData(const void *data, uint16_t length);
+Flash_Status_t Flash_LoadMapData(void *data, uint16_t capacity,
+                                uint16_t *actual_length);
+
+/* Compatibility with main's 5x5 persistent maze and calibration structs.
+ * New writes use versioned CRC records; loads fall back to legacy bytes only
+ * when no new-format record exists for that type. */
+Flash_Status_t Flash_SaveMazeChecked(const Maze_Persistent_t *pm);
+Flash_Status_t Flash_LoadMazeChecked(Maze_Persistent_t *pm);
+Flash_Status_t Flash_SaveIRCalibChecked(const IR_Simple_Calib_t *calib);
+Flash_Status_t Flash_LoadIRCalibChecked(IR_Simple_Calib_t *calib);
+Flash_Status_t Flash_SaveMPUCalibChecked(const MPU_Calib_Flash_t *mcalib);
+Flash_Status_t Flash_LoadMPUCalibChecked(MPU_Calib_Flash_t *mcalib);
+
+/* Old void signatures are kept for source compatibility. Prefer checked
+ * APIs for any new integration, and handle every non-OK result. */
 void Flash_SaveMaze(Maze_Persistent_t *pm);
 void Flash_LoadMaze(Maze_Persistent_t *pm);
-
-/* Save and load IR Calibration to Flash (Sector 6) */
 void Flash_SaveIRCalib(IR_Simple_Calib_t *calib);
 void Flash_LoadIRCalib(IR_Simple_Calib_t *calib);
-
-/* Save and load MPU Calibration to Flash (Sector 6, offset 256) */
 void Flash_SaveMPUCalib(MPU_Calib_Flash_t *mcalib);
 void Flash_LoadMPUCalib(MPU_Calib_Flash_t *mcalib);
-
-#endif /* FLASH_STORAGE_H */
-
+#endif

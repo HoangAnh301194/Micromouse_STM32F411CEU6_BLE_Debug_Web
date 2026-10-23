@@ -33,10 +33,12 @@ pid.c        = reusable PID mathematics
 drivers      = peripheral-specific register configuration
 ```
 
-The legacy Flash persistence driver has been ported as an inactive, source-only
-module (`src/flash_storage.c`, `include/flash_storage.h`, `include/flash_legacy_types.h`).
-No flash writes/erases occur at startup. Read [Flash safety and compatibility](docs/flash_storage.md)
-before enabling its blocking erase/program API.
+Flash persistence now has an app-only 256 KiB linker region and versioned,
+CRC32-verified, append-only records in reserved sectors 6/7. Its 5x5 legacy
+layout is readable, and the new map blob API can hold up to 1000 bytes.
+It remains **inactive** in the runtime: no startup writes/erases, and board
+write/readback/power-loss qualification is still outstanding. See
+[Flash storage safety and integration](docs/flash_storage.md).
 
 The SSD1306 driver and font sources are present in `src/ssd1306.c`,
 `src/fonts.c`, `include/ssd1306.h`, and `include/fonts.h`, but are not
