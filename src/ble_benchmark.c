@@ -121,6 +121,18 @@ static void PrintStatus(uint8_t detailed)
             (unsigned long)generated,(unsigned long)accepted,
             (unsigned long)rejected,(unsigned long)skipped,
             (unsigned long)encode_cycles,(unsigned long)encode_max);
+        BT_Printf("!T,s=%u,b0=%lu,b1=%lu,b2=%lu,b3=%lu,b4=%lu,b5=%lu,b6=%lu,b7=%lu\n",
+            (unsigned)session,
+            (unsigned long)c.irq_hist[0],(unsigned long)c.irq_hist[1],
+            (unsigned long)c.irq_hist[2],(unsigned long)c.irq_hist[3],
+            (unsigned long)c.irq_hist[4],(unsigned long)c.irq_hist[5],
+            (unsigned long)c.irq_hist[6],(unsigned long)c.irq_hist[7]);
+        BT_Printf("!U,s=%u,accb=%lu,uartdr=%lu,rxbytes=%lu,irqn=%lu,ore=%lu,fe=%lu,ne=%lu,overflow=%lu\n",
+            (unsigned)session,
+            (unsigned long)b.tx_accepted,(unsigned long)b.tx_uart_dr_bytes,
+            (unsigned long)b.rx_bytes,(unsigned long)b.irq_count,
+            (unsigned long)b.rx_ore,(unsigned long)b.rx_fe,
+            (unsigned long)b.rx_ne,(unsigned long)b.rx_overflow);
     }
     status_cycles+=(uint32_t)(DWT->CYCCNT-started);
 }
