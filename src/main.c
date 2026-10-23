@@ -1,4 +1,7 @@
-#if defined(BLE_PROFILE_DIAG)
+#if defined(IR_OLED_TEST)
+int IR_OLED_TestMain(void);
+int main(void) { return IR_OLED_TestMain(); }
+#elif defined(BLE_PROFILE_DIAG)
 int BleBenchmark_Main(void);
 int main(void) { return BleBenchmark_Main(); }
 #elif defined(FLASH_MAP_DIAG)
