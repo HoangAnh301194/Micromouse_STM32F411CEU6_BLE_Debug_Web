@@ -142,8 +142,12 @@ def verify(files: dict[str, bytes]) -> dict:
             "I2C1 400kHz peripheral clock derivation regressed")
     require("USART1->BRR = (Board_GetAPB2ClockHz()" in read("src/uart.c"),
             "USART1 baud rate no longer tracks APB2")
-    require("USART2->BRR = brr_value;" in read("src/bt_debug.c") and
-            "plln = (RCC->PLLCFGR" in read("src/bt_debug.c"),
+    bt_source = read("src/bt_debug.c")
+    # Either the legacy local RCC/PLL decoder or the safer shared Board
+    # APB1 clock source tracks HSI trim/PLL. Reject hardcoded USART2 BRR.
+    require(("USART2->BRR = brr_value;" in bt_source and
+             "plln = (RCC->PLLCFGR" in bt_source) or
+            "USART2->BRR = (Board_GetAPB1ClockHz() + BT_BAUDRATE/2U)/BT_BAUDRATE;" in bt_source,
             "BLE USART2 baud configuration no longer tracks PLL")
 
     # Nominal RCC-derived values, explicitly not external measurements.

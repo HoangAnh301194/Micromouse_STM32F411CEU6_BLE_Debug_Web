@@ -18,6 +18,7 @@ typedef struct {
     uint32_t late_gt50us;
     uint32_t gaps_gt1500us;
     uint32_t max_irq_cycles;
+    uint32_t irq_hist[8]; /* <=4,8,12,16,24,32,48, >48us */
     uint32_t max_encoder_cycles;
     uint32_t max_motor_service_cycles;
     uint32_t motor_service_ticks;

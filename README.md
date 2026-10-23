@@ -195,3 +195,20 @@ The MPU6050 gyro, asynchronous temperature measurement and I2C1 driver are maint
 ### Flash map WebBLE diagnostic
 
 Opt-in motor-locked 5×5/16×16 Flash mock-map pipeline over UART1 PA9/PA10 and JDY-33 BLE PA2/PA3: [operator guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
+
+### One-command JDY-33 BLE PA2/PA3 qualification (new, hardware pending)
+
+For motor-locked Bluetooth testing without a PA9/PA10 USB-TTL adapter:
+```powershell
+python tools/ble_full_pipeline.py --name Nezumi_Chan
+```
+The command auto-flashes ST-Link builds, uses the Windows BLE adapter and Bleak,
+runs 18 sizes/rates at 115200 and six at 38400, writes loss/CRC/TIM11/IR/MPU
+metrics and restores the motor-locked image. An additional guarded, raised-wheel
+real speed-PID motor-ON phase can be enabled by:
+```powershell
+python tools/ble_full_pipeline.py --name Nezumi_Chan --motor-on --fixture-ready --independent-vm-cutoff --allow-30-percent
+```
+See [BLE one-shot documentation](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
+No physical BLE benchmark PASS exists yet. Do not open the legacy browser Web
+Console simultaneously; the benchmark uses BLE GATT directly from Python.

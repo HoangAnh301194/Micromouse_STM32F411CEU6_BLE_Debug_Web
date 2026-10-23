@@ -1,0 +1,33 @@
+name: BLE One-Shot Host and Firmware Gates
+on:
+  push:
+    branches: [giomuadongbac, 'feature/ble-one-shot-pipeline-20261024']
+  pull_request:
+    branches: [giomuadongbac]
+  workflow_dispatch:
+jobs:
+  ble-regression-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host BLE decoder and scoring offline tests
+        run: python tools/test_ble_full_pipeline.py
+      - name: Legacy clock/RC2 UART integration contracts
+        run: |
+          python tools/clock96_integration_gate.py --self-test
+          python tools/clock96_integration_gate.py --audit
+          python tools/uart_mpu_integration_gate.py
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Build MCU motor-OFF UART 115200
+        run: python -m platformio run -e ble_profile_motor_off_115200_96m
+      - name: Build MCU motor-OFF UART 38400
+        run: python -m platformio run -e ble_profile_motor_off_38400_96m
+      - name: Build MCU guarded 30-percent speed-PID motor-ON
+        run: python -m platformio run -e ble_profile_motor_on_pid_115200_96m
+      - name: Build production unaffected
+        run: python -m platformio run -e genericSTM32F411CE

@@ -1,7 +1,7 @@
 /**
  * @file bt_debug.h
  * @brief Bluetooth Debug UART Driver for JDY-33 via USART2 (PA2=TX, PA3=RX)
- * @details Non-blocking DMA transmission with circular buffer.
+ * @details TXE interrupt / RXNE interrupt, frame-atomic nonblocking TX.
  *          Drop-on-full policy to never stall the main loop.
  *          Printf-style formatted output for convenient debug logging.
  */
@@ -19,24 +19,41 @@
 /* Configuration                                                                */
 /* ============================================================================ */
 
+#ifndef BT_BAUDRATE
 #define BT_BAUDRATE         115200
+#endif
 #define BT_TX_BUF_SIZE      4096      /* Large buffer for maze map printing   */
 
 /* Global enable/disable — set to 0 to compile-out all BT traffic */
 #define BT_DEBUG_ENABLED    1
+
+typedef struct {
+    uint32_t tx_accepted;
+    uint32_t tx_uart_dr_bytes; /* DR writes, NOT confirmed BLE delivery. */
+    uint32_t tx_drop;
+    uint32_t irq_cycles;
+    uint32_t irq_count;
+    uint32_t rx_bytes;
+    uint32_t rx_ore;
+    uint32_t rx_fe;
+    uint32_t rx_ne;
+    uint32_t rx_overflow;
+    uint16_t tx_queue;
+    uint16_t tx_queue_peak;
+} BT_Profile_t;
 
 /* ============================================================================ */
 /* API                                                                          */
 /* ============================================================================ */
 
 /**
- * @brief Initialize USART2 + DMA1 for Bluetooth debug output
+ * @brief Initialize USART2 IRQ TX/RX for Bluetooth debug output
  * @note  Call once during system init, after clock setup
  */
 void BT_Init(void);
 
 /**
- * @brief Send a null-terminated string via DMA (non-blocking)
+ * @brief Send a null-terminated string via TXE IRQ (non-blocking)
  * @param str  String to transmit
  * @note  Drops excess data if buffer is full — never blocks
  */
@@ -59,11 +76,15 @@ void BT_Printf(const char *fmt, ...);
 void BT_SendChar(char c);
 
 /**
- * @brief Send raw bytes via DMA (non-blocking)
+ * @brief Send raw bytes via TXE IRQ (non-blocking)
  * @param data  Pointer to byte array
  * @param len   Number of bytes to send
  */
 void BT_SendData(const uint8_t *data, uint16_t len);
+/* One main producer only. Returns 0 when the WHOLE frame was rejected. */
+uint8_t BT_TrySendData(const uint8_t *data, uint16_t len);
+uint8_t BT_ReadByte(uint8_t *out);
+void BT_GetProfile(BT_Profile_t *out);
 
 /**
  * @brief Check if data has been received on USART2

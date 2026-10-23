@@ -249,3 +249,11 @@ Source added: dedicated motor-locked `flash_map_diag_96m` profile, deterministic
   production motion control and loaded validation still pending.
   Follow full acceptance record
   `docs/encoder/ENCODER_ACCEPTANCE_20261024.md`.
+
+## 2026-10-24 — BLE USART2 one-shot profiler (software handoff; hardware PENDING)
+
+- Created isolated `BLE_PROFILE_DIAG` builds and a one-command `tools/ble_full_pipeline.py` harness on feature branch. The host connects JDY-33 directly by Bleak FFE1, runs 18 packet/rate tests at 115200, six at 38400, and optionally six during a guarded 30%-PWM real 10ms speed-PID integration sweep. It restores the motor-locked image after automated bench phases.
+- USART2 PA2/PA3 now accepts/rejects complete TX frames atomically, receives PA3 using RXNE interrupt ring and counts TX queue, hardware errors and ISR cycles. Historical production BLE debug remains text, 10 Hz. TIM11 runtime histogram is diagnostic-only.
+- **No real BLE hardware log or CPU/latency qualification yet.** GitHub CI/Python synthetic tests do not establish real over-air performance; DMA1 Stream6 conflicts with I2C1_TX and is deliberately not changed. The browser text Web Console does not parse this binary protocol. See [BLE one-shot procedure](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
+- Motor-ON phase remains optional and requires explicit `--motor-on --fixture-ready --independent-vm-cutoff --allow-30-percent`, supervised lifted wheels, separate VM cutoff, and real BLE heartbeat. Do not run free-moving tests using the attached ST-Link multi-flash procedure.
+
