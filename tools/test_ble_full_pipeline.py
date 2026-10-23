@@ -31,6 +31,15 @@ class DecoderTest(unittest.TestCase):
                 self.assertEqual(d.crc_failures, 0)
                 self.assertEqual(d.discarded, 0)
 
+    def test_notification_splits_first_magic_byte(self):
+        d = Decoder()
+        raw = frame(32)
+        d.feed(raw[:1], 1)
+        self.assertEqual(d.discarded, 0)
+        d.feed(raw[1:5], 2)
+        d.feed(raw[5:], 3)
+        self.assertEqual([f["seq"] for f in d.frames], [12])
+
     def test_resync_after_corrupt_frame(self):
         d = Decoder()
         corrupt = bytearray(frame())
