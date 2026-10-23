@@ -1,5 +1,38 @@
 # BLE PA2/PA3 — chẩn đoán kết nối trước pipeline T01–T18 (2026-10-24)
 
+## Ghi nhận từ WebBLE log ngày 2026-10-24
+
+- `web/ble_debug_console.html` và bản sao cũ `tools/ble_debug_console.html`
+  đã bị nối đuôi khoảng 10 KB mã JavaScript **sau** `</html>`.
+  Trình duyệt hiển thị mã này thành văn bản. Bản sửa cắt bỏ đúng phần
+  nối thừa, không đụng parser bản đồ 5×5/16×16.
+- Phân loại log `u.includes('ERR')` khiến `!S` bị tô ERR
+  chỉ vì tên trường `i2cerr=0` / `rxerr=0`.
+  Bản sửa chỉ coi sự kiện mở đầu `!ERR,` là lỗi.
+- Web Maze Monitor gọi `requestCurrentMap()` và gửi **byte ASCII 0x3F**
+  (`?`) ngay sau connect, dù firmware đang là BLE benchmark chứ không
+  phải map firmware. `?` không có newline và có thể ghép với
+  `HELLO\n` thành `?HELLO` rồi gây `UNKNOWN_COMMAND`.
+  Bản sửa firmware benchmark bỏ qua `?` đứng riêng đầu lệnh.
+  Giao thức Flash Map firmware giữ nguyên.
+- Python runner trước đó ưu tiên GATT Write With Response khi FFE1 có
+  cả hai thuộc tính; browser dùng Write Without Response trước.
+  Bản sửa đồng nhất ưu tiên Write Without Response, ghi lỗi GATT dễ hiểu.
+  **Không** suy ra rằng lỗi `Unreachable` hoàn toàn do kiểu write;
+  cùng lúc mở Web và Python cũng có thể gây tranh kết nối.
+
+Từ log 6000–21000 ms: TIM11 chạy thêm 15000 tick / 15 s = 1 kHz,
+IR thêm 15000 lượt quét, `late=gap=stale=i2cerr=i2cto=txdrop=0`,
+`locked=1`. `maxcy=1040` chu kỳ ≈ 10.83 µs ở 96 MHz danh định.
+Đây chỉ là profile status ≈1 Hz, **chưa nghiệm thu 100–400 Hz BLE**
+hay motor ON.
+
+**Không chạy Web BLE và Python benchmark song song.** Muốn xem status đơn
+thuần thì dùng Web (mở `http://localhost:8000/ble_debug_console.html`
+khi server chạy `python -m http.server 8000 --directory web`).
+Muốn đo end-to-end nhị phân thì disconnect Web, đóng tab, cấp lại nguồn
+JDY-33 nếu cần, dùng `--probe` rồi `ble_full_pipeline.py` từ Python.
+
 ## Hiện tượng
 
 - `BLE device not found: Nezumi_Chan`: Windows BLE scanner không thấy
