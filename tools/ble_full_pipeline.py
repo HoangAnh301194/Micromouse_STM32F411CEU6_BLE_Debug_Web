@@ -164,6 +164,18 @@ def score_test(test, frames, begin, end, before, after, crc_delta, seconds):
     cpu = (end.get("ecy", 0) + end.get("scy", 0) +
            (diff(before, after, "txcy") or 0))
     cpu_pct = 100 * cpu / (SYSCLK * seconds)
+    histogram = [diff(before, after, f"b{i}") or 0 for i in range(8)]
+    def hist_quantile(q):
+        total = sum(histogram)
+        if not total:
+            return None
+        cutoff = (total * q + 99) // 100
+        sofar = 0
+        for count, limit in zip(histogram, (4, 8, 12, 16, 24, 32, 48, None)):
+            sofar += count
+            if sofar >= cutoff:
+                return f">{48}" if limit is None else f"<={limit}"
+        return None
     checks = {
         "end_marker": end.get("type") == "!E" and end.get("s") == begin.get("s"),
         "rate_over_95pct": hz == 0 or (isinstance(generated, int) and
@@ -201,6 +213,10 @@ def score_test(test, frames, begin, end, before, after, crc_delta, seconds):
         "tim11_gap_delta": diff(before, after, "gap"),
         "mpu_stale_delta": diff(before, after, "stale"),
         "ir_scans_delta": diff(before, after, "ir"),
+        "tim11_irq_p95_us_bucket": hist_quantile(95),
+        "tim11_irq_p99_us_bucket": hist_quantile(99),
+        "uart_dr_bytes_delta": diff(before, after, "uartdr"),
+        "uart_accepted_bytes_delta": diff(before, after, "accb"),
         "checks": checks, "pass": all(checks.values()),
     }
 
@@ -322,7 +338,15 @@ class Session:
     async def health(self):
         mark = len(self.decoder.events)
         await self.send("STATUS")
-        return await self.wait("!S", mark, 8)
+        status = await self.wait("!S", mark, 8)
+        histogram = await self.wait("!T", mark, 8)
+        uart = await self.wait("!U", mark, 8)
+        status.update({key: value for key, value in histogram.items()
+                       if key.startswith("b") and key[1:].isdigit()})
+        status.update({key: value for key, value in uart.items()
+                       if key in ("accb", "uartdr", "rxbytes", "irqn",
+                                  "ore", "fe", "ne", "overflow")})
+        return status
 
     async def run_case(self, test, seconds: int, run_mode: str):
         test_id, size, hz = test
