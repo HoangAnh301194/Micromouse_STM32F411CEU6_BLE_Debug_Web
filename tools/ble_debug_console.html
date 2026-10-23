@@ -1560,7 +1560,7 @@ function parseFlashMapEnd(line) {
     const p=pendingFlashMap, c=parseMapFields(line);
     if (Number(c.rows) !== p.n || !/^[0-9a-fA-F]{8}$/.test(c.crc || '') ||
         (parseInt(c.crc,16)>>>0) !== p.crc ||
-        p.rows.some(row => typeof row !== 'string')) {
+        p.rows.filter(row => typeof row === 'string').length !== p.n) {
         mapError('missing rows or end CRC mismatch'); return;
     }
     const b=new Uint8Array(p.len);
