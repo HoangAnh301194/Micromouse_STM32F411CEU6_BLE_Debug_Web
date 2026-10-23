@@ -1,13 +1,11 @@
 # Flash map WebBLE + UART1 diagnostic pipeline
 
-> **Historical experiment (archived 2026-10-24):** The one-off
-> `tools/flash_map_pipeline.py` runner and other debug scripts have
-> been removed from the active branch. For the following commands,
-> retrieve the [historical archive branch](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024).
-> Live WebBLE map display remains available at `web/ble_debug_console.html`:
-> `python -m http.server 8000 --directory web`.
-> The optional motor-locked Flash diagnostic firmware remains available,
-> but board-side Flash write qualification is still pending.
+> **Restored on `giomuadongbac`:** `tools/flash_map_pipeline.py` is again
+> available for the user-requested 5×5/16×16 Flash-map test. The BLE viewer
+> remains in `web/ble_debug_console.html` and the native test is under
+> `tests/regression/flash_map_protocol_test.py`. Other retired host debug tools
+> remain in the [archive branch](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024).
+> Board-side Flash write / power-loss / JDY-33 acceptance is still pending.
 
 
 **Branch:** `giomuadongbac`. **Firmware profile:** `flash_map_diag_96m`.
@@ -34,7 +32,7 @@ has been completed from this chat.
 
 2. Launch the updated HTML from the repository:
 
-   `python -m http.server 8000 --directory tools`
+   `python -m http.server 8000 --directory web`
 
    Open **http://localhost:8000/ble_debug_console.html** in Chrome or Edge,
    click **Connect** to JDY-33. The **Request map** button sends a one-byte
@@ -89,11 +87,11 @@ browser verifies BLE frames and the optional `--ble-log` import audits them.
 
 Offline tests:
 
-- `python tools/test_flash_map_protocol.py` — actual C map 5×5/16×16,
+- `python tests/regression/flash_map_protocol_test.py` — actual C map 5×5/16×16,
   CRC cross-check against Python zlib, and UART corrupted-row rejection.
-- `node tools/test_ble_map_web.js` — web JS syntax, dynamic sizes,
+- `node tests/web/test_ble_map_web.js` — web JS syntax, dynamic sizes,
   valid CRC render, bad CRC/missing-row rejection.
-- `python tools/flash_record_native_test.py` — Flash record CRC C regression.
+- `python tests/regression/flash_record_native_test.py` — Flash record CRC C regression.
 - `python -m platformio run -e flash_map_diag_96m` — diagnostic firmware build.
 
 The interactive test is not a bench-proven guarantee of JDY-33 throughput,

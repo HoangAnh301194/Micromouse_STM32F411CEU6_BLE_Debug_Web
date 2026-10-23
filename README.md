@@ -1,6 +1,6 @@
 # Micromouse STM32F411CEU6 - Minimal Core
 
-> **Dọn dẹp công cụ debug — 24/10/2026:** Các chương trình chạy debug thủ công trước đây trong `tools/` đã được lưu trữ tại [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024) và không còn trong `giomuadongbac`. **Không xóa** bất kỳ tệp `results/` nào. Các lệnh `python tools/...` ở phần tư liệu cũ chỉ có tác dụng trên nhánh lưu trữ. Giao diện BLE hiển thị map còn hoạt động tại [web/ble_debug_console.html](web/ble_debug_console.html); kiểm thử hồi quy được giữ ở `tests/` và CI biên dịch firmware production.
+> **Phục hồi có chọn lọc:** Các công cụ debug lịch sử vẫn nằm trên [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024), nhưng `tools/flash_map_pipeline.py` đã được khôi phục vào `giomuadongbac` theo yêu cầu để thử map giả 5×5/16×16, Flash Sector 7 và UART1/JDY-33. WebBLE ở [web/ble_debug_console.html](web/ble_debug_console.html); bài test map ở `tests/regression/flash_map_protocol_test.py`. Các script debug cũ khác vẫn ở archive. **Giữ nguyên** mọi tệp `results/`.
 
 
 > **Tiến độ mới nhất và ngữ cảnh bàn giao đa agent:** [PROJECT_STATUS.md](PROJECT_STATUS.md). Agent/chat mới bắt đầu từ [AGENTS.md](AGENTS.md); kết quả nghiệm thu I2C–MPU6050 nằm tại [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md).

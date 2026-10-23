@@ -272,3 +272,8 @@ production `alpha=0.10` Encoder estimator, hardware drivers, Flash
 storage map APIs and optional diagnostic firmware profiles were not
 modified. Historical commands under `tools/` no longer execute in
 the active branch; retrieve them from the archive as needed.
+
+
+### Phục hồi pipeline map Flash theo yêu cầu người dùng (2026-10-24)
+
+`tools/flash_map_pipeline.py` đã được lấy lại từ `archive/debug-tools-precleanup-20261024` về `giomuadongbac`, còn giao diện BLE vẫn ở `web/ble_debug_console.html`, test chạy ở `tests/regression/flash_map_protocol_test.py`. Pipeline mặc định chỉ preview RAM/đọc Flash; ghi thử yêu cầu `--write-size`, `--allow-flash-write` và `--backup-confirmed`. Việc kiểm thử UART/BLE/Flash trên MCU thực tế vẫn chưa nghiệm thu. Các tool debug khác vẫn ở archive.
