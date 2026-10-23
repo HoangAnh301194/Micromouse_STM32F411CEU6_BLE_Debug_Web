@@ -39,6 +39,7 @@ void Control_GetDebugStats(Control_DebugStats_t *out)
     out->late_gt50us = di_stats.late_gt50us;
     out->gaps_gt1500us = di_stats.gaps_gt1500us;
     out->max_irq_cycles = di_stats.max_irq_cycles;
+    { uint8_t i; for(i=0U;i<8U;i++) out->irq_hist[i]=di_stats.irq_hist[i]; }
     out->max_encoder_cycles = di_stats.max_encoder_cycles;
     out->max_motor_service_cycles = di_stats.max_motor_service_cycles;
     out->motor_service_ticks = di_stats.motor_service_ticks;
@@ -247,7 +248,14 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #if defined(INTEGRATION_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - start_cycles;
+        uint8_t bucket;
         if (cycles > di_stats.max_irq_cycles) di_stats.max_irq_cycles = cycles;
+        /* Diagnostic histogram uses raw cycles: no divide or loops in TIM11. */
+        bucket = cycles <= 384U ? 0U : cycles <= 768U ? 1U :
+                 cycles <= 1152U ? 2U : cycles <= 1536U ? 3U :
+                 cycles <= 2304U ? 4U : cycles <= 3072U ? 5U :
+                 cycles <= 4608U ? 6U : 7U;
+        di_stats.irq_hist[bucket]++;
     }
 #endif
 }
