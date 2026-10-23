@@ -71,22 +71,15 @@ void OLED_SharedService(const MPU6050_Handle_t *h) {
     uint16_t pos;
     uint8_t count;
     if(!present) return;
-    if(phase) {
+    if(phase==1U || phase==2U) {
         status=I2C_OledAsync_Poll(&dur);
         if(status==I2C_BUSY) return;
         if(status!=I2C_OK) {
-            ++stats.errors;
-            phase=0U;frame_active=0U;
-            last_frame_ms=millis();return; /* Recompare next frame. */
+            ++stats.errors;phase=0U;frame_active=0U;
+            last_frame_ms=millis();return;
         }
         if(phase==1U) {
-            phase=0U;
-            packet[0]=0x40U;
-            memcpy(&packet[1],&frame[pending_pos],pending_len);
-            if(TrySend(h,(uint8_t)(pending_len+1U))) {
-                phase=2U;return;
-            }
-            /* If BUSY, command is repeated next opportunity. */
+            phase=3U; /* Command done; defer data without resending it. */
         } else {
             memcpy(&shadow[pending_pos],&frame[pending_pos],pending_len);
             stats.data_bytes+=pending_len;
@@ -94,6 +87,24 @@ void OLED_SharedService(const MPU6050_Handle_t *h) {
             offset=(uint16_t)(pending_pos+pending_len);
             phase=0U;
         }
+    }
+    if(phase==3U) {
+        if(!enabled) {
+            phase=0U;frame_active=0U;return;
+        }
+        /* I2C gyro transactions do not change SSD1306 column/page pointer.
+         * Shorten burst to remaining slack, or defer to next 1ms window. */
+        count=pending_len;
+        if(CanStart(h,2U)) {
+            while(count>1U && !CanStart(h,(uint8_t)(count+1U))) --count;
+        }
+        packet[0]=0x40U;
+        memcpy(&packet[1],&frame[pending_pos],count);
+        if(TrySend(h,(uint8_t)(count+1U))) {
+            pending_len=count;
+            phase=2U;
+        }
+        return;
     }
     if(!enabled) return;
     if(!frame_active) {
@@ -110,6 +121,10 @@ void OLED_SharedService(const MPU6050_Handle_t *h) {
     while(count<OLED_DATA_CHUNK && pos+count<SSD1306_BUFFER_SIZE &&
           (pos+count)/SSD1306_WIDTH==pos/SSD1306_WIDTH &&
           frame[pos+count]!=shadow[pos+count]) ++count;
+    /* Estimate command + data bus occupancy before reserving a page.
+     * Otherwise a command could run without a feasible data slot. */
+    while(count>0U && !CanStart(h,(uint8_t)(count+6U))) --count;
+    if(!count) { ++stats.admission_skips;return; }
     packet[0]=0x00U;
     packet[1]=(uint8_t)(0xB0U+pos/SSD1306_WIDTH);
     packet[2]=(uint8_t)((pos%SSD1306_WIDTH)&0x0FU);
