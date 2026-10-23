@@ -485,7 +485,25 @@ def write_results(out, phases, argv):
             writer = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(rows)
+    # Recommendation is preliminary and limited to motor-OFF PASS evidence.
+    # Keep <=80% of the advertised 4kB/s and require a >=32B real-telemetry
+    # frame; no firmware/PID parameters are auto-deployed.
+    candidates = [
+        dict(case, environment=p["environment"])
+        for p in phases for case in p.get("cases", [])
+        if p.get("mode") == "OFF" and case["pass"] and
+        case["size_B"] >= 32 and case["offered_Bps"] <= 3200
+    ]
+    candidates.sort(key=lambda c: (
+        -c["target_Hz"], c["uart_cpu_measured_subset_percent"],
+        c["arrival_gap_p99_ms"] if c["arrival_gap_p99_ms"] is not None else 1e9))
+    recommended = {
+        k: candidates[0][k] for k in (
+            "environment", "id", "size_B", "target_Hz", "offered_Bps",
+            "uart_cpu_measured_subset_percent", "arrival_gap_p99_ms")
+    } if candidates else None
     report = {
+        "provisional_motor_off_candidate": recommended,
         "utc_timestamp": datetime.now(timezone.utc).isoformat(),
         "argv": argv, "clock_hz_nominal": SYSCLK,
         "hardware_verified": False,
