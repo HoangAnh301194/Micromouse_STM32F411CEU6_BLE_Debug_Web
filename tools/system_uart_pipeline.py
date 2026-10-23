@@ -15,6 +15,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import threading
 
 ROOT = Path(__file__).resolve().parent.parent
 MOTOR_OFF_ENV = "integration_diag_motor_off_96m"
@@ -283,13 +284,58 @@ class PhaseSession:
         self.max_ping_write_ms = 0.0
         self.rows = []
         self.raw = (outdir / (name.lower() + "_uart.log")).open("w", encoding="utf-8")
+        # Guard writes (START/STOP/PING) to preserve UART frame boundaries.
+        # Only the speed PID trial opts in, preserving old sweep behavior.
+        self._write_lock = threading.Lock()
+        self._hb_stop = threading.Event()
+        self._hb_thread = None
+        self._hb_error = None
+        self._hb_thread_enabled = expected_alpha_pct is not None
+        self._hb_interval_s = 0.12
 
-    def send(self, command):
-        self.ser.write((command + "\n").encode("ascii"))
-        self.ser.flush()
+    def send(self, command, flush=True):
+        with self._write_lock:
+            self.ser.write((command + "\n").encode("ascii"))
+            if flush:
+                self.ser.flush()
+
+    def _heartbeat_loop(self):
+        # No disk writes, serial reads, or console output here.
+        # This thread can keep sending PING while the main thread is
+        # delayed in serial.readline(), terminal prints or file.flush().
+        try:
+            while not self._hb_stop.is_set():
+                before = time.monotonic()
+                if self.ping_sent_count:
+                    self.max_ping_gap_ms = max(
+                        self.max_ping_gap_ms, (before-self.last_ping)*1000.0)
+                self.send("PING", flush=False)
+                after = time.monotonic()
+                self.max_ping_write_ms = max(
+                    self.max_ping_write_ms, (after-before)*1000.0)
+                self.last_ping = after
+                self.ping_sent_count += 1
+                if self._hb_stop.wait(self._hb_interval_s):
+                    break
+        except Exception as exc:
+            self._hb_error = f"{type(exc).__name__}: {exc}"
+            self._hb_stop.set()
+
+    def start_heartbeat(self):
+        if not self._hb_thread_enabled:
+            return
+        if self._hb_thread is not None:
+            raise RuntimeError("UART heartbeat thread started twice")
+        self._hb_stop.clear()
+        self._hb_thread = threading.Thread(
+            name="speed-pid-uart-heartbeat", target=self._heartbeat_loop,
+            daemon=True)
+        self._hb_thread.start()
 
     def poll(self, heartbeat=False):
-        if heartbeat and time.monotonic() - self.last_ping >= 0.15:
+        if self._hb_error:
+            raise RuntimeError("UART heartbeat thread failed: " + self._hb_error)
+        if heartbeat and self._hb_thread is None and time.monotonic() - self.last_ping >= 0.15:
             before = time.monotonic()
             if self.ping_sent_count:
                 self.max_ping_gap_ms = max(
@@ -358,6 +404,9 @@ class PhaseSession:
         start_ack = self.wait_response("CMD_START")
         if start_ack.get("accepted") != 1:
             raise RuntimeError("START rejected by firmware: " + repr(start_ack))
+        # Launch the independent serial TX heartbeat before any logging.
+        # Never widen/bypass the firmware's original 750ms fail-safe.
+        self.start_heartbeat()
         print(f"{self.name}: started {self.expected_stages} steps; capturing all sensors and timers.")
         deadline = time.monotonic() + PHASE_SECONDS
         while time.monotonic() < deadline:
@@ -392,6 +441,13 @@ class PhaseSession:
                 self.send("!")
                 self.send("STOP")
             except Exception: pass
+        self._hb_stop.set()
+        if self._hb_thread is not None:
+            self._hb_thread.join(timeout=0.6)
+            if self._hb_thread.is_alive():
+                # A host/driver-level write may be blocking. Never wait
+                # forever to close or conceal the failed heartbeat.
+                self._hb_error = self._hb_error or "heartbeat thread did not terminate"
         try: self.ser.close()
         finally: self.raw.close()
 
