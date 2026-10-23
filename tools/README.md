@@ -16,28 +16,31 @@ script requires pyserial (`python -m pip install pyserial`).
 
 ## BLE Debug Console
 
-<p align="center">
-  <img src="../assets/webBLEDebug.png" width="95%" alt="Web BLE Debug Console Interface"/>
-</p>
-
-The `ble_debug_console.html` is a standalone host-side web application designed to:
-
-- Connect to the robot via Web Bluetooth API (JDY-33 BLE module)
-- Monitor real-time UART/BLE log streams
-- Render live 2D maze walls, flood-fill distance maps, calculated path, and robot pose
+[`ble_debug_console.html`](./ble_debug_console.html) is a standalone, receive-focused
+host monitor for the robot's JDY-33 BLE link. Its primary view keeps the live 16×16
+maze matrix and terminal log visible together. The matrix retains Flood, Path, and
+Explored display toggles, robot pose/progress, and optional maze statistics. Drag
+the divider between the matrix and terminal to resize either panel; on narrow
+screens, the divider resizes the panels vertically. The terminal supports clearing
+and exporting the latest 5,000 lines.
 
 ### Getting Started
 
 1. Open `ble_debug_console.html` using a Chromium-based browser (Google Chrome or Microsoft Edge).
 2. Power on the robot and the JDY-33 BLE module.
-3. Click the **Connect BLE** button in the console header.
-4. Select the Bluetooth device broadcasting the `0xFFE0` service.
+3. Click **Connect** and select the robot. After a link drop, use **Reconnect** to
+   reconnect to the previously selected device; use **Disconnect** to close the link.
 
 ### Notes
 
-- The console is currently synced with the firmware's **5x5 maze configuration**.
-- The robot sends `CELL:` packets for incremental step updates and `MAZE:` packets for complete maze dumps.
-- If you change the maze dimensions in the firmware, update the corresponding constants in `ble_debug_console.html`.
+- The browser UI currently displays a 16×16 matrix and listens for `CELL:`, `MAZE:`,
+  and chunked `MZ0:`–`MZ7:` frames. Keep its matrix size and packet parsers aligned
+  with the firmware protocol.
+- The terminal is receive-only; arbitrary BLE command transmission is intentionally
+  not part of this simplified monitor.
+- Browser interaction and packet rendering can be checked without hardware, but
+  those checks do not validate BLE throughput, packet loss, or reconnect behavior
+  with the physical JDY-33 module.
 
 
 ## Encoder unified qualification (2026-10-20)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nezumi_Chan BLE Debug Console</title>
+    <title>Micromouse BLE Maze Monitor</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -91,10 +91,11 @@
             display: flex;
             flex-direction: column;
             background: var(--maze-bg);
-            flex-shrink: 0;
+            flex: 0 0 52%;
+            min-width: 260px;
             border-right: 2px solid var(--border);
             position: relative;
-            min-width: 300px;
+            overflow: hidden;
         }
         .maze-toolbar {
             background: var(--bg-panel);
@@ -111,7 +112,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            padding: 8px;
+            padding: 2px;
             background: var(--maze-bg);
         }
         #mazeCanvas {
@@ -131,6 +132,35 @@
         }
         .maze-info-bar .mib-val { color: var(--cyan); font-weight: 600; }
         .maze-info-bar .mib-lbl { opacity: .7; }
+        .maze-stats {
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .maze-stats summary {
+            padding: 5px 12px;
+            color: var(--text-sec);
+            font-size: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .maze-stats .stats-panel {
+            padding: 0 8px 8px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 5px;
+        }
+        .maze-stats .stat-card {
+            padding: 5px 8px;
+            border-radius: 5px;
+        }
+        .maze-stats .stat-card .sc-label {
+            margin-bottom: 2px;
+            font-size: 8px;
+        }
+        .maze-stats .stat-card .sc-value {
+            font-size: 14px;
+        }
 
         .maze-overlay-msg {
             position: absolute;
@@ -148,13 +178,37 @@
 
         /* ─── RIGHT: CONTROL PANEL ────────────────────────── */
         .ctrl-side {
-            flex: 1;
+            flex: 1 1 0;
             display: flex;
             flex-direction: column;
-            min-width: 320px;
+            min-width: 300px;
             overflow: hidden;
             background: var(--bg-base);
         }
+
+        .resize-handle {
+            width: 8px;
+            flex: 0 0 8px;
+            background: var(--border);
+            cursor: col-resize;
+            touch-action: none;
+            position: relative;
+            z-index: 1;
+        }
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 2px;
+            width: 4px;
+            height: 36px;
+            border-radius: 4px;
+            background: var(--text-sec);
+            transform: translateY(-50%);
+            opacity: .7;
+        }
+        .resize-handle:hover,
+        .resize-handle:focus-visible { background: var(--blue); outline: none; }
 
         /* Controls bar */
         .controls-bar {
@@ -397,8 +451,12 @@
         /* Responsive */
         @media (max-width: 768px) {
             .workspace { flex-direction: column; }
-            .maze-side { border-right: none; border-bottom: 2px solid var(--border); min-height: 40vh; }
-            .maze-side { min-width: unset; }
+            .header { flex-wrap: wrap; }
+            .header > div:last-child { flex-wrap: wrap; justify-content: flex-end; }
+            .maze-side { flex: 1 1 55%; border-right: none; border-bottom: 2px solid var(--border); min-width: 0; min-height: 0; }
+            .resize-handle { width: auto; height: 8px; flex: 0 0 8px; cursor: row-resize; }
+            .resize-handle::after { top: 2px; left: 50%; width: 36px; height: 4px; transform: translateX(-50%); }
+            .ctrl-side { flex: 1 1 45%; min-width: 0; min-height: 0; }
         }
     </style>
 </head>
@@ -412,11 +470,14 @@
         <div class="logo">🐭</div>
         <div>
             <div class="hd-title">NEZUMI_CHAN</div>
-            <div class="hd-sub">Micromouse Debug Console</div>
+            <div class="hd-sub">BLE Maze Monitor</div>
         </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
         <span class="maze-size-badge">16×16</span>
+        <button class="btn btn-ble" id="btnBLE" onclick="bleConnect()">Connect</button>
+        <button class="btn" id="btnReconnect" onclick="reconnectBLE()" disabled>Reconnect</button>
+        <button class="btn" id="btnDisconnect" onclick="bleDisconnect()" disabled>Disconnect</button>
         <div class="status-badge disconnected" id="statusBadge">
             <div class="status-dot"></div>
             <span id="statusText">Disconnected</span>
@@ -430,22 +491,20 @@
 <div class="workspace">
 
     <!-- ── LEFT: MAZE ──────────────────────────────── -->
-    <div class="maze-side" id="mazeSide" style="width:520px;">
-
+    <div class="maze-side" id="mazeSide">
         <div class="maze-toolbar">
             <span style="font-size:11px;color:var(--text-sec);font-weight:600;">DISPLAY</span>
             <div class="toggle-group">
                 <button class="toggle-btn on" id="tglFlood" onclick="toggleDisplay('flood', this)">Flood#</button>
-                <button class="toggle-btn on" id="tglPath"  onclick="toggleDisplay('path', this)">Path</button>
+                <button class="toggle-btn on" id="tglPath" onclick="toggleDisplay('path', this)">Path</button>
                 <button class="toggle-btn on" id="tglVisit" onclick="toggleDisplay('visit', this)">Explored</button>
             </div>
         </div>
-
         <div class="maze-canvas-wrap" id="mazeCanvasWrap">
             <canvas id="mazeCanvas"></canvas>
             <div class="maze-overlay-msg" id="mazeOverlay">
                 <div class="icon">🗺️</div>
-                <p>Connect BLE device to start.</p>
+                <p>Connect to the robot to receive maze data.</p>
             </div>
         </div>
 
@@ -457,98 +516,36 @@
             <span><span class="mib-lbl">Steps </span><span class="mib-val" id="mibSteps">0</span></span>
             <span id="mibPhase" style="color:var(--purple);font-size:10px;"></span>
         </div>
+        <details class="maze-stats">
+            <summary>Stats</summary>
+            <div class="stats-panel">
+                <div class="stat-card"><div class="sc-label">TOTAL STEPS</div><div class="sc-value" id="st-steps">0</div></div>
+                <div class="stat-card"><div class="sc-label">CELLS VISITED</div><div class="sc-value" id="st-visited">0</div></div>
+                <div class="stat-card"><div class="sc-label">WALLS FOUND</div><div class="sc-value" id="st-walls">0</div></div>
+                <div class="stat-card"><div class="sc-label">BACKTRACK</div><div class="sc-value" id="st-back">0</div></div>
+                <div class="stat-card"><div class="sc-label">FLOOD RECALC</div><div class="sc-value" id="st-freq">0</div></div>
+                <div class="stat-card"><div class="sc-label">PATH LENGTH</div><div class="sc-value" id="st-path">—</div></div>
+            </div>
+        </details>
     </div>
 
-    <!-- Resize handle -->
-    <div class="resize-handle" id="resizeHandle"></div>
+    <div class="resize-handle" id="resizeHandle" role="separator" aria-label="Resize maze and terminal panels"
+         aria-orientation="vertical" tabindex="0"></div>
 
-    <!-- ── RIGHT: CONTROLS + LOG ───────────────────── -->
+    <!-- ── RIGHT: TERMINAL LOG ────────────────────── -->
     <div class="ctrl-side">
-
-        <!-- Controls bar -->
         <div class="controls-bar">
-            <!-- BLE row -->
             <div class="controls-row">
-                <span class="controls-label">BLE</span>
-                <button class="btn btn-ble" id="btnBLE" onclick="toggleConnection()">⚡ Connect BLE</button>
-                <button class="btn" onclick="clearLogs()">🗑 Clear</button>
-                <button class="btn" onclick="exportLog()">💾 Export</button>
+                <span class="controls-label">TERMINAL</span>
+                <span id="logCount" style="font-size:10px;color:var(--text-sec);">0 lines</span>
                 <div style="flex:1;"></div>
-                <div style="display:flex;gap:4px;">
-                    <button class="toggle-btn on" onclick="setFilter('all',this)" data-f="all">ALL</button>
-                    <button class="toggle-btn" onclick="setFilter('maze',this)" data-f="maze">MAZE</button>
-                    <button class="toggle-btn" onclick="setFilter('srch',this)" data-f="srch">SRCH</button>
-                    <button class="toggle-btn" onclick="setFilter('warn',this)" data-f="warn">WRN</button>
-                    <button class="toggle-btn" onclick="setFilter('err',this)" data-f="err">ERR</button>
-                </div>
+                <button class="btn" onclick="clearLogs()">Clear</button>
+                <button class="btn" onclick="exportLog()">Export</button>
             </div>
         </div>
-
-        <!-- Tabs -->
-        <div class="tabs-bar">
-            <button class="tab-btn active" onclick="switchTab('ble',this)">📡 BLE Log</button>
-            <button class="tab-btn" onclick="switchTab('stats',this)">📊 Stats</button>
-        </div>
-
-        <!-- Tab: BLE Log -->
-        <div class="log-tab-content active" id="tab-ble" style="overflow:hidden;flex:1;display:flex;flex-direction:column;">
-            <div class="log-pane" id="bleLog">
-                <div style="text-align:center;padding:30px;opacity:.4;">
-                    <div style="font-size:36px;margin-bottom:8px;">🔌</div>
-                    <div style="font-size:12px;color:var(--text-sec);">No BLE connection</div>
-                    <div style="font-size:10px;color:var(--text-sec);margin-top:4px;">Click "Connect BLE" to start</div>
-                </div>
-            </div>
-        </div>
-
-
-
-        <!-- Tab: Stats -->
-        <div class="log-tab-content" id="tab-stats" style="overflow:hidden;flex:1;overflow-y:auto;">
-            <div class="stats-panel">
-                <div class="stat-card">
-                    <div class="sc-label">TOTAL STEPS</div>
-                    <div class="sc-value" id="st-steps">0</div>
-                    <div class="sc-sub">robot movements</div>
-                </div>
-                <div class="stat-card">
-                    <div class="sc-label">CELLS VISITED</div>
-                    <div class="sc-value" id="st-visited">0</div>
-                    <div class="sc-sub">of 256 total</div>
-                </div>
-                <div class="stat-card">
-                    <div class="sc-label">WALLS FOUND</div>
-                    <div class="sc-value" id="st-walls">0</div>
-                    <div class="sc-sub">discovered</div>
-                </div>
-                <div class="stat-card">
-                    <div class="sc-label">BACKTRACK</div>
-                    <div class="sc-value" id="st-back">0</div>
-                    <div class="sc-sub">visited revisits</div>
-                </div>
-                <div class="stat-card">
-                    <div class="sc-label">FLOOD RECALC</div>
-                    <div class="sc-value" id="st-freq">0</div>
-                    <div class="sc-sub">flood fill updates</div>
-                </div>
-                <div class="stat-card">
-                    <div class="sc-label">PATH LENGTH</div>
-                    <div class="sc-value" id="st-path">—</div>
-                    <div class="sc-sub">optimal path cells</div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Send bar -->
-        <div class="send-bar">
-            <input type="text" id="sendInput" placeholder="Send command to Nezumi_Chan..." disabled
-                   onkeydown="if(event.key==='Enter') sendData()">
-            <button class="btn" onclick="sendData()" id="btnSend" disabled>Send</button>
-        </div>
-
-    </div><!-- ctrl-side -->
-</div><!-- workspace -->
+        <div class="log-pane" id="bleLog" aria-live="polite"></div>
+    </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════
      JAVASCRIPT
@@ -575,6 +572,7 @@ const DIR_OPP      = [2, 3, 0, 1];
    FLOOD FILL
 ═══════════════════════════════════════════════ */
 function calcFlood(knownWalls, goals) {
+    statFreq++;
     const flood = Array.from({length:MAZE_SIZE}, () => new Array(MAZE_SIZE).fill(255));
     const queue = [];
     for (const [gx,gy] of goals) {
@@ -664,6 +662,7 @@ function floodColor(val, maxVal) {
 
 function renderMaze() {
     if (!mazeWalls) return;
+    calculateFloodPath();
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Background
@@ -886,6 +885,7 @@ function updateInfoBar() {
     document.getElementById('mibDist').textContent   = fd < 255 ? fd : '—';
     document.getElementById('mibVisit').textContent  = visitedCells.size;
     document.getElementById('mibSteps').textContent  = simStepCount;
+    updateStats();
 }
 
 /* ═══════════════════════════════════════════════
@@ -899,23 +899,24 @@ let pathCells    = new Set();
 let pathList     = [];
 let astarExplored = new Set();
 let simStepCount = 0;
+let traversedCells = new Set();
 
 // Stats
-let statWalls    = 0;
 let statBack     = 0;
 let statFreq     = 0;
 
 // BLE
 let bleDevice    = null;
 let bleChar      = null;
+let bleConnecting = false;
 let lineBuffer   = '';
 let totalMessages = 0;
 let totalBytes   = 0;
 let bleAutoScroll = true;
-let activeFilter = 'all';
 
 // Log entries (BLE)
 let bleLogEntries = [];
+const MAX_LOG_ENTRIES = 5000;
 
 /* ═══════════════════════════════════════════════
    INIT
@@ -923,26 +924,56 @@ let bleLogEntries = [];
 window.addEventListener('load', () => {
     sizeCanvas();
     initMazeDisplay();
-    document.getElementById('mazeOverlay').style.display = 'none';
 });
 
 window.addEventListener('resize', () => {
     sizeCanvas();
     renderMaze();
+    updateResizeHandleOrientation();
 });
+
+const mazeResizeObserver = new ResizeObserver(() => {
+    sizeCanvas();
+    renderMaze();
+});
+mazeResizeObserver.observe(document.getElementById('mazeCanvasWrap'));
 
 function initMazeDisplay() {
     mazeWalls   = initKnownWalls();
-    mazeFlood   = calcFlood(mazeWalls, GOAL_CELLS);
     robotPos    = { x:0, y:0, dir:0 };
     visitedCells = new Set();
     pathCells   = new Set();
     pathList    = [];
     astarExplored = new Set();
+    traversedCells = new Set(['0,0']);
     simStepCount = 0;
-    statWalls = statBack = statFreq = 0;
+    statBack = statFreq = 0;
+    mazeFlood   = calcFlood(mazeWalls, GOAL_CELLS);
     renderMaze();
     updateStats();
+}
+
+function setRobotPosition(nextPosition) {
+    const previousKey = `${robotPos.x},${robotPos.y}`;
+    const nextKey = `${nextPosition.x},${nextPosition.y}`;
+    if (nextKey !== previousKey) {
+        simStepCount++;
+        if (traversedCells.has(nextKey)) statBack++;
+        traversedCells.add(nextKey);
+    }
+    robotPos = nextPosition;
+}
+
+function countKnownWalls() {
+    if (!mazeWalls) return 0;
+    let count = 0;
+    for (let y = 0; y < MAZE_SIZE; y++) {
+        for (let x = 0; x < MAZE_SIZE; x++) {
+            if (y < MAZE_SIZE - 1 && (mazeWalls[y][x] & WALL_N)) count++;
+            if (x < MAZE_SIZE - 1 && (mazeWalls[y][x] & WALL_E)) count++;
+        }
+    }
+    return count;
 }
 
 function propagateWalls(x, y, w) {
@@ -967,21 +998,47 @@ function propagateWalls(x, y, w) {
 function updateStats() {
     document.getElementById('st-steps').textContent   = simStepCount;
     document.getElementById('st-visited').textContent = visitedCells.size;
-    document.getElementById('st-walls').textContent   = statWalls;
+    document.getElementById('st-walls').textContent   = countKnownWalls();
     document.getElementById('st-back').textContent    = statBack;
     document.getElementById('st-freq').textContent    = statFreq;
+    document.getElementById('st-path').textContent    = pathList.length ? pathList.length - 1 : '—';
 }
 
-/* ═══════════════════════════════════════════════
-   TABS
-═══════════════════════════════════════════════ */
-let activeTab = 'ble';
-function switchTab(name, btn) {
-    document.querySelectorAll('.log-tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b  => b.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    btn.classList.add('active');
-    activeTab = name;
+function calculateFloodPath() {
+    pathCells.clear();
+    pathList = [];
+    if (!mazeWalls || !mazeFlood) return;
+
+    const startValue = mazeFlood[robotPos.y][robotPos.x];
+    if (startValue >= 255) return;
+
+    let x = robotPos.x;
+    let y = robotPos.y;
+    const seen = new Set();
+    for (let i = 0; i < MAZE_SIZE * MAZE_SIZE; i++) {
+        const key = `${x},${y}`;
+        if (seen.has(key)) break;
+        seen.add(key);
+        pathCells.add(key);
+        pathList.push([x, y]);
+        if (GOAL_CELLS.some(([gx, gy]) => gx === x && gy === y)) break;
+
+        let next = null;
+        let nextValue = mazeFlood[y][x];
+        for (let dir = 0; dir < 4; dir++) {
+            const nx = x + DIR_DX[dir];
+            const ny = y + DIR_DY[dir];
+            if (nx < 0 || nx >= MAZE_SIZE || ny < 0 || ny >= MAZE_SIZE) continue;
+            if (mazeWalls[y][x] & DIR_WALL[dir]) continue;
+            const value = mazeFlood[ny][nx];
+            if (value < nextValue) {
+                next = [nx, ny];
+                nextValue = value;
+            }
+        }
+        if (!next) break;
+        [x, y] = next;
+    }
 }
 
 /* ═══════════════════════════════════════════════
@@ -993,18 +1050,22 @@ function addBLEEntry(text, forceType) {
     totalMessages++;
     const type = forceType || classifyBLE(text);
     bleLogEntries.push({time: new Date(), text, type});
-    if (bleLogEntries.length > 5000) bleLogEntries.shift();
+    if (bleLogEntries.length > MAX_LOG_ENTRIES) {
+        bleLogEntries.shift();
+        const firstLine = document.querySelector('#bleLog .log-line');
+        if (firstLine) firstLine.remove();
+    }
 
     const el = document.getElementById('bleLog');
     if (bleLogEntries.length === 1) el.innerHTML = '';
 
     const div = document.createElement('div');
     div.className = `log-line ${type}`;
-    if (activeFilter !== 'all' && type !== activeFilter) div.style.display = 'none';
     div.innerHTML = `<span class="ll-time">${fmtTime(bleLogEntries[bleLogEntries.length-1].time)}</span>
         <span class="ll-tag">${bleTagLabel(type)}</span>
         <span class="ll-msg">${escHtml(text)}</span>`;
     el.appendChild(div);
+    document.getElementById('logCount').textContent = `${bleLogEntries.length} lines`;
     if (bleAutoScroll) el.scrollTop = el.scrollHeight;
 }
 
@@ -1032,20 +1093,12 @@ function fmtTime(d) {
            + '.' + String(d.getMilliseconds()).padStart(3,'0');
 }
 
-function setFilter(filter, btn) {
-    activeFilter = filter;
-    document.querySelectorAll('[data-f]').forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
-    document.querySelectorAll('#bleLog .log-line').forEach(line => {
-        line.style.display = (filter==='all'||line.classList.contains(filter)) ? '' : 'none';
-    });
-}
-
 function clearLogs() {
-    document.getElementById('bleLog').innerHTML = '<div style="text-align:center;padding:30px;opacity:.4;"><div style="font-size:36px;margin-bottom:8px;">🔌</div><div style="font-size:12px;color:var(--text-sec);">Log cleared</div></div>';
+    document.getElementById('bleLog').innerHTML = '';
     bleLogEntries = [];
     totalMessages = 0;
     totalBytes = 0;
+    document.getElementById('logCount').textContent = '0 lines';
 }
 
 function exportLog() {
@@ -1064,58 +1117,84 @@ function exportLog() {
 const BLE_SVC  = 0xFFE0;
 const BLE_CHAR = 0xFFE1;
 
-async function toggleConnection() {
-    if (bleDevice && bleDevice.gatt.connected) { bleDisconnect(); }
-    else { await bleConnect(); }
-}
-
 async function bleConnect() {
+    if (bleConnecting || !navigator.bluetooth) return;
+    bleConnecting = true;
+    updateConnectionControls();
     try {
         setStatus('connecting', 'Scanning...');
         addBLEEntry('Scanning for BLE devices...','sys');
 
-        bleDevice = await navigator.bluetooth.requestDevice({
+        const selectedDevice = await navigator.bluetooth.requestDevice({
             filters:[{services:[BLE_SVC]}], optionalServices:[BLE_SVC]
         });
+        if (bleDevice) {
+            bleDevice.removeEventListener('gattserverdisconnected', onBLEDisconnected);
+        }
+        bleDevice = selectedDevice;
         addBLEEntry(`Found: ${bleDevice.name || 'Unknown'}`, 'sys');
-        setStatus('connecting', 'Connecting...');
         bleDevice.addEventListener('gattserverdisconnected', onBLEDisconnected);
-
-        const server  = await bleDevice.gatt.connect();
-        const service = await server.getPrimaryService(BLE_SVC);
-        bleChar = await service.getCharacteristic(BLE_CHAR);
-        await bleChar.startNotifications();
-        bleChar.addEventListener('characteristicvaluechanged', onBLEData);
-
-        setStatus('connected', bleDevice.name || 'BLE');
-        addBLEEntry(`✅ Connected to ${bleDevice.name}`, 'sys');
-        document.getElementById('sendInput').disabled = false;
-        document.getElementById('btnSend').disabled   = false;
-        const btn = document.getElementById('btnBLE');
-        btn.innerHTML = '⏏ Disconnect'; btn.classList.add('active');
-
-        // switch to BLE tab
-        const bleTabBtn = document.querySelector('[onclick*="\'ble\'"]');
-        if (bleTabBtn) switchTab('ble', bleTabBtn);
+        await connectSelectedDevice();
     } catch(err) {
         if (err.name !== 'NotFoundError')
             addBLEEntry(`❌ Error: ${err.message}`, 'err');
         setStatus('disconnected', 'Disconnected');
+    } finally {
+        bleConnecting = false;
+        updateConnectionControls();
+    }
+}
+
+async function reconnectBLE() {
+    if (bleConnecting || !bleDevice || bleDevice.gatt.connected) return;
+    bleConnecting = true;
+    updateConnectionControls();
+    await connectSelectedDevice();
+    bleConnecting = false;
+    updateConnectionControls();
+}
+
+async function connectSelectedDevice() {
+    if (!bleDevice) return;
+    setStatus('connecting', 'Connecting...');
+    try {
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(BLE_SVC);
+        const characteristic = await service.getCharacteristic(BLE_CHAR);
+        characteristic.addEventListener('characteristicvaluechanged', onBLEData);
+        await characteristic.startNotifications();
+        bleChar = characteristic;
+        const deviceName = bleDevice.name || 'BLE device';
+        setStatus('connected', deviceName);
+        addBLEEntry(`✅ Connected to ${deviceName}`, 'sys');
+    } catch(err) {
+        bleChar = null;
+        setStatus('disconnected', 'Disconnected');
+        addBLEEntry(`❌ Connection failed: ${err.message}`, 'err');
+        if (bleDevice.gatt.connected) bleDevice.gatt.disconnect();
     }
 }
 
 function bleDisconnect() {
-    if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
+    if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+    }
 }
 
 function onBLEDisconnected() {
     setStatus('disconnected', 'Disconnected');
     addBLEEntry('🔌 Disconnected', 'sys');
+    bleChar = null;
     lineBuffer = '';
-    document.getElementById('sendInput').disabled = true;
-    document.getElementById('btnSend').disabled   = true;
-    const btn = document.getElementById('btnBLE');
-    btn.innerHTML = '⚡ Connect BLE'; btn.classList.remove('active');
+    updateConnectionControls();
+}
+
+function updateConnectionControls() {
+    const connected = Boolean(bleDevice && bleDevice.gatt.connected);
+    document.getElementById('btnBLE').disabled = bleConnecting || connected || !navigator.bluetooth;
+    document.getElementById('btnReconnect').disabled =
+        bleConnecting || connected || !bleDevice || !navigator.bluetooth;
+    document.getElementById('btnDisconnect').disabled = bleConnecting || !connected;
 }
 
 function onBLEData(event) {
@@ -1142,21 +1221,6 @@ function onBLEData(event) {
     }
 }
 
-async function sendData() {
-    const inp  = document.getElementById('sendInput');
-    const text = inp.value.trim();
-    if (!text || !bleChar) return;
-    try {
-        const data = new TextEncoder().encode(text + '\r\n');
-        for (let i = 0; i < data.length; i += 20)
-            await bleChar.writeValue(data.slice(i, i+20));
-        addBLEEntry(`→ ${text}`, 'info');
-        inp.value = '';
-    } catch(err) {
-        addBLEEntry(`❌ Send failed: ${err.message}`, 'err');
-    }
-}
-
 /* ═══════════════════════════════════════════════
    BLE MAZE PROTOCOL PARSING
 ═══════════════════════════════════════════════ */
@@ -1175,7 +1239,9 @@ function parseMZChunk(line) {
         const colonPos = payload.indexOf(':');
         if (colonPos < 0) return;
         const rp = payload.substring(0, colonPos).split(',');
-        robotPos = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+        const nextPosition = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+        if (!isValidRobotPosition(nextPosition)) return;
+        setRobotPosition(nextPosition);
         mzChunks[0] = payload.substring(colonPos + 1);
     } else {
         mzChunks[idx] = payload;
@@ -1243,6 +1309,7 @@ function applyMZData(hasFlood) {
     }
 
     mzChunks = {};
+    document.getElementById('mazeOverlay').style.display = 'none';
     renderMaze();
 }
 
@@ -1251,7 +1318,9 @@ function parseMazeData(line) {
     const parts = line.split(':');
     if (parts.length < 3) return;
     const rp = parts[1].split(',');
-    robotPos = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+    const nextPosition = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
+    if (!isValidRobotPosition(nextPosition)) return;
+    setRobotPosition(nextPosition);
 
     const wh = parts[2];
     if (wh.length < 256) return;
@@ -1271,6 +1340,7 @@ function parseMazeData(line) {
         for (let x=0; x<MAZE_SIZE; x++)
             if (mazeWalls[y][x] !== 0) visitedCells.add(`${x},${y}`);
 
+    document.getElementById('mazeOverlay').style.display = 'none';
     renderMaze();
 }
 
@@ -1281,6 +1351,8 @@ function parseCellUpdate(line) {
     const x=parseInt(parts[0]), y=parseInt(parts[1]);
     const w=parseInt(parts[2],16), rd=parseInt(parts[3]);
     const ff=parts.length>=5 ? parseInt(parts[4],16) : 255;
+    const nextPosition = { x, y, dir: rd };
+    if (!isValidRobotPosition(nextPosition) || !Number.isFinite(w) || !Number.isFinite(ff)) return;
 
     if (!mazeWalls) {
         mazeWalls = initKnownWalls();
@@ -1289,10 +1361,17 @@ function parseCellUpdate(line) {
     mazeWalls[y][x] = w;
     if (!mazeFlood) mazeFlood = Array.from({length:MAZE_SIZE},()=>new Array(MAZE_SIZE).fill(255));
     mazeFlood[y][x] = ff;
-    robotPos = { x, y, dir: rd };
+    setRobotPosition(nextPosition);
     visitedCells.add(`${x},${y}`);
     propagateWalls(x, y, w);
+    document.getElementById('mazeOverlay').style.display = 'none';
     renderMaze();
+}
+
+function isValidRobotPosition(position) {
+    return Number.isInteger(position.x) && position.x >= 0 && position.x < MAZE_SIZE &&
+           Number.isInteger(position.y) && position.y >= 0 && position.y < MAZE_SIZE &&
+           Number.isInteger(position.dir) && position.dir >= 0 && position.dir < DIR_LABELS.length;
 }
 
 /* ═══════════════════════════════════════════════
@@ -1304,31 +1383,78 @@ function setStatus(state, text) {
     document.getElementById('statusText').textContent = text;
 }
 
-/* ═══════════════════════════════════════════════
-   RESIZE HANDLE
-═══════════════════════════════════════════════ */
-const rh = document.getElementById('resizeHandle');
-let resizing = false, resizeStartX = 0, resizeStartW = 0;
-
-rh.addEventListener('mousedown', e => {
-    resizing = true; resizeStartX = e.clientX;
-    resizeStartW = document.getElementById('mazeSide').offsetWidth;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-});
-document.addEventListener('mousemove', e => {
-    if (!resizing) return;
-    const newW = Math.max(250, Math.min(800, resizeStartW + e.clientX - resizeStartX));
-    document.getElementById('mazeSide').style.width = newW + 'px';
-});
-document.addEventListener('mouseup', () => {
-    if (resizing) { resizing = false; document.body.style.cursor=''; document.body.style.userSelect=''; sizeCanvas(); renderMaze(); }
-});
-
 /* ─── BLE check ─────────────────────────────── */
+const mazeSide = document.getElementById('mazeSide');
+const resizeHandle = document.getElementById('resizeHandle');
+let resizePointerId = null;
+let resizeOrientation = null;
+
+function isVerticalLayout() {
+    return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function updateResizeHandleOrientation() {
+    const orientation = isVerticalLayout() ? 'horizontal' : 'vertical';
+    if (resizeOrientation && resizeOrientation !== orientation) {
+        mazeSide.style.flexBasis = '';
+    }
+    resizeOrientation = orientation;
+    resizeHandle.setAttribute('aria-orientation', orientation);
+}
+
+function resizeMazePanel(position) {
+    const workspace = document.querySelector('.workspace');
+    const vertical = isVerticalLayout();
+    const total = vertical ? workspace.clientHeight : workspace.clientWidth;
+    const handleSize = vertical ? resizeHandle.offsetHeight : resizeHandle.offsetWidth;
+    const mazeMinimum = vertical ? 180 : 260;
+    const terminalMinimum = vertical ? 160 : 300;
+    const maximum = total - handleSize - terminalMinimum;
+    const nextSize = Math.max(mazeMinimum, Math.min(maximum, position));
+    mazeSide.style.flexBasis = `${nextSize}px`;
+    resizeHandle.setAttribute('aria-valuemin', String(mazeMinimum));
+    resizeHandle.setAttribute('aria-valuemax', String(Math.max(mazeMinimum, maximum)));
+    resizeHandle.setAttribute('aria-valuenow', String(nextSize));
+}
+
+resizeHandle.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    resizePointerId = event.pointerId;
+    resizeHandle.setPointerCapture(event.pointerId);
+    document.body.style.userSelect = 'none';
+    event.preventDefault();
+});
+
+resizeHandle.addEventListener('pointermove', event => {
+    if (event.pointerId !== resizePointerId) return;
+    const bounds = document.querySelector('.workspace').getBoundingClientRect();
+    resizeMazePanel(isVerticalLayout() ? event.clientY - bounds.top : event.clientX - bounds.left);
+});
+
+function stopPanelResize(event) {
+    if (event.pointerId !== resizePointerId) return;
+    resizePointerId = null;
+    document.body.style.userSelect = '';
+}
+
+resizeHandle.addEventListener('pointerup', stopPanelResize);
+resizeHandle.addEventListener('pointercancel', stopPanelResize);
+resizeHandle.addEventListener('keydown', event => {
+    const vertical = isVerticalLayout();
+    const negative = vertical ? 'ArrowUp' : 'ArrowLeft';
+    const positive = vertical ? 'ArrowDown' : 'ArrowRight';
+    if (event.key !== negative && event.key !== positive) return;
+    event.preventDefault();
+    const currentSize = vertical ? mazeSide.offsetHeight : mazeSide.offsetWidth;
+    resizeMazePanel(currentSize + (event.key === positive ? 24 : -24));
+});
+
+updateResizeHandleOrientation();
+
 if (!navigator.bluetooth) {
     addBLEEntry('❌ Web Bluetooth NOT supported in this browser!', 'err');
     addBLEEntry('💡 Use Chrome/Edge desktop, or Chrome on Android', 'sys');
+    updateConnectionControls();
 } else {
     addBLEEntry('✅ Web Bluetooth ready. Connect your Nezumi_Chan!', 'sys');
 }

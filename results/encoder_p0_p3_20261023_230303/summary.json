@@ -1,0 +1,42 @@
+{
+  "pipeline": "P0 software+OFF / P1 <=30% / P2 full / P3 ten-alpha",
+  "mode": "PHYSICAL_SUPERVISED",
+  "status": "HALTED_UNQUALIFIED",
+  "P0": {
+    "status": "NOT_RUN"
+  },
+  "P1": {
+    "status": "NOT_RUN"
+  },
+  "P2": {
+    "status": "NOT_RUN"
+  },
+  "P3": {
+    "status": "NOT_RUN"
+  },
+  "commands": {
+    "preflight": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "preflight.log"
+    },
+    "build_limited": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "build_limited.log"
+    },
+    "P0_P1_limited": {
+      "status": "FAIL",
+      "returncode": 1,
+      "log": "P0_P1_limited.log"
+    },
+    "restore_motor_off": {
+      "status": "PASS",
+      "returncode": 0,
+      "log": "restore_motor_off.log"
+    }
+  },
+  "production_alpha_changed": false,
+  "failure": "P0_P1_limited command failed (rc=1), see D:\\Micromouse_STM32F411CEU6_BLE_Debug_Web\\results\\encoder_p0_p3_20261023_230303\\P0_P1_limited.log",
+  "restored_motor_off": true
+}
