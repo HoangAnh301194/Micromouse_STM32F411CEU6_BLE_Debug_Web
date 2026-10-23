@@ -304,18 +304,21 @@ static void Flash_Report(const char *name, Flash_Status_t status)
 }
 
 void Flash_SaveMaze(Maze_Persistent_t *pm) {
+  if (pm) pm->is_valid = MAZE_PERSISTENT_MAGIC; /* Preserve main API side effect. */
   Flash_Report("SAVE_MAP", Flash_SaveMazeChecked(pm));
 }
 void Flash_LoadMaze(Maze_Persistent_t *pm) {
   Flash_Report("LOAD_MAP", Flash_LoadMazeChecked(pm));
 }
 void Flash_SaveIRCalib(IR_Simple_Calib_t *calib) {
+  if (calib) calib->is_calibrated = IR_CALIB_MAGIC;
   Flash_Report("SAVE_IR", Flash_SaveIRCalibChecked(calib));
 }
 void Flash_LoadIRCalib(IR_Simple_Calib_t *calib) {
   Flash_Report("LOAD_IR", Flash_LoadIRCalibChecked(calib));
 }
 void Flash_SaveMPUCalib(MPU_Calib_Flash_t *mcalib) {
+  if (mcalib) mcalib->is_valid = MPU_CALIB_MAGIC;
   Flash_Report("SAVE_MPU", Flash_SaveMPUCalibChecked(mcalib));
 }
 void Flash_LoadMPUCalib(MPU_Calib_Flash_t *mcalib) {
