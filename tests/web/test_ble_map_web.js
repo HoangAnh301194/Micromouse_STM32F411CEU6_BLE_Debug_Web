@@ -4,6 +4,17 @@
 const fs = require('fs'), path = require('path'), vm=require('vm');
 const html=fs.readFileSync(path.join(__dirname,'..','..','web','ble_debug_console.html'),'utf8');
 const script=html.split('<script>')[1].split('</script>')[0];
+// Regression: a past accidental merge appended ~10KB of raw JS after </html>,
+// which Chromium rendered visibly below the BLE map.
+if ((html.match(/<\\/html>/g) || []).length !== 1 ||
+    !/^\\s*$/.test(html.slice(html.indexOf('</html>') + 7))) {
+    throw Error('HTML has duplicate closing tag or source text after </html>');
+}
+const sourceClassify=script.slice(script.indexOf('function classifyBLE('),
+                                  script.indexOf('function bleTagLabel(', script.indexOf('function classifyBLE(')));
+if (!sourceClassify.includes('!ERR') || !sourceClassify.includes('i2cerr')) {
+    throw Error('BLE status/error classification regression');
+}
 new vm.Script(script);  // Validate entire browser source syntax.
 const start=script.indexOf('/* Versioned map protocol:');
 const end=script.indexOf('/* Chunked protocol:',start);
