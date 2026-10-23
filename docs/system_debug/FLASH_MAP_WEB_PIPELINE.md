@@ -1,13 +1,12 @@
 # Flash map WebBLE + UART1 diagnostic pipeline
 
-> **Historical experiment (archived 2026-10-24):** The one-off
-> `tools/flash_map_pipeline.py` runner and other debug scripts have
-> been removed from the active branch. For the following commands,
-> retrieve the [historical archive branch](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024).
-> Live WebBLE map display remains available at `web/ble_debug_console.html`:
+> **Restored 2026-10-24:** The historical runner `tools/flash_map_pipeline.py`
+> and its companion host tools are present again on `giomuadongbac`, recovered
+> from `archive/debug-tools-precleanup-20261024`. The current WebBLE viewer
+> remains at `web/ble_debug_console.html`:
 > `python -m http.server 8000 --directory web`.
-> The optional motor-locked Flash diagnostic firmware remains available,
-> but board-side Flash write qualification is still pending.
+> The optional motor-locked Flash diagnostic firmware remains available;
+> physical Flash write qualification is still pending.
 
 
 **Branch:** `giomuadongbac`. **Firmware profile:** `flash_map_diag_96m`.

@@ -272,3 +272,9 @@ production `alpha=0.10` Encoder estimator, hardware drivers, Flash
 storage map APIs and optional diagnostic firmware profiles were not
 modified. Historical commands under `tools/` no longer execute in
 the active branch; retrieve them from the archive as needed.
+
+### 2026-10-24 — Requested restoration of archived host tools
+
+- All **33 archived files under `tools/`** have been restored by reference to their exact historical Git blobs from `archive/debug-tools-precleanup-20261024`; original archive stays intact. This reverses the file removals in cleanup commit `21bb6e5` only for the `tools/` directory.
+- Newer `web/ble_debug_console.html`, `tests/regression/`, `tests/web/`, production firmware, PID/encoder changes, and all historical `results/` remain untouched. The restored scripts were recovered, **not rerun on physical hardware**. The current compact CI workflow remains the default CI; no retired CI workflows were restored.
+- BLE one-shot runner: `python tools/ble_full_pipeline.py --name Nezumi_Chan` (motor OFF default). Physical BLE and motor-ON acceptance remain pending; see `docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md` for safety gates.

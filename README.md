@@ -197,7 +197,7 @@ The MPU6050 gyro, asynchronous temperature measurement and I2C1 driver are maint
 
 ### Flash map WebBLE diagnostic
 
-The WebBLE 5×5/16×16 map viewer is retained at [web/ble_debug_console.html](web/ble_debug_console.html). Historical Flash-map bench automation is available only on the archive branch; see the [original guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
+The WebBLE 5×5/16×16 map viewer is retained at [web/ble_debug_console.html](web/ble_debug_console.html). The Flash-map runner has been **restored** to [`tools/flash_map_pipeline.py`](tools/flash_map_pipeline.py) from the archive; see the [operator guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
 
 ### One-command JDY-33 BLE PA2/PA3 qualification (new, hardware pending)
 
@@ -215,3 +215,5 @@ python tools/ble_full_pipeline.py --name Nezumi_Chan --motor-on --fixture-ready 
 See [BLE one-shot documentation](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
 No physical BLE benchmark PASS exists yet. Do not open the legacy browser Web
 Console simultaneously; the benchmark uses BLE GATT directly from Python.
+
+**Restored debug tools (2026-10-24):** All 33 archived host tools are available again under [`tools/`](tools/) on `giomuadongbac`, including [`ble_full_pipeline.py`](tools/ble_full_pipeline.py), UART, encoder, IR and Flash bench runners. Original historical snapshot: `archive/debug-tools-precleanup-20261024`. The newer Web BLE viewer remains in `web/` and native regression tests remain in `tests/`. Restoration of scripts is not hardware validation.
