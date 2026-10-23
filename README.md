@@ -33,6 +33,11 @@ pid.c        = reusable PID mathematics
 drivers      = peripheral-specific register configuration
 ```
 
+The legacy Flash persistence driver has been ported as an inactive, source-only
+module (`src/flash_storage.c`, `include/flash_storage.h`, `include/flash_legacy_types.h`).
+No flash writes/erases occur at startup. Read [Flash safety and compatibility](docs/flash_storage.md)
+before enabling its blocking erase/program API.
+
 The SSD1306 driver and font sources are present in `src/ssd1306.c`,
 `src/fonts.c`, `include/ssd1306.h`, and `include/fonts.h`, but are not
 initialized by the active runtime. I2C1 remains owned by `i2c.c`; the OLED
