@@ -69,7 +69,7 @@ void SpeedPidDiag_Run(uint32_t now_ms, uint8_t group, uint8_t step)
     }
     if ((uint32_t)(now_ms-state.last_update_ms) < PID_TICK_MS) return;
     state.last_update_ms = now_ms;
-    target = (uint16_t)step * 900U; /* 0, 900, 1800, 2700 PPS */
+    target = (uint16_t)step * 800U; /* 0, 800, 1600, 2400 PPS; PWM headroom */
     feedforward = (uint16_t)step * 100U; /* 0..30% baseline */
     state.target_pps = target;
     state.feedforward_permille = feedforward;
