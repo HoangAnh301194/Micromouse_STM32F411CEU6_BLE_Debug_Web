@@ -191,3 +191,21 @@ The 104529 Motor-ON endurance phase passed 33 software stages with zero TIM11 ga
 ## MPU6050 / I2C1 module — handed over
 
 The MPU6050 gyro, asynchronous temperature measurement and I2C1 driver are maintained as one logical module without relocating validated source files. Public include: [`mpu6050_i2c_module.h`](include/mpu6050_i2c_module.h). The **[module README](docs/mpu_i2c_rc2/README.md)** records integration, measured acceptance (STILL, SHADOW and 80–100% motor LIVE), constraints and future optimization. Raw evidence in `results/` is retained unchanged. The completed MPU 180-second test pipeline has been retired; other modules' motor/UART/clock tools remain available.
+
+
+### One-command JDY-33 BLE PA2/PA3 qualification (new, hardware pending)
+
+For motor-locked Bluetooth testing without a PA9/PA10 USB-TTL adapter:
+```powershell
+python tools/ble_full_pipeline.py --name Nezumi_Chan
+```
+The command auto-flashes ST-Link builds, uses the Windows BLE adapter and Bleak,
+runs 18 sizes/rates at 115200 and six at 38400, writes loss/CRC/TIM11/IR/MPU
+metrics and restores the motor-locked image. An additional guarded, raised-wheel
+real speed-PID motor-ON phase can be enabled by:
+```powershell
+python tools/ble_full_pipeline.py --name Nezumi_Chan --motor-on --fixture-ready --independent-vm-cutoff --allow-30-percent
+```
+See [BLE one-shot documentation](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
+No physical BLE benchmark PASS exists yet. Do not open the legacy browser Web
+Console simultaneously; the benchmark uses BLE GATT directly from Python.
