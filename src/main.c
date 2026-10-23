@@ -1,3 +1,7 @@
+#if defined(FLASH_MAP_DIAG)
+#include "flash_map_diag.h"
+int main(void) { return FlashMapDiag_Main(); }
+#else
 #include "board.h"
 #include "bt_debug.h"
 #if defined(ENCODER_PROFILE_DIAG) && (!defined(INTEGRATION_DIAG) || \
@@ -696,3 +700,5 @@ int main(void)
         }
     }
 }
+
+#endif /* FLASH_MAP_DIAG */

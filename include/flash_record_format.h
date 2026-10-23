@@ -18,4 +18,5 @@ typedef struct {
  * 16 bytes of the header (all except crc) followed by payload bytes.
  * Pure software (no FLASH/I2C/timer access), host-testable. */
 uint32_t Flash_RecordCrc32(const Flash_RecordHeader_t *h, const void *payload);
+uint32_t Flash_DataCrc32(const void *data, uint32_t length);
 #endif

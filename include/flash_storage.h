@@ -33,6 +33,15 @@ typedef enum {
   FLASH_ERR_FORMAT
 } Flash_Status_t;
 
+
+typedef struct {
+    uint32_t active_slot;
+    uint32_t sequence;
+    uint32_t bytes;
+    uint32_t free_slots;
+} Flash_MapInfo_t;
+Flash_Status_t Flash_GetMapInfo(Flash_MapInfo_t *out);
+
 /* Versioned binary map payload, independent of 5x5 legacy layout.
  * The entire payload is verified by CRC32 before returning.
  * Calling Save requires Control_Stop(), Motor_LockOutputs(), then IR_Stop().

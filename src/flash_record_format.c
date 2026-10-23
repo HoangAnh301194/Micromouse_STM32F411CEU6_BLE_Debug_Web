@@ -24,3 +24,12 @@ uint32_t Flash_RecordCrc32(const Flash_RecordHeader_t *h, const void *payload)
     crc = Flash_CrcFeed(crc, data[i]);
   return ~crc;
 }
+
+uint32_t Flash_DataCrc32(const void *data, uint32_t length) {
+    const uint8_t *p = (const uint8_t *)data;
+    uint32_t crc = 0xFFFFFFFFUL;
+    uint32_t i;
+    if (!p && length) return 0U;
+    for (i = 0U; i < length; ++i) crc = Flash_CrcFeed(crc, p[i]);
+    return ~crc;
+}

@@ -204,6 +204,22 @@ static Flash_Status_t Flash_Load(uint32_t type, void *data,
   return FLASH_OK;
 }
 
+
+Flash_Status_t Flash_GetMapInfo(Flash_MapInfo_t *out)
+{
+    uint32_t i, addr = 0U, seq = 0U, free_count = 0U;
+    Flash_Status_t st;
+    if (!out) return FLASH_ERR_ARG;
+    st = Flash_FindLatest(REC_MAP, &addr, &seq);
+    for (i = 1U; i < REC_SLOT_COUNT; ++i)
+        if (Flash_IsErased(Flash_SlotAddr(FLASH_STORAGE_ADDR, i))) ++free_count;
+    out->active_slot = addr ? (addr - FLASH_STORAGE_ADDR) / FLASH_RECORD_SLOT_BYTES : 0U;
+    out->sequence = seq;
+    out->bytes = addr ? ((const Flash_RecordHeader_t *)addr)->length : 0U;
+    out->free_slots = free_count;
+    return st;
+}
+
 Flash_Status_t Flash_SaveMapData(const void *data, uint16_t length)
 {
   return Flash_Append(REC_MAP, data, length);
