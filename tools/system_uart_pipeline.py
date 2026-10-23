@@ -267,11 +267,13 @@ def evaluate(logs, mode, limited=False):
 
 
 class PhaseSession:
-    def __init__(self, port, baudrate, name, outdir, limited=False):
+    def __init__(self, port, baudrate, name, outdir, limited=False,
+                 expected_alpha_pct=None):
         import serial
         self.ser = serial.Serial(port=port, baudrate=baudrate,
                                  timeout=0.1, write_timeout=0.4)
         self.name = name
+        self.expected_alpha_pct = expected_alpha_pct
         self.limited = limited and name == "ON"
         self.expected_stages = 12 if self.limited else 33
         self.start = time.monotonic()
@@ -338,6 +340,16 @@ class PhaseSession:
             expected_pwm=30 if self.limited else 100
             if status.get("max_pwm")!=expected_pwm or status.get("total")!=self.expected_stages:
                 raise RuntimeError("Wrong motor-on firmware safety profile: "+repr(status))
+            if self.expected_alpha_pct is not None:
+                profile=self.wait_response("CMD_PIDCFG")
+                if (profile.get("alpha_pct") != self.expected_alpha_pct or
+                    profile.get("kp_milli") != 50 or
+                    profile.get("ki_milli") != 80 or
+                    profile.get("kd_milli") != 0 or
+                    profile.get("pwm_max") != 300 or
+                    profile.get("target_step") != 900):
+                    raise RuntimeError("Wrong PID/EMA compiled profile; refusing START: "+
+                                       repr(profile))
         self.send(f"MODE {self.name}")
         mode_ack = self.wait_response("CMD_MODE")
         if mode_ack.get("accepted") != 1:
