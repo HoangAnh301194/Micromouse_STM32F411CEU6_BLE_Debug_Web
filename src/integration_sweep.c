@@ -12,6 +12,9 @@
 #include "board.h"
 #include "system_timer.h"
 #include "stm32f4xx.h"
+#if defined(ENCODER_SPEED_PID_DIAG)
+#include "speed_pid_diag.h"
+#endif
 
 #if defined(INTEGRATION_DIAG_MOTOR_OFF) && defined(INTEGRATION_DIAG_MOTOR_ON)
 #error "Motor ON/OFF diagnostics cannot both be enabled"
@@ -28,15 +31,20 @@
  * encoder speed at each transition. No current, voltage or temperature
  * measurement is available: never infer electrical/thermal qualification. */
 #if defined(INTEGRATION_DIAG_LIMITED_PWM_30)
-#if !defined(INTEGRATION_DIAG_MOTOR_ON) || !defined(ENCODER_ALPHA_AB_DIAG)
-#error "Limited 30pct sweep is only for motor-on Encoder A/B diagnostics"
+#if !defined(INTEGRATION_DIAG_MOTOR_ON) || \
+    (!defined(ENCODER_ALPHA_AB_DIAG) && !defined(ENCODER_SPEED_PID_DIAG))
+#error "Limited 30pct sweep requires motor-on Encoder diagnostic"
 #endif
 #define SWEEP_STEPS_PER_GROUP 4U
 #else
 #define SWEEP_STEPS_PER_GROUP 11U
 #endif
 #define SWEEP_STEP_TOTAL (3U * SWEEP_STEPS_PER_GROUP)
+#if defined(ENCODER_SPEED_PID_DIAG)
+#define SWEEP_COMMAND_RENEW_MS 10U
+#else
 #define SWEEP_COMMAND_RENEW_MS 40U
+#endif
 #define SWEEP_HARD_LIMIT_MS 180000U
 #define SWEEP_DRIVE_DEFAULT_MS 2000U
 #define SWEEP_DRIVE_SUSTAIN_MS 3500U
@@ -70,11 +78,17 @@ static void LockDone(uint8_t newstate, uint8_t reason)
 {
     state.state = newstate;
     state.fault = reason;
+#if defined(ENCODER_SPEED_PID_DIAG)
+    SpeedPidDiag_Stop();
+#endif
     Motor_LockOutputs(); /* Sticky lock; cannot rearm until reset. */
 }
 void Sweep_Init(void)
 {
     state = (SweepSnapshot){0};
+#if defined(ENCODER_SPEED_PID_DIAG)
+    SpeedPidDiag_Init();
+#endif
     since_ms = last_cmd_ms = session_ms = last_heartbeat_ms = 0U;
     baseline_gap = baseline_timeout = 0U;
     /* Default is always OFF shadow. Motor output is not enabled until
@@ -109,12 +123,18 @@ static void Command(uint8_t idx)
     if (state.motor_enabled) {
         /* 0,10,...100% on LEFT then RIGHT then BOTH.
          * No reverse, brake, PID or closed-loop compensation. */
+#if defined(ENCODER_SPEED_PID_DIAG)
+        /* Same setpoint, same PID gains for all alpha builds. */
+        SpeedPidDiag_Run(millis(), (uint8_t)(idx / SWEEP_STEPS_PER_GROUP),
+                         (uint8_t)(idx % SWEEP_STEPS_PER_GROUP));
+#else
         uint16_t duty = (uint16_t)((idx % SWEEP_STEPS_PER_GROUP) * 100U);
         switch (idx / SWEEP_STEPS_PER_GROUP) {
         case 0U: Motor_SetPairPermille((int16_t)duty, 0); break;
         case 1U: Motor_SetPairPermille(0, (int16_t)duty); break;
         default: Motor_SetPairPermille((int16_t)duty, (int16_t)duty); break;
         }
+#endif
     } else {
         Motor_Stop(); /* No PWM demand in shadow; peripherals stay busy. */
     }
@@ -197,7 +217,11 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
     state.elapsed_ms = age;
     if (state.state == SWEEP_DRIVE) {
         if ((uint32_t)(now_ms - since_ms) >= DriveDurationMs(state.stage_id)) {
+#if defined(ENCODER_SPEED_PID_DIAG)
+            SpeedPidDiag_Stop();
+#else
             Motor_Stop();
+#endif
             state.state = SWEEP_COAST;
             since_ms = now_ms;
         } else if ((uint32_t)(now_ms - last_cmd_ms) >= SWEEP_COMMAND_RENEW_MS) {
