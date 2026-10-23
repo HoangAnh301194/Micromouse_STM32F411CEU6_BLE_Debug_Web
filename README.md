@@ -100,6 +100,22 @@ S  immediate stop
 Z  zero gyro yaw (idle only)
 ```
 
+## IR sensor + OLED 128x64 bench mode (motor locked)
+
+Six IR channels can be displayed using existing TIM10/ADC1 DMA and SSD1306
+drivers without activating normal motion, MPU6050 or TIM11 control.
+The isolated test gives the OLED exclusive PB8/PB9 I2C1 access;
+it does **not** validate OLED+MPU coexistence.
+
+```powershell
+python -m platformio run -e ir_oled_test_96m -t upload
+```
+
+Screen rows show L90/R90, L45/R45, L0/R0 as ambient-subtracted
+ADC counts, refreshed at most 5Hz. Optional PA9/PA10 UART frames use
+`IR6,...` at 5Hz. Motor outputs are permanently locked.
+[Wiring, caveats and restoring normal firmware](docs/system_debug/IR_OLED_VIEWER_20261024.md).
+
 ## Build
 
 ```powershell
