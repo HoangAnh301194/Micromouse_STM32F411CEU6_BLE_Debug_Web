@@ -1,5 +1,16 @@
 # Final Encoder speed-estimator alpha: guarded closed-loop trial
 
+**2026-10-24 acceptance update:** Nine out of nine physical
+closed-loop fixture tests PASS. The best weighted score was alpha=0.10,
+but the top-two separation was only 1.41%, below the original 5%
+superiority threshold; the machine report rightly stays `INCONCLUSIVE`.
+The user selected **production alpha=0.10 as an engineering choice**,
+without asserting a unique optimum. This document below preserves
+the experiment's historical pre-acceptance configuration.
+For current production status, refer to
+[`ENCODER_ACCEPTANCE_20261024.md`](ENCODER_ACCEPTANCE_20261024.md).
+
+
 **Status: diagnostic implementation only. No new physical data captured by GitHub Actions.**
 Branch: `giomuadongbac`. Run `tools/speed_pid_final_pipeline.py`.
 
