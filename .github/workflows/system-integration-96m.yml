@@ -58,6 +58,12 @@ jobs:
           python tools/motor_driver_native_test.py
       - name: Native Flash CRC and reserved-sector contract regression
         run: python tools/flash_record_native_test.py
+      - name: Native C map 5x5/16x16 and UART frame regression
+        run: python tools/test_flash_map_protocol.py
+      - name: Browser JavaScript map resize and CRC regression
+        run: node tools/test_ble_map_web.js
+      - name: Build opt-in locked map Flash diagnostic
+        run: python -m platformio run -e flash_map_diag_96m
       - name: Build default production firmware (Flash API inactive)
         run: |
           python -m pip install --disable-pip-version-check platformio
