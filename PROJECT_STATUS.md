@@ -257,3 +257,18 @@ Source added: dedicated motor-locked `flash_map_diag_96m` profile, deterministic
 - **No real BLE hardware log or CPU/latency qualification yet.** GitHub CI/Python synthetic tests do not establish real over-air performance; DMA1 Stream6 conflicts with I2C1_TX and is deliberately not changed. The browser text Web Console does not parse this binary protocol. See [BLE one-shot procedure](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
 - Motor-ON phase remains optional and requires explicit `--motor-on --fixture-ready --independent-vm-cutoff --allow-30-percent`, supervised lifted wheels, separate VM cutoff, and real BLE heartbeat. Do not run free-moving tests using the attached ST-Link multi-flash procedure.
 
+
+### 2026-10-24 — Cleanup of completed host debug tooling
+
+By user request, all 33 files in `tools/` were retired from the
+active `giomuadongbac` branch. The full pre-cleanup state is preserved at
+`archive/debug-tools-precleanup-20261024`. The `results/` logs and data are **unchanged**.
+The functioning JDY-33 5x5/16x16 WebBLE map viewer is retained
+unchanged at `web/ble_debug_console.html`, the independent native C
+regression runners are moved to `tests/regression/` and the Web map
+contract check to `tests/web/`. The 6 legacy debug CI workflows were
+replaced by a single regression and firmware-build workflow. The
+production `alpha=0.10` Encoder estimator, hardware drivers, Flash
+storage map APIs and optional diagnostic firmware profiles were not
+modified. Historical commands under `tools/` no longer execute in
+the active branch; retrieve them from the archive as needed.

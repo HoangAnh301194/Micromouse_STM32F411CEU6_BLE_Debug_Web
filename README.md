@@ -1,5 +1,8 @@
 # Micromouse STM32F411CEU6 - Minimal Core
 
+> **Dọn dẹp công cụ debug — 24/10/2026:** Các chương trình chạy debug thủ công trước đây trong `tools/` đã được lưu trữ tại [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024) và không còn trong `giomuadongbac`. **Không xóa** bất kỳ tệp `results/` nào. Các lệnh `python tools/...` ở phần tư liệu cũ chỉ có tác dụng trên nhánh lưu trữ. Giao diện BLE hiển thị map còn hoạt động tại [web/ble_debug_console.html](web/ble_debug_console.html); kiểm thử hồi quy được giữ ở `tests/` và CI biên dịch firmware production.
+
+
 > **Tiến độ mới nhất và ngữ cảnh bàn giao đa agent:** [PROJECT_STATUS.md](PROJECT_STATUS.md). Agent/chat mới bắt đầu từ [AGENTS.md](AGENTS.md); kết quả nghiệm thu I2C–MPU6050 nằm tại [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md).
 
 This branch (`giomuadongbac`) is the STM32F411CEU6 RC2 baseline with opt-in 96 MHz system integration and UART PA9/PA10 diagnostic profiles; the default production build does not run a stress benchmark.
@@ -194,7 +197,7 @@ The MPU6050 gyro, asynchronous temperature measurement and I2C1 driver are maint
 
 ### Flash map WebBLE diagnostic
 
-Opt-in motor-locked 5×5/16×16 Flash mock-map pipeline over UART1 PA9/PA10 and JDY-33 BLE PA2/PA3: [operator guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
+The WebBLE 5×5/16×16 map viewer is retained at [web/ble_debug_console.html](web/ble_debug_console.html). Historical Flash-map bench automation is available only on the archive branch; see the [original guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
 
 ### One-command JDY-33 BLE PA2/PA3 qualification (new, hardware pending)
 

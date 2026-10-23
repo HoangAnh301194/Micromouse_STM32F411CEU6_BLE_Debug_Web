@@ -2,7 +2,7 @@
 /* Offline browser protocol regression without browser/BLE hardware. */
 'use strict';
 const fs = require('fs'), path = require('path'), vm=require('vm');
-const html=fs.readFileSync(path.join(__dirname,'ble_debug_console.html'),'utf8');
+const html=fs.readFileSync(path.join(__dirname,'..','..','web','ble_debug_console.html'),'utf8');
 const script=html.split('<script>')[1].split('</script>')[0];
 new vm.Script(script);  // Validate entire browser source syntax.
 const start=script.indexOf('/* Versioned map protocol:');

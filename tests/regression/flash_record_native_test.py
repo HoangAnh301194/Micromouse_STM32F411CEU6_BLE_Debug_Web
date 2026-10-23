@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import zlib
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 HEADER = ROOT / "include" / "flash_record_format.h"
 SRC = ROOT / "src" / "flash_record_format.c"
 LDSCRIPT = ROOT / "ld" / "STM32F411CE_FLASH_256K.ld"

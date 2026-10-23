@@ -1,0 +1,31 @@
+name: Production firmware and regression tests
+on:
+  push:
+    branches: [giomuadongbac]
+    paths: ["src/**", "include/**", "ld/**", "platformio.ini", "web/**", "tests/**", ".github/workflows/firmware-regression.yml"]
+  pull_request:
+    branches: [giomuadongbac]
+  workflow_dispatch:
+jobs:
+  production-and-native:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Native regression for Encoder, IR, motor, Flash and BLE web
+        run: |
+          python tests/regression/encoder_native_test.py
+          python tests/regression/ir_sensor_native_test.py
+          python tests/regression/motor_driver_native_test.py
+          python tests/regression/system_sweep_native_test.py
+          python tests/regression/flash_record_native_test.py
+          node tests/web/test_ble_map_web.js
+      - name: Install PlatformIO
+        run: python -m pip install --disable-pip-version-check platformio
+      - name: Build production firmware (no hardware)
+        run: python -m platformio run -e genericSTM32F411CE
+      - name: Build optional motor-locked Flash-map firmware (no hardware)
+        run: python -m platformio run -e flash_map_diag_96m
