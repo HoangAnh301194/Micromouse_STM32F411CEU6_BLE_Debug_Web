@@ -46,6 +46,11 @@ static void PrintStatus(const MPU6050_Handle_t *mpu, uint32_t now)
                 (unsigned long)UART_GetRxErrors(),
                 (unsigned)Sweep_MaxPwmPercent(),
                 (unsigned)Sweep_StageTotal());
+#if defined(ENCODER_SPEED_PID_DIAG)
+    /* Host verifies actual flashed alpha before allowing START. */
+    UART_Printf("CMD_PIDCFG,alpha_pct=%u,kp_milli=50,ki_milli=80,kd_milli=0,pwm_max=300,target_step=900\r\n",
+                (unsigned)ENCODER_PID_ALPHA_PCT);
+#endif
 }
 static void Dispatch(const MPU6050_Handle_t *mpu, uint32_t now)
 {
