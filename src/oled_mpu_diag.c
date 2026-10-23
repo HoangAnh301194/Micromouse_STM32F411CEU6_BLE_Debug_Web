@@ -54,7 +54,7 @@ static void Emit(void) {
     /* Split into three short frames; UART_Printf buffer is 256 bytes.
      * Host accepts only identical seq across OLED_C/G/O. */
     UART_Printf("OLED_C,seq=%lu,ms=%lu,on=%u,ready=%u,cal=%u,locked=%u,"
-      "tick=%lu,late=%lu,gap=%lu,valid=%lu,invalid=%lu,uart_drop=%lu\r\n",
+      "tick=%lu,late=%lu,gap=%lu,valid=%lu,invalid=%lu,maxirq=%lu,uart_drop=%lu\r\n",
       (unsigned long)metric_seq,(unsigned long)millis(),
       (unsigned)OLED_SharedEnabled(),(unsigned)OLED_SharedReady(),
       (unsigned)mpu.calibrated,(unsigned)Motor_OutputsLocked(),
@@ -62,6 +62,7 @@ static void Emit(void) {
       (unsigned long)ctl.gaps_gt1500us,
       (unsigned long)ctl.gyro_valid_ticks,
       (unsigned long)ctl.gyro_invalid_after_first_valid,
+      (unsigned long)ctl.max_irq_cycles,
       (unsigned long)UART_GetDroppedMessages());
     UART_Printf("OLED_G,seq=%lu,good=%lu,err=%lu,to=%lu,mpubusy=%lu,age=%lu\r\n",
       (unsigned long)metric_seq,(unsigned long)mpu.good_reads,
@@ -69,14 +70,15 @@ static void Emit(void) {
       (unsigned long)mpu.busy_retries,(unsigned long)age);
     UART_Printf("OLED_O,seq=%lu,cmd=%lu,chunks=%lu,frames=%lu,bytes=%lu,"
       "skip=%lu,wait=%lu,oled_err=%lu,tx_start=%lu,tx_done=%lu,"
-      "tx_err=%lu,tx_to=%lu,tx_max=%lu\r\n",
+      "tx_err=%lu,tx_to=%lu,tx_max=%lu,recoveries=%lu\r\n",
       (unsigned long)metric_seq,(unsigned long)oled.commands,
       (unsigned long)oled.chunks,(unsigned long)oled.frames,
       (unsigned long)oled.data_bytes,(unsigned long)oled.admission_skips,
       (unsigned long)oled.busy_skips,(unsigned long)oled.errors,
       (unsigned long)bus.started,(unsigned long)bus.completed,
       (unsigned long)bus.errors,(unsigned long)bus.timeouts,
-      (unsigned long)bus.max_duration_us);
+      (unsigned long)bus.max_duration_us,
+      (unsigned long)bus.recoveries);
 }
 int OLED_MPU_DiagMain(void) {
     MPU6050_Status init;

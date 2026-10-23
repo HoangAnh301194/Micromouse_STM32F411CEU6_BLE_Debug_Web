@@ -25,7 +25,7 @@ REQUIRED = {
     "valid", "invalid", "uart_drop", "good", "err", "to",
     "mpubusy", "age", "cmd", "chunks", "frames", "bytes",
     "skip", "wait", "oled_err", "tx_start", "tx_done", "tx_err",
-    "tx_to", "tx_max",
+    "tx_to", "tx_max", "recoveries", "maxirq",
 }
 
 
@@ -101,7 +101,7 @@ def segment(samples, expected_on):
     keys = ["tick", "late", "gap", "valid", "invalid", "uart_drop",
             "good", "err", "to", "mpubusy", "cmd", "chunks",
             "frames", "bytes", "skip", "wait", "oled_err",
-            "tx_start", "tx_done", "tx_err", "tx_to"]
+            "tx_start", "tx_done", "tx_err", "tx_to", "recoveries"]
     diff = {key: delta(end, start, key) for key in keys}
     diff.update(
         seconds=dt,
@@ -111,6 +111,7 @@ def segment(samples, expected_on):
         late_ratio=diff["late"] / count if count else 1,
         max_age_us=max(r["age"] for r in samples),
         tx_max_us=max(r["tx_max"] for r in samples),
+        max_irq_cycles=max(r["maxirq"] for r in samples),
         rows=len(samples),
     )
     return diff
@@ -133,6 +134,8 @@ def evaluate(off, on, minimum_gyro_hz=850, min_ratio=0.97):
         "oled_traffic_off_during_baseline": off["tx_start"] == 0,
         "no_oled_dma_errors": on["oled_err"] == 0 and on["tx_err"] == 0 and
                               on["tx_to"] == 0,
+        "no_bus_recovery": off["recoveries"] == 0 and on["recoveries"] == 0,
+        "isr_bounded_under_500us": max(off["max_irq_cycles"], on["max_irq_cycles"]) < 48000,
         "short_oled_transactions": 0 < on["tx_max_us"] <= 900,
         "serial_complete": off["uart_drop"] == 0 and on["uart_drop"] == 0,
     }
@@ -150,7 +153,8 @@ def self_test():
                     cmd=completed, chunks=completed, frames=completed,
                     bytes=completed * 8, skip=10, wait=0, oled_err=0,
                     tx_start=completed * 2, tx_done=completed * 2,
-                    tx_err=0, tx_to=0, tx_max=250 if mode else 0)
+                    tx_err=0, tx_to=0, recoveries=0, maxirq=5000,
+                    tx_max=250 if mode else 0)
     a = [build(i, 0, i*1000, i*980) for i in range(6)]
     b = [build(i, 1, i*1000, i*980, completed=i-5) for i in range(6,12)]
     assert evaluate(segment(a,0), segment(b,1))["verdict"] == "PASS"
@@ -159,9 +163,9 @@ def self_test():
     ass = Assembler()
     r = a[0]
     for tag,keys in [
-        ("OLED_C",("ms on ready cal locked tick late gap valid invalid uart_drop")),
+        ("OLED_C",("ms on ready cal locked tick late gap valid invalid maxirq uart_drop")),
         ("OLED_G",("good err to mpubusy age")),
-        ("OLED_O",("cmd chunks frames bytes skip wait oled_err tx_start tx_done tx_err tx_to tx_max")),
+        ("OLED_O",("cmd chunks frames bytes skip wait oled_err tx_start tx_done tx_err tx_to tx_max recoveries")),
     ]:
         fields = "seq=%d," % r["seq"] + ",".join(
             "%s=%d" % (k,r[k]) for k in keys.split())

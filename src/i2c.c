@@ -72,6 +72,7 @@ static volatile I2C_Status oled_result = I2C_IDLE;
 static volatile uint32_t oled_start_us, oled_duration_us;
 static volatile uint8_t oled_address;
 static I2C_OledStats_t oled_stats;
+static volatile uint32_t oled_shared_recoveries;
 #define OLED_DMA_FLAGS (0x3FUL << 16)
 #define OLED_DMA_TC (1UL << 21)
 #define OLED_DMA_FAIL ((1UL << 16) | (1UL << 18) | (1UL << 19))
@@ -123,6 +124,9 @@ static void I2C_ClearErrors(uint32_t i2c_base) {
 
 static void I2C_BusRecovery(void) {
     uint8_t i;
+#if defined(OLED_SHARED_I2C)
+    ++oled_shared_recoveries;
+#endif
     /* Called only from main on an idle/failed transaction. Never from TIM11. */
     I2C1->CR1 &= ~I2C_CR1_PE;
     GPIOB_OTYPER |= (1UL << 8) | (1UL << 9);
@@ -507,7 +511,7 @@ I2C_Status I2C_OledAsync_Poll(uint32_t *duration_us)
     return s;
 }
 void I2C_OledGetStats(I2C_OledStats_t *out) {
-    if (out) *out = oled_stats; /* Main-only stats, no torn concurrent read. */
+    if (out) { *out = oled_stats; out->recoveries = oled_shared_recoveries; }
 }
 #endif
 

@@ -214,6 +214,7 @@ uint32_t I2C_GetConfiguredSclHz(void);
 /* Nonblocking OLED DMA transport: main starts/polls; completion by IRQ. */
 typedef struct {
     uint32_t started, completed, bytes, busy_rejects, errors, timeouts;
+    uint32_t recoveries;
     uint32_t max_duration_us;
 } I2C_OledStats_t;
 void I2C_OledAsync_Init(void);
