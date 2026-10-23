@@ -1,0 +1,5 @@
+{'method': 'EMA 1ms', 'window_ms': 1, 'steady_mae_pps': 82.189, 'steady_rmse_pps': 96.159, 'measurement_window_delay_bound_ms': 1}
+{'method': 'boxcar', 'window_ms': 1, 'steady_mae_pps': 288.91, 'steady_rmse_pps': 380.049, 'measurement_window_delay_bound_ms': 1}
+{'method': 'boxcar', 'window_ms': 5, 'steady_mae_pps': 75.141, 'steady_rmse_pps': 86.677, 'measurement_window_delay_bound_ms': 5}
+{'method': 'boxcar', 'window_ms': 10, 'steady_mae_pps': 31.611, 'steady_rmse_pps': 39.761, 'measurement_window_delay_bound_ms': 10}
+{'method': 'boxcar', 'window_ms': 20, 'steady_mae_pps': 16.863, 'steady_rmse_pps': 20.532, 'measurement_window_delay_bound_ms': 20}

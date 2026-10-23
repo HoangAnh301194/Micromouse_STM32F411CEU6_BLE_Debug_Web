@@ -1,0 +1,55 @@
+Processing speed_pid_alpha_030_96m (platform: ststm32; board: genericSTM32F411CE; framework: cmsis)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F411CE.html
+PLATFORM: ST STM32 (19.2.0) > STM32F411CE (128k RAM. 512k Flash)
+HARDWARE: STM32F411CEU6 100MHz, 128KB RAM, 512KB Flash
+DEBUG: Current (blackmagic) External (blackmagic, jlink, stlink)
+PACKAGES: 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - framework-cmsis-stm32f4 @ 2.6.11 
+ - tool-dfuutil @ 1.11.0 
+ - tool-dfuutil-arduino @ 1.11.0 
+ - tool-ldscripts-ststm32 @ 0.2.0 
+ - tool-openocd @ 3.1200.0 (12.0) 
+ - tool-stm32flash @ 0.7.0 
+ - toolchain-gccarmnoneeabi @ 1.70201.0 (7.2.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 0 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Checking size .pio\build\speed_pid_alpha_030_96m\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   5.9% (used 7672 bytes from 131072 bytes)
+Flash: [=         ]   5.6% (used 29572 bytes from 524288 bytes)
+Configuring upload protocol...
+AVAILABLE: blackmagic, dfu, jlink, serial, stlink
+CURRENT: upload_protocol = stlink
+Uploading .pio\build\speed_pid_alpha_030_96m\firmware.elf
+xPack Open On-Chip Debugger 0.12.0-01004-g9ea7f3d64-dirty (2023-01-30-15:04)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+debug_level: 1
+
+adapter speed: 100 kHz
+
+none separate
+
+hla_swd
+[stm32f4x.cpu] halted due to debug-request, current mode: Thread 
+xPSR: 0x01000000 pc: 0x0800125c msp: 0x20020000
+** Programming Started **
+** Programming Finished **
+** Verify Started **
+** Verified OK **
+** Resetting Target **
+shutdown command invoked
+========================= [SUCCESS] Took 4.08 seconds =========================
+
+Environment              Status    Duration
+-----------------------  --------  ------------
+speed_pid_alpha_030_96m  SUCCESS   00:00:04.078
+========================= 1 succeeded in 00:00:04.078 =========================

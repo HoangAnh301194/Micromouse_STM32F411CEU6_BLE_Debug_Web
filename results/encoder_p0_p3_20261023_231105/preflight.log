@@ -1,0 +1,15 @@
+RUN: integration_audit
+RUN: integration_negative
+RUN: encoder_probe_parser
+RUN: shadow_ab_regression
+RUN: encoder_native
+RUN: pipeline_regression
+RUN: estimator_selftest
+RUN: motor_driver_native
+RUN: sweep_native
+RUN: ir_native
+RUN: ir_parser
+RUN: estimator_study
+RUN: build_locked
+RUN: build_encoder_on
+Results: D:\Micromouse_STM32F411CEU6_BLE_Debug_Web\results\encoder_p0_p3_20261023_231105\preflight

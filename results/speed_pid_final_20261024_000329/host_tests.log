@@ -1,0 +1,6 @@
+PASS real PID_Compute with fixed gains, isolated 100Hz sampling and 30% clamp
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.184s
+
+OK

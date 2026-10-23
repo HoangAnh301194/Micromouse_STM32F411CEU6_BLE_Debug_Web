@@ -1,0 +1,2 @@
+PASS: actual encoder.c register config, x4, dual wheel counts, EMA, reset, 16-bit wrap and 10k-tick accumulation
+PASS: actual encoder.c register config, x4, dual wheel counts, EMA, reset, 16-bit wrap and 10k-tick accumulation

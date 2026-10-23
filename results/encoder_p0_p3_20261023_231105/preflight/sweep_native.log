@@ -1,0 +1,6 @@
+PASS real integration_sweep.c: 33 stages, one-shot, STOP, stale gyro, TIM11 fault, UART loss
+PASS real integration_sweep.c: 33 stages, one-shot, STOP, stale gyro, TIM11 fault, UART loss
+PASS real integration_sweep.c: 33 stages, one-shot, STOP, stale gyro, TIM11 fault, UART loss
+PASS OFF: actual C sweep 33 stages + STOP/stale MPU and TIM11 fault
+PASS ON: actual C sweep 33 stages + STOP/stale MPU and TIM11 fault + UART loss
+PASS LIMITED: actual C sweep 12 stages + STOP/stale MPU and TIM11 fault + UART loss

@@ -1,0 +1,454 @@
+0.0151	CMD_HELP,HELP|STATUS|MODE OFF|MODE ON|START|PING|STOP|!; CRLF/LF; MODE ON requires live build; START ON uses serial-only authorization; one shot per reset
+0.0248	CMD_STATUS,ms=193,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=1,rx_ov=0,rx_err=0
+0.0664	t=253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.1665	t=353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.2664	t=453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.3666	t=553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.4667	t=653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.5668	t=753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.6669	t=853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.7670	t=953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.8195	SYS_T,ms=1000,ticks=846,late=0,gap=0,maxcy=1122,encmaxcy=451,motmaxcy=168,motticks=846,valid=0,stale=0,ir=846
+0.8279	SYS_M,ms=1000,cal=1,n=0,seq=0,age=0,i2cok=845,i2cerr=0,to=0,nr=17,busy=0,locked=0,wd=0
+0.8335	SYS_U,ms=1000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+0.8390	SYS_CAL,ms=1000,state=1,retries=0,reason=0
+0.8466	CMD_STATUS,ms=1012,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=1,rx_ov=0,rx_err=0
+0.8671	t=1053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+0.9673	t=1153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.0673	t=1253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.1674	t=1353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.2675	t=1453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.3675	t=1553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.4676	t=1653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.5677	t=1753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.6676	t=1853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.6787	CMD_STATUS,ms=1859,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=1,rx_ov=0,rx_err=0
+1.7676	t=1953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.8203	SYS_T,ms=2000,ticks=1846,late=0,gap=0,maxcy=1122,encmaxcy=451,motmaxcy=168,motticks=1846,valid=0,stale=0,ir=1846
+1.8285	SYS_M,ms=2000,cal=1,n=0,seq=0,age=0,i2cok=1845,i2cerr=0,to=0,nr=32,busy=0,locked=0,wd=0
+1.8354	SYS_U,ms=2000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+1.8678	t=2053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+1.9677	t=2153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.0678	t=2253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.1680	t=2353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.2679	t=2453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.3680	t=2553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.4681	t=2653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.4790	CMD_STATUS,ms=2659,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=1,rx_ov=0,rx_err=0
+2.5681	t=2753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.6683	t=2853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.7683	t=2953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.8209	SYS_T,ms=3000,ticks=2846,late=0,gap=0,maxcy=1122,encmaxcy=451,motmaxcy=168,motticks=2846,valid=0,stale=0,ir=2846
+2.8292	SYS_M,ms=3000,cal=1,n=0,seq=0,age=0,i2cok=2845,i2cerr=0,to=0,nr=43,busy=0,locked=0,wd=0
+2.8360	SYS_U,ms=3000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+2.8685	t=3053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+2.9684	t=3153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.0686	t=3253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.1686	t=3353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.2686	t=3453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.2795	CMD_STATUS,ms=3459,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=1,rx_ov=0,rx_err=0
+3.3687	t=3553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.4687	t=3653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.5686	t=3753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.6691	t=3853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.7686	t=3953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.8213	SYS_T,ms=4000,ticks=3846,late=0,gap=0,maxcy=1122,encmaxcy=452,motmaxcy=168,motticks=3846,valid=0,stale=0,ir=3846
+3.8296	SYS_M,ms=4000,cal=1,n=0,seq=0,age=0,i2cok=3845,i2cerr=0,to=0,nr=43,busy=0,locked=0,wd=0
+3.8365	SYS_U,ms=4000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+3.8686	t=4053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+3.9687	t=4153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.0687	t=4253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.0796	CMD_STATUS,ms=4259,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=1,rx_ov=0,rx_err=0
+4.1688	t=4353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.2686	t=4453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.3689	t=4553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.4688	t=4653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.5689	t=4753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.6688	t=4853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.7688	t=4953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.8215	SYS_T,ms=5000,ticks=4846,late=0,gap=0,maxcy=1122,encmaxcy=453,motmaxcy=168,motticks=4846,valid=0,stale=0,ir=4846
+4.8297	SYS_M,ms=5000,cal=1,n=0,seq=0,age=0,i2cok=4845,i2cerr=0,to=0,nr=43,busy=0,locked=0,wd=0
+4.8365	SYS_U,ms=5000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+4.8688	t=5053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.9689	t=5153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+4.9777	CMD_STATUS,ms=5154,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=2,rx_ov=0,rx_err=0
+5.0688	t=5253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.1689	t=5353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.2690	t=5453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.3689	t=5553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.4691	t=5653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.5691	t=5753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.6692	t=5853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.7690	t=5953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.7800	CMD_STATUS,ms=5959,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=2,rx_ov=0,rx_err=0
+5.8215	SYS_T,ms=6000,ticks=5846,late=0,gap=0,maxcy=1122,encmaxcy=453,motmaxcy=168,motticks=5846,valid=0,stale=0,ir=5846
+5.8299	SYS_M,ms=6000,cal=2,n=847,seq=0,age=0,i2cok=5845,i2cerr=0,to=0,nr=59,busy=0,locked=0,wd=0
+5.8357	SYS_U,ms=6000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+5.8405	SYS_CAL,ms=6000,state=2,retries=0,reason=0
+5.8691	t=6053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+5.9691	t=6153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.0690	t=6253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.1693	t=6353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.2692	t=6453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.3695	t=6553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.4694	t=6653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.5696	t=6753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.5805	CMD_STATUS,ms=6759,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=2,rx_ov=0,rx_err=0
+6.6696	t=6853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.7698	t=6953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.8224	SYS_T,ms=7000,ticks=6846,late=0,gap=0,maxcy=1122,encmaxcy=453,motmaxcy=168,motticks=6846,valid=0,stale=0,ir=6846
+6.8307	SYS_M,ms=7000,cal=2,n=1847,seq=0,age=0,i2cok=6845,i2cerr=0,to=0,nr=66,busy=0,locked=0,wd=0
+6.8388	SYS_U,ms=7000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+6.8700	t=7053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+6.9700	t=7153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.0701	t=7253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.1701	t=7353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.2708	t=7453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.3706	t=7553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.3816	CMD_STATUS,ms=7559,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=2,rx_ov=0,rx_err=0
+7.4705	t=7653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.5705	t=7753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.6706	t=7853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.7708	t=7953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.8234	SYS_T,ms=8000,ticks=7846,late=0,gap=0,maxcy=1122,encmaxcy=453,motmaxcy=168,motticks=7846,valid=0,stale=0,ir=7846
+7.8317	SYS_M,ms=8000,cal=2,n=2847,seq=0,age=0,i2cok=7845,i2cerr=0,to=0,nr=75,busy=0,locked=0,wd=0
+7.8384	SYS_U,ms=8000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+7.8708	t=8053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+7.9709	t=8153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.0711	t=8253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.1711	t=8353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.1821	CMD_STATUS,ms=8359,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=2,rx_ov=0,rx_err=0
+8.2713	t=8453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.3712	t=8553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.4712	t=8653 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.5713	t=8753 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.6713	t=8853 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.7713	t=8953 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.8240	SYS_T,ms=9000,ticks=8846,late=0,gap=0,maxcy=1122,encmaxcy=453,motmaxcy=168,motticks=8846,valid=0,stale=0,ir=8846
+8.8322	SYS_M,ms=9000,cal=2,n=3847,seq=0,age=0,i2cok=8845,i2cerr=0,to=0,nr=75,busy=0,locked=0,wd=0
+8.8389	SYS_U,ms=9000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+8.8715	t=9053 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.9715	t=9153 state=0 encL=0 encR=0 yaw= gz= dropped=0
+8.9823	CMD_STATUS,ms=9159,mode=OFF,state=0,fault=0,armed=0,stage=0,duty=0,locked=0,cal=3,rx_ov=0,rx_err=0
+8.9874	CMD_MODE,requested=ON,accepted=1
+8.9913	CMD_START,accepted=1
+8.9997	SYS_STEP,ms=9175,state=1,fault=0,mode=1,id=0,group=0,step=0,duty=0,dl=0,dr=0
+9.0000	CMD_PING,ms=9179
+9.0715	t=9253 state=0 encL=0 encR=0 yaw= gz= dropped=0
+9.1714	t=9353 state=0 encL=0 encR=0 yaw= gz= dropped=0
+9.1752	CMD_PING,ms=9359
+9.2460	SYS_STEP,ms=9425,state=2,fault=0,mode=1,id=0,group=0,step=0,duty=0,dl=0,dr=0
+9.2716	t=9453 state=0 encL=0 encR=0 yaw= gz= dropped=0
+9.3715	t=9553 state=0 encL=0 encR=0 yaw= gz= dropped=0
+9.3753	CMD_PING,ms=9559
+9.3961	SYS_STEP,ms=9575,state=1,fault=0,mode=1,id=1,group=0,step=1,duty=100,dl=0,dr=0
+9.4719	t=9653 state=0 encL=-17 encR=1 yaw= gz= dropped=0
+9.5718	t=9753 state=0 encL=-73 encR=1 yaw= gz= dropped=0
+9.5755	CMD_PING,ms=9759
+9.6468	SYS_STEP,ms=9825,state=2,fault=0,mode=1,id=1,group=0,step=1,duty=100,dl=-116,dr=1
+9.6720	t=9853 state=0 encL=-130 encR=1 yaw= gz= dropped=0
+9.7721	t=9953 state=0 encL=-142 encR=1 yaw= gz= dropped=0
+9.7758	CMD_PING,ms=9959
+9.7968	SYS_STEP,ms=9975,state=1,fault=0,mode=1,id=2,group=0,step=2,duty=200,dl=-26,dr=0
+9.8245	SYS_T,ms=10000,ticks=9846,late=0,gap=0,maxcy=1503,encmaxcy=882,motmaxcy=356,motticks=9846,valid=847,stale=0,ir=9846
+9.8329	SYS_M,ms=10000,cal=3,n=4000,seq=847,age=986,i2cok=9845,i2cerr=0,to=0,nr=142,busy=0,locked=0,wd=0
+9.8409	SYS_U,ms=10000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+9.8445	SYS_CAL,ms=10000,state=3,retries=0,reason=0
+9.8721	t=10053 state=0 encL=-200 encR=1 yaw= gz= dropped=0
+9.9724	t=10153 state=0 encL=-335 encR=1 yaw= gz= dropped=0
+9.9763	CMD_PING,ms=10160
+10.0469	SYS_STEP,ms=10225,state=2,fault=0,mode=1,id=2,group=0,step=2,duty=200,dl=-293,dr=0
+10.0725	t=10253 state=0 encL=-471 encR=1 yaw= gz= dropped=0
+10.1723	t=10353 state=0 encL=-553 encR=1 yaw= gz= dropped=0
+10.1760	CMD_PING,ms=10359
+10.1971	SYS_STEP,ms=10375,state=1,fault=0,mode=1,id=3,group=0,step=3,duty=300,dl=-127,dr=0
+10.2723	t=10453 state=0 encL=-662 encR=1 yaw= gz= dropped=0
+10.3721	t=10553 state=0 encL=-875 encR=1 yaw= gz= dropped=0
+10.3739	CMD_PING,ms=10555
+10.4471	SYS_STEP,ms=10625,state=2,fault=0,mode=1,id=3,group=0,step=3,duty=300,dl=-470,dr=0
+10.4726	t=10653 state=0 encL=-1090 encR=1 yaw= gz= dropped=0
+10.5727	t=10753 state=0 encL=-1244 encR=1 yaw= gz= dropped=0
+10.5765	CMD_PING,ms=10760
+10.5974	SYS_STEP,ms=10775,state=1,fault=0,mode=1,id=4,group=0,step=4,duty=400,dl=-236,dr=0
+10.6728	t=10853 state=0 encL=-1416 encR=1 yaw= gz= dropped=0
+10.7727	t=10953 state=0 encL=-1705 encR=1 yaw= gz= dropped=0
+10.7766	CMD_PING,ms=10960
+10.8250	SYS_T,ms=11000,ticks=10846,late=0,gap=0,maxcy=1699,encmaxcy=898,motmaxcy=356,motticks=10846,valid=1847,stale=0,ir=10846
+10.8333	SYS_M,ms=11000,cal=3,n=4000,seq=1847,age=986,i2cok=10845,i2cerr=0,to=0,nr=142,busy=0,locked=0,wd=0
+10.8415	SYS_U,ms=11000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+10.8485	SYS_STEP,ms=11025,state=2,fault=0,mode=1,id=4,group=0,step=4,duty=400,dl=-651,dr=0
+10.8729	t=11053 state=0 encL=-1999 encR=1 yaw= gz= dropped=0
+10.9728	t=11153 state=0 encL=-2227 encR=1 yaw= gz= dropped=0
+10.9768	CMD_PING,ms=11160
+10.9974	SYS_STEP,ms=11175,state=1,fault=0,mode=1,id=5,group=0,step=5,duty=500,dl=-347,dr=0
+11.0729	t=11253 state=0 encL=-2456 encR=1 yaw= gz= dropped=0
+11.1731	t=11353 state=0 encL=-2822 encR=1 yaw= gz= dropped=0
+11.1771	CMD_PING,ms=11360
+11.2476	SYS_STEP,ms=11425,state=2,fault=0,mode=1,id=5,group=0,step=5,duty=500,dl=-828,dr=0
+11.2730	t=11453 state=0 encL=-3195 encR=1 yaw= gz= dropped=0
+11.3731	t=11553 state=0 encL=-3496 encR=1 yaw= gz= dropped=0
+11.3771	CMD_PING,ms=11560
+11.3977	SYS_STEP,ms=11575,state=1,fault=0,mode=1,id=6,group=0,step=6,duty=600,dl=-456,dr=0
+11.4731	t=11653 state=0 encL=-3781 encR=1 yaw= gz= dropped=0
+11.5728	t=11753 state=0 encL=-4223 encR=1 yaw= gz= dropped=0
+11.5747	CMD_PING,ms=11755
+11.6480	SYS_STEP,ms=11825,state=2,fault=0,mode=1,id=6,group=0,step=6,duty=600,dl=-1002,dr=0
+11.6734	t=11853 state=0 encL=-4676 encR=1 yaw= gz= dropped=0
+11.7734	t=11953 state=0 encL=-5050 encR=1 yaw= gz= dropped=0
+11.7773	CMD_PING,ms=11960
+11.7980	SYS_STEP,ms=11975,state=1,fault=0,mode=1,id=7,group=0,step=7,duty=700,dl=-566,dr=0
+11.8256	SYS_T,ms=12000,ticks=11846,late=0,gap=0,maxcy=1703,encmaxcy=898,motmaxcy=356,motticks=11846,valid=2847,stale=0,ir=11846
+11.8340	SYS_M,ms=12000,cal=3,n=4000,seq=2847,age=978,i2cok=11845,i2cerr=0,to=0,nr=150,busy=0,locked=0,wd=0
+11.8421	SYS_U,ms=12000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+11.8734	t=12053 state=0 encL=-5386 encR=1 yaw= gz= dropped=0
+11.9736	t=12153 state=0 encL=-5900 encR=1 yaw= gz= dropped=0
+11.9774	CMD_PING,ms=12160
+12.0483	SYS_STEP,ms=12225,state=2,fault=0,mode=1,id=7,group=0,step=7,duty=700,dl=-1164,dr=0
+12.0736	t=12253 state=0 encL=-6426 encR=1 yaw= gz= dropped=0
+12.1738	t=12353 state=0 encL=-6870 encR=1 yaw= gz= dropped=0
+12.1776	CMD_PING,ms=12360
+12.1983	SYS_STEP,ms=12375,state=1,fault=0,mode=1,id=8,group=0,step=8,duty=800,dl=-671,dr=0
+12.2738	t=12453 state=0 encL=-7254 encR=1 yaw= gz= dropped=0
+12.3738	t=12553 state=0 encL=-7838 encR=1 yaw= gz= dropped=0
+12.3776	CMD_PING,ms=12560
+12.4485	SYS_STEP,ms=12625,state=2,fault=0,mode=1,id=8,group=0,step=8,duty=800,dl=-1322,dr=0
+12.4738	t=12653 state=0 encL=-8441 encR=1 yaw= gz= dropped=0
+12.5734	t=12753 state=0 encL=-8955 encR=1 yaw= gz= dropped=0
+12.5752	CMD_PING,ms=12754
+12.5983	SYS_STEP,ms=12775,state=1,fault=0,mode=1,id=9,group=0,step=9,duty=900,dl=-777,dr=0
+12.6738	t=12853 state=0 encL=-9383 encR=1 yaw= gz= dropped=0
+12.7740	t=12953 state=0 encL=-10028 encR=1 yaw= gz= dropped=0
+12.7779	CMD_PING,ms=12960
+12.8261	SYS_T,ms=13000,ticks=12846,late=0,gap=0,maxcy=1706,encmaxcy=898,motmaxcy=356,motticks=12846,valid=3847,stale=0,ir=12846
+12.8345	SYS_M,ms=13000,cal=3,n=4000,seq=3847,age=986,i2cok=12845,i2cerr=0,to=0,nr=166,busy=0,locked=0,wd=0
+12.8426	SYS_U,ms=13000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+12.8497	SYS_STEP,ms=13025,state=2,fault=0,mode=1,id=9,group=0,step=9,duty=900,dl=-1458,dr=0
+12.8741	t=13053 state=0 encL=-10693 encR=1 yaw= gz= dropped=0
+12.9742	t=13153 state=0 encL=-11265 encR=1 yaw= gz= dropped=0
+12.9782	CMD_PING,ms=13160
+12.9989	SYS_STEP,ms=13175,state=1,fault=0,mode=1,id=10,group=0,step=10,duty=1000,dl=-864,dr=0
+13.0742	t=13253 state=0 encL=-11730 encR=1 yaw= gz= dropped=0
+13.1737	t=13353 state=0 encL=-12439 encR=1 yaw= gz= dropped=0
+13.1756	CMD_PING,ms=13355
+13.2491	SYS_STEP,ms=13425,state=2,fault=0,mode=1,id=10,group=0,step=10,duty=1000,dl=-1603,dr=0
+13.2742	t=13453 state=0 encL=-13181 encR=1 yaw= gz= dropped=0
+13.3742	t=13553 state=0 encL=-13824 encR=1 yaw= gz= dropped=0
+13.3782	CMD_PING,ms=13560
+13.3987	SYS_STEP,ms=13575,state=1,fault=0,mode=1,id=11,group=1,step=0,duty=0,dl=-972,dr=0
+13.4742	t=13653 state=0 encL=-14344 encR=1 yaw= gz= dropped=0
+13.5740	t=13753 state=0 encL=-14751 encR=1 yaw= gz= dropped=0
+13.5777	CMD_PING,ms=13759
+13.6485	SYS_STEP,ms=13825,state=2,fault=0,mode=1,id=11,group=1,step=0,duty=0,dl=-1033,dr=0
+13.6740	t=13853 state=0 encL=-15058 encR=1 yaw= gz= dropped=0
+13.7741	t=13953 state=0 encL=-15274 encR=1 yaw= gz= dropped=0
+13.7780	CMD_PING,ms=13960
+13.7985	SYS_STEP,ms=13975,state=1,fault=0,mode=1,id=12,group=1,step=1,duty=100,dl=-328,dr=0
+13.8262	SYS_T,ms=14000,ticks=13846,late=0,gap=0,maxcy=1706,encmaxcy=898,motmaxcy=358,motticks=13846,valid=4847,stale=0,ir=13846
+13.8345	SYS_M,ms=14000,cal=3,n=4000,seq=4847,age=984,i2cok=13845,i2cerr=0,to=0,nr=166,busy=0,locked=0,wd=0
+13.8425	SYS_U,ms=14000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+13.8743	t=14053 state=0 encL=-15408 encR=-15 yaw= gz= dropped=0
+13.9742	t=14153 state=0 encL=-15467 encR=-63 yaw= gz= dropped=0
+13.9781	CMD_PING,ms=14160
+14.0487	SYS_STEP,ms=14225,state=2,fault=0,mode=1,id=12,group=1,step=1,duty=100,dl=-160,dr=-102
+14.0742	t=14253 state=0 encL=-15470 encR=-113 yaw= gz= dropped=0
+14.1741	t=14353 state=0 encL=-15472 encR=-116 yaw= gz= dropped=0
+14.1779	CMD_PING,ms=14360
+14.1984	SYS_STEP,ms=14375,state=1,fault=0,mode=1,id=13,group=1,step=2,duty=200,dl=-2,dr=-15
+14.2742	t=14453 state=0 encL=-15472 encR=-174 yaw= gz= dropped=0
+14.3740	t=14553 state=0 encL=-15472 encR=-301 yaw= gz= dropped=0
+14.3779	CMD_PING,ms=14560
+14.4483	SYS_STEP,ms=14625,state=2,fault=0,mode=1,id=13,group=1,step=2,duty=200,dl=0,dr=-280
+14.4741	t=14653 state=0 encL=-15472 encR=-429 yaw= gz= dropped=0
+14.5740	t=14753 state=0 encL=-15472 encR=-498 yaw= gz= dropped=0
+14.5781	CMD_PING,ms=14760
+14.5983	SYS_STEP,ms=14775,state=1,fault=0,mode=1,id=14,group=1,step=3,duty=300,dl=0,dr=-107
+14.6739	t=14853 state=0 encL=-15472 encR=-593 yaw= gz= dropped=0
+14.7741	t=14953 state=0 encL=-15472 encR=-797 yaw= gz= dropped=0
+14.7780	CMD_PING,ms=14960
+14.8259	SYS_T,ms=15000,ticks=14846,late=0,gap=0,maxcy=1706,encmaxcy=966,motmaxcy=359,motticks=14846,valid=5847,stale=0,ir=14846
+14.8341	SYS_M,ms=15000,cal=3,n=4000,seq=5847,age=985,i2cok=14845,i2cerr=0,to=0,nr=166,busy=0,locked=0,wd=0
+14.8423	SYS_U,ms=15000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+14.8496	SYS_STEP,ms=15025,state=2,fault=0,mode=1,id=14,group=1,step=3,duty=300,dl=0,dr=-447
+14.8742	t=15053 state=0 encL=-15472 encR=-1006 yaw= gz= dropped=0
+14.9746	t=15153 state=0 encL=-15472 encR=-1148 yaw= gz= dropped=0
+14.9786	CMD_PING,ms=15160
+14.9984	SYS_STEP,ms=15175,state=1,fault=0,mode=1,id=15,group=1,step=4,duty=400,dl=0,dr=-218
+15.0745	t=15253 state=0 encL=-15472 encR=-1305 yaw= gz= dropped=0
+15.1745	t=15353 state=0 encL=-15472 encR=-1588 yaw= gz= dropped=0
+15.1784	CMD_PING,ms=15360
+15.2486	SYS_STEP,ms=15425,state=2,fault=0,mode=1,id=15,group=1,step=4,duty=400,dl=0,dr=-631
+15.2745	t=15453 state=0 encL=-15472 encR=-1877 yaw= gz= dropped=0
+15.3747	t=15553 state=0 encL=-15472 encR=-2091 yaw= gz= dropped=0
+15.3786	CMD_PING,ms=15560
+15.3988	SYS_STEP,ms=15575,state=1,fault=0,mode=1,id=16,group=1,step=5,duty=500,dl=0,dr=-327
+15.4747	t=15653 state=0 encL=-15472 encR=-2307 yaw= gz= dropped=0
+15.5749	t=15753 state=0 encL=-15472 encR=-2667 yaw= gz= dropped=0
+15.5788	CMD_PING,ms=15760
+15.6491	SYS_STEP,ms=15825,state=2,fault=0,mode=1,id=16,group=1,step=5,duty=500,dl=0,dr=-810
+15.6750	t=15853 state=0 encL=-15472 encR=-3037 yaw= gz= dropped=0
+15.7750	t=15953 state=0 encL=-15472 encR=-3325 yaw= gz= dropped=0
+15.7789	CMD_PING,ms=15960
+15.7991	SYS_STEP,ms=15975,state=1,fault=0,mode=1,id=17,group=1,step=6,duty=600,dl=0,dr=-439
+15.8266	SYS_T,ms=16000,ticks=15846,late=0,gap=0,maxcy=1715,encmaxcy=966,motmaxcy=359,motticks=15846,valid=6847,stale=0,ir=15846
+15.8350	SYS_M,ms=16000,cal=3,n=4000,seq=6847,age=988,i2cok=15845,i2cerr=0,to=0,nr=172,busy=0,locked=0,wd=0
+15.8432	SYS_U,ms=16000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+15.8751	t=16053 state=0 encL=-15472 encR=-3596 yaw= gz= dropped=0
+15.9751	t=16153 state=0 encL=-15472 encR=-4033 yaw= gz= dropped=0
+15.9789	CMD_PING,ms=16160
+16.0494	SYS_STEP,ms=16225,state=2,fault=0,mode=1,id=17,group=1,step=6,duty=600,dl=0,dr=-985
+16.0753	t=16253 state=0 encL=-15472 encR=-4483 yaw= gz= dropped=0
+16.1753	t=16353 state=0 encL=-15472 encR=-4847 yaw= gz= dropped=0
+16.1791	CMD_PING,ms=16360
+16.1993	SYS_STEP,ms=16375,state=1,fault=0,mode=1,id=18,group=1,step=7,duty=700,dl=0,dr=-552
+16.2754	t=16453 state=0 encL=-15472 encR=-5171 yaw= gz= dropped=0
+16.3753	t=16553 state=0 encL=-15472 encR=-5683 yaw= gz= dropped=0
+16.3792	CMD_PING,ms=16560
+16.4498	SYS_STEP,ms=16625,state=2,fault=0,mode=1,id=18,group=1,step=7,duty=700,dl=0,dr=-1155
+16.4755	t=16653 state=0 encL=-15472 encR=-6212 yaw= gz= dropped=0
+16.5756	t=16753 state=0 encL=-15472 encR=-6650 yaw= gz= dropped=0
+16.5794	CMD_PING,ms=16760
+16.5997	SYS_STEP,ms=16775,state=1,fault=0,mode=1,id=19,group=1,step=8,duty=800,dl=0,dr=-664
+16.6757	t=16853 state=0 encL=-15472 encR=-7025 yaw= gz= dropped=0
+16.7749	t=16953 state=0 encL=-15472 encR=-7611 yaw= gz= dropped=0
+16.7775	CMD_PING,ms=16956
+16.8273	SYS_T,ms=17000,ticks=16846,late=0,gap=0,maxcy=1715,encmaxcy=966,motmaxcy=360,motticks=16846,valid=7847,stale=0,ir=16846
+16.8357	SYS_M,ms=17000,cal=3,n=4000,seq=7847,age=985,i2cok=16845,i2cerr=0,to=0,nr=182,busy=0,locked=0,wd=0
+16.8439	SYS_U,ms=17000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+16.8513	SYS_STEP,ms=17025,state=2,fault=0,mode=1,id=19,group=1,step=8,duty=800,dl=0,dr=-1321
+16.8757	t=17053 state=0 encL=-15472 encR=-8218 yaw= gz= dropped=0
+16.9758	t=17153 state=0 encL=-15472 encR=-8730 yaw= gz= dropped=0
+16.9797	CMD_PING,ms=17160
+17.0000	SYS_STEP,ms=17175,state=1,fault=0,mode=1,id=20,group=1,step=9,duty=900,dl=0,dr=-774
+17.0759	t=17253 state=0 encL=-15472 encR=-9152 yaw= gz= dropped=0
+17.1757	t=17353 state=0 encL=-15472 encR=-9809 yaw= gz= dropped=0
+17.1797	CMD_PING,ms=17360
+17.2501	SYS_STEP,ms=17425,state=2,fault=0,mode=1,id=20,group=1,step=9,duty=900,dl=0,dr=-1481
+17.2759	t=17453 state=0 encL=-15472 encR=-10495 yaw= gz= dropped=0
+17.3760	t=17553 state=0 encL=-15472 encR=-11081 yaw= gz= dropped=0
+17.3798	CMD_PING,ms=17560
+17.4004	SYS_STEP,ms=17575,state=1,fault=0,mode=1,id=21,group=1,step=10,duty=1000,dl=0,dr=-885
+17.4761	t=17653 state=0 encL=-15472 encR=-11549 yaw= gz= dropped=0
+17.5761	t=17753 state=0 encL=-15472 encR=-12286 yaw= gz= dropped=0
+17.5800	CMD_PING,ms=17760
+17.6505	SYS_STEP,ms=17825,state=2,fault=0,mode=1,id=21,group=1,step=10,duty=1000,dl=0,dr=-1650
+17.6762	t=17853 state=0 encL=-15472 encR=-13053 yaw= gz= dropped=0
+17.7764	t=17953 state=0 encL=-15472 encR=-13713 yaw= gz= dropped=0
+17.7801	CMD_PING,ms=17960
+17.8002	SYS_STEP,ms=17975,state=1,fault=0,mode=1,id=22,group=2,step=0,duty=0,dl=0,dr=-997
+17.8279	SYS_T,ms=18000,ticks=17846,late=0,gap=0,maxcy=1719,encmaxcy=966,motmaxcy=360,motticks=17846,valid=8847,stale=0,ir=17846
+17.8364	SYS_M,ms=18000,cal=3,n=4000,seq=8847,age=985,i2cok=17845,i2cerr=0,to=0,nr=182,busy=0,locked=0,wd=0
+17.8444	SYS_U,ms=18000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+17.8765	t=18053 state=0 encL=-15472 encR=-14238 yaw= gz= dropped=0
+17.9765	t=18153 state=0 encL=-15472 encR=-14639 yaw= gz= dropped=0
+17.9803	CMD_PING,ms=18160
+18.0505	SYS_STEP,ms=18225,state=2,fault=0,mode=1,id=22,group=2,step=0,duty=0,dl=0,dr=-1018
+18.0766	t=18253 state=0 encL=-15472 encR=-14928 yaw= gz= dropped=0
+18.1768	t=18353 state=0 encL=-15472 encR=-15115 yaw= gz= dropped=0
+18.1807	CMD_PING,ms=18360
+18.2008	SYS_STEP,ms=18375,state=1,fault=0,mode=1,id=23,group=2,step=1,duty=100,dl=0,dr=-287
+18.2769	t=18453 state=0 encL=-15495 encR=-15206 yaw= gz= dropped=0
+18.3769	t=18553 state=0 encL=-15551 encR=-15262 yaw= gz= dropped=0
+18.3809	CMD_PING,ms=18560
+18.4516	SYS_STEP,ms=18625,state=2,fault=0,mode=1,id=23,group=2,step=1,duty=100,dl=-119,dr=-158
+18.4772	t=18653 state=0 encL=-15604 encR=-15315 yaw= gz= dropped=0
+18.5772	t=18753 state=0 encL=-15614 encR=-15321 yaw= gz= dropped=0
+18.5810	CMD_PING,ms=18760
+18.6014	SYS_STEP,ms=18775,state=1,fault=0,mode=1,id=24,group=2,step=2,duty=200,dl=-23,dr=-19
+18.6775	t=18853 state=0 encL=-15670 encR=-15376 yaw= gz= dropped=0
+18.7775	t=18953 state=0 encL=-15800 encR=-15507 yaw= gz= dropped=0
+18.7814	CMD_PING,ms=18960
+18.8291	SYS_T,ms=19000,ticks=18846,late=0,gap=0,maxcy=1791,encmaxcy=966,motmaxcy=438,motticks=18846,valid=9847,stale=0,ir=18846
+18.8373	SYS_M,ms=19000,cal=3,n=4000,seq=9847,age=985,i2cok=18845,i2cerr=0,to=0,nr=214,busy=0,locked=0,wd=0
+18.8456	SYS_U,ms=19000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+18.8530	SYS_STEP,ms=19025,state=2,fault=0,mode=1,id=24,group=2,step=2,duty=200,dl=-283,dr=-282
+18.8775	t=19053 state=0 encL=-15931 encR=-15638 yaw= gz= dropped=0
+18.9776	t=19153 state=0 encL=-16003 encR=-15710 yaw= gz= dropped=0
+18.9814	CMD_PING,ms=19160
+19.0019	SYS_STEP,ms=19175,state=1,fault=0,mode=1,id=25,group=2,step=3,duty=300,dl=-112,dr=-113
+19.0776	t=19253 state=0 encL=-16103 encR=-15803 yaw= gz= dropped=0
+19.1778	t=19353 state=0 encL=-16311 encR=-16010 yaw= gz= dropped=0
+19.1815	CMD_PING,ms=19360
+19.2522	SYS_STEP,ms=19425,state=2,fault=0,mode=1,id=25,group=2,step=3,duty=300,dl=-456,dr=-448
+19.2778	t=19453 state=0 encL=-16521 encR=-16220 yaw= gz= dropped=0
+19.3778	t=19553 state=0 encL=-16666 encR=-16365 yaw= gz= dropped=0
+19.3817	CMD_PING,ms=19560
+19.4020	SYS_STEP,ms=19575,state=1,fault=0,mode=1,id=26,group=2,step=4,duty=400,dl=-222,dr=-222
+19.4778	t=19653 state=0 encL=-16827 encR=-16526 yaw= gz= dropped=0
+19.5778	t=19753 state=0 encL=-17111 encR=-16810 yaw= gz= dropped=0
+19.5818	CMD_PING,ms=19760
+19.6522	SYS_STEP,ms=19825,state=2,fault=0,mode=1,id=26,group=2,step=4,duty=400,dl=-635,dr=-635
+19.6780	t=19853 state=0 encL=-17401 encR=-17100 yaw= gz= dropped=0
+19.7778	t=19953 state=0 encL=-17618 encR=-17317 yaw= gz= dropped=0
+19.7816	CMD_PING,ms=19960
+19.8022	SYS_STEP,ms=19975,state=1,fault=0,mode=1,id=27,group=2,step=5,duty=500,dl=-332,dr=-332
+19.8296	SYS_T,ms=20000,ticks=19846,late=0,gap=0,maxcy=1798,encmaxcy=966,motmaxcy=438,motticks=19846,valid=10847,stale=0,ir=19846
+19.8379	SYS_M,ms=20000,cal=3,n=4000,seq=10847,age=981,i2cok=19845,i2cerr=0,to=0,nr=214,busy=0,locked=0,wd=0
+19.8462	SYS_U,ms=20000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+19.8778	t=20053 state=0 encL=-17836 encR=-17535 yaw= gz= dropped=0
+19.9782	t=20153 state=0 encL=-18197 encR=-17896 yaw= gz= dropped=0
+19.9821	CMD_PING,ms=20160
+20.0524	SYS_STEP,ms=20225,state=2,fault=0,mode=1,id=27,group=2,step=5,duty=500,dl=-812,dr=-811
+20.0780	t=20253 state=0 encL=-18566 encR=-18265 yaw= gz= dropped=0
+20.1781	t=20353 state=0 encL=-18856 encR=-18555 yaw= gz= dropped=0
+20.1819	CMD_PING,ms=20360
+20.2024	SYS_STEP,ms=20375,state=1,fault=0,mode=1,id=28,group=2,step=6,duty=600,dl=-440,dr=-441
+20.2782	t=20453 state=0 encL=-19129 encR=-18828 yaw= gz= dropped=0
+20.3783	t=20553 state=0 encL=-19564 encR=-19263 yaw= gz= dropped=0
+20.3821	CMD_PING,ms=20560
+20.4526	SYS_STEP,ms=20625,state=2,fault=0,mode=1,id=28,group=2,step=6,duty=600,dl=-983,dr=-983
+20.4784	t=20653 state=0 encL=-20012 encR=-19711 yaw= gz= dropped=0
+20.5786	t=20753 state=0 encL=-20375 encR=-20074 yaw= gz= dropped=0
+20.5824	CMD_PING,ms=20760
+20.6029	SYS_STEP,ms=20775,state=1,fault=0,mode=1,id=29,group=2,step=7,duty=700,dl=-551,dr=-551
+20.6784	t=20853 state=0 encL=-20700 encR=-20399 yaw= gz= dropped=0
+20.7787	t=20953 state=0 encL=-21208 encR=-20907 yaw= gz= dropped=0
+20.7825	CMD_PING,ms=20960
+20.8301	SYS_T,ms=21000,ticks=20846,late=0,gap=0,maxcy=1801,encmaxcy=966,motmaxcy=438,motticks=20846,valid=11847,stale=0,ir=20846
+20.8386	SYS_M,ms=21000,cal=3,n=4000,seq=11847,age=985,i2cok=20845,i2cerr=0,to=0,nr=247,busy=0,locked=0,wd=0
+20.8468	SYS_U,ms=21000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+20.8547	SYS_STEP,ms=21025,state=2,fault=0,mode=1,id=29,group=2,step=7,duty=700,dl=-1149,dr=-1149
+20.8787	t=21053 state=0 encL=-21732 encR=-21431 yaw= gz= dropped=0
+20.9787	t=21153 state=0 encL=-22167 encR=-21865 yaw= gz= dropped=0
+20.9827	CMD_PING,ms=21160
+21.0030	SYS_STEP,ms=21175,state=1,fault=0,mode=1,id=30,group=2,step=8,duty=800,dl=-658,dr=-658
+21.0789	t=21253 state=0 encL=-22539 encR=-22238 yaw= gz= dropped=0
+21.1789	t=21353 state=0 encL=-23117 encR=-22816 yaw= gz= dropped=0
+21.1826	CMD_PING,ms=21360
+21.2533	SYS_STEP,ms=21425,state=2,fault=0,mode=1,id=30,group=2,step=8,duty=800,dl=-1305,dr=-1305
+21.2788	t=21453 state=0 encL=-23717 encR=-23415 yaw= gz= dropped=0
+21.3791	t=21553 state=0 encL=-24221 encR=-23920 yaw= gz= dropped=0
+21.3830	CMD_PING,ms=21560
+21.4033	SYS_STEP,ms=21575,state=1,fault=0,mode=1,id=31,group=2,step=9,duty=900,dl=-764,dr=-763
+21.4789	t=21653 state=0 encL=-24638 encR=-24337 yaw= gz= dropped=0
+21.5793	t=21753 state=0 encL=-25282 encR=-24982 yaw= gz= dropped=0
+21.5831	CMD_PING,ms=21760
+21.6537	SYS_STEP,ms=21825,state=2,fault=0,mode=1,id=31,group=2,step=9,duty=900,dl=-1452,dr=-1454
+21.6791	t=21853 state=0 encL=-25953 encR=-25652 yaw= gz= dropped=0
+21.7792	t=21953 state=0 encL=-26524 encR=-26222 yaw= gz= dropped=0
+21.7830	CMD_PING,ms=21960
+21.8037	SYS_STEP,ms=21975,state=1,fault=0,mode=1,id=32,group=2,step=10,duty=1000,dl=-864,dr=-863
+21.8308	SYS_T,ms=22000,ticks=21846,late=0,gap=0,maxcy=1803,encmaxcy=966,motmaxcy=438,motticks=21846,valid=12847,stale=0,ir=21846
+21.8393	SYS_M,ms=22000,cal=3,n=4000,seq=12847,age=981,i2cok=21845,i2cerr=0,to=0,nr=251,busy=0,locked=0,wd=0
+21.8474	SYS_U,ms=22000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+21.8792	t=22053 state=0 encL=-26982 encR=-26681 yaw= gz= dropped=0
+21.9793	t=22153 state=0 encL=-27694 encR=-27399 yaw= gz= dropped=0
+21.9832	CMD_PING,ms=22160
+22.0542	SYS_STEP,ms=22225,state=2,fault=0,mode=1,id=32,group=2,step=10,duty=1000,dl=-1604,dr=-1617
+22.0794	t=22253 state=0 encL=-28443 encR=-28154 yaw= gz= dropped=0
+22.1796	t=22353 state=0 encL=-29088 encR=-28798 yaw= gz= dropped=0
+22.1836	CMD_PING,ms=22360
+22.2042	SYS_STEP,ms=22375,state=3,fault=0,mode=1,id=33,group=2,step=10,duty=1000,dl=-975,dr=-974
+22.2798	t=22453 state=0 encL=-29600 encR=-29311 yaw= gz= dropped=0
+22.3799	t=22553 state=0 encL=-29991 encR=-29702 yaw= gz= dropped=0
+22.4801	t=22653 state=0 encL=-30274 encR=-29985 yaw= gz= dropped=0
+22.5801	t=22753 state=0 encL=-30460 encR=-30171 yaw= gz= dropped=0
+22.6802	t=22853 state=0 encL=-30559 encR=-30270 yaw= gz= dropped=0
+22.7804	t=22953 state=0 encL=-30580 encR=-30293 yaw= gz= dropped=0
+22.8319	SYS_T,ms=23000,ticks=22846,late=0,gap=0,maxcy=1803,encmaxcy=966,motmaxcy=438,motticks=22846,valid=13847,stale=0,ir=22846
+22.8403	SYS_M,ms=23000,cal=3,n=4000,seq=13847,age=991,i2cok=22845,i2cerr=0,to=0,nr=259,busy=0,locked=1,wd=0
+22.8487	SYS_U,ms=23000,tx_drop=0,dma_err=0,rx_err=0,rx_ov=0,trim=25,clkfault=0,iclk=400000
+22.8804	t=23053 state=0 encL=-30580 encR=-30293 yaw= gz= dropped=0
+22.9810	t=23153 state=0 encL=-30580 encR=-30293 yaw= gz= dropped=0
+23.0807	t=23253 state=0 encL=-30580 encR=-30293 yaw= gz= dropped=0
+23.1805	t=23353 state=0 encL=-30580 encR=-30293 yaw= gz= dropped=0
+23.2804	t=23453 state=0 encL=-30580 encR=-30293 yaw= gz= dropped=0
