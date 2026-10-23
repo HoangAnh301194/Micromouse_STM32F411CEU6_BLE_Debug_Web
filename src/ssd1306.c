@@ -197,7 +197,7 @@ SSD1306_Status_t SSD1306_Init(void) {
     
     /* Set Memory Addressing Mode (Page addressing mode) */
     SSD1306_WriteCommand(SSD1306_CMD_MEMORY_MODE);
-    SSD1306_WriteCommand(0x10);
+    SSD1306_WriteCommand(0x02); /* Datasheet: 10b = page addressing. */
     
     /* Enable Charge Pump */
     SSD1306_WriteCommand(SSD1306_CMD_CHARGE_PUMP);
@@ -342,7 +342,7 @@ void SSD1306_Process_DMA(void) {
             /* Re-send critical init commands */
             SSD1306_WriteCommand(SSD1306_CMD_DISPLAY_ON);
             SSD1306_WriteCommand(SSD1306_CMD_MEMORY_MODE);
-            SSD1306_WriteCommand(0x10);  /* Page addressing mode */
+            SSD1306_WriteCommand(0x02);  /* Page addressing mode */
             SSD1306_WriteCommand(0xA4);  /* Output follows RAM */
             SSD1306_WriteCommand(SSD1306_CMD_DISPLAY_NORMAL);
         }
