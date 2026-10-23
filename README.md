@@ -1,6 +1,6 @@
 # Micromouse STM32F411CEU6 - Minimal Core
 
-> **Phục hồi có chọn lọc:** Các công cụ debug lịch sử vẫn nằm trên [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024), nhưng `tools/flash_map_pipeline.py` đã được khôi phục vào `giomuadongbac` theo yêu cầu để thử map giả 5×5/16×16, Flash Sector 7 và UART1/JDY-33. WebBLE ở [web/ble_debug_console.html](web/ble_debug_console.html); bài test map ở `tests/regression/flash_map_protocol_test.py`. Các script debug cũ khác vẫn ở archive. **Giữ nguyên** mọi tệp `results/`.
+> **Khôi phục đầy đủ tools (24/10/2026):** Đã đưa lại **33 file** của thư mục [`tools/`](tools/) vào `giomuadongbac` từ [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024), gồm BLE, UART, encoder, IR, PID, Flash và các bài test. WebBLE vẫn ở [web/ble_debug_console.html](web/ble_debug_console.html), kiểm thử native hiện hành vẫn ở `tests/`; không thay đổi dữ liệu `results/`. Khôi phục code **không phải nghiệm thu phần cứng**.
 
 
 > **Tiến độ mới nhất và ngữ cảnh bàn giao đa agent:** [PROJECT_STATUS.md](PROJECT_STATUS.md). Agent/chat mới bắt đầu từ [AGENTS.md](AGENTS.md); kết quả nghiệm thu I2C–MPU6050 nằm tại [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md).
@@ -213,7 +213,7 @@ The MPU6050 gyro, asynchronous temperature measurement and I2C1 driver are maint
 
 ### Flash map WebBLE diagnostic
 
-The WebBLE 5×5/16×16 map viewer is retained at [web/ble_debug_console.html](web/ble_debug_console.html). Historical Flash-map bench automation is available only on the archive branch; see the [original guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
+The WebBLE 5×5/16×16 map viewer is retained at [web/ble_debug_console.html](web/ble_debug_console.html). Flash-map bench automation is available at [`tools/flash_map_pipeline.py`](tools/flash_map_pipeline.py); see the [operator guide](docs/system_debug/FLASH_MAP_WEB_PIPELINE.md). Production does not save maps automatically.
 
 ### One-command JDY-33 BLE PA2/PA3 qualification (new, hardware pending)
 

@@ -3,8 +3,8 @@
 > **Restored on `giomuadongbac`:** `tools/flash_map_pipeline.py` is again
 > available for the user-requested 5×5/16×16 Flash-map test. The BLE viewer
 > remains in `web/ble_debug_console.html` and the native test is under
-> `tests/regression/flash_map_protocol_test.py`. Other retired host debug tools
-> remain in the [archive branch](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024).
+> `tests/regression/flash_map_protocol_test.py`. The complete restored debug tool suite is now also on the active
+> `giomuadongbac` branch; the historical snapshot remains in the [archive branch](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024).
 > Board-side Flash write / power-loss / JDY-33 acceptance is still pending.
 
 
