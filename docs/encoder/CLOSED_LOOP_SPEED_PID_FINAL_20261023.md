@@ -34,11 +34,15 @@ may differ from the nominal stage reference, but is limited to <=30%.
   elevated and guarded; do not run on an unrestrained mobile robot.
 - An independent, tested physical motor-VM power cutoff and an attentive
   operator are mandatory. Never rely on USB/UART/software STOP alone.
-- Every one of 9 test runs flashes a new motor-enabled image. The
-  pipeline explicitly requests **VM_OFF** before EACH flash and
-  **MOTOR_READY** after flashing. It requests VM_OFF again after DONE.
-  If a run crashes, physically disconnect VM before handling board
-  or ST-Link; the host attempts motor-OFF restoration in `finally`.
+- The nine tests now run **without any terminal input prompts**.
+  The command-line flags authorize all nine motor-ON runs in advance.
+  Each round automatically reflashes a motor-capable image and can then
+  start motors without an additional pause. **VM being plugged in
+  does not make firmware flashing or reset harmless**: keep wheels
+  mechanically secured, remain next to a working independent physical
+  VM cutoff and use it immediately if behavior is abnormal.
+  Do not leave the rig unattended. On failure the host attempts
+  motor-OFF restoration; do not consider a failed restoration safe.
 - Firmware still requires MODE ON + START with fresh MPU calibration,
   750-ms PING lease, 300-ms Motor Driver command lease, TIM11/IMU/I2C
   watchdogs, permanent STOP/FAULT lock, and 180s session deadline.
@@ -48,7 +52,11 @@ may differ from the nominal stage reference, but is limited to <=30%.
 
 ## Commands
 
-Power off motor VM before flashing. First synchronize the clean checkout:
+Prefer VM disconnected during flashing wherever the physical setup
+permits. If you choose to keep VM supplied, the controlled test fixture,
+independent physical cutoff and continuous operator supervision are
+essential; auto-start after each firmware flash is expected.
+First synchronize the clean checkout:
 
 ```powershell
 git status -sb
@@ -67,11 +75,16 @@ For the nine supervised motor-enabled trials (three repeats each,
 counterbalanced order, **never more than 30%**):
 
 ```powershell
-python tools/speed_pid_final_pipeline.py --port COM7 --fixture-ready --independent-vm-cutoff --allow-30-percent
+python tools/speed_pid_final_pipeline.py --port COM6 --fixture-ready --independent-vm-cutoff --allow-30-percent
 ```
 
-This command first runs a fresh real 33-stage locked Motor-OFF sanity
-check. Each run then uses a distinct firmware environment:
+This command does not request `VM_OFF` or `MOTOR_READY` input.
+The flags `--fixture-ready`, `--independent-vm-cutoff` and
+`--allow-30-percent` are a **single authorization** for all nine
+sequential live trials; the independent cutoff is physical equipment,
+not a software action. It first performs a locked 33-stage Motor-OFF
+sanity check, then flashes and runs each image automatically.
+Each run uses a distinct firmware environment:
 
 - `speed_pid_alpha_008_96m`: alpha 0.08.
 - `speed_pid_alpha_010_96m`: alpha 0.10.
