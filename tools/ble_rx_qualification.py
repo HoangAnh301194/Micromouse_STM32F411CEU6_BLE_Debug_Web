@@ -398,6 +398,8 @@ def decide(results):
     if not a or not b or not tests:
         return "INCOMPLETE"
     if all(x["verdict"]=="RX_FUNCTIONAL_IN_THIS_TEST" for x in tests):
+        if not a.get("pass") or not b.get("pass"):
+            return "RX_FUNCTIONAL_BUT_UPLINK_BASELINE_LIMIT"
         return "RX_FUNCTIONAL_IN_TESTED_RANGE"
     if all(x["verdict"]=="GATT_WRITE_NOT_TESTABLE" for x in tests):
         return "NOT_TESTABLE_NO_GATT_WRITE"
@@ -457,7 +459,13 @@ async def run(args,out):
         print("QUALIFICATION ABORTED:",result["error"],file=sys.stderr,flush=True)
     finally:
         if cap is not None:
-            await cap.close()
+            try:
+                await cap.close()  # MODE B first, regardless of test outcome.
+            except Exception as exc:
+                result["cleanup_error"]=f"{type(exc).__name__}: {exc}"
+                print("WARNING: failed to cleanly close BLE/COM; "
+                      "attempting safe firmware restoration.",
+                      file=sys.stderr,flush=True)
             save(out,result,cap)
         if not args.no_flash and not args.no_restore:
             try:
@@ -504,7 +512,7 @@ def main():
         "ble_rx_ab_"+datetime.now().strftime("%Y%m%d_%H%M%S"))
     out.mkdir(parents=True,exist_ok=True)
     report=asyncio.run(run(args,out))
-    if report.get("error") or report.get("restore_error") or report["verdict"]=="INCOMPLETE":
+    if report.get("error") or report.get("restore_error") or report.get("cleanup_error") or report["verdict"]=="INCOMPLETE":
         raise SystemExit(2)
 
 
