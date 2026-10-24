@@ -16,14 +16,15 @@
 #include <string.h>
 
 #define FM_CMD_CAP 40U
-#define FM_PACE_MS 40UL
+#define FM_PACE_MS 120UL /* JDY-33: pace 16x16 map over ~2s, no blocking */
+#define FM_READY_MS 3500UL
 static uint8_t fake_map[MAP_DIAG_MAX_BLOB];
 static uint8_t flash_buffer[FLASH_RECORD_PAYLOAD_MAX];
 static uint8_t tx_map[MAP_DIAG_MAX_BLOB];
 static char command[FM_CMD_CAP];
 static uint8_t cmd_len,cmd_bad,tx_active,tx_row;
 static uint16_t tx_len;
-static uint32_t tx_crc,tx_last;
+static uint32_t tx_crc,tx_last,ready_last;
 static char tx_source[12];
 
 static void PrintInfo(void)
@@ -123,6 +124,7 @@ static void DoRead(void)
                 (unsigned long)(st==FLASH_OK?Flash_DataCrc32(fake_map,n):0U));
     PrintInfo();
     if(st==FLASH_OK) BeginBle(fake_map,n,legacy?"LEGACY":"FLASH");
+    else BT_Printf("MAPERR,reason=NO_SAVED_MAP,status=%u\r\n",(unsigned)st);
 }
 
 static void DoPreview(uint8_t size)
@@ -206,13 +208,32 @@ int FlashMapDiag_Main(void)
     BT_Init();
     UART_SendString("FM_BOOT,profile=flash_map_diag_96m,locked=1,tim11=OFF,ir=OFF,mpu=OFF,erase=DISABLED\r\n");
     PrintInfo();
+    ready_last=millis()-FM_READY_MS;
     while(1) {
         PollSerial();
         if(BT_Available()) {
             char c=BT_ReceiveChar();
-            if(c=='?') DoRead(); /* Browser requests current Flash map. */
+            if(c=='?') {
+                UART_Printf("FM_BLE_REQ,cmd=READ,ms=%lu\r\n",(unsigned long)millis());
+                BT_SendString("MAPACK,cmd=READ\r\n");
+                DoRead();
+            } else if(c=='V') {
+                UART_Printf("FM_BLE_REQ,cmd=PREVIEW16,ms=%lu\r\n",(unsigned long)millis());
+                BT_SendString("MAPACK,cmd=PREVIEW16\r\n");
+                DoPreview(16U);
+            } else if(c=='v') {
+                UART_Printf("FM_BLE_REQ,cmd=PREVIEW5,ms=%lu\r\n",(unsigned long)millis());
+                BT_SendString("MAPACK,cmd=PREVIEW5\r\n");
+                DoPreview(5U);
+            }
         }
         ServiceBle();
+        /* Lightweight heartbeat lets Web detect board resets and a missing
+         * map request, even when JDY-33 was connected after boot. */
+        if((uint32_t)(millis()-ready_last)>=FM_READY_MS) {
+            ready_last=millis();
+            BT_Printf("MAPREADY,ms=%lu,locked=1\r\n",(unsigned long)ready_last);
+        }
     }
 }
 #else
