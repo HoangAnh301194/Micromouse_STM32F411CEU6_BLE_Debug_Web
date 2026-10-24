@@ -66,7 +66,7 @@ python tools/clock96_integration_gate.py --audit
 python tools/motor_giomuadongbac_gate.py --self-test
 python tools/motor_giomuadongbac_gate.py --audit
 python tools/uart_mpu_integration_gate.py
-python tools/motor_driver_native_test.py
+python tests/regression/motor_driver_native_test.py
 python -m platformio run -e genericSTM32F411CE
 ```
 

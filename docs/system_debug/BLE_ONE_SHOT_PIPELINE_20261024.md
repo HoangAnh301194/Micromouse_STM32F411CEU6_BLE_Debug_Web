@@ -112,7 +112,7 @@ Hardware data must be saved at `results/ble_one_shot_YYYYMMDD_HHMMSS/`:
 - `*_events.json`: all firmware health, setup and safety events.
 - `ble_summary.json`, `ble_qualification.md`: summary for sharing.
 
-The current browser `tools/ble_debug_console.html` remains the legacy
+The current browser `web/ble_debug_console.html` remains the legacy
 text/maze viewer, **not** a decoder for binary benchmark frames. During
 this one-shot benchmark use the Python Bleak receiver, not Web Bluetooth.
 

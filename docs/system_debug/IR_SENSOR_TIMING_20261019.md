@@ -51,7 +51,7 @@ nominal 96 MHz capacity; it is not total MCU utilization.
 From the repository root:
 
 ```powershell
-python tools/ir_sensor_native_test.py
+python tests/regression/ir_sensor_native_test.py
 python tools/test_ir_sensor_timing_capture.py
 pio run -e genericSTM32F411CE -e integration_diag_motor_off_96m -e integration_diag_uart_96m
 pio run -e integration_diag_motor_off_96m -t upload

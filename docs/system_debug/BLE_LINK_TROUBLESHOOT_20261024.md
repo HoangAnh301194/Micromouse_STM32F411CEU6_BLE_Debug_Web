@@ -2,7 +2,7 @@
 
 ## Ghi nhận từ WebBLE log ngày 2026-10-24
 
-- `web/ble_debug_console.html` và bản sao cũ `tools/ble_debug_console.html`
+- `web/ble_debug_console.html` và bản sao cũ trong `tools/` (đã xóa khi dọn file trùng lặp ngày 24/10/2026)
   đã bị nối đuôi khoảng 10 KB mã JavaScript **sau** `</html>`.
   Trình duyệt hiển thị mã này thành văn bản. Bản sửa cắt bỏ đúng phần
   nối thừa, không đụng parser bản đồ 5×5/16×16.

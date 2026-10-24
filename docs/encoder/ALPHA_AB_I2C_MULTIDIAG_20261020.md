@@ -365,7 +365,7 @@ such a run is unqualified rather than silently producing biased data.
 
 ### Software validation and acceptance workflow
 
-The existing `tools/encoder_native_test.py` now compiles/runs actual
+The existing `tests/regression/encoder_native_test.py` now compiles/runs actual
 `src/encoder.c` in both production and diagnostic configurations.
 The diagnostic native harness checks:
 
