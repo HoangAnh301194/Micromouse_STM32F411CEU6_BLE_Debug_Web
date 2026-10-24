@@ -15,12 +15,11 @@ const sourceClassify=script.slice(script.indexOf('function classifyBLE('),
 if (!sourceClassify.includes('!ERR') || !sourceClassify.includes('i2cerr')) {
     throw Error('BLE status/error classification regression');
 }
-if (!html.includes('id="btnPreview16"') ||
-    !html.includes('id="btnPreview5"') ||
-    !script.includes('function requestMapCommand(') ||
-    !script.includes('MAPREADY,') || !script.includes('MAPACK,') ||
-    !script.includes('MAPERR,')) {
-    throw Error('Web BLE flash-map request/retry/preview controls missing');
+if (html.includes('id="btnPreview16"') || html.includes('id="btnRequestMap"') ||
+    script.includes('requestMapCommand(') || script.includes('.writeValue') ||
+    !script.includes('MAPREADY,') || !script.includes('MAPCFG,') ||
+    !html.includes('Monitor only · Auto map')) {
+    throw Error('BLE must be passive RX-only, without map GATT write controls');
 }
 new vm.Script(script);  // Validate entire browser source syntax.
 const start=script.indexOf('/* Versioned map protocol:');
