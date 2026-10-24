@@ -22,6 +22,11 @@ if (!html.includes('id="btnPreview16"') ||
     !script.includes('MAPERR,')) {
     throw Error('Web BLE flash-map request/retry/preview controls missing');
 }
+if (!script.includes('let bleNotificationsSinceConnect = 0') ||
+    !script.includes('bleNotificationsSinceConnect++') ||
+    !script.includes('0 notifications after 3 requests')) {
+    throw Error('BLE link diagnosis must detect zero GATT notifications');
+}
 new vm.Script(script);  // Validate entire browser source syntax.
 const start=script.indexOf('/* Versioned map protocol:');
 const end=script.indexOf('/* Chunked protocol:',start);
