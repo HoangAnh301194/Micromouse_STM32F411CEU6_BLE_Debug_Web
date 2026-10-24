@@ -18,7 +18,7 @@ has been completed from this chat.
 ## Hardware and protocol
 
 - Debug/results: **USART1 TX PA9 / RX PA10**, USB-UART, 115200 8N1. Emits `FM_BOOT`, `FM_INFO`, `FM_BEGIN`, `FM_SAVE`, `FM_VERIFY`, `FM_READ`, `FM_CFG`, `FM_ROW`, `FM_DONE`.
-- Map display: **JDY-33 BLE USART2 TX PA2 / RX PA3**, Web Bluetooth service FFE0, characteristic FFE1. Sends `MAPCFG`, one `MAPROW` per row, then `MAPEND`; web verifies complete rows and CRC32 before rendering.
+- Map display: **JDY-33 BLE USART2 TX PA2 only**, Web Bluetooth service FFE0, characteristic FFE1. STM32 USART2 receive is disabled in the optional Flash Map diagnostic. All debug control commands use UART1 PA10/COM7. Sends `MAPCFG`, one `MAPROW` per row, then `MAPEND`; web verifies complete rows and CRC32 before rendering.
 - Two deterministic fake maps: **16×16** and **5×5**, byte header `MAP1`, width, height, two zero bytes, then N×N wall nibbles (N/E/S/W = 1/2/4/8), row zero at bottom. Flood fill is calculated by web; a wall nibble is not treated as an explored flag.
 - Existing legacy `main` 5×5 map is readable as a fallback from sector 7, offset zero. A versioned 5×5 or 16×16 new map uses the journal's CRC32-protected record slots.
 
@@ -35,8 +35,9 @@ has been completed from this chat.
    `python -m http.server 8000 --directory web`
 
    Open **http://localhost:8000/ble_debug_console.html** in Chrome or Edge,
-   click **Connect** to JDY-33. The **Request map** button sends a one-byte
-   `?` request; if FFE1 is not writable, use UART command `READ` instead.
+   click **Connect** to JDY-33. The Web is receive-only; no GATT write
+   requests exist. The STM32 automatically rebroadcasts the last diagnostic
+   map about 12 seconds after each completed map transfer.
    Browser GATT access needs a secure context (localhost is supported).
 
 3. Back up any important existing Flash data and check that ST-Link uploading
@@ -66,9 +67,10 @@ has been completed from this chat.
    and a subsequent `FM_READ,status=0`. The firmware sends the read-back
    map to BLE with `src=FLASH`.
 
-6. After an MCU reset (the map must persist), rerun the safe preview,
-   click **Request map** or send `READ` over UART1 to retransmit the
-   stored 5×5/16×16 map.
+6. After MCU reset, the diagnostic firmware starts a fresh **RAM 16×16 test
+   map** and rebroadcasts it periodically. This is not persistent Flash data.
+   To display the actual persisted map, send `READ` over UART1/COM7;
+   the last selected map then repeats automatically over BLE.
 
 7. Export the BLE terminal log in the web page, then independently audit
    the exact MAPCFG/MAPROW/MAPEND frames:
@@ -100,55 +102,71 @@ failures with UART .log and exported BLE lines. Save commands are never sent
 by default. The diagnostic does not implement navigation or map exploration.
 
 
-## 2026-10-24 — WebBLE map replay and verification
+## 2026-10-24 — RX-disabled BLE monitor (current mode)
 
-The initial 2026-10-24 Flash Map report `results/flash_map_diag/flash_map_20261024_082035.json`
-proved **UART1** 16x16 RAM preview CRC `933A97B3` (16 rows), RAM
-5x5 preview CRC `1323C17D` (5 rows), and read-back of the earlier
-**legacy 5x5** Flash map CRC `22646C99`. It did **not** include a BLE
-Web export, so these UART-only PASS verdicts cannot prove on-air delivery.
+### Hardware constraint
 
-**Important:** `PREVIEW 16` and `PREVIEW 5` live in **RAM** and are
-transmitted only at command time. Resetting the STM32 does not persist RAM
-previews. The `READ` / Web **Read saved map** action accesses the persisted
-Flash map (here it is the legacy 5x5), not the last 16x16 RAM preview.
-Neither web preview button performs a Flash write.
+The current Micromouse may have an unreliable JDY-33-to-STM32 UART2 receive
+path (FFE1 downlink). Prior short HELLO/PING diagnostics did succeed on
+some sessions, so a permanent physical fault is **not conclusively proven**.
+The optional Flash Map diagnostic now **does not depend on this path**.
+`USART2->CR1` disables `RE` and `RXNEIE` in the Flash Map firmware only.
+Other firmware profiles and physical pin mappings are unchanged.
 
-Run the **new** `flash_map_diag_96m` firmware via ST-Link and the matching
-`web/ble_debug_console.html` in a refreshed Chrome/Edge tab:
+| Path | Role | Direction |
+|---|---|---|
+| UART1 PA9/PA10 via USB-TTL COM7 | Debug commands and verification | PC ↔ STM32 |
+| USART2 PA2 TX → JDY-33 RXD → Web notifications | Passive telemetry/map | STM32 → Web |
+| USART2 PA3 RX ← JDY-33 TXD | Unused in this profile | Disabled |
+
+### No BLE commands or Flash writes
+
+No Web **Read saved map**, **Preview** or retry buttons are exposed.
+Connecting to JDY-33 only subscribes to FFE1 notifications.
+The firmware generates the deterministic **16×16 RAM test map at boot**,
+broadcasts `MAPCFG`, 16 paced `MAPROW` records, and `MAPEND`, and
+retransmits the last chosen map **12 seconds after each finished broadcast**
+even if no Web browser is connected. With 120 ms per row, a full 16×16
+broadcast lasts about 2 seconds; a later subscriber may need slightly
+longer than 12 seconds to receive the next complete map.
+`MAPREADY` heartbeat is sent every ~3.5 seconds and the browser
+tracks MCU uptime resets without trying to send any requests.
+
+To display a different map while Web is connected use COM7 UART1:
+
 ```powershell
-git pull --rebase origin giomuadongbac
-python -m platformio run -e flash_map_diag_96m -t upload
-python -m http.server 8000 --directory web
+python -m serial.tools.miniterm COM7 115200
 ```
 
-Open `http://localhost:8000/ble_debug_console.html` (hard refresh
-Ctrl+F5), connect `Nezumi_Chan`, and click:
+Inside Miniterm (NOT PowerShell) enter `PREVIEW 5`, `PREVIEW 16` or
+`READ`; `PREVIEW` uses RAM only, and `READ` reads saved Flash
+(in the prior run, a legacy 5×5 map). Whichever map was most recently
+selected is the one that will be rebroadcast periodically.
+Exit Miniterm with `Ctrl+]`.
 
-- **Read saved map**: Web sends `?`, MCU logs `FM_BLE_REQ,cmd=READ`
-  on UART1 and answers BLE `MAPACK,cmd=READ` + `MAPCFG`/`MAPROW`/`MAPEND`.
-  Here the expected result is 5×5 legacy CRC `22646C99`.
-- **Preview 16×16 (RAM)**: Web sends `V`, MCU logs
-  `FM_BLE_REQ,cmd=PREVIEW16`, then streams 16x16 RAM map with
-  expected CRC `933A97B3`, without programming Flash.
-- **Preview 5×5 (RAM)**: Web sends `v`, expected CRC `1323C17D`.
-  These two commands work only in the guarded Flash Map diagnostic build.
+One-shot UART diagnostic (no Flash writes) remains available:
 
-The UART1 log `FM_BLE_REQ` distinguishes a failed FFE1 downlink
-(no MCU receipt) from a failed uplink (MCU ACK exists on serial but no
-BLE MAPACK). The Web terminal shows `MAP TX`, `MAPACK`, the number
-of valid `MAPROW` rows and either `MAP VERIFY PASS` or a specific error.
-If incomplete, it retries the requested map up to three attempts.
-`MAPREADY,ms=...` arrives about every 3.5s, detects an STM32 uptime
-reset and can request a map again over the **existing** BLE connection.
-There is no unbounded flood when the remote device is absent.
+```powershell
+python tools/flash_map_pipeline.py --port COM7 --web-hold-seconds 6
+```
 
-Keep the Web connected **before** sending UART `PREVIEW`; otherwise
-the RAM preview's one-time BLE output can be missed. The request buttons
-allow deliberate replay after the original UART event.
-If a browser or Bluetooth terminal already holds GATT, disconnect it before
-using the Python Bleak benchmark. Do not operate concurrent GATT clients.
+This changes the displayed diagnostic map through UART1, *not BLE RX*.
+Run the browser before launching the script to observe all phases.
 
-If Web still says `waiting for data`, export the **Web BLE TXT** and
-capture UART1 `FM_BLE_REQ`/ `FM_CFG`/ `FM_ROW`/`FM_DONE` from the
-same instant. UART-only Flash-map PASS must not be presented as WebBLE PASS.
+### Evidence and acceptance
+
+A Web terminal screenshot showing only `Connected` is insufficient.
+To pass the BLE uplink test require **all** `MAPCFG`, N `MAPROW`, and
+`MAPEND` with `MAP VERIFY PASS` and CRC32 matching the UART output.
+Use the browser **Export** button and `--ble-log` Python audit.
+
+`FM_REPLAY`, `FM_CFG`, `FM_ROW`, `FM_DONE` printed on COM7
+confirm firmware scheduling/USART1 mirror, but not radio delivery.
+If Web sees `MAPREADY` with no complete map, check UART2 TX PA2 →
+JDY-33 RXD, JDY module baudrate **115200**, GND, and BLE notify traffic.
+Web must not silently retry GATT writes; receiver just awaits the
+next autonomous broadcast.
+
+Note: this isolated Flash Map profile keeps motors locked, and
+**does not start TIM11/IR/MPU**. It cannot qualify production control
+jitter or motor-on BLE throughput. Those are separate tests.
