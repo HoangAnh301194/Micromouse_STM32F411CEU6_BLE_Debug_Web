@@ -475,7 +475,9 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
         <span class="maze-size-badge" id="mazeSizeBadge">16×16</span>
-        <button class="btn" id="btnRequestMap" onclick="requestCurrentMap()" disabled>Request map</button>
+        <button class="btn" id="btnRequestMap" onclick="requestCurrentMap()" disabled>Read saved map</button>
+        <button class="btn" id="btnPreview16" onclick="requestPreviewMap16()" disabled>Preview 16×16 (RAM)</button>
+        <button class="btn" id="btnPreview5" onclick="requestPreviewMap5()" disabled>Preview 5×5 (RAM)</button>
         <button class="btn btn-ble" id="btnBLE" onclick="bleConnect()">Connect</button>
         <button class="btn" id="btnReconnect" onclick="reconnectBLE()" disabled>Reconnect</button>
         <button class="btn" id="btnDisconnect" onclick="bleDisconnect()" disabled>Disconnect</button>
@@ -1183,6 +1185,7 @@ async function connectSelectedDevice() {
         const deviceName = bleDevice.name || 'BLE device';
         setStatus('connected', deviceName);
         addBLEEntry(`✅ Connected to ${deviceName}`, 'sys');
+        flashMapReadyMs = null;
         await requestCurrentMap();
     } catch(err) {
         bleChar = null;
@@ -1192,19 +1195,70 @@ async function connectSelectedDevice() {
     }
 }
 
-async function requestCurrentMap() {
-    if (!bleChar) return;
+// Flash Map diagnostic protocol: '?' reads saved map, 'V' previews 16x16,
+// 'v' previews 5x5, all over FFE1 write. RAM previews never write Flash.
+// Explicit ACK+CRC and bounded retries expose JDY-33/GATT failures.
+let flashMapTimer = null;
+let flashMapRequestedCode = '?';
+let flashMapRequestAttempts = 0;
+let flashMapWaiting = false;
+let flashMapReadyMs = null;
+function stopMapTimer() {
+    if (flashMapTimer !== null) clearTimeout(flashMapTimer);
+    flashMapTimer = null;
+}
+function finishMapRequest() {
+    stopMapTimer();
+    flashMapWaiting = false;
+    flashMapRequestAttempts = 0;
+}
+async function requestMapCommand(code, retry=false) {
+    if (!bleChar) {
+        mapStatus('Map: BLE not connected');
+        return;
+    }
+    if (!retry) {
+        finishMapRequest();
+        flashMapRequestedCode = code;
+    }
+    flashMapRequestAttempts++;
+    flashMapWaiting = true;
+    const cmdName = code === '?' ? 'saved Flash/legacy READ'
+                  : code === 'V' ? '16×16 RAM preview' : '5×5 RAM preview';
+    mapStatus('Map: requesting '+cmdName+' (attempt '+flashMapRequestAttempts+'/3)');
+    addBLEEntry('MAP TX '+cmdName+' attempt='+flashMapRequestAttempts,'sys');
     try {
-        const command = new Uint8Array([63]); // '?' requests the latest Flash map.
+        const command = new Uint8Array([code.charCodeAt(0)]);
         if (bleChar.properties.writeWithoutResponse)
             await bleChar.writeValueWithoutResponse(command);
         else if (bleChar.properties.write)
             await bleChar.writeValueWithResponse(command);
-        else addBLEEntry('BLE characteristic is not writable; send READ on UART PA9/PA10.', 'warn');
-    } catch (err) {
-        addBLEEntry('Map request unavailable: ' + err.message + '; send READ on UART PA9/PA10.', 'warn');
+        else throw new Error('FFE1 is not writable');
+    } catch(err) {
+        flashMapWaiting = false;
+        stopMapTimer();
+        mapStatus('Map: BLE write FAILED: '+err.message);
+        addBLEEntry('Map GATT write failed: '+err.message,'err');
+        return;
     }
+    // 16x16 RAM map at 120ms/row completes in ~2s; allow Windows
+    // BLE scheduling delays and one bounded retry on lost frames.
+    stopMapTimer();
+    flashMapTimer = setTimeout(() => {
+        flashMapTimer = null;
+        if (!flashMapWaiting) return;
+        if (flashMapRequestAttempts < 3 && bleChar) {
+            addBLEEntry('Map incomplete/no ACK: retrying '+cmdName,'warn');
+            void requestMapCommand(flashMapRequestedCode,true);
+        } else {
+            flashMapWaiting = false;
+            mapError('no complete MAPCFG/MAPROW/MAPEND after 3 requests');
+        }
+    }, 6500);
 }
+function requestCurrentMap() { return requestMapCommand('?'); }
+function requestPreviewMap16() { return requestMapCommand('V'); }
+function requestPreviewMap5() { return requestMapCommand('v'); }
 
 function bleDisconnect() {
     if (bleDevice && bleDevice.gatt.connected) {
@@ -1217,6 +1271,8 @@ function onBLEDisconnected() {
     addBLEEntry('🔌 Disconnected', 'sys');
     bleChar = null;
     lineBuffer = '';
+    finishMapRequest();
+    flashMapReadyMs = null;
     updateConnectionControls();
 }
 
@@ -1227,6 +1283,8 @@ function updateConnectionControls() {
         bleConnecting || connected || !bleDevice || !navigator.bluetooth;
     document.getElementById('btnDisconnect').disabled = bleConnecting || !connected;
     document.getElementById('btnRequestMap').disabled = !connected;
+    document.getElementById('btnPreview16').disabled = !connected;
+    document.getElementById('btnPreview5').disabled = !connected;
 }
 
 function onBLEData(event) {
@@ -1249,6 +1307,25 @@ function onBLEData(event) {
         if (line.startsWith('MAPCFG,')) { parseFlashMapConfig(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('MAPROW,')) { parseFlashMapRow(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('MAPEND,')) { parseFlashMapEnd(line); addBLEEntry(line, 'maze'); }
+        else if (line.startsWith('MAPACK,')) { addBLEEntry(line, 'sys'); }
+        else if (line.startsWith('MAPERR,')) {
+            finishMapRequest();
+            mapError(line);
+        }
+        else if (line.startsWith('MAPREADY,')) {
+            const ms = Number(parseMapFields(line).ms);
+            if (Number.isFinite(ms)) {
+                const resetDetected = flashMapReadyMs !== null && ms + 1500 < flashMapReadyMs;
+                flashMapReadyMs = ms;
+                if (resetDetected) {
+                    addBLEEntry('STM32 reset detected: requesting saved map again','sys');
+                    if (!flashMapWaiting) void requestCurrentMap();
+                } else if (!flashMapWaiting && !lastFlashMap &&
+                           document.getElementById('mapVerifyStatus').textContent === 'Map: waiting for data') {
+                    void requestCurrentMap();
+                }
+            }
+        }
         else if (line.startsWith('MAZE:'))      { parseMazeData(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('CELL:')) { parseCellUpdate(line); addBLEEntry(line, 'maze'); }
         else if (/^MZ[0-7]:/.test(line))   { parseMZChunk(line); addBLEEntry(line, 'maze'); }
@@ -1313,6 +1390,8 @@ function parseFlashMapRow(line) {
         mapError('conflicting row '+y); return;
     }
     pendingFlashMap.rows[y]=hex;
+    const completed=pendingFlashMap.rows.filter(row=>typeof row==='string').length;
+    mapStatus('Map: receiving '+completed+'/'+n+' rows ('+pendingFlashMap.src+')');
 }
 function parseFlashMapEnd(line) {
     if (!pendingFlashMap) return;
@@ -1336,6 +1415,7 @@ function parseFlashMapEnd(line) {
     setRobotPosition({x:0,y:0,dir:0});
     lastFlashMap={size:p.n,crc:p.crc,source:p.src,rows:p.n,status:'PASS'};
     pendingFlashMap=null;
+    finishMapRequest();
     document.getElementById('mazeOverlay').style.display='none';
     const hex=p.crc.toString(16).toUpperCase().padStart(8,'0');
     mapStatus('Map: PASS '+p.n+'×'+p.n+' CRC='+hex+' source='+p.src);
