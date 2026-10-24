@@ -1,4 +1,7 @@
-#if defined(OLED_MPU_DIAG)
+#if defined(BLE_RX_DIAG)
+int BleRxDiag_Main(void);
+int main(void) { return BleRxDiag_Main(); }
+#elif defined(OLED_MPU_DIAG)
 int OLED_MPU_DiagMain(void);
 int main(void) { return OLED_MPU_DiagMain(); }
 #elif defined(IR_OLED_TEST)
