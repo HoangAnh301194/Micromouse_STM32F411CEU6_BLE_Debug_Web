@@ -20,6 +20,7 @@ const sandbox={
     calcFlood:()=>[[0]],
     GOAL_CELLS:[[7,7],[8,7],[7,8],[8,8]],
     setRobotPosition:()=>{},
+    finishMapRequest:()=>{},
     mazeWalls:null, mazeFlood:null,
     visitedCells:new Set(),
 };
