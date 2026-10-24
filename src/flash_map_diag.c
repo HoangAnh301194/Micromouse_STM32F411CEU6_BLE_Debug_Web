@@ -24,8 +24,29 @@ static uint8_t tx_map[MAP_DIAG_MAX_BLOB];
 static char command[FM_CMD_CAP];
 static uint8_t cmd_len,cmd_bad,tx_active,tx_row;
 static uint16_t tx_len;
-static uint32_t tx_crc,tx_last,ready_last;
+static uint32_t tx_crc,tx_last,ready_last,ble_diag_last;
+static uint32_t ble_cmd_count,ble_unknown_count;
+static uint8_t ble_last_unknown_byte;
 static char tx_source[12];
+
+/* Snapshot USART2 RX/TX in main context; does not block TIM11 (OFF build).
+ * UART1 PA9 is the independent wired observer. A completed DR write is NOT
+ * confirmation that JDY-33 forwarded the byte through GATT. */
+static void PrintBleDiagnostics(void)
+{
+    BT_Profile_t b;
+    BT_GetProfile(&b);
+    UART_Printf("FM_BLE_DIAG,ms=%lu,baud=%lu,accepted=%lu,txdr=%lu,q=%u,peak=%u,drop=%lu,rx=%lu,ore=%lu,fe=%lu,ne=%lu,overflow=%lu,cmd=%lu,unknown=%lu,lasthex=%02X\r\n",
+                (unsigned long)millis(),(unsigned long)BT_BAUDRATE,
+                (unsigned long)b.tx_accepted,
+                (unsigned long)b.tx_uart_dr_bytes,
+                (unsigned)b.tx_queue,(unsigned)b.tx_queue_peak,
+                (unsigned long)b.tx_drop,(unsigned long)b.rx_bytes,
+                (unsigned long)b.rx_ore,(unsigned long)b.rx_fe,
+                (unsigned long)b.rx_ne,(unsigned long)b.rx_overflow,
+                (unsigned long)ble_cmd_count,(unsigned long)ble_unknown_count,
+                (unsigned)ble_last_unknown_byte);
+}
 
 static void PrintInfo(void)
 {
@@ -209,10 +230,13 @@ int FlashMapDiag_Main(void)
     UART_SendString("FM_BOOT,profile=flash_map_diag_96m,locked=1,tim11=OFF,ir=OFF,mpu=OFF,erase=DISABLED\r\n");
     PrintInfo();
     ready_last=millis()-FM_READY_MS;
+    ble_diag_last=millis()-2000UL;
+    PrintBleDiagnostics();
     while(1) {
         PollSerial();
         if(BT_Available()) {
             char c=BT_ReceiveChar();
+            if(c=='?' || c=='V' || c=='v') ble_cmd_count++;
             if(c=='?') {
                 UART_Printf("FM_BLE_REQ,cmd=READ,ms=%lu\r\n",(unsigned long)millis());
                 BT_SendString("MAPACK,cmd=READ\r\n");
@@ -225,6 +249,13 @@ int FlashMapDiag_Main(void)
                 UART_Printf("FM_BLE_REQ,cmd=PREVIEW5,ms=%lu\r\n",(unsigned long)millis());
                 BT_SendString("MAPACK,cmd=PREVIEW5\r\n");
                 DoPreview(5U);
+            } else {
+                ble_unknown_count++;
+                ble_last_unknown_byte=(uint8_t)c;
+                if(ble_unknown_count<=8U) {
+                    UART_Printf("FM_BLE_UNKNOWN,hex=%02X,ms=%lu\r\n",
+                                (unsigned)(uint8_t)c,(unsigned long)millis());
+                }
             }
         }
         ServiceBle();
@@ -233,6 +264,10 @@ int FlashMapDiag_Main(void)
         if((uint32_t)(millis()-ready_last)>=FM_READY_MS) {
             ready_last=millis();
             BT_Printf("MAPREADY,ms=%lu,locked=1\r\n",(unsigned long)ready_last);
+        }
+        if((uint32_t)(millis()-ble_diag_last)>=2000UL) {
+            ble_diag_last=millis();
+            PrintBleDiagnostics();
         }
     }
 }
