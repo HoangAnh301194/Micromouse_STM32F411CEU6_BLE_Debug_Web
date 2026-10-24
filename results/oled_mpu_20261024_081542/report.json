@@ -1,0 +1,5 @@
+{
+  "verdict": "INCOMPLETE",
+  "reason": "OLED not detected; cannot assess coexistence",
+  "note": "Never claim hardware PASS from incomplete telemetry."
+}
