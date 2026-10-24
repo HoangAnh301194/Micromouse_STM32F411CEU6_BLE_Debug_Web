@@ -15,6 +15,13 @@ const sourceClassify=script.slice(script.indexOf('function classifyBLE('),
 if (!sourceClassify.includes('!ERR') || !sourceClassify.includes('i2cerr')) {
     throw Error('BLE status/error classification regression');
 }
+if (!html.includes('id="btnPreview16"') ||
+    !html.includes('id="btnPreview5"') ||
+    !script.includes('function requestMapCommand(') ||
+    !script.includes('MAPREADY,') || !script.includes('MAPACK,') ||
+    !script.includes('MAPERR,')) {
+    throw Error('Web BLE flash-map request/retry/preview controls missing');
+}
 new vm.Script(script);  // Validate entire browser source syntax.
 const start=script.indexOf('/* Versioned map protocol:');
 const end=script.indexOf('/* Chunked protocol:',start);
@@ -31,6 +38,7 @@ const sandbox={
     calcFlood:()=>[[0]],
     GOAL_CELLS:[[7,7],[8,7],[7,8],[8,8]],
     setRobotPosition:()=>{},
+    finishMapRequest:()=>{},
     mazeWalls:null, mazeFlood:null,
     visitedCells:new Set(),
 };
