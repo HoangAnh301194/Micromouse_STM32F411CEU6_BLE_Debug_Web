@@ -914,6 +914,7 @@ let bleDevice    = null;
 let bleChar      = null;
 let bleConnecting = false;
 let lineBuffer   = '';
+let bleNotificationsSinceConnect = 0; // GATT notifications, NOT application packets
 let totalMessages = 0;
 let totalBytes   = 0;
 let bleAutoScroll = true;
@@ -1180,6 +1181,7 @@ async function connectSelectedDevice() {
         const service = await server.getPrimaryService(BLE_SVC);
         const characteristic = await service.getCharacteristic(BLE_CHAR);
         characteristic.addEventListener('characteristicvaluechanged', onBLEData);
+        bleNotificationsSinceConnect = 0;
         await characteristic.startNotifications();
         bleChar = characteristic;
         const deviceName = bleDevice.name || 'BLE device';
@@ -1248,11 +1250,16 @@ async function requestMapCommand(code, retry=false) {
         flashMapTimer = null;
         if (!flashMapWaiting) return;
         if (flashMapRequestAttempts < 3 && bleChar) {
+            if (bleNotificationsSinceConnect === 0)
+                addBLEEntry('No BLE notifications from MCU. Check COM7 FM_BOOT and FM_BLE_DIAG: txdr/accepted, UART2 115200 baud, PA2→JDY RXD. Web Connected only proves GATT link.','err');
             addBLEEntry('Map incomplete/no ACK: retrying '+cmdName,'warn');
             void requestMapCommand(flashMapRequestedCode,true);
         } else {
             flashMapWaiting = false;
-            mapError('no complete MAPCFG/MAPROW/MAPEND after 3 requests');
+            if (bleNotificationsSinceConnect === 0)
+                mapError('0 notifications after 3 requests; inspect UART1 FM_BLE_DIAG and BLE/USART2 wiring');
+            else
+                mapError('incomplete MAPCFG/MAPROW/MAPEND after 3 requests; export Web log');
         }
     }, 6500);
 }
@@ -1271,6 +1278,7 @@ function onBLEDisconnected() {
     addBLEEntry('🔌 Disconnected', 'sys');
     bleChar = null;
     lineBuffer = '';
+    bleNotificationsSinceConnect = 0;
     finishMapRequest();
     flashMapReadyMs = null;
     updateConnectionControls();
@@ -1288,6 +1296,7 @@ function updateConnectionControls() {
 }
 
 function onBLEData(event) {
+    bleNotificationsSinceConnect++;
     const text = new TextDecoder().decode(event.target.value);
     totalBytes += event.target.value.byteLength;
     lineBuffer += text;
