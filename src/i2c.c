@@ -525,6 +525,12 @@ void DMA1_Stream6_IRQHandler(void) {
         DMA1_Stream6->CR &= ~DMA_SxCR_EN;
         I2C1->CR2 &= ~I2C_CR2_DMAEN;
         if (flags & OLED_DMA_FAIL) {
+            if (flags & (1UL << 16)) ++oled_stats.dma_fifo_errors;
+            if (flags & (1UL << 18)) ++oled_stats.dma_direct_errors;
+            if (flags & (1UL << 19)) ++oled_stats.dma_transfer_errors;
+            oled_stats.last_dma_flags = flags;
+            oled_stats.last_dma_ndtr = DMA1_Stream6->NDTR;
+            oled_stats.last_phase = (uint32_t)oled_phase;
             OLED_Finish(I2C_ERROR);
         } else if ((flags & OLED_DMA_TC) && oled_phase == OLED_DMA) {
             oled_phase = OLED_DRAIN;
@@ -1045,6 +1051,13 @@ void I2C1_ER_IRQHandler(void)
     if (flags) {
 #if defined(OLED_SHARED_I2C)
         if (bus_owner == OWNER_OLED) {
+            if (flags & I2C_SR1_AF) ++oled_stats.nacks;
+            if (flags & I2C_SR1_BERR) ++oled_stats.bus_errors;
+            if (flags & I2C_SR1_ARLO) ++oled_stats.arbitration_losses;
+            if (flags & I2C_SR1_OVR) ++oled_stats.overruns;
+            oled_stats.last_i2c_sr1 = flags;
+            oled_stats.last_phase = (uint32_t)oled_phase;
+            oled_stats.last_dma_ndtr = DMA1_Stream6->NDTR;
             I2C1->SR1 &= ~flags;
             DMA1_Stream6->CR &= ~DMA_SxCR_EN;
             DMA1->HIFCR = OLED_DMA_FLAGS;

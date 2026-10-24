@@ -216,6 +216,10 @@ typedef struct {
     uint32_t started, completed, bytes, busy_rejects, errors, timeouts;
     uint32_t recoveries;
     uint32_t max_duration_us;
+    /* Failure-origin evidence; snapshots only, never change bus behavior. */
+    uint32_t nacks, bus_errors, arbitration_losses, overruns;
+    uint32_t dma_fifo_errors, dma_direct_errors, dma_transfer_errors;
+    uint32_t last_i2c_sr1, last_dma_flags, last_phase, last_dma_ndtr;
 } I2C_OledStats_t;
 void I2C_OledAsync_Init(void);
 I2C_Status I2C_OledAsync_Start(uint8_t addr, const uint8_t *buffer, uint8_t len);

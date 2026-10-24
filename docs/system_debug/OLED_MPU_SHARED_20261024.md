@@ -30,7 +30,7 @@ python tools/oled_mpu_pipeline.py --port COM5 --baseline-seconds 15 --oled-secon
 
 Use the actual USB-to-UART COM port (STM32 PA9 TX -> USB-TTL RX, PA10 RX -> USB-TTL TX, common GND, 3.3 V logic). `--flash` is optional on the pipeline and flashes before capture. Disconnect independent motor VM supply as an additional safety measure.
 
-Host workflow waits for gyro calibration, commands OLED OFF for baseline, then OLED ON while keeping TIM11, IR and gyro active. It receives three 1-Hz frames with matching `seq`: `OLED_C` (control), `OLED_G` (gyro), `OLED_O` (OLED/DMA); missing or malformed frame invalidates final acceptance.
+Host workflow waits for gyro calibration, commands OLED OFF for baseline, then OLED ON while keeping TIM11, IR and gyro active. It receives four 1-Hz frames with matching `seq`: `OLED_C` (control), `OLED_G` (gyro), `OLED_O` (OLED/DMA progress) and `OLED_E` (I2C NACK/BERR/ARLO/OVR and DMA FE/DME/TE failure evidence); missing or malformed frame invalidates final acceptance.
 
 Artifacts: `results/oled_mpu_YYYYMMDD_HHMMSS/uart_raw.log`, `telemetry.csv`, `report.json`.
 
@@ -45,7 +45,7 @@ Artifacts: `results/oled_mpu_YYYYMMDD_HHMMSS/uart_raw.log`, `telemetry.csv`, `re
 | MPU sampling | At least 850 successful reads/s in both phases, ON rate >= 97% OFF rate |
 | IRQ jitter | OLED ON `late/ticks` <= OFF ratio + 0.005 |
 | OLED progress | `chunks`, `frames`, `bytes` and DMA completions increase when enabled |
-| OLED bus/DMA faults | `oled_err`, `tx_err`, `tx_to` increments = 0 |
+| OLED bus/DMA faults | `oled_err`, `tx_err`, `tx_to`, `af`, `berr`, `arlo`, `ovr`, `fe`, `dme`, `te` increments = 0 |
 | OLED burst | MCU-recorded maximum < 900 us |
 | TIM11 ISR worst case | `maxirq` < 48000 core cycles (< 500 us at nominal 96 MHz) |
 | Shared I2C recovery | `recoveries` increment = 0 throughout both phases |
@@ -61,3 +61,9 @@ python -m platformio run -e oled_mpu_diag_96m
 ```
 
 Build validates toolchain compatibility. Synthetic self-test validates parser and PASS/FAIL logic. Only serial evidence captured from the STM32 may be classified as hardware PASS. Visually confirm OLED characters are correct and stable during the ON phase; a TX completion counter does not prove pixel correctness.
+
+## First physical A/B upload (24/10/2026)
+
+- `results/oled_mpu_20261024_081542`: `INCOMPLETE` because OLED boot `ready=0` (initialization failed; not proof device physically absent).
+- `results/oled_mpu_20261024_081626`: `FAIL`: 54 OLED TX started, zero complete, 54 error, zero data chunks/frames. TIM11 = 1000 Hz in both phases; MPU gyro = 1000 Hz OFF versus 992.07 Hz ON, without MPU timeouts, bus recovery, stale samples or tick gaps.
+- The old counters do not distinguish I2C AF/NACK from DMA FIFO/direct/transfer errors. New `OLED_E` telemetry provides failure origin; no claim of a fix or hardware PASS without a new measurement. Rebuild/flash the diagnostic before rerunning the updated four-part pipeline.

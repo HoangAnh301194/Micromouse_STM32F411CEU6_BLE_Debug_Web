@@ -79,6 +79,15 @@ static void Emit(void) {
       (unsigned long)bus.errors,(unsigned long)bus.timeouts,
       (unsigned long)bus.max_duration_us,
       (unsigned long)bus.recoveries);
+    UART_Printf("OLED_E,seq=%lu,af=%lu,berr=%lu,arlo=%lu,ovr=%lu,"
+      "fe=%lu,dme=%lu,te=%lu,last_sr1=%lu,last_dma=%lu,"
+      "last_phase=%lu,ndtr=%lu\r\n",
+      (unsigned long)metric_seq,(unsigned long)bus.nacks,
+      (unsigned long)bus.bus_errors,(unsigned long)bus.arbitration_losses,
+      (unsigned long)bus.overruns,(unsigned long)bus.dma_fifo_errors,
+      (unsigned long)bus.dma_direct_errors,(unsigned long)bus.dma_transfer_errors,
+      (unsigned long)bus.last_i2c_sr1,(unsigned long)bus.last_dma_flags,
+      (unsigned long)bus.last_phase,(unsigned long)bus.last_dma_ndtr);
 }
 int OLED_MPU_DiagMain(void) {
     MPU6050_Status init;

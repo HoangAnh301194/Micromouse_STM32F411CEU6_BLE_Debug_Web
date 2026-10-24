@@ -19,13 +19,15 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
-PARTS = {"OLED_C", "OLED_G", "OLED_O"}
+PARTS = {"OLED_C", "OLED_G", "OLED_O", "OLED_E"}
 REQUIRED = {
     "ms", "on", "ready", "cal", "locked", "tick", "late", "gap",
     "valid", "invalid", "uart_drop", "good", "err", "to",
     "mpubusy", "age", "cmd", "chunks", "frames", "bytes",
     "skip", "wait", "oled_err", "tx_start", "tx_done", "tx_err",
     "tx_to", "tx_max", "recoveries", "maxirq",
+    "af", "berr", "arlo", "ovr", "fe", "dme", "te",
+    "last_sr1", "last_dma", "last_phase", "ndtr",
 }
 
 
@@ -57,7 +59,7 @@ class Assembler:
     def feed(self, line: str):
         parsed = parse_record(line)
         if parsed is None:
-            if line.startswith(("OLED_C,", "OLED_G,", "OLED_O,")):
+            if line.startswith(("OLED_C,", "OLED_G,", "OLED_O,", "OLED_E,")):
                 self.malformed += 1
             return None
         kind, item = parsed
@@ -68,7 +70,7 @@ class Assembler:
             if old < seq - 4:
                 self.missing += 1
                 del self.pending[old]
-        if len(self.pending[seq]) != 3:
+        if len(self.pending[seq]) != len(PARTS):
             return None
         sample = {"seq": seq}
         for segment in sorted(PARTS):
@@ -101,7 +103,8 @@ def segment(samples, expected_on):
     keys = ["tick", "late", "gap", "valid", "invalid", "uart_drop",
             "good", "err", "to", "mpubusy", "cmd", "chunks",
             "frames", "bytes", "skip", "wait", "oled_err",
-            "tx_start", "tx_done", "tx_err", "tx_to", "recoveries"]
+            "tx_start", "tx_done", "tx_err", "tx_to", "recoveries",
+            "af", "berr", "arlo", "ovr", "fe", "dme", "te"]
     diff = {key: delta(end, start, key) for key in keys}
     diff.update(
         seconds=dt,
@@ -112,6 +115,8 @@ def segment(samples, expected_on):
         max_age_us=max(r["age"] for r in samples),
         tx_max_us=max(r["tx_max"] for r in samples),
         max_irq_cycles=max(r["maxirq"] for r in samples),
+        last_failure={key: end[key] for key in
+                      ("last_sr1", "last_dma", "last_phase", "ndtr")},
         rows=len(samples),
     )
     return diff
@@ -134,6 +139,10 @@ def evaluate(off, on, minimum_gyro_hz=850, min_ratio=0.97):
         "oled_traffic_off_during_baseline": off["tx_start"] == 0,
         "no_oled_dma_errors": on["oled_err"] == 0 and on["tx_err"] == 0 and
                               on["tx_to"] == 0,
+        "no_i2c_oled_nack_or_bus_fault": all(on[k] == 0 for k in
+                                               ("af", "berr", "arlo", "ovr")),
+        "no_dma_fifo_direct_transfer_fault": all(on[k] == 0 for k in
+                                                   ("fe", "dme", "te")),
         "no_bus_recovery": off["recoveries"] == 0 and on["recoveries"] == 0,
         "isr_bounded_under_500us": max(off["max_irq_cycles"], on["max_irq_cycles"]) < 48000,
         "short_oled_transactions": 0 < on["tx_max_us"] <= 900,
@@ -154,6 +163,8 @@ def self_test():
                     bytes=completed * 8, skip=10, wait=0, oled_err=0,
                     tx_start=completed * 2, tx_done=completed * 2,
                     tx_err=0, tx_to=0, recoveries=0, maxirq=5000,
+                    af=0, berr=0, arlo=0, ovr=0, fe=0, dme=0, te=0,
+                    last_sr1=0, last_dma=0, last_phase=0, ndtr=0,
                     tx_max=250 if mode else 0)
     a = [build(i, 0, i*1000, i*980) for i in range(6)]
     b = [build(i, 1, i*1000, i*980, completed=i-5) for i in range(6,12)]
@@ -166,6 +177,7 @@ def self_test():
         ("OLED_C",("ms on ready cal locked tick late gap valid invalid maxirq uart_drop")),
         ("OLED_G",("good err to mpubusy age")),
         ("OLED_O",("cmd chunks frames bytes skip wait oled_err tx_start tx_done tx_err tx_to tx_max recoveries")),
+        ("OLED_E",("af berr arlo ovr fe dme te last_sr1 last_dma last_phase ndtr")),
     ]:
         fields = "seq=%d," % r["seq"] + ",".join(
             "%s=%d" % (k,r[k]) for k in keys.split())
