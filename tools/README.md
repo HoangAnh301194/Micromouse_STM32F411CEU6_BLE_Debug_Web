@@ -1,11 +1,8 @@
 # Host diagnostic and qualification tools (restored)
 
-All **33 historical files under `tools/`** have been restored to the active
-`giomuadongbac` branch from `archive/debug-tools-precleanup-20261024`.
-This includes the guarded Flash-map runner, BLE one-shot qualification,
-UART, IR, encoder and PID pipelines and host regressions. The archive
-remains available unchanged; restoring scripts does not establish hardware
-qualification.
+The 33 historical `tools/` files were restored from `archive/debug-tools-precleanup-20261024`. At explicit user request on 24/10/2026, eight redundant copies are retired; **26 live files remain** (including this README and the OLED A/B qualification runner). Canonical regression tests live in `tests/regression/` and `tests/web/`, and the unique browser console lives in `web/ble_debug_console.html`. The archive remains unchanged.
+
+Keep the guarded Flash-map runner, BLE one-shot qualification, OLED/MPU hardware acceptance (`tools/oled_mpu_pipeline.py`), UART, IR, encoder, PID pipelines and nonduplicate host regressions; removing them would compromise future requalification. **Never delete or rewrite real `results/` logs**. Software tests cannot substitute for hardware acceptance.
 
 - Web UI: `web/ble_debug_console.html`
 - Native contract: `tests/regression/flash_map_protocol_test.py`

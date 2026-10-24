@@ -90,7 +90,7 @@ def main():
         if args.native_test:
             # Use actual C motor native host regression, not fake sweep results.
             import subprocess
-            subprocess.run([sys.executable,str(ROOT/"tools/motor_driver_native_test.py")],
+            subprocess.run([sys.executable,str(ROOT/"tests/regression/motor_driver_native_test.py")],
                            cwd=ROOT,check=True)
             print("PASS native Motor Driver; sweep C state machine NOT native qualified")
         elif args.self_test:

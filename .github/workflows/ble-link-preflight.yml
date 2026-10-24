@@ -9,7 +9,6 @@ on:
       - tools/test_ble_full_pipeline.py
       - src/ble_benchmark.c
       - web/ble_debug_console.html
-      - tools/ble_debug_console.html
       - tests/web/test_ble_map_web.js
       - .github/workflows/ble-link-preflight.yml
   workflow_dispatch:
