@@ -1,6 +1,6 @@
 # Micromouse STM32F411CEU6 - Minimal Core
 
-> **Khôi phục đầy đủ tools (24/10/2026):** Đã đưa lại **33 file** của thư mục [`tools/`](tools/) vào `giomuadongbac` từ [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024), gồm BLE, UART, encoder, IR, PID, Flash và các bài test. WebBLE vẫn ở [web/ble_debug_console.html](web/ble_debug_console.html), kiểm thử native hiện hành vẫn ở `tests/`; không thay đổi dữ liệu `results/`. Khôi phục code **không phải nghiệm thu phần cứng**.
+> **Bàn giao OLED và dọn tools trùng lặp (24/10/2026):** Bộ 33 file lịch sử được khôi phục từ [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024). Sau yêu cầu dọn của người dùng, loại 8 bản sao không cần thiết, còn **26 file trong `tools/`** (gồm `tools/README.md`); regression chuẩn ở `tests/`, WebBLE ở [`web/ble_debug_console.html`](web/ble_debug_console.html). **Toàn bộ log `results/`, pipeline nghiệm thu OLED và firmware gốc được giữ nguyên.**
 
 
 > **Tiến độ mới nhất và ngữ cảnh bàn giao đa agent:** [PROJECT_STATUS.md](PROJECT_STATUS.md). Agent/chat mới bắt đầu từ [AGENTS.md](AGENTS.md); kết quả nghiệm thu I2C–MPU6050 nằm tại [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md).
@@ -123,6 +123,8 @@ UART, CSV and JSON evidence under `results/oled_mpu_YYYYMMDD_HHMMSS`.
 `--self-test` verifies host parsing only; no build or synthetic test is
 equivalent to MCU/hardware acceptance. For measured criteria and wiring,
 see [OLED/MPU shared-I2C acceptance](docs/system_debug/OLED_MPU_SHARED_20261024.md).
+
+**Handover (2026-10-24):** Board A/B acceptance PASS (15 s OFF + 15 s ON): TIM11 1 kHz, gyro 1000 → 992.73 Hz (-0.73%), OLED 1056/1056 DMA TX completed, 73 frames, zero OLED/MPU bus faults; see [`report.json`](results/oled_mpu_20261024_082616/report.json). **Scope:** OLED transport with motor outputs locked; production OLED/menu/API are not enabled, visual pixel verification, motor noise and long soak remain unqualified. The acceptance pipeline remains available for future regressions.
 
 ## IR sensor + OLED 128x64 bench mode (motor locked)
 

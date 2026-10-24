@@ -76,3 +76,11 @@ Build validates toolchain compatibility. Synthetic self-test validates parser an
 - MPU: 1000.0 → 992.73 successful gyro reads/s with OLED ON (-0.73%, well within 3% budget); observed sample age <= 788 us; 0 new I2C errors, 0 timeouts and 0 bus recoveries.
 - OLED ON: 1056/1056 DMA transfers completed, 528 changed-data chunks, 1373 pixel bytes, 73 complete frames (~4.87/s), maximum measured transaction 161 us; 0 NACK/AF, BERR, ARLO, OVR, DMA FE/DME/TE errors and 0 UART dropped/malformed frames.
 - **Acceptance scope:** serial evidence demonstrates bus transactions complete while priority control/MPU remain within declared limits in the *motor-locked qualification firmware*. It does not prove the displayed text/pixels are visually correct; require operator observation/photo for that claim. Logic analyzer/oscilloscope validation, extended soak, worst-case display churn, motor electrical noise, production-mode integration and OLED menu controls remain pending.
+
+## Handover sign-off — driver/shared-I2C scope only (24/10/2026)
+
+**PASS:** 17/17 hardware-telemetry acceptance checks from `results/oled_mpu_20261024_082616` (15 s motor-locked OLED OFF baseline + 15 s OLED ON). STM32 TIM11 remains 1000 Hz, MPU 1000→992.73 reads/s, OLED 1056/1056 I2C/DMA transfers successful, 73 completed framebuffer snapshots, zero bus/DMA errors. Acceptance is limited to the tested configuration, not proof of optical rendering or motor electrical immunity.
+
+**Delivered source:** `src/ssd1306.c`, `src/oled_shared.c`, `src/i2c.c`, `src/oled_mpu_diag.c` and headers; motor-locked build `oled_mpu_diag_96m`; host A/B test `tools/oled_mpu_pipeline.py`; immutable raw logs `results/oled_mpu_20261024_082616/{report.json,telemetry.csv,uart_raw.log}`. Production still has OLED disabled; future `OLED_UI_*` application APIs and mode-selection UI have **not** been implemented. No new API is required to accept the current driver-layer workstream.
+
+**Maintenance contract:** never use blocking `SSD1306_UpdateScreen()` or full-page DMA alongside active MPU sampling. Keep renderer and `OLED_SharedService()` in main context; preserve MPU ownership, TIM11 priority and OLED admission guard. Any new UI/API or production/motor-on change requires new A/B qualification and visual inspection.
