@@ -25,6 +25,39 @@ jobs:
           python tests/regression/flash_map_protocol_test.py
           node tests/web/test_ble_map_web.js
           node tests/web/test_flash_map_gatt_control.js
+      - name: Verify canonical tools after OLED handover
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          retired = (
+              "tools/ble_debug_console.html",
+              "tools/test_ble_map_web.js",
+              "tools/encoder_native_test.py",
+              "tools/flash_record_native_test.py",
+              "tools/ir_sensor_native_test.py",
+              "tools/motor_driver_native_test.py",
+              "tools/system_sweep_native_test.py",
+              "tools/test_flash_map_protocol.py",
+          )
+          canonical = (
+              "web/ble_debug_console.html",
+              "tests/web/test_ble_map_web.js",
+              "tests/regression/encoder_native_test.py",
+              "tests/regression/flash_record_native_test.py",
+              "tests/regression/ir_sensor_native_test.py",
+              "tests/regression/motor_driver_native_test.py",
+              "tests/regression/system_sweep_native_test.py",
+              "tests/regression/flash_map_protocol_test.py",
+              "tools/oled_mpu_pipeline.py",
+              "results/oled_mpu_20261024_082616/report.json",
+          )
+          assert not [x for x in retired if Path(x).exists()], "Obsolete duplicate files remain"
+          assert all(Path(x).is_file() for x in canonical), "Canonical test or OLED evidence missing"
+          for dependent in ("tools/encoder_qualification_pipeline.py",
+                            "tools/system_integration_gate.py"):
+              assert "tests/regression/" in Path(dependent).read_text()
+          print("HANDOVER_LAYOUT_PASS (not a substitute for live hardware validation)")
+          PY
       - name: Install PlatformIO
         run: python -m pip install --disable-pip-version-check platformio
       - name: Build production firmware (no hardware)
