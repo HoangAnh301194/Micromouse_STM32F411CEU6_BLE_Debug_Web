@@ -49,7 +49,7 @@ Artifacts: `results/oled_mpu_YYYYMMDD_HHMMSS/uart_raw.log`, `telemetry.csv`, `re
 | OLED burst | MCU-recorded maximum < 900 us |
 | TIM11 ISR worst case | `maxirq` < 48000 core cycles (< 500 us at nominal 96 MHz) |
 | Shared I2C recovery | `recoveries` increment = 0 throughout both phases |
-| UART integrity | `uart_drop` increment = 0 and no missing/corrupt 3-part sample |
+| UART integrity | `uart_drop` increment = 0 and no missing/corrupt 4-part sample |
 
 These are conservative *initial* gates, not proof that PWM/IMU latency on a moving robot is safe. Physical 400 kHz SCL waveform, clock rise time, actual OLED FPS, worst-case latency under display churn, sustained long-duration errors and power/noise still require direct hardware investigation. Timeouts without an actual ST-Link + UART + OLED + MPU test are **NOT PASSED**.
 
@@ -67,3 +67,12 @@ Build validates toolchain compatibility. Synthetic self-test validates parser an
 - `results/oled_mpu_20261024_081542`: `INCOMPLETE` because OLED boot `ready=0` (initialization failed; not proof device physically absent).
 - `results/oled_mpu_20261024_081626`: `FAIL`: 54 OLED TX started, zero complete, 54 error, zero data chunks/frames. TIM11 = 1000 Hz in both phases; MPU gyro = 1000 Hz OFF versus 992.07 Hz ON, without MPU timeouts, bus recovery, stale samples or tick gaps.
 - The old counters do not distinguish I2C AF/NACK from DMA FIFO/direct/transfer errors. New `OLED_E` telemetry provides failure origin; no claim of a fix or hardware PASS without a new measurement. Rebuild/flash the diagnostic before rerunning the updated four-part pipeline.
+
+## Second physical A/B upload — PASS (24/10/2026)
+
+- Authoritative evidence: [`results/oled_mpu_20261024_082616/report.json`](../../results/oled_mpu_20261024_082616/report.json), [`telemetry.csv`](../../results/oled_mpu_20261024_082616/telemetry.csv), [`uart_raw.log`](../../results/oled_mpu_20261024_082616/uart_raw.log). Raw logs are preserved; the earlier `081626` FAIL is **not overwritten**.
+- Host verdict: **PASS across all 17 A/B checks** (15 s OLED OFF + 15 s ON, after startup/calibration).
+- TIM11: 1000.0 ticks/s both phases; 0 gaps >1.5 ms, 0 late >50 us; worst ISR 1041 core cycles (~10.84 us at nominal 96 MHz). No stale gyro ticks.
+- MPU: 1000.0 → 992.73 successful gyro reads/s with OLED ON (-0.73%, well within 3% budget); observed sample age <= 788 us; 0 new I2C errors, 0 timeouts and 0 bus recoveries.
+- OLED ON: 1056/1056 DMA transfers completed, 528 changed-data chunks, 1373 pixel bytes, 73 complete frames (~4.87/s), maximum measured transaction 161 us; 0 NACK/AF, BERR, ARLO, OVR, DMA FE/DME/TE errors and 0 UART dropped/malformed frames.
+- **Acceptance scope:** serial evidence demonstrates bus transactions complete while priority control/MPU remain within declared limits in the *motor-locked qualification firmware*. It does not prove the displayed text/pixels are visually correct; require operator observation/photo for that claim. Logic analyzer/oscilloscope validation, extended soak, worst-case display churn, motor electrical noise, production-mode integration and OLED menu controls remain pending.
