@@ -32,21 +32,27 @@ vm.runInContext(`let bleChar = {
 ${script.slice(start,end)}`,ctx);
 const execute=expression=>vm.runInContext(expression,ctx);
 const tick=async()=>{ await new Promise(resolve=>setImmediate(resolve)); };
+function fireTimer(){
+    const next=timers.entries().next().value;
+    if(!next)throw Error('no pending timeout');
+    const [id,callback]=next;
+    timers.delete(id); // Fired browser timers are not pending anymore.
+    callback();
+}
 async function main(){
     await execute('requestCurrentMap()');
     await execute('requestPreviewMap16()');
     await execute('requestPreviewMap5()');
     if (sent.join(',') !== '63,86,118') throw Error('wrong GATT command bytes '+sent);
     if(timers.size!==1)throw Error('map request timeout not armed');
-    const last=Array.from(timers.values())[0];
-    last();
+    fireTimer();
     await tick();
     if(sent.at(-1)!==118 || sent.length!==4)throw Error('retry changed requested mode');
     if(timers.size!==1)throw Error('retry did not rearm');
-    Array.from(timers.values())[0]();
+    fireTimer();
     await tick();
     if(sent.length!==5)throw Error('second retry missing');
-    Array.from(timers.values())[0]();
+    fireTimer();
     await tick();
     if(sent.length!==5 || !statuses.at(-1).startsWith('ERROR no complete'))
         throw Error('bounded 3-attempt fail state incorrect');
