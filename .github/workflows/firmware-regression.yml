@@ -25,6 +25,7 @@ jobs:
           python tests/regression/flash_map_protocol_test.py
           node tests/web/test_ble_map_web.js
           node tests/web/test_flash_map_gatt_control.js
+          python tools/test_ble_rx_qualification.py
       - name: Verify canonical tools after OLED handover
         run: |
           python - <<'PY'
@@ -70,3 +71,5 @@ jobs:
         run: python -m platformio run -e oled_mpu_diag_96m
       - name: Build optional motor-locked Flash-map firmware (no hardware)
         run: python -m platformio run -e flash_map_diag_96m
+      - name: Build motor-locked JDY-33 RX A/B/C qualification image (no hardware)
+        run: python -m platformio run -e ble_rx_diag_96m

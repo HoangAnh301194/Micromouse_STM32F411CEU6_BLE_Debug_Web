@@ -15,3 +15,16 @@ mass-erase sectors 6/7 on upload, and do not confuse a CI PASS with a
 successful physical Flash readback/reboot test.
 
 Main BLE one-shot entrypoint: `python tools/ble_full_pipeline.py --name Nezumi_Chan` (motor OFF by default). For the full test matrix, safety gates and evidence paths see `docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md`.
+
+
+### JDY-33 RX A/B/C qualification — before considering PID tuning
+
+Run `python tools/ble_rx_qualification.py --port COM7 --name Nezumi_Chan`
+with ST-Link and COM7 USB-TTL connected, Web BLE disconnected, motor power
+safely isolated. A/B isolate receiver enable under identical autonomous
+TX load; C writes 16-byte nonce frames via GATT and requires matching
+MCU `RXACK` **on UART1** as independent proof of PA3 reception.
+Default one-run orchestration restores motor-locked `flash_map_diag_96m`
+on exit. Reports live under `results/ble_rx_ab_*`.
+See `docs/system_debug/BLE_RX_AB_QUALIFICATION_20261024.md`.
+This does not operate motors or change PID gains.
