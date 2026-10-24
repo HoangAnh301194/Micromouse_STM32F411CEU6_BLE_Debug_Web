@@ -17,10 +17,8 @@ import asyncio
 import csv
 import importlib.util
 import json
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-import statistics
 import subprocess
 import sys
 import time
@@ -39,7 +37,7 @@ def parse_line(text: str) -> dict:
         if "=" not in item:
             continue
         k, val = item.split("=", 1)
-        d[k] = int(val) if val.isdecimal() else val
+        d[k] = int(val) if k != "value" and val.isdecimal() else val
     return d
 
 
@@ -401,6 +399,8 @@ def decide(results):
         return "INCOMPLETE"
     if all(x["verdict"]=="RX_FUNCTIONAL_IN_THIS_TEST" for x in tests):
         return "RX_FUNCTIONAL_IN_TESTED_RANGE"
+    if all(x["verdict"]=="GATT_WRITE_NOT_TESTABLE" for x in tests):
+        return "NOT_TESTABLE_NO_GATT_WRITE"
     if all(x["independent_uart_acks"]==0 for x in tests):
         return "RX_NOT_VERIFIED_CHECK_GATT_AND_PA3"
     return "RX_INTERMITTENT_OR_RATE_LIMITED"
