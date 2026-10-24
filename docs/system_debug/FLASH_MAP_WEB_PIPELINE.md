@@ -98,3 +98,57 @@ The interactive test is not a bench-proven guarantee of JDY-33 throughput,
 ST-Link sector preservation, or power-loss resilience. Record any real-board
 failures with UART .log and exported BLE lines. Save commands are never sent
 by default. The diagnostic does not implement navigation or map exploration.
+
+
+## 2026-10-24 — WebBLE map replay and verification
+
+The initial 2026-10-24 Flash Map report `results/flash_map_diag/flash_map_20261024_082035.json`
+proved **UART1** 16x16 RAM preview CRC `933A97B3` (16 rows), RAM
+5x5 preview CRC `1323C17D` (5 rows), and read-back of the earlier
+**legacy 5x5** Flash map CRC `22646C99`. It did **not** include a BLE
+Web export, so these UART-only PASS verdicts cannot prove on-air delivery.
+
+**Important:** `PREVIEW 16` and `PREVIEW 5` live in **RAM** and are
+transmitted only at command time. Resetting the STM32 does not persist RAM
+previews. The `READ` / Web **Read saved map** action accesses the persisted
+Flash map (here it is the legacy 5x5), not the last 16x16 RAM preview.
+Neither web preview button performs a Flash write.
+
+Run the **new** `flash_map_diag_96m` firmware via ST-Link and the matching
+`web/ble_debug_console.html` in a refreshed Chrome/Edge tab:
+```powershell
+git pull --rebase origin giomuadongbac
+python -m platformio run -e flash_map_diag_96m -t upload
+python -m http.server 8000 --directory web
+```
+
+Open `http://localhost:8000/ble_debug_console.html` (hard refresh
+Ctrl+F5), connect `Nezumi_Chan`, and click:
+
+- **Read saved map**: Web sends `?`, MCU logs `FM_BLE_REQ,cmd=READ`
+  on UART1 and answers BLE `MAPACK,cmd=READ` + `MAPCFG`/`MAPROW`/`MAPEND`.
+  Here the expected result is 5×5 legacy CRC `22646C99`.
+- **Preview 16×16 (RAM)**: Web sends `V`, MCU logs
+  `FM_BLE_REQ,cmd=PREVIEW16`, then streams 16x16 RAM map with
+  expected CRC `933A97B3`, without programming Flash.
+- **Preview 5×5 (RAM)**: Web sends `v`, expected CRC `1323C17D`.
+  These two commands work only in the guarded Flash Map diagnostic build.
+
+The UART1 log `FM_BLE_REQ` distinguishes a failed FFE1 downlink
+(no MCU receipt) from a failed uplink (MCU ACK exists on serial but no
+BLE MAPACK). The Web terminal shows `MAP TX`, `MAPACK`, the number
+of valid `MAPROW` rows and either `MAP VERIFY PASS` or a specific error.
+If incomplete, it retries the requested map up to three attempts.
+`MAPREADY,ms=...` arrives about every 3.5s, detects an STM32 uptime
+reset and can request a map again over the **existing** BLE connection.
+There is no unbounded flood when the remote device is absent.
+
+Keep the Web connected **before** sending UART `PREVIEW`; otherwise
+the RAM preview's one-time BLE output can be missed. The request buttons
+allow deliberate replay after the original UART event.
+If a browser or Bluetooth terminal already holds GATT, disconnect it before
+using the Python Bleak benchmark. Do not operate concurrent GATT clients.
+
+If Web still says `waiting for data`, export the **Web BLE TXT** and
+capture UART1 `FM_BLE_REQ`/ `FM_CFG`/ `FM_ROW`/`FM_DONE` from the
+same instant. UART-only Flash-map PASS must not be presented as WebBLE PASS.
