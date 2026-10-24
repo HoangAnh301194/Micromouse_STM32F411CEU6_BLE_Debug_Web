@@ -152,3 +152,53 @@ using the Python Bleak benchmark. Do not operate concurrent GATT clients.
 If Web still says `waiting for data`, export the **Web BLE TXT** and
 capture UART1 `FM_BLE_REQ`/ `FM_CFG`/ `FM_ROW`/`FM_DONE` from the
 same instant. UART-only Flash-map PASS must not be presented as WebBLE PASS.
+
+
+## 2026-10-24 follow-up — Web connects but never receives MAPACK or MAPREADY
+
+**Symptoms:** Web shows `Connected to Nezumi_Chan`, `MAP TX ...` and
+three retries, but ZERO `MAPACK`, `MAPREADY`, `MAPCFG` or `MAPROW`.
+This is **not a map rendering/CRC verdict**: there is no map frame to
+render. FFE1 GATT being connected and accepting writes is NOT proof that
+the JDY-33 UART and STM32 USART2 are exchanging bytes.
+
+An independent USART1/COM7 observer is now compiled into
+`flash_map_diag_96m`. Flash the updated image and start serial capture
+**before** pressing the Web map buttons:
+
+```powershell
+git pull --rebase origin giomuadongbac
+python -m platformio run -e flash_map_diag_96m -t upload
+python -m serial.tools.miniterm COM7 115200
+```
+
+Miniterm must show:
+
+```text
+FM_BOOT,profile=flash_map_diag_96m,...
+FM_BLE_DIAG,ms=...,baud=115200,accepted=...,txdr=...,q=...,drop=...,rx=...,ore=...,fe=...,ne=...,overflow=...,cmd=...,unknown=...,lasthex=...
+```
+
+`FM_BLE_DIAG` repeats every two seconds. In Chrome/Edge open the **new**
+`web/ble_debug_console.html` (hard refresh Ctrl+F5), connect the module,
+click **Preview 5×5 (RAM)** exactly once and check these counters before
+and after the click:
+
+| Observation on COM7 | Conclusion / next investigation |
+|---|---|
+| No `FM_BOOT` and no `FM_BLE_DIAG` | Incorrect firmware, COM port, upload/reset or CPU stopped; the standalone JDY-33 can advertise/connect without STM32. |
+| `FM_BLE_DIAG` `txdr` keeps increasing but Web has **zero** GATT notifications, even for `MAPREADY` | STM32 writes USART2 DR, but forward delivery to Web is unverified; check **PA2 TX → JDY RXD**, shared GND, UART baud 115200 on **both sides**, module transparent-UART configuration and PC BLE notifications. |
+| `FM_BLE_DIAG` `rx` does not increase on a Web click | The outgoing GATT write did not reach **PA3 RX ← JDY TXD**; check GATT write permissions/mode, JDY UART wiring/configuration and RXNE interrupt. |
+| `rx` increases, `cmd` increases and `FM_BLE_REQ,cmd=PREVIEW5` appears | Web → JDY → MCU command path **works**. Look for `MAPACK` and `MAPROW` notifications and validate BLE transmit direction/byte integrity. |
+| `rx` increases but `unknown`, `fe`, `ore` or `ne` increases | Bytes reached USART2 but are invalid or corrupted; compare `lasthex` and error counters against the expected single-byte command `76` (ASCII `v`). |
+
+`txdr` counts writes to USART2 TX data register, **not radio ACKs**.
+`rx` counts accepted UART bytes at PA3, not GATT transaction success.
+A clean map still requires the full `MAPCFG` + N `MAPROW` +
+`MAPEND` CRC verification on Web.
+
+Capture the COM7 `FM_BOOT` and two `FM_BLE_DIAG` lines before/after
+the single Web button press, plus the exported Web BLE TXT. Do not run
+`ble_full_pipeline.py`, a Bluetooth phone client or any other GATT
+connection in parallel. This check runs with motors permanently locked;
+neither Web preview command writes to Flash.
