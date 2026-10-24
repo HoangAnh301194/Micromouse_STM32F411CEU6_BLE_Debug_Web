@@ -24,6 +24,7 @@ jobs:
           python tests/regression/flash_record_native_test.py
           python tests/regression/flash_map_protocol_test.py
           node tests/web/test_ble_map_web.js
+          node tests/web/test_flash_map_gatt_control.js
       - name: Install PlatformIO
         run: python -m pip install --disable-pip-version-check platformio
       - name: Build production firmware (no hardware)
