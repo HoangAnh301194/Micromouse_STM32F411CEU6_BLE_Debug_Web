@@ -18,13 +18,14 @@
 #define FM_CMD_CAP 40U
 #define FM_PACE_MS 120UL /* JDY-33: pace 16x16 map over ~2s, no blocking */
 #define FM_READY_MS 3500UL
+#define FM_REBROADCAST_MS 12000UL /* passive Web listens, may join at any time */
 static uint8_t fake_map[MAP_DIAG_MAX_BLOB];
 static uint8_t flash_buffer[FLASH_RECORD_PAYLOAD_MAX];
 static uint8_t tx_map[MAP_DIAG_MAX_BLOB];
 static char command[FM_CMD_CAP];
-static uint8_t cmd_len,cmd_bad,tx_active,tx_row;
+static uint8_t cmd_len,cmd_bad,tx_active,tx_row,map_cached;
 static uint16_t tx_len;
-static uint32_t tx_crc,tx_last,ready_last;
+static uint32_t tx_crc,tx_last,ready_last,tx_completed_at,tx_round;
 static char tx_source[12];
 
 static void PrintInfo(void)
@@ -73,6 +74,16 @@ static Flash_Status_t ReadMap(uint8_t *dest,uint16_t *len,uint8_t *legacy)
     }
 }
 
+static void EmitMapHeader(void)
+{
+    BT_Printf("MAPCFG,w=%u,h=%u,fmt=1,len=%u,crc=%08lX,src=%s\r\n",
+              (unsigned)tx_map[4],(unsigned)tx_map[5],
+              (unsigned)tx_len,(unsigned long)tx_crc,tx_source);
+    UART_Printf("FM_CFG,w=%u,h=%u,len=%u,crc=%08lX,src=%s\r\n",
+                (unsigned)tx_map[4],(unsigned)tx_map[5],
+                (unsigned)tx_len,(unsigned long)tx_crc,tx_source);
+}
+
 static void BeginBle(const uint8_t *map,uint16_t len,const char *src)
 {
     if(!MapDiag_Validate(map,len)) {
@@ -82,14 +93,10 @@ static void BeginBle(const uint8_t *map,uint16_t len,const char *src)
     tx_len=len; tx_row=0U;
     tx_crc=Flash_DataCrc32(tx_map,tx_len);
     snprintf(tx_source,sizeof(tx_source),"%s",src);
-    tx_active=1U;
+    tx_active=map_cached=1U;
     tx_last=millis()-FM_PACE_MS;
-    BT_Printf("MAPCFG,w=%u,h=%u,fmt=1,len=%u,crc=%08lX,src=%s\r\n",
-              (unsigned)tx_map[4],(unsigned)tx_map[5],
-              (unsigned)tx_len,(unsigned long)tx_crc,tx_source);
-    UART_Printf("FM_CFG,w=%u,h=%u,len=%u,crc=%08lX,src=%s\r\n",
-                (unsigned)tx_map[4],(unsigned)tx_map[5],
-                (unsigned)tx_len,(unsigned long)tx_crc,tx_source);
+    tx_round++;
+    EmitMapHeader();
 }
 
 static void ServiceBle(void)
@@ -104,7 +111,9 @@ static void ServiceBle(void)
                   (unsigned long)tx_crc,(unsigned)n);
         UART_Printf("FM_DONE,rows=%u,crc=%08lX,src=%s\r\n",
                     (unsigned)n,(unsigned long)tx_crc,tx_source);
-        tx_active=0U; return;
+        tx_active=0U;
+        tx_completed_at=millis();
+        return;
     }
     for(x=0U;x<n;x++)
         row[x]=digits[tx_map[MAP_DIAG_HEADER_SIZE+(uint16_t)tx_row*n+x]&15U];
@@ -112,6 +121,23 @@ static void ServiceBle(void)
     BT_Printf("MAPROW,y=%u,hex=%s\r\n",(unsigned)tx_row,row);
     UART_Printf("FM_ROW,y=%u,hex=%s\r\n",(unsigned)tx_row,row);
     tx_row++;
+}
+
+/* Periodically replay the last RAM or Flash image. Passive Web may
+ * subscribe AFTER boot; no connection state or BLE RX is necessary.
+ * Never sleep/block the CPU, never program Flash, and allow UART1 to
+ * replace the cached image at any time. */
+static void ReplayCachedMap(void)
+{
+    if (!map_cached || tx_active ||
+        (uint32_t)(millis()-tx_completed_at) < FM_REBROADCAST_MS) return;
+    tx_row=0U;
+    tx_active=1U;
+    tx_last=millis()-FM_PACE_MS;
+    tx_round++;
+    UART_Printf("FM_REPLAY,round=%lu,size=%u,src=%s\r\n",
+                (unsigned long)tx_round,(unsigned)tx_map[4],tx_source);
+    EmitMapHeader();
 }
 
 static void DoRead(void)
@@ -206,33 +232,25 @@ int FlashMapDiag_Main(void)
     Motor_Init();
     Motor_LockOutputs(); /* Permanently locked until reset. */
     BT_Init();
-    UART_SendString("FM_BOOT,profile=flash_map_diag_96m,locked=1,tim11=OFF,ir=OFF,mpu=OFF,erase=DISABLED\r\n");
+    /* JDY-33 downlink is not required in this diagnostic build.
+     * No RX commands, no floating-RX interrupts or need for a wire fix. */
+    USART2->CR1 &= ~(USART_CR1_RE | USART_CR1_RXNEIE);
+    UART_SendString("FM_BOOT,profile=flash_map_diag_96m,locked=1,tim11=OFF,ir=OFF,mpu=OFF,erase=DISABLED,BLE_TX_ONLY=1\r\n");
     PrintInfo();
+    /* Explicit TEST image: no Flash writes; visible even if saved map is
+     * legacy 5x5. UART1 READ/PREVIEW can replace this image at any time. */
+    DoPreview(16U);
     ready_last=millis()-FM_READY_MS;
     while(1) {
         PollSerial();
-        if(BT_Available()) {
-            char c=BT_ReceiveChar();
-            if(c=='?') {
-                UART_Printf("FM_BLE_REQ,cmd=READ,ms=%lu\r\n",(unsigned long)millis());
-                BT_SendString("MAPACK,cmd=READ\r\n");
-                DoRead();
-            } else if(c=='V') {
-                UART_Printf("FM_BLE_REQ,cmd=PREVIEW16,ms=%lu\r\n",(unsigned long)millis());
-                BT_SendString("MAPACK,cmd=PREVIEW16\r\n");
-                DoPreview(16U);
-            } else if(c=='v') {
-                UART_Printf("FM_BLE_REQ,cmd=PREVIEW5,ms=%lu\r\n",(unsigned long)millis());
-                BT_SendString("MAPACK,cmd=PREVIEW5\r\n");
-                DoPreview(5U);
-            }
-        }
         ServiceBle();
+        ReplayCachedMap();
         /* Lightweight heartbeat lets Web detect board resets and a missing
          * map request, even when JDY-33 was connected after boot. */
         if((uint32_t)(millis()-ready_last)>=FM_READY_MS) {
             ready_last=millis();
-            BT_Printf("MAPREADY,ms=%lu,locked=1\r\n",(unsigned long)ready_last);
+            BT_Printf("MAPREADY,ms=%lu,locked=1,txonly=1,round=%lu\r\n",
+                      (unsigned long)ready_last,(unsigned long)tx_round);
         }
     }
 }

@@ -475,9 +475,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
         <span class="maze-size-badge" id="mazeSizeBadge">16×16</span>
-        <button class="btn" id="btnRequestMap" onclick="requestCurrentMap()" disabled>Read saved map</button>
-        <button class="btn" id="btnPreview16" onclick="requestPreviewMap16()" disabled>Preview 16×16 (RAM)</button>
-        <button class="btn" id="btnPreview5" onclick="requestPreviewMap5()" disabled>Preview 5×5 (RAM)</button>
+        <span class="maze-size-badge" title="BLE receive-only. Use COM7 UART1: PREVIEW 16 / PREVIEW 5 / READ.">Monitor only · Auto map</span>
         <button class="btn btn-ble" id="btnBLE" onclick="bleConnect()">Connect</button>
         <button class="btn" id="btnReconnect" onclick="reconnectBLE()" disabled>Reconnect</button>
         <button class="btn" id="btnDisconnect" onclick="bleDisconnect()" disabled>Disconnect</button>
@@ -1180,13 +1178,17 @@ async function connectSelectedDevice() {
         const service = await server.getPrimaryService(BLE_SVC);
         const characteristic = await service.getCharacteristic(BLE_CHAR);
         characteristic.addEventListener('characteristicvaluechanged', onBLEData);
+        bleNotificationsSinceConnect = 0;
         await characteristic.startNotifications();
         bleChar = characteristic;
         const deviceName = bleDevice.name || 'BLE device';
         setStatus('connected', deviceName);
         addBLEEntry(`✅ Connected to ${deviceName}`, 'sys');
         flashMapReadyMs = null;
-        await requestCurrentMap();
+        lastFlashMap = null;
+        pendingFlashMap = null;
+        mapStatus('Map: listening; STM32 broadcasts automatically about every 12s');
+        addBLEEntry('RX-only monitor: no Web commands. Use COM7 UART1 PREVIEW 16, PREVIEW 5 or READ.', 'sys');
     } catch(err) {
         bleChar = null;
         setStatus('disconnected', 'Disconnected');
@@ -1195,70 +1197,10 @@ async function connectSelectedDevice() {
     }
 }
 
-// Flash Map diagnostic protocol: '?' reads saved map, 'V' previews 16x16,
-// 'v' previews 5x5, all over FFE1 write. RAM previews never write Flash.
-// Explicit ACK+CRC and bounded retries expose JDY-33/GATT failures.
-let flashMapTimer = null;
-let flashMapRequestedCode = '?';
-let flashMapRequestAttempts = 0;
-let flashMapWaiting = false;
+// Unidirectional BLE telemetry: STM32 PA2 -> JDY-33 -> Web.
+// All command input uses independent USART1 PA10 / COM7.
 let flashMapReadyMs = null;
-function stopMapTimer() {
-    if (flashMapTimer !== null) clearTimeout(flashMapTimer);
-    flashMapTimer = null;
-}
-function finishMapRequest() {
-    stopMapTimer();
-    flashMapWaiting = false;
-    flashMapRequestAttempts = 0;
-}
-async function requestMapCommand(code, retry=false) {
-    if (!bleChar) {
-        mapStatus('Map: BLE not connected');
-        return;
-    }
-    if (!retry) {
-        finishMapRequest();
-        flashMapRequestedCode = code;
-    }
-    flashMapRequestAttempts++;
-    flashMapWaiting = true;
-    const cmdName = code === '?' ? 'saved Flash/legacy READ'
-                  : code === 'V' ? '16×16 RAM preview' : '5×5 RAM preview';
-    mapStatus('Map: requesting '+cmdName+' (attempt '+flashMapRequestAttempts+'/3)');
-    addBLEEntry('MAP TX '+cmdName+' attempt='+flashMapRequestAttempts,'sys');
-    try {
-        const command = new Uint8Array([code.charCodeAt(0)]);
-        if (bleChar.properties.writeWithoutResponse)
-            await bleChar.writeValueWithoutResponse(command);
-        else if (bleChar.properties.write)
-            await bleChar.writeValueWithResponse(command);
-        else throw new Error('FFE1 is not writable');
-    } catch(err) {
-        flashMapWaiting = false;
-        stopMapTimer();
-        mapStatus('Map: BLE write FAILED: '+err.message);
-        addBLEEntry('Map GATT write failed: '+err.message,'err');
-        return;
-    }
-    // 16x16 RAM map at 120ms/row completes in ~2s; allow Windows
-    // BLE scheduling delays and one bounded retry on lost frames.
-    stopMapTimer();
-    flashMapTimer = setTimeout(() => {
-        flashMapTimer = null;
-        if (!flashMapWaiting) return;
-        if (flashMapRequestAttempts < 3 && bleChar) {
-            addBLEEntry('Map incomplete/no ACK: retrying '+cmdName,'warn');
-            void requestMapCommand(flashMapRequestedCode,true);
-        } else {
-            flashMapWaiting = false;
-            mapError('no complete MAPCFG/MAPROW/MAPEND after 3 requests');
-        }
-    }, 6500);
-}
-function requestCurrentMap() { return requestMapCommand('?'); }
-function requestPreviewMap16() { return requestMapCommand('V'); }
-function requestPreviewMap5() { return requestMapCommand('v'); }
+let bleNotificationsSinceConnect = 0;
 
 function bleDisconnect() {
     if (bleDevice && bleDevice.gatt.connected) {
@@ -1271,8 +1213,9 @@ function onBLEDisconnected() {
     addBLEEntry('🔌 Disconnected', 'sys');
     bleChar = null;
     lineBuffer = '';
-    finishMapRequest();
     flashMapReadyMs = null;
+    pendingFlashMap = null;
+    bleNotificationsSinceConnect = 0;
     updateConnectionControls();
 }
 
@@ -1282,12 +1225,11 @@ function updateConnectionControls() {
     document.getElementById('btnReconnect').disabled =
         bleConnecting || connected || !bleDevice || !navigator.bluetooth;
     document.getElementById('btnDisconnect').disabled = bleConnecting || !connected;
-    document.getElementById('btnRequestMap').disabled = !connected;
-    document.getElementById('btnPreview16').disabled = !connected;
-    document.getElementById('btnPreview5').disabled = !connected;
+
 }
 
 function onBLEData(event) {
+    bleNotificationsSinceConnect++;
     const text = new TextDecoder().decode(event.target.value);
     totalBytes += event.target.value.byteLength;
     lineBuffer += text;
@@ -1308,23 +1250,22 @@ function onBLEData(event) {
         else if (line.startsWith('MAPROW,')) { parseFlashMapRow(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('MAPEND,')) { parseFlashMapEnd(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('MAPACK,')) { addBLEEntry(line, 'sys'); }
-        else if (line.startsWith('MAPERR,')) {
-            finishMapRequest();
-            mapError(line);
-        }
+        else if (line.startsWith('MAPERR,')) { mapError(line); }
         else if (line.startsWith('MAPREADY,')) {
             const ms = Number(parseMapFields(line).ms);
             if (Number.isFinite(ms)) {
                 const resetDetected = flashMapReadyMs !== null && ms + 1500 < flashMapReadyMs;
                 flashMapReadyMs = ms;
                 if (resetDetected) {
-                    addBLEEntry('STM32 reset detected: requesting saved map again','sys');
-                    if (!flashMapWaiting) void requestCurrentMap();
-                } else if (!flashMapWaiting && !lastFlashMap &&
-                           document.getElementById('mapVerifyStatus').textContent === 'Map: waiting for data') {
-                    void requestCurrentMap();
+                    pendingFlashMap = null;
+                    lastFlashMap = null;
+                    mapStatus('Map: STM32 restarted; awaiting passive broadcast');
+                    addBLEEntry('STM32 reset detected; awaiting next automatic map', 'sys');
+                } else if (!pendingFlashMap && !lastFlashMap) {
+                    mapStatus('Map: MCU TX heartbeat received; awaiting MAPCFG');
                 }
             }
+            addBLEEntry(line, 'sys');
         }
         else if (line.startsWith('MAZE:'))      { parseMazeData(line); addBLEEntry(line, 'maze'); }
         else if (line.startsWith('CELL:')) { parseCellUpdate(line); addBLEEntry(line, 'maze'); }
@@ -1415,7 +1356,6 @@ function parseFlashMapEnd(line) {
     setRobotPosition({x:0,y:0,dir:0});
     lastFlashMap={size:p.n,crc:p.crc,source:p.src,rows:p.n,status:'PASS'};
     pendingFlashMap=null;
-    finishMapRequest();
     document.getElementById('mazeOverlay').style.display='none';
     const hex=p.crc.toString(16).toUpperCase().padStart(8,'0');
     mapStatus('Map: PASS '+p.n+'×'+p.n+' CRC='+hex+' source='+p.src);
