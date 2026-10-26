@@ -43,7 +43,10 @@ REPORT_FIELDS = (
     "motor_sweep_steps", "terminal_80_to_stop_ms",
     "kick_samples", "smooth_approach_samples", "reverse_pwm_samples",
     "rapid_accel_samples", "rapid_brake_samples", "rapid_near_samples",
-    "rapid_coast_samples", "peak_gyro_1khz_dps"
+    "rapid_coast_samples", "peak_gyro_1khz_dps",
+    "flow_accel_samples","flow_brake_samples",
+    "flow_coast_samples","flow_approach_samples","flow_finish_samples",
+    "rapid_or_flow_brake_reaccelerations"
 )
 
 IMU_FIELDS = (
@@ -96,16 +99,20 @@ def parse_sample(line: str) -> dict | None:
          left,right,age_us,motor_stage)=raw
     if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (0,90,180):
         return None
-    if profile not in (0,1,2,3,4) or phase not in (1,2):
+    if profile not in (0,1,2,3,4,5) or phase not in (1,2):
         return None
-    if abs(cmd_pm) > (800 if profile==4 else 400) or age_us < 0:
+    if abs(cmd_pm) > (800 if profile in (4,5) else 400) or age_us < 0:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
     if motor_stage is not None:
-        if not 0 <= motor_stage <= 12:
+        if not 0 <= motor_stage <= 17:
             return None
-        if profile != 4 and motor_stage > 8:
+        if profile == 5:
+            if motor_stage not in (0,13,14,15,16,17):return None
+        elif profile == 4:
+            if motor_stage > 12:return None
+        elif motor_stage > 8:
             return None
     return dict(run_id=run_id,t_ms=t_ms,target_deg=target,
                 profile=profile,phase=phase,yaw_deg=yaw_cd/100,
@@ -245,7 +252,7 @@ def analyze(samples: list[dict], result: dict,
     return {
         "run_id": rows[0]["run_id"],
         "target_deg": target,
-        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID"}[rows[0]["profile"]],
+        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW"}[rows[0]["profile"]],
         "reason": result.get("reason", "PARTIAL"),
         "t10_ms": rnd(t10),
         "t90_ms": rnd(t90),
@@ -268,6 +275,15 @@ def analyze(samples: list[dict], result: dict,
         "rapid_brake_samples": sum(v.get("motor_stage")==10 for v in rows if v["phase"]==1),
         "rapid_near_samples": sum(v.get("motor_stage")==11 for v in rows if v["phase"]==1),
         "rapid_coast_samples": sum(v.get("motor_stage")==12 for v in rows if v["phase"]==1),
+        "flow_accel_samples": sum(v.get("motor_stage")==13 for v in rows if v["phase"]==1),
+        "flow_brake_samples": sum(v.get("motor_stage")==14 for v in rows if v["phase"]==1),
+        "flow_coast_samples": sum(v.get("motor_stage")==15 for v in rows if v["phase"]==1),
+        "flow_approach_samples": sum(v.get("motor_stage")==16 for v in rows if v["phase"]==1),
+        "flow_finish_samples": sum(v.get("motor_stage")==17 for v in rows if v["phase"]==1),
+        "rapid_or_flow_brake_reaccelerations": sum(
+            v.get("motor_stage") in (9,13) and any(
+                z.get("motor_stage") in (10,14) for z in rows[:i])
+            for i,v in enumerate(rows) if v["phase"]==1),
         "peak_gyro_1khz_dps": (round(int(result["peak_dps10"])/10.0,3)
                                 if result.get("peak_dps10") else None),
         "max_requested_pwm_pm": max(abs(s["cmd_pm"]) for s in rows),
@@ -426,7 +442,10 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "smooth_approach_samples","reverse_pwm_samples",
                       "rapid_accel_samples","rapid_brake_samples",
                       "rapid_near_samples","rapid_coast_samples",
-                      "peak_gyro_1khz_dps"):
+                      "peak_gyro_1khz_dps",
+                      "flow_accel_samples","flow_brake_samples",
+                      "flow_coast_samples","flow_approach_samples",
+                      "flow_finish_samples","rapid_or_flow_brake_reaccelerations"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -463,7 +482,7 @@ def capture(args: argparse.Namespace) -> int:
     imu_windows: dict[int,list[dict]]={}
     completed=set()
     mode_byte={"90":b"1","180":b"2","motor":b"m"}[args.mode]
-    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h"}[args.profile]
+    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w"}[args.profile]
     pending=bytearray()
     last_serial_activity=time.monotonic()
     last_config=0.0
@@ -618,7 +637,7 @@ def main(argv=None) -> int:
     parser.add_argument("--baud",type=int,default=115200)
     parser.add_argument("--mode",choices=["90","180","motor"],default="90",
                         help="90/180 degree pivot or bounded phase-1 motor PWM sweep")
-    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid"],default="base")
+    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow"],default="base")
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output",type=str,help="destination results folder")
     parser.add_argument("--duration",type=float,default=360,
@@ -628,8 +647,8 @@ def main(argv=None) -> int:
                         help="optionally bundle files for manual upload; not needed for GitHub")
     args=parser.parse_args(argv)
     if args.runs<1:parser.error("--runs must be >=1")
-    if not args.analyze and args.profile=="rapid" and args.mode!="90":
-        parser.error("--profile rapid is restricted to 90-degree test only")
+    if not args.analyze and args.profile in ("rapid","flow") and args.mode!="90":
+        parser.error("--profile rapid/flow is restricted to 90-degree test only")
     return offline(args.analyze,make_zip=args.zip) if args.analyze else capture(args)
 
 
