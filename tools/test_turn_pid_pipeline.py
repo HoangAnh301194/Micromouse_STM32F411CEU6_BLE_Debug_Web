@@ -49,6 +49,8 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(rec["applied_r_pm"],307)
         self.assertEqual(rec["motor_stage"],0)
         self.assertEqual(rec["enc_l"],-210)
+        kick=parse_sample("TP,D,4,200,90,2,1,8700,300,0,0,0,150,150,-150,150,-260,240,751,6")
+        self.assertEqual(kick["motor_stage"],6)
         self.assertIsNone(parse_sample("TP,D,4,20,90,2,1,1090,7890,250,1200,90,110,999,-310,307,-210,190,751,0"))
 
     def test_motor_sweep_step_metrics_and_archive(self):
