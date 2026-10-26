@@ -46,7 +46,8 @@ REPORT_FIELDS = (
     "rapid_coast_samples", "peak_gyro_1khz_dps",
     "flow_accel_samples","flow_brake_samples",
     "flow_coast_samples","flow_approach_samples","flow_finish_samples",
-    "rapid_or_flow_brake_reaccelerations"
+    "rapid_or_flow_brake_reaccelerations","trace_first_ms",
+    "trace_terminal_disagreement_deg"
 )
 
 IMU_FIELDS = (
@@ -144,7 +145,9 @@ def interpolate_crossing(samples: list[dict], threshold: float) -> float | None:
                 return previous["t_ms"] + (item["t_ms"] - previous["t_ms"]) * (
                     threshold - a) / (b - a)
         elif item["yaw_deg"] >= threshold:
-            return float(item["t_ms"])
+            # Initial part of the trace is missing: the crossing time
+            # cannot be reconstructed from the first UART sample.
+            return None
         previous = item
     return None
 
@@ -221,8 +224,15 @@ def analyze(samples: list[dict], result: dict,
     t90 = interpolate_crossing(rows, target * 0.90)
     tfull = interpolate_crossing(rows, float(target))
     peak = max(s["yaw_deg"] for s in rows)
+    if result.get("peak_cd") is not None:
+        peak=max(peak,int(result["peak_cd"])/100.0)
     max_rate = max(abs(s["gyro_dps"]) for s in rows)
-    final_yaw = rows[-1]["yaw_deg"]
+    # MCU RESULT is captured at 1kHz and can follow the last 50Hz
+    # telemetry sample. It is authoritative for terminal yaw.
+    final_yaw = (int(result["final_cd"])/100.0
+                 if result.get("final_cd") is not None
+                 else rows[-1]["yaw_deg"])
+    terminal_disagreement = abs(final_yaw-rows[-1]["yaw_deg"])
     overshoot = max(0.0, peak - target)
     stop_ms = int(result["stop_ms"]) if result.get("stop_ms") else None
     reach_80 = next((v["t_ms"] for v in rows if v["phase"]==1 and v["yaw_deg"]>=80.0),None)
@@ -302,6 +312,8 @@ def analyze(samples: list[dict], result: dict,
         "imu_age_max_us": max(sample_ages),
         "trace_samples": len(rows),
         "sampling_gap_max_ms": max(gaps) if gaps else 0,
+        "trace_first_ms": rows[0]["t_ms"],
+        "trace_terminal_disagreement_deg": rnd(terminal_disagreement),
         "ring_drops": int(result.get("qdrop", 0)),
         "uart_drops": int(result.get("uartdrop", 0)),
         # Software trace quality only, NOT physical floor-motion acceptance.
@@ -310,6 +322,8 @@ def analyze(samples: list[dict], result: dict,
             abs(target-final_yaw) <= 2.0 and settling is not None and
             stop_ms is not None and rows[-1]["t_ms"]>=stop_ms+650 and
             max(gaps, default=0) <= 60 and len(rows) >= 12 and
+            rows[0]["t_ms"] <= 60 and
+            terminal_disagreement <= 2.0 and
             int(result.get("qdrop", 0)) == 0 and
             int(result.get("uartdrop", 0)) == 0),
     }
@@ -442,7 +456,8 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "smooth_approach_samples","reverse_pwm_samples",
                       "rapid_accel_samples","rapid_brake_samples",
                       "rapid_near_samples","rapid_coast_samples",
-                      "peak_gyro_1khz_dps",
+                      "peak_gyro_1khz_dps","trace_first_ms",
+                      "trace_terminal_disagreement_deg",
                       "flow_accel_samples","flow_brake_samples",
                       "flow_coast_samples","flow_approach_samples",
                       "flow_finish_samples","rapid_or_flow_brake_reaccelerations"):
