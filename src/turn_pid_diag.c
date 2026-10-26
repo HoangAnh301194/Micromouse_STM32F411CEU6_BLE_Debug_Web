@@ -75,6 +75,27 @@
 #define TP_GLIDE_FINAL_STALL_MS 430U
 #define TP_GLIDE_PWM_RISE_STEP   95.0f
 #define TP_GLIDE_PWM_BRAKE_STEP 160.0f
+/* Opt-in SPRINT: a 100% ceiling, not a constant 100% output.
+ * Control is still rate-limited; motor driver retains reversal gap. */
+#define TP_SPRINT_PWM_CAP      1000.0f
+#define TP_SPRINT_ACCEL        4000.0f
+#define TP_SPRINT_MAX_RATE_90   620.0f
+#define TP_SPRINT_MAX_RATE_180  720.0f
+#define TP_SPRINT_DECEL_EST    3800.0f
+#define TP_SPRINT_BRAKE_MARGIN  22.0f
+#define TP_SPRINT_BRAKE_MAX    310.0f
+#define TP_SPRINT_BRAKE_END_W  170.0f
+#define TP_SPRINT_BRAKE_END_E   20.0f
+#define TP_SPRINT_BRAKE_MAX_MS 220U
+#define TP_SPRINT_COAST_W      95.0f
+#define TP_SPRINT_COAST_MS    120U
+#define TP_SPRINT_UP_STEP      120.0f
+#define TP_SPRINT_BRAKE_STEP   135.0f
+#define TP_SPRINT_NEAR_PWM     160.0f
+#define TP_SPRINT_NEAR_STEP     12.0f
+#define TP_SPRINT_NEAR_STALL   480U
+#define TP_SPRINT_GYRO_ABORT   850.0f
+
 #define TP_RING_SIZE         128U
 #define TP_ANGLE_BAND        2.0f
 #define TP_RATE_BAND         12.0f
@@ -107,9 +128,9 @@ static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
-      TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8};
+      TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8,TP_DRIFT=9};
 
 typedef struct {
     float kp_angle;       /* desired deg/s per degree error */
@@ -127,7 +148,7 @@ typedef struct {
 /* Preserve BASE/FAST/TUNED exactly for comparison against real logs.
  * SMOOTH: first hardware-unverified fix for strong near-target jolt.
  * Do not infer physical stability from firmware compilation. */
-static const TP_Profile profiles[7]={
+static const TP_Profile profiles[8]={
     {4.8f,1.15f,0.0f,0.35f,650.0f,150.0f,260,95,0.0f,0.0f},
     {6.0f,1.35f,0.0f,0.40f,950.0f,230.0f,300,95,0.0f,0.0f},
     {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f},
@@ -138,7 +159,8 @@ static const TP_Profile profiles[7]={
     /* FLOW: accel once, brake once, coast once, then creep-to-band;
      * no high-power acceleration allowed after the braking stage. */
     {13.0f,2.20f,0.0f,1.20f,3200.0f,520.0f,800,0,0.0f,0.0f},
-    {13.0f,2.20f,0.0f,1.20f,3200.0f,520.0f,800,0,0.0f,0.0f}
+    {13.0f,2.20f,0.0f,1.20f,3200.0f,520.0f,800,0,0.0f,0.0f},
+    {13.0f,2.15f,0.0f,1.28f,4000.0f,720.0f,1000,0,0.0f,0.0f}
 };
 
 typedef struct {
@@ -265,6 +287,7 @@ static const char *WhyName(uint8_t reason) {
         case TP_ANGLE:return "ANGLE_LIMIT";
         case TP_MOTOR:return "MOTOR_LOCKED";
         case TP_STALL:return "STALLED_NEAR_TARGET";
+        case TP_DRIFT:return "POST_STOP_DRIFT";
         default:return "UART_STOP";
     }
 }
@@ -533,6 +556,10 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     if(fabsf(tp.rate)>tp.peak_rate)tp.peak_rate=fabsf(tp.rate);
     if(tp.phase==TP_COAST) {
         ++tp.post_ticks;
+        /* DONE is valid only if yaw remains within ±2deg throughout
+         * the 800ms coast observation after outputs are locked. */
+        if(tp.reason==TP_DONE && tp.mode!=TP_SWEEP &&
+           fabsf(tp.err)>TP_ANGLE_BAND)tp.reason=TP_DRIFT;
         if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
         if(tp.post_ticks>=TP_POST_TICKS)tp.phase=TP_RESULT;
         return;
