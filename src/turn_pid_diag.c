@@ -140,10 +140,10 @@ void TurnPidDiag_Stop(uint8_t why) {
 void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
                              float gyro_dps,uint32_t age_us) {
     const TP_Profile *cfg;
-    float error,wanted,limit_brake,rate_error,u,rate_ref;
+    float error,wanted,limit_brake,u,rate_ref;
     if(tp.phase!=TP_RUNNING && tp.phase!=TP_COAST)return;
     ++tp.ticks;
-    tp.yaw=yaw_deg-tp.zero_y; /* unwrapped yaw; 180 does not alias -180 */
+    tp.yaw=yaw_deg-tp.zero_yaw; /* unwrapped yaw; 180 does not alias -180 */
     tp.rate=gyro_dps;
     tp.err=(float)tp.mode-tp.yaw;
     tp.enc_l=left;tp.enc_r=right;
@@ -203,7 +203,6 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
                              cfg->accel_dps2*0.005f);
             rate_ref=Limit(rate_ref,-cfg->speed_dps,cfg->speed_dps);
             tp.ref_rate=rate_ref;
-            rate_error=rate_ref-tp.rate;
             tp.pid_pm=(int16_t)PID_Compute(&tp.pid_rate,rate_ref,tp.rate,0.005f);
             tp.ff_pm=(int16_t)(cfg->kff_rate*rate_ref);
             u=(float)tp.pid_pm+(float)tp.ff_pm;
