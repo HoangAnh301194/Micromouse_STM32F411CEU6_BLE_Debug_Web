@@ -8,11 +8,17 @@ TIM11 (1kHz). Motor outputs LOCKED at boot, calibration, idle and after stop.
 or autonomous sequence. A new PA0 press stops in TIM11; UART \`S\` stops via
 main (not a substitute for physically cutting VM supply).
 
-Test first with wheels mechanically raised/secured, VM separately switchable,
-clear of obstructions, operator present. Check left/right direction and gyro
-sign. An inverted gyro/motor mapping or motor drive misbehavior can damage
-hardware despite software guards. Motor cap is 260/1000 BASE or 300/1000 FAST.
-Do not start FAST or floor testing until BASE direction and stop are accepted.
+First bench test: **raise the wheels** solely to confirm motor direction,
+low-duty response, PA0/UART STOP and telemetry with independently switchable VM.
+A secured/elevated robot **cannot physically yaw**, so gyro turn accuracy and
+90/180 response CANNOT be measured on this fixture. The yaw controller will
+probably reach TIMEOUT while the chassis is held still; do not treat that as
+PID tuning data. After bench safety is accepted, perform actual BASE angle
+trials on a level, clear floor with an operator and independent VM cutoff,
+starting with 90 degrees. Check physical motor/gyro polarity and externally
+measure final heading. An inverted mapping or drive fault may cause damage
+despite software guards. Motor cap is 260/1000 BASE or 300/1000 FAST.
+Only try FAST after real BASE 90-degree turn and STOP are accepted.
 
 ## Install and run (Windows PowerShell)
 \`\`\`powershell
@@ -102,12 +108,16 @@ before comparing speed. If the robot continues rotating after an emergency
 stop, physical VM cutoff must take priority.
 
 ## Analysis sequence
-1. Three BASE 90° attempts on a secured fixture. Verify direction/STOP,
-   gyro rate, angle, and telemetry integrity.
-2. Three FAST 90° attempts only if BASE valid; compare mean/SD for response,
-   overshoot and settling (not just fastest single time).
-3. Repeat BASE then FAST at 180°; greater rotation needs separate braking data.
-4. Next parameter revisions should change one variable at a time (speed
+1. **Lifted-wheel safety check** only: verify motor polarity, bounded PWM,
+   UART telemetry and immediate PA0 stop. Gyro angle cannot be characterized
+   while the chassis is fixed.
+2. **Actual floor turns**: three BASE 90° attempts on a clear, level floor
+   after the safe check. Compare real angle (external reference), STOP,
+   peak gyro rate, overshoot, and telemetry integrity.
+3. Three FAST 90° attempts only if BASE on-floor response is valid; compare
+   mean/SD for response, overshoot and settling (not fastest single time).
+4. Repeat BASE then FAST at 180°; greater rotation needs separate braking data.
+5. Next parameter revisions should change one variable at a time (speed
    limit, braking accel, rate Kp, then optional Ki), retain raw evidence,
    and rebuild the isolated profile for reproducibility. Real-floor testing
    only after safe fixture acceptance.
