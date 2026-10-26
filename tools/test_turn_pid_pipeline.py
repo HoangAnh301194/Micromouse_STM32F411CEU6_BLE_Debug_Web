@@ -106,6 +106,32 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(report["reverse_pwm_samples"],0)
         self.assertIsNone(parse_sample("TP,D,7,20,90,3,1,100,200,10,20,0,0,100,-100,100,-50,50,500,9"))
 
+    def test_v5_rapid_80pct_ceiling_braking_and_peak_from_1khz(self):
+        def rec(t, yaw, cmd, stage, phase=1):
+            cd=int(yaw*100)
+            return parse_sample(
+                f"TP,D,8,{t},90,4,{phase},{cd},{9000-cd},"
+                f"500,2000,100,250,{cmd},{-cmd},{cmd},-50,50,500,{stage}")
+        records=[rec(20,8,780,9),rec(40,40,550,9),
+                 rec(60,72,-310,10),rec(80,83,100,11),
+                 rec(100,88.5,0,12),rec(320,89.1,0,12,phase=2)]
+        self.assertTrue(all(r is not None for r in records))
+        summary=analyze(records,{"reason":"DONE","stop_ms":"100",
+                                 "peak_dps10":"4805"})
+        self.assertEqual(summary["profile"],"RAPID")
+        self.assertEqual(summary["max_requested_pwm_pm"],780)
+        self.assertEqual(summary["rapid_accel_samples"],2)
+        self.assertEqual(summary["rapid_brake_samples"],1)
+        self.assertEqual(summary["rapid_near_samples"],1)
+        self.assertEqual(summary["rapid_coast_samples"],1)
+        self.assertEqual(summary["peak_gyro_1khz_dps"],480.5)
+        self.assertEqual(summary["reverse_pwm_samples"],1)
+        self.assertIsNone(rec(20,8,801,9))
+        self.assertIsNone(parse_sample(
+            "TP,D,8,20,90,3,1,800,8200,500,2000,100,250,780,-780,780,-50,50,500,9"))
+        self.assertIsNone(parse_sample(
+            "TP,D,8,20,90,4,1,800,8200,500,2000,100,250,780,-780,780,-50,50,500,13"))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
