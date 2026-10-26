@@ -163,6 +163,29 @@ class TurnTraceTests(unittest.TestCase):
         self.assertIsNone(parse_sample(
           "TP,D,10,20,90,4,1,300,8700,1200,2400,30,40,680,-680,680,-50,50,540,13"))
 
+    def test_missing_initial_trace_and_true_terminal_1khz_yaw(self):
+        # Run1 of the 2026-10-27 rapid session lost startup UART frames
+        # but formerly met trace quality; do not fabricate a t10 crossing.
+        rows=[sample(t,30.0+0.12*(t-140),phase=1 if t<780 else 2)
+              for t in range(140,1600,20)]
+        report=analyze(rows,{"reason":"DONE","stop_ms":"785",
+                            "final_cd":"8856","peak_cd":"8858"})
+        self.assertIsNone(report["t10_ms"])
+        self.assertEqual(report["trace_first_ms"],140)
+        self.assertFalse(report["meets_trace_thresholds"])
+        self.assertEqual(report["final_yaw_deg"],88.56)
+        # Run4: RESULT final is 74.12deg, not the previous 50Hz 76.38deg.
+        motion=[sample(20,20.0),sample(2075,87.42,phase=2),
+                sample(2855,76.38,phase=2)]
+        m=analyze(motion,{"reason":"STALLED_NEAR_TARGET",
+                          "stop_ms":"2075","final_cd":"7412",
+                          "peak_cd":"8753"})
+        self.assertEqual(m["final_yaw_deg"],74.12)
+        self.assertEqual(m["final_abs_error_deg"],15.88)
+        self.assertGreater(m["coast_drift_deg"].__abs__(),13)
+        self.assertGreater(m["trace_terminal_disagreement_deg"],2.0)
+        self.assertFalse(m["meets_trace_thresholds"])
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
