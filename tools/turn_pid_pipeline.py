@@ -145,6 +145,7 @@ def analyze(samples: list[dict], result: dict) -> dict:
         "meets_trace_thresholds": bool(
             result.get("reason") == "DONE" and overshoot <= 3.0 and
             abs(target-final_yaw) <= 2.0 and settling is not None and
+            stop_ms is not None and rows[-1]["t_ms"]>=stop_ms+650 and
             max(gaps, default=0) <= 60 and len(rows) >= 12 and
             int(result.get("qdrop", 0)) == 0 and
             int(result.get("uartdrop", 0)) == 0),
@@ -242,9 +243,11 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "overshoot_deg","max_abs_gyro_dps",
                       "final_abs_error_deg","coast_drift_deg"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
-            entry[field]={"mean":round(statistics.mean(numbers),3),
-                          "stdev":round(statistics.stdev(numbers),3) if len(numbers)>1 else None}
-            if not numbers:entry[field]={"mean":None,"stdev":None}
+            if numbers:
+                entry[field]={"mean":round(statistics.mean(numbers),3),
+                              "stdev":round(statistics.stdev(numbers),3) if len(numbers)>1 else None}
+            else:
+                entry[field]={"mean":None,"stdev":None}
         stats[key]=entry
     (root/"group_stats.json").write_text(
         json.dumps(stats,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
