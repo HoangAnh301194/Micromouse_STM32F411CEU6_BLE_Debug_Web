@@ -309,7 +309,9 @@ def capture(args: argparse.Namespace) -> int:
             configure()
             while len(completed)<args.runs:
                 if args.duration and time.monotonic()-began>args.duration:
-                    print("[STOP] Total session time limit reached.")
+                    print("[STOP] Total session time limit reached; commanding UART stop.")
+                    try:ser.write(b"S")
+                    except Exception:pass
                     break
                 try:
                     data=ser.readline()
