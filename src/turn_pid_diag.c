@@ -301,7 +301,10 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
         if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
         return;
     }
-    if(tp.yaw>(float)tp.mode+22.0f) {
+    /* TUNED has tighter high-speed flight envelope; BASE/FAST unchanged. */
+    if(tp.yaw>(float)tp.mode+
+               (tp.profile==TP_TUNED?8.0f:22.0f) ||
+       (tp.profile==TP_TUNED && fabsf(tp.rate)>450.0f)) {
         StopAndCoast(TP_ANGLE);PushSample(age_us);return;
     }
     if((tp.ticks%TP_CONTROL_DIV)==0U) {
