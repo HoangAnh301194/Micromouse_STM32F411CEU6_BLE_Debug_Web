@@ -454,7 +454,7 @@ static void GlideControlTick(void) {
         tp.stage=19U;
         tp.flow_ticks+=TP_CONTROL_DIV;
         if(rate<=TP_GLIDE_BRAKE_END_RATE ||
-           error<=TP_GLIDE_BRAKE_END_ERR ||
+           (error<=TP_GLIDE_BRAKE_END_ERR && rate<=220.0f) ||
            tp.flow_ticks>=TP_GLIDE_BRAKE_TIMEOUT) {
             tp.flow_phase=2U;
             tp.flow_ticks=0U;
