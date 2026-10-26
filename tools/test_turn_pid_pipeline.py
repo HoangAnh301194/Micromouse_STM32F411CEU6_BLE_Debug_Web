@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from turn_pid_pipeline import parse_sample,parse_kv,parse_imu,analyze,write_report,zip_session
+from turn_pid_pipeline import parse_sample,parse_kv,parse_imu,analyze,write_report,zip_session,offline
 
 
 def sample(t,yaw,target=90,phase=1):
@@ -87,6 +87,17 @@ class TurnTraceTests(unittest.TestCase):
             self.assertEqual(len(records),1)
             self.assertEqual(records[0]["reason"],"DONE")
             self.assertEqual(json.loads((folder/"summary.json").read_text())[0]["trace_samples"],13)
+
+    def test_offline_does_not_create_zip_unless_requested(self):
+        line="TP,D,1,20,90,0,1,100,8900,50,60,70,80,90,10,-10,500"
+        with tempfile.TemporaryDirectory() as temp:
+            folder=Path(temp)
+            (folder/"raw_uart.log").write_text(line+"\n",encoding="utf-8")
+            self.assertEqual(offline(folder),0)
+            self.assertFalse((folder/"turn_pid_bundle.zip").exists())
+            self.assertTrue((folder/"run_001"/"samples.csv").exists())
+            self.assertEqual(offline(folder,make_zip=True),0)
+            self.assertTrue((folder/"turn_pid_bundle.zip").exists())
 
     def test_kv_header(self):
         d=parse_kv("TP,RESULT,id=3,mode=90,reason=DONE,stop_ms=800","TP,RESULT,")

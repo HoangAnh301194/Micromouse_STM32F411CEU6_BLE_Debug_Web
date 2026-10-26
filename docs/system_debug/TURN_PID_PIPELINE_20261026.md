@@ -124,9 +124,20 @@ stop, physical VM cutoff must take priority.
 
 ## Single attachment for follow-up analysis
 
-After the host finishes a session, it prints `[UPLOAD THIS ZIP]` with
-`results/turn_pid_*/turn_pid_bundle.zip`. Upload that single ZIP in the
-next conversation. It contains the raw logs, time-series CSV, plots,
+For the GitHub-based workflow, the host saves `raw_uart.log`, per-run
+`samples.csv`, `imu_windows.csv`, plots and JSON summaries **without
+creating a ZIP by default**. Push those source files normally; their
+text can be inspected directly by GitHub and diffed between commits.
+
+Only when sharing one standalone attachment outside GitHub, add `--zip`:
+```powershell
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile base --runs 3 --zip
+python tools/turn_pid_pipeline.py --analyze results/turn_pid_YYYYmmdd_HHMMSS --zip
+```
+This creates `turn_pid_bundle.zip` in the session directory; new ZIP
+artifacts are ignored by Git via `.gitignore`. ZIP files already committed
+as historical results are preserved; adding a Git ignore rule does not remove
+files already tracked. The ZIP holds raw logs, time-series CSV, plots,
 per-run metrics, and `group_stats.json` (mean and sample SD over repeats).
 `meets_trace_thresholds` is a **software signal-based indicator**, not
 confirmation of physical 90°/180° accuracy: external angular reference
@@ -170,7 +181,7 @@ this is the age of the coherent snapshot consumed by TIM11 at a logging
 tick. 50Hz UART traces **do not** indicate the gyro is sampled at 50Hz.
 The tool now saves \`run_NNN/imu_windows.csv\`, appends
 \`imu_effective_hz\`, interval mean/max and 50Hz consumed-sample
-age mean/max to summaries, and includes them in the session ZIP.
+age mean/max to summaries; they are bundled only if `--zip` is selected.
 
 Important: reading a snapshot on each 1kHz control tick can re-use the
 same latest gyro publication. A separate count of completed *new*

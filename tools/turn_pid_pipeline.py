@@ -446,15 +446,18 @@ def capture(args: argparse.Namespace) -> int:
                         "requested_profile":args.profile,"requested_runs":args.runs,
                         "completed_runs":len(completed),"valid_samples":sum(map(len,runs.values()))},
                        indent=2)+"\n",encoding="utf-8")
-        archive=zip_session(root)
         print(f"[SAVED] {root.resolve()}")
-        print(f"[UPLOAD THIS ZIP] {archive.resolve()}")
+        if args.zip:
+            archive=zip_session(root)
+            print(f"[ZIP CREATED] {archive.resolve()}")
+        else:
+            print("[GIT] Raw UART, CSV, JSON, and charts saved; no ZIP by default.")
         print(f"[COUNT] {len(completed)} complete result(s); "
               f"{len(summaries)} run(s) with trace data.")
     return 0 if len(completed)>=args.runs else 1
 
 
-def offline(folder: Path) -> int:
+def offline(folder: Path, make_zip: bool = False) -> int:
     path=folder/"raw_uart.log"
     if not path.exists():
         print(f"Missing {path}",file=sys.stderr)
@@ -476,9 +479,12 @@ def offline(folder: Path) -> int:
     summaries=write_report(folder,runs,results,imu_windows)
     for item in summaries:
         print(json.dumps(item,ensure_ascii=False))
-    archive=zip_session(folder)
     print(f"[SAVED] {folder.resolve()}")
-    print(f"[UPLOAD THIS ZIP] {archive.resolve()}")
+    if make_zip:
+        archive=zip_session(folder)
+        print(f"[ZIP CREATED] {archive.resolve()}")
+    else:
+        print("[GIT] Reprocessed raw files directly; no ZIP by default.")
     return 0 if summaries else 1
 
 
@@ -494,9 +500,11 @@ def main(argv=None) -> int:
     parser.add_argument("--duration",type=float,default=360,
                         help="maximum capture session seconds, 0 means unlimited")
     parser.add_argument("--analyze",type=Path,help="offline reprocess previous raw UART folder")
+    parser.add_argument("--zip",action="store_true",
+                        help="optionally bundle files for manual upload; not needed for GitHub")
     args=parser.parse_args(argv)
     if args.runs<1:parser.error("--runs must be >=1")
-    return offline(args.analyze) if args.analyze else capture(args)
+    return offline(args.analyze,make_zip=args.zip) if args.analyze else capture(args)
 
 
 if __name__=="__main__":

@@ -13,3 +13,7 @@ __pycache__/
 *.map
 *.o
 *.obj
+
+# Optional turn-debug bundles are redundant when raw CSV/JSON logs are in Git.
+# Existing tracked ZIP histories remain intact.
+results/turn_pid_*/turn_pid_bundle.zip
