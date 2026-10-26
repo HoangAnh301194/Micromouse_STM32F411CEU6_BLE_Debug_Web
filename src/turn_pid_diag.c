@@ -420,7 +420,8 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
                     u=Limit(u,0.0f,TP_SMOOTH_CEIL_PWM);
                     if(tp.rate<TP_SMOOTH_LOW_RATE_DPS &&
                        u<TP_SMOOTH_FLOOR_PWM) u=TP_SMOOTH_FLOOR_PWM;
-                    u=Limit(u,0.0f,old_cmd+TP_SMOOTH_RISE_PER_5MS);
+                    u=Limit(u,0.0f,
+                            (old_cmd>0.0f?old_cmd:0.0f)+TP_SMOOTH_RISE_PER_5MS);
                     if(fabsf(tp.rate)<3.0f) {
                         tp.stuck_ticks=(uint16_t)(tp.stuck_ticks+TP_CONTROL_DIV);
                         if(tp.stuck_ticks>=TP_SMOOTH_STALL_MS) {
