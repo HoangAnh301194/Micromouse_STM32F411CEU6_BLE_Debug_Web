@@ -58,7 +58,11 @@ REPORT_FIELDS = (
     "track_accel_samples","track_brake_samples",
     "track_near_samples","track_settle_samples",
     "midturn_low_speed_samples","midturn_reverse_samples",
-    "min_midturn_gyro_dps"
+    "min_midturn_gyro_dps",
+    "guard_forward_samples","guard_brake_samples",
+    "guard_near_samples","guard_stop_samples",
+    "guard_active_band_brake_samples",
+    "in_target_band_high_rate_samples","first_band_rate_dps"
 )
 
 IMU_FIELDS = (
@@ -111,16 +115,18 @@ def parse_sample(line: str) -> dict | None:
          left,right,age_us,motor_stage)=raw
     if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (0,90,180):
         return None
-    if profile not in (0,1,2,3,4,5,6,7,8) or phase not in (1,2):
+    if profile not in (0,1,2,3,4,5,6,7,8,9) or phase not in (1,2):
         return None
-    if abs(cmd_pm) > (1000 if profile in (7,8) else (800 if profile in (4,5,6) else 400)) or age_us < 0:
+    if abs(cmd_pm) > (750 if profile==9 and target==90 else (850 if profile==9 else (1000 if profile in (7,8) else (800 if profile in (4,5,6) else 400)))) or age_us < 0:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
     if motor_stage is not None:
-        if not 0 <= motor_stage <= 31:
+        if not 0 <= motor_stage <= 36:
             return None
-        if profile == 8:
+        if profile == 9:
+            if motor_stage not in (0,32,33,34,35,36):return None
+        elif profile == 8:
             if motor_stage not in (0,28,29,30,31):return None
         elif profile == 7:
             if motor_stage not in (0,23,24,25,26,27):return None
