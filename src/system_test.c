@@ -263,6 +263,10 @@ int SystemTest_Main(void) {
     OLED_SharedInit(found);
     OLED_SharedEnable(found);
     Motion_Init();IR_StartScan();
+    /* Initial conservative PID gains; PWM unit is permille. */
+    PID_Init(&pid_turn,3.6f,0.0f,0.0f,260.0f,0.0f);
+    PID_Init(&pid_heading,5.0f,0.0f,0.0f,90.0f,0.0f);
+    PID_Init(&pid_dist,2.4f,0.0f,0.0f,260.0f,0.0f);
     Control_Init(&mpu);
     st.page=PAGE_MENU;st.mode=MODE_90;st.why=WHY_DONE;
     Control_Start();
