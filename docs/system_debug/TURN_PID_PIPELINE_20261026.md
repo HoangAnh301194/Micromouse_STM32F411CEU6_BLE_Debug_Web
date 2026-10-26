@@ -111,3 +111,17 @@ stop, physical VM cutoff must take priority.
    limit, braking accel, rate Kp, then optional Ki), retain raw evidence,
    and rebuild the isolated profile for reproducibility. Real-floor testing
    only after safe fixture acceptance.
+
+## Single attachment for follow-up analysis
+
+After the host finishes a session, it prints `[UPLOAD THIS ZIP]` with
+`results/turn_pid_*/turn_pid_bundle.zip`. Upload that single ZIP in the
+next conversation. It contains the raw logs, time-series CSV, plots,
+per-run metrics, and `group_stats.json` (mean and sample SD over repeats).
+`meets_trace_thresholds` is a **software signal-based indicator**, not
+confirmation of physical 90°/180° accuracy: external angular reference
+and slip/ground measurement are still required.
+
+If gyro stops returning fresh data during the post-stop coast period,
+firmware times out final reporting after 1.1s with motor already locked;
+the CSV may contain fewer post-stop samples, which must be marked incomplete.

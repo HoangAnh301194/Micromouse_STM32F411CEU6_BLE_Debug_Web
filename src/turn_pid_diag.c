@@ -74,7 +74,7 @@ typedef struct {
     volatile float zero_yaw,yaw,rate,ref_rate,err,peak_yaw,peak_rate;
     volatile int16_t requested_pwm,pid_pm,ff_pm;
     volatile int32_t enc_l,enc_r;
-    volatile uint32_t duration_ms,stop_tick;
+    volatile uint32_t duration_ms,stop_tick,coast_wall_started_ms;
     PID_Handle_t pid_rate;
 } TP_State;
 static TP_State tp;
@@ -124,6 +124,7 @@ static void StopAndCoast(uint8_t why) {
     Motor_LockOutputs();            /* immediately neutralize bridge */
     tp.reason=why;
     tp.stop_tick=tp.ticks;
+    tp.coast_wall_started_ms=millis();
     tp.requested_pwm=0;
     tp.pid_pm=0;
     tp.ff_pm=0;
@@ -406,6 +407,14 @@ int TurnPidDiag_Main(void) {
                         (unsigned long)now,(unsigned long)mpu.good_reads);
             UART_Printf("TP,READY,mode=%u,profile=%u,PA0=PRESS_RELEASE\r\n",
                         (unsigned)tp.mode,(unsigned)tp.profile);
+        }
+        /* If the gyro remains stale after a locked stop, TIM11 cannot
+         * collect the normal 800ms tail. Still emit a terminal result. */
+        if(tp.phase==TP_COAST &&
+           (uint32_t)(now-tp.coast_wall_started_ms)>=1100U) {
+            uint32_t irq=__get_PRIMASK();__disable_irq();
+            if(tp.phase==TP_COAST)tp.phase=TP_RESULT;
+            if(!irq)__enable_irq();
         }
         DrainSamples(); /* MUST precede RESULT to keep host trace ordered. */
         if(tp.phase==TP_RESULT && q_tail==q_head)EmitResult();

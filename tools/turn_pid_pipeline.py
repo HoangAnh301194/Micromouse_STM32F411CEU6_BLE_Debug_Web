@@ -16,8 +16,10 @@ from datetime import datetime
 import json
 import math
 from pathlib import Path
+import statistics
 import sys
 import time
+import zipfile
 
 FIELD_NAMES = (
     "run_id", "t_ms", "target_deg", "profile", "phase",
@@ -30,7 +32,8 @@ REPORT_FIELDS = (
     "stop_ms", "settling_ms", "peak_yaw_deg", "overshoot_deg",
     "overshoot_percent", "max_abs_gyro_dps", "final_yaw_deg",
     "final_abs_error_deg", "coast_drift_deg", "trace_samples",
-    "sampling_gap_max_ms", "ring_drops", "uart_drops"
+    "sampling_gap_max_ms", "ring_drops", "uart_drops",
+    "meets_trace_thresholds"
 )
 
 
@@ -138,6 +141,13 @@ def analyze(samples: list[dict], result: dict) -> dict:
         "sampling_gap_max_ms": max(gaps) if gaps else 0,
         "ring_drops": int(result.get("qdrop", 0)),
         "uart_drops": int(result.get("uartdrop", 0)),
+        # Software trace quality only, NOT physical floor-motion acceptance.
+        "meets_trace_thresholds": bool(
+            result.get("reason") == "DONE" and overshoot <= 3.0 and
+            abs(target-final_yaw) <= 2.0 and settling is not None and
+            max(gaps, default=0) <= 60 and len(rows) >= 12 and
+            int(result.get("qdrop", 0)) == 0 and
+            int(result.get("uartdrop", 0)) == 0),
     }
 
 
@@ -220,7 +230,34 @@ def write_report(root: Path, runs: dict[int,list[dict]],
     (root/"summary.json").write_text(
         json.dumps(summaries,indent=2,ensure_ascii=False)+"\n",
         encoding="utf-8")
+    stats={}
+    groups={}
+    for item in summaries:
+        if "error" in item:continue
+        key=f"{item['target_deg']}deg_{item['profile']}"
+        groups.setdefault(key,[]).append(item)
+    for key,items in groups.items():
+        entry={"runs":len(items),"trace_pass":sum(bool(z.get("meets_trace_thresholds")) for z in items)}
+        for field in ("rise_10_90_ms","stop_ms","settling_ms",
+                      "overshoot_deg","max_abs_gyro_dps",
+                      "final_abs_error_deg","coast_drift_deg"):
+            numbers=[float(z[field]) for z in items if z.get(field) is not None]
+            entry[field]={"mean":round(statistics.mean(numbers),3),
+                          "stdev":round(statistics.stdev(numbers),3) if len(numbers)>1 else None}
+            if not numbers:entry[field]={"mean":None,"stdev":None}
+        stats[key]=entry
+    (root/"group_stats.json").write_text(
+        json.dumps(stats,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     return summaries
+
+
+def zip_session(root: Path) -> Path:
+    destination=root/"turn_pid_bundle.zip"
+    with zipfile.ZipFile(destination,"w",compression=zipfile.ZIP_DEFLATED) as zf:
+        for source in root.rglob("*"):
+            if source.is_file() and source!=destination:
+                zf.write(source,arcname=str(source.relative_to(root)))
+    return destination
 
 
 def capture(args: argparse.Namespace) -> int:
@@ -330,7 +367,9 @@ def capture(args: argparse.Namespace) -> int:
                         "requested_profile":args.profile,"requested_runs":args.runs,
                         "completed_runs":len(completed),"valid_samples":sum(map(len,runs.values()))},
                        indent=2)+"\n",encoding="utf-8")
+        archive=zip_session(root)
         print(f"[SAVED] {root.resolve()}")
+        print(f"[UPLOAD THIS ZIP] {archive.resolve()}")
         print(f"[COUNT] {len(completed)} complete result(s); "
               f"{len(summaries)} run(s) with trace data.")
     return 0 if len(completed)>=args.runs else 1
@@ -354,7 +393,9 @@ def offline(folder: Path) -> int:
     summaries=write_report(folder,runs,results)
     for item in summaries:
         print(json.dumps(item,ensure_ascii=False))
+    archive=zip_session(folder)
     print(f"[SAVED] {folder.resolve()}")
+    print(f"[UPLOAD THIS ZIP] {archive.resolve()}")
     return 0 if summaries else 1
 
 

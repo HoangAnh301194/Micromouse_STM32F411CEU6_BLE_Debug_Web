@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from turn_pid_pipeline import parse_sample,parse_kv,analyze,write_report
+from turn_pid_pipeline import parse_sample,parse_kv,analyze,write_report,zip_session
 
 
 def sample(t,yaw,target=90,phase=1):
@@ -66,6 +66,8 @@ class TurnTraceTests(unittest.TestCase):
             reports=write_report(folder,{1:rows},{1:{"reason":"DONE","stop_ms":"200"}})
             self.assertEqual(len(reports),1)
             self.assertTrue((folder/"raw_uart.log").exists() is False)
+            self.assertTrue((folder/"group_stats.json").exists())
+            self.assertTrue(zip_session(folder).exists())
             self.assertTrue((folder/"run_001"/"samples.csv").exists())
             self.assertTrue((folder/"run_001"/"summary.json").exists())
             with (folder/"summary.csv").open(newline="",encoding="utf-8") as f:

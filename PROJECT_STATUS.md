@@ -343,3 +343,8 @@ the active branch; retrieve them from the archive as needed.
   Synthetic host tests `tools/test_turn_pid_pipeline.py`.
 - No physical motor-on acceptance yet. Hardware caution: prior logs showed
   MPU `cal=0` persisting; `TP,CAL_OK` is required or PA0 cannot start.
+
+- Turn logger follow-up: hardware-stop fallback allows result emission
+  if MPU loses samples during 800ms post-stop coast. Session ZIP contains
+  all raw CSV, plots, per-run summary and group mean/SD. Isolated firmware
+  remains physically UNTESTED.
