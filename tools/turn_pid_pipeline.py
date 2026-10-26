@@ -24,7 +24,8 @@ import zipfile
 FIELD_NAMES = (
     "run_id", "t_ms", "target_deg", "profile", "phase",
     "yaw_deg", "error_deg", "gyro_dps", "ref_dps",
-    "pid_pm", "ff_pm", "cmd_pm", "enc_l", "enc_r", "imu_age_us"
+    "pid_pm", "ff_pm", "cmd_pm", "applied_l_pm", "applied_r_pm",
+    "enc_l", "enc_r", "imu_age_us", "motor_stage"
 )
 REPORT_FIELDS = (
     "run_id", "target_deg", "profile", "reason",
@@ -36,7 +37,9 @@ REPORT_FIELDS = (
     "meets_trace_thresholds", "imu_effective_hz", "imu_intervals_max_us",
     "imu_intervals_mean_us", "imu_gap_gt1500", "imu_gap_gt2000",
     "imu_observer_missed", "imu_status_notready", "imu_i2c_errors",
-    "imu_age_mean_us", "imu_age_max_us"
+    "imu_age_mean_us", "imu_age_max_us",
+    "max_requested_pwm_pm", "max_applied_pwm_pm", "encoder_imbalance_pct",
+    "motor_sweep_steps"
 )
 
 IMU_FIELDS = (
@@ -73,27 +76,37 @@ def parse_imu(line: str) -> dict | None:
 def parse_sample(line: str) -> dict | None:
     """One producer-timestamped gyro/PWM sample; rejects partial UART frames."""
     parts = line.strip().split(",")
-    if len(parts) != 17 or parts[:2] != ["TP", "D"]:
+    if len(parts) not in (17, 20) or parts[:2] != ["TP", "D"]:
         return None
     try:
         raw = [int(i) for i in parts[2:]]
     except ValueError:
         return None
-    (run_id, t_ms, target, profile, phase, yaw_cd, err_cd,
-     gyro_tenth, ref_tenth, pid_pm, ff_pm, cmd_pm, left, right,
-     age_us) = raw
-    if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (90, 180):
+    if len(raw)==15:  # v1/v2 historical trace
+        (run_id,t_ms,target,profile,phase,yaw_cd,err_cd,gyro_tenth,
+         ref_tenth,pid_pm,ff_pm,cmd_pm,left,right,age_us)=raw
+        applied_l=applied_r=motor_stage=None
+    else:  # v3: applied motor commands + sweep stage
+        (run_id,t_ms,target,profile,phase,yaw_cd,err_cd,gyro_tenth,
+         ref_tenth,pid_pm,ff_pm,cmd_pm,applied_l,applied_r,
+         left,right,age_us,motor_stage)=raw
+    if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (0,90,180):
         return None
-    if profile not in (0, 1) or phase not in (1, 2):
+    if profile not in (0,1,2) or phase not in (1,2):
         return None
-    if abs(cmd_pm) > 300 or age_us < 0:
+    if abs(cmd_pm) > 400 or age_us < 0:
         return None
-    return dict(run_id=run_id, t_ms=t_ms, target_deg=target,
-                profile=profile, phase=phase, yaw_deg=yaw_cd / 100,
-                error_deg=err_cd / 100, gyro_dps=gyro_tenth / 10,
-                ref_dps=ref_tenth / 10, pid_pm=pid_pm, ff_pm=ff_pm,
-                cmd_pm=cmd_pm, enc_l=left, enc_r=right,
-                imu_age_us=age_us)
+    if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
+        return None
+    if motor_stage is not None and not 0<=motor_stage<=5:
+        return None
+    return dict(run_id=run_id,t_ms=t_ms,target_deg=target,
+                profile=profile,phase=phase,yaw_deg=yaw_cd/100,
+                error_deg=err_cd/100,gyro_dps=gyro_tenth/10,
+                ref_dps=ref_tenth/10,pid_pm=pid_pm,ff_pm=ff_pm,
+                cmd_pm=cmd_pm,applied_l_pm=applied_l,
+                applied_r_pm=applied_r,motor_stage=motor_stage,
+                enc_l=left,enc_r=right,imu_age_us=age_us)
 
 
 def parse_kv(line: str, prefix: str) -> dict:
@@ -122,6 +135,44 @@ def interpolate_crossing(samples: list[dict], threshold: float) -> float | None:
     return None
 
 
+
+MOTOR_SWEEP_PWM = (70, 95, 120, 155, 200, 260)
+MOTOR_ON_MS=150
+MOTOR_SEG_MS=250
+MOTOR_FIELDS=("stage","pwm_requested_pm","trace_points","peak_gyro_dps",
+              "mean_gyro_dps","max_applied_l_pm","max_applied_r_pm",
+              "mean_applied_l_pm","mean_applied_r_pm",
+              "left_encoder_delta","right_encoder_delta",
+              "signed_encoder_imbalance_pct","start_yaw_deg","end_yaw_deg")
+
+def motor_sweep_steps(samples: list[dict]) -> list[dict]:
+    """Bounded open-loop pulse response, not a fitted motor model."""
+    steps=[]
+    for stage,pwm in enumerate(MOTOR_SWEEP_PWM):
+        start=stage*MOTOR_SEG_MS
+        active=[s for s in samples
+                if s["phase"]==1 and start<=s["t_ms"]<start+MOTOR_ON_MS
+                and s.get("motor_stage")==stage]
+        if not active:
+            continue
+        left=active[-1]["enc_l"]-active[0]["enc_l"]
+        right=active[-1]["enc_r"]-active[0]["enc_r"]
+        denom=abs(left)+abs(right)
+        step={"stage":stage,"pwm_requested_pm":pwm,
+              "trace_points":len(active),
+              "peak_gyro_dps":round(max(abs(s["gyro_dps"]) for s in active),2),
+              "mean_gyro_dps":round(statistics.mean(s["gyro_dps"] for s in active),2),
+              "max_applied_l_pm":max(abs(s.get("applied_l_pm") or 0) for s in active),
+              "max_applied_r_pm":max(abs(s.get("applied_r_pm") or 0) for s in active),
+              "mean_applied_l_pm":round(statistics.mean(abs(s.get("applied_l_pm") or 0) for s in active),2),
+              "mean_applied_r_pm":round(statistics.mean(abs(s.get("applied_r_pm") or 0) for s in active),2),
+              "left_encoder_delta":left,"right_encoder_delta":right,
+              "signed_encoder_imbalance_pct":round(100*abs(left+right)/denom,2) if denom else None,
+              "start_yaw_deg":active[0]["yaw_deg"],
+              "end_yaw_deg":active[-1]["yaw_deg"]}
+        steps.append(step)
+    return steps
+
 def analyze(samples: list[dict], result: dict,
             imu_records: list[dict] | None = None) -> dict:
     if not samples:
@@ -129,6 +180,26 @@ def analyze(samples: list[dict], result: dict,
     rows = sorted((s for s in samples if s["run_id"] == samples[0]["run_id"]),
                   key=lambda s: s["t_ms"])
     target = int(rows[0]["target_deg"])
+    applied_pwm=[abs(x) for s in rows for x in (s.get("applied_l_pm"),s.get("applied_r_pm")) if x is not None]
+    final_l,final_r=rows[-1]["enc_l"],rows[-1]["enc_r"]
+    enc_den=abs(final_l)+abs(final_r)
+    encoder_imbalance=100*abs(final_l+final_r)/enc_den if enc_den else None
+    if target == 0:
+        steps=motor_sweep_steps(rows)
+        return dict(run_id=rows[0]["run_id"],target_deg=0,profile="SWEEP",
+                    reason=result.get("reason","PARTIAL"),
+                    stop_ms=int(result.get("stop_ms",0)),
+                    trace_samples=len(rows),motor_sweep_steps=len(steps),
+                    max_abs_gyro_dps=round(max(abs(s["gyro_dps"]) for s in rows),3),
+                    final_yaw_deg=rows[-1]["yaw_deg"],
+                    max_requested_pwm_pm=max(abs(s["cmd_pm"]) for s in rows),
+                    max_applied_pwm_pm=max(applied_pwm) if applied_pwm else None,
+                    encoder_imbalance_pct=round(encoder_imbalance,3) if encoder_imbalance is not None else None,
+                    ring_drops=int(result.get("qdrop",0)),
+                    uart_drops=int(result.get("uartdrop",0)),
+                    meets_trace_thresholds=bool(result.get("reason")=="DONE" and
+                      len(steps)==6 and len(rows)>=50 and int(result.get("qdrop",0))==0
+                      and int(result.get("uartdrop",0))==0))
     t10 = interpolate_crossing(rows, target * 0.10)
     t90 = interpolate_crossing(rows, target * 0.90)
     tfull = interpolate_crossing(rows, float(target))
@@ -163,7 +234,7 @@ def analyze(samples: list[dict], result: dict,
     return {
         "run_id": rows[0]["run_id"],
         "target_deg": target,
-        "profile": "FAST" if rows[0]["profile"] else "BASE",
+        "profile": {0:"BASE",1:"FAST",2:"TUNED"}[rows[0]["profile"]],
         "reason": result.get("reason", "PARTIAL"),
         "t10_ms": rnd(t10),
         "t90_ms": rnd(t90),
@@ -178,6 +249,10 @@ def analyze(samples: list[dict], result: dict,
         "final_yaw_deg": rnd(final_yaw),
         "final_abs_error_deg": rnd(abs(target-final_yaw)),
         "coast_drift_deg": coast_drift,
+        "max_requested_pwm_pm": max(abs(s["cmd_pm"]) for s in rows),
+        "max_applied_pwm_pm": max(applied_pwm) if applied_pwm else None,
+        "encoder_imbalance_pct": rnd(encoder_imbalance),
+        "motor_sweep_steps": None,
         "imu_effective_hz": rnd(new_samples*1000.0/duration_ms) if duration_ms else None,
         "imu_intervals_max_us": max((w["interval_max_us"] for w in valid_imu),default=None),
         "imu_intervals_mean_us": rnd(mean_gyro_dt),
@@ -240,6 +315,9 @@ def plot_run(path: Path, samples: list[dict], title: str) -> bool:
     axes[3].plot(t,[s["cmd_pm"] for s in samples],label="commanded PWM")
     axes[3].plot(t,[s["pid_pm"] for s in samples],label="rate PID",alpha=0.65)
     axes[3].plot(t,[s["ff_pm"] for s in samples],label="feedforward",alpha=0.65)
+    if any(s.get("applied_l_pm") is not None for s in samples):
+        axes[3].plot(t,[s.get("applied_l_pm") for s in samples],label="actual L",alpha=0.55)
+        axes[3].plot(t,[s.get("applied_r_pm") for s in samples],label="actual R",alpha=0.55)
     axes[3].set_ylabel("Motor permille")
     axes[3].set_xlabel("TIM11 relative time [s]")
     axes[3].legend(loc="best")
@@ -268,6 +346,14 @@ def write_report(root: Path, runs: dict[int,list[dict]],
         folder=root/f"run_{run_id:03d}"
         folder.mkdir(exist_ok=True)
         save_csv(folder/"samples.csv",samples)
+        if samples[0]["target_deg"]==0:
+            steps=motor_sweep_steps(samples)
+            with (folder/"motor_steps.csv").open("w",newline="",encoding="utf-8") as f:
+                w=csv.DictWriter(f,fieldnames=MOTOR_FIELDS)
+                w.writeheader()
+                for item in steps:w.writerow(item)
+            (folder/"motor_steps.json").write_text(
+                json.dumps(steps,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
         subset=imu_windows.get(run_id,[])
         if subset:
             with (folder/"imu_windows.csv").open("w",newline="",encoding="utf-8") as f:
@@ -293,7 +379,9 @@ def write_report(root: Path, runs: dict[int,list[dict]],
     stats={}
     groups={}
     for item in summaries:
-        if "error" in item:continue
+        # Exclude aborted/PA0_STOP and the motor sweep from turn-timing means.
+        if "error" in item or item.get("reason")!="DONE" or item.get("target_deg")==0:
+            continue
         key=f"{item['target_deg']}deg_{item['profile']}"
         groups.setdefault(key,[]).append(item)
     for key,items in groups.items():
@@ -303,7 +391,8 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "final_abs_error_deg","coast_drift_deg",
                       "imu_effective_hz","imu_intervals_max_us",
                       "imu_intervals_mean_us","imu_age_mean_us",
-                      "imu_age_max_us"):
+                      "imu_age_max_us","max_requested_pwm_pm",
+                      "max_applied_pwm_pm","encoder_imbalance_pct"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -339,8 +428,8 @@ def capture(args: argparse.Namespace) -> int:
     results: dict[int,dict]={}
     imu_windows: dict[int,list[dict]]={}
     completed=set()
-    mode_byte=b"1" if args.mode==90 else b"2"
-    profile_byte=b"b" if args.profile=="base" else b"f"
+    mode_byte={"90":b"1","180":b"2","motor":b"m"}[args.mode]
+    profile_byte={"base":b"b","fast":b"f","tuned":b"t"}[args.profile]
     pending=bytearray()
     last_serial_activity=time.monotonic()
     last_config=0.0
@@ -493,8 +582,9 @@ def main(argv=None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--port",default="COM7",help="USB-TTL USART1 port")
     parser.add_argument("--baud",type=int,default=115200)
-    parser.add_argument("--mode",type=int,choices=[90,180],default=90)
-    parser.add_argument("--profile",choices=["base","fast"],default="base")
+    parser.add_argument("--mode",choices=["90","180","motor"],default="90",
+                        help="90/180 degree pivot or bounded phase-1 motor PWM sweep")
+    parser.add_argument("--profile",choices=["base","fast","tuned"],default="base")
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output",type=str,help="destination results folder")
     parser.add_argument("--duration",type=float,default=360,
