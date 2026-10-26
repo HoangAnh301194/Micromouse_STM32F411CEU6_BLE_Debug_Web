@@ -403,3 +403,73 @@ If any `ANGLE_LIMIT`, `POST_STOP_DRIFT`,
 translation or excessive heat occurs, stop the experimental series
 and review the log rather than immediately repeating at full power.
 This diagnostic is a stationary pivot, NOT a forward-moving slalom.
+
+## 2026-10-27 — TRACK v9 continuous velocity trajectory: eliminate midturn halt
+
+User-reported issue: more physical SPRINT 90deg floor logs pushed under
+`results/turn_pid_20261027_024310` and
+`results/turn_pid_20261027_024355`. On complete 50Hz UART samples,
+SPRINT repeatedly initiated reverse braking at about 32deg with
+560–575deg/s angular speed. At 200ms it remained 260–350deg/s
+around yaw 70–72deg, but around 220–260ms the motor braking had driven
+gyro speed down to +20 or even -22deg/s around yaw 72–76deg, still
+14–18deg short of the requested setpoint. Afterwards commanded
++70..160 permille gradually re-accelerated the robot to about
++70deg/s, causing a visible two-stage turn. This is physically
+documented OVERBRAKING, not just missing PWM headroom.
+
+SPRINT software limits and phase transition remain untouched as a
+comparative baseline. **New opt-in TRACK v9** (profile=8, UART 'k',
+host `--profile track`) supports 90 and 180deg independently, with
+1000/1000 PWM ceiling, 620/720deg/s nominal maximum angular rate.
+It replaces the distinct accelerate/reverse brake/creep stage
+machine with a continuously updated angle-to-rate envelope:
+`rate_brake=sqrt(2*3500*max(0,error-2deg-0.022s*max(gyro,0)))`
+and
+`rate_target=min(620/720,14*error,rate_brake)`.
+The rate target ramps upward no faster than +4000deg/s2 and down no
+faster than -6000deg/s2; inner velocity feedback and acceleration
+feedforward compute bounded PWM. Output changes are limited to
+105permille per 5ms away from the target; inside 12deg, PWM steps
+are limited to 35permille per 5ms when already low, with a rapid
+ramp-down allowed if duty remains above 180permille.
+
+Avoiding a fixed braking-to-zero phase does NOT itself guarantee
+no reverse-torque requests: TRACK can command bounded -320permille
+before final 12deg and no more than -130permille in the last 12deg.
+The hardware still imposes its 30ms reverse-polarity neutral gap.
+Close to target (<4deg, measured |gyro|<65deg/s) negative PWM is
+prohibited, and firmware uses neutral stop in the ±2deg band.
+An unexpected early stop, -40deg/s reverse, yaw beyond target+2deg
+or 800ms post-stop yaw drift beyond ±2deg is a FAILED run.
+**Continuous trajectories are a hypothesis that requires floor
+verification**, not a passed motion benchmark.
+
+TRACK debug stage mapping: 28=accelerate/positive control outside
+12deg, 29=bounded reverse braking outside 12deg, 30=inside final
+12deg under continuous gyro-rate regulation, 31=stop/settling.
+Host additionally exports `midturn_low_speed_samples` (samples
+with |gyro|<15deg/s, yaw>0.3*target and yaw<target-10deg),
+`midturn_reverse_samples` (gyro<-3deg/s in the same region),
+and `min_midturn_gyro_dps` to directly compare the problem.
+The SPRINT logs typically show these unwanted events.
+
+**Trial order**: test on a clear floor with the independently
+operable motor supply cutoff and PA0 STOP validated. Verify firmware
+banner `TP,HELLO,turn_pid_diag_v9_track`, and run **one** 90deg
+TRACK trial first. Do not immediately run multiple high-power trials
+or 180deg before that run is physically acceptable.
+
+```powershell
+git pull --ff-only origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile track --runs 1
+# Only if 90deg is smooth, stays inside +/-2deg after motor stop:
+python tools/turn_pid_pipeline.py --port COM7 --mode 180 --profile track --runs 1
+```
+
+In the two raw sessions, several runs had large UART telemetry gaps
+despite firmware-logged qdrop=0 and uartdrop=0, so their derived metrics
+need the `meets_trace_thresholds` flag checked. The user should not
+interpret a partial result, malformed UART frame or reconstructed
+stop time as proof of motion quality.
