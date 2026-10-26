@@ -314,7 +314,7 @@ class TurnTraceTests(unittest.TestCase):
                 dict(sample(800,88.6,phase=2),profile=7,gyro_dps=0,motor_stage=27)]
         s=analyze(series,{"reason":"DONE","stop_ms":"540"})
         self.assertEqual(s["midturn_low_speed_samples"],2)
-        self.assertEqual(s["midturn_reverse_samples"],2)
+        self.assertEqual(s["midturn_reverse_samples"],1)  # -10.7<-3, but -1.5 is not
         self.assertEqual(s["min_midturn_gyro_dps"],-10.7)
 
     def test_reject_partial_and_unsafe_value(self):
