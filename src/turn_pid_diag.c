@@ -949,7 +949,8 @@ static void StartByPA0(void) {
         (int)(profiles[tp.profile].kp_rate*100.0f),
         (int)(profiles[tp.profile].kff_rate*100.0f),
         (unsigned)profiles[tp.profile].accel_dps2,
-        (unsigned)profiles[tp.profile].speed_dps);
+        (unsigned)((tp.profile==TP_SPRINT && tp.mode==TP_90)?
+                   TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps));
 }
 static void HandleButton(uint32_t now) {
     static uint8_t initialized,previous,boot_held,allowed;
