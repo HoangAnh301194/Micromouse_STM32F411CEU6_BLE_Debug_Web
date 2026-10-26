@@ -74,5 +74,5 @@ jobs:
       - name: Build motor-locked JDY-33 RX A/B/C qualification image (no hardware)
         run: python -m platformio run -e ble_rx_diag_96m
 
-      - name: Build opt-in OLED system-test firmware (no physical test)
+      - name: Build headless PA0 system-test firmware (no physical test)
         run: python -m platformio run -e system_test_96m

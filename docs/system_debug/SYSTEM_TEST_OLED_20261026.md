@@ -1,49 +1,71 @@
-# System Test — OLED + MPU6050 + Encoder (26/10/2026)
+# PA0 System Test (no OLED) — 2026-10-26
 
-## Mục đích
-Firmware test độc lập opt-in `system_test_96m`, không thay đổi firmware production.
-Menu OLED áp dụng nút PA0 như bản `main` cũ, nhưng dùng các driver RC2 hiện tại.
+The optional PlatformIO profile `system_test_96m` is now fully **headless**.
+The SSD1306 OLED is not probed, initialized, drawn, or required for arming.
+This change only affects the opt-in test profile; production/IR-OLED benchmarks
+remain separate.
 
-## Chế độ
-| Mode | Phản hồi | Điều kiện dừng |
-|---|---|---|
-| TURN +90 | PID góc từ yaw gyro MPU6050; hai bánh quay ngược chiều | sai số <=2° và tốc độ góc <=12°/s liên tục 120ms |
-| TURN +180 | tương tự; yaw không wrap qua ±180° | cùng tiêu chuẩn |
-| STRAIGHT 20CM | encoder hai bánh đo quãng đường + PID giữ hướng từ IMU, bộ P khoảng cách | đạt encoder-estimated 200 mm |
+## Start and stop
+1. Connect UART1 PA9 (TX) -> 3.3V USB-TTL RX, PA10 (RX) <- TX and common GND.
+   Monitor at **115200 8N1**. Connect the physical independent motor VM cutoff.
+2. Power/reset board without pressing PA0. Keep board stationary during
+   automatic MPU calibration (nominal ~9s, may require retries).
+   The firmware prints `ST,CAL` every second until finished and then
+   `ST,CAL_OK` followed by `ST,READY`.
+3. **One press and release of PA0** (>=40ms) starts the current mode.
+   Each successful result advances: `TURN90` -> `TURN180` ->
+   `STRAIGHT200` -> `TURN90`. No automatic re-run.
+4. **Any new PA0 press during movement locks motor outputs from TIM11**.
+   UART1 `S` is a second STOP method. No serial/BLE start command exists.
+   After a fault/STOP/TIMEOUT the same mode is retained for a retry.
+5. If a button is already held when boot finishes, release is ignored;
+   pre-calibration presses never queue motion for later.
 
-Thông số riêng trong `src/system_test.c`: bánh **bán kính 34 mm**, 1430 xung/vòng.
-Quãng đường/xung = 2π34/1430 = 0.14940 mm/xung; 200mm = **1338.79 xung trung bình**.
-`include/pinout.h` production vẫn giữ đường kính cũ 35 mm, không bị sửa.
-Lưu ý 1430 phải là số đếm quadrature thực của TIM3/4; nếu là PPR một kênh phải hiệu chỉnh.
+## Control
+- Turn 90° or 180°: uses gyro-integrated yaw PID feedback **only** for angle;
+  both wheels run opposite directions. A successful stop requires angle
+  error <=2° and angular velocity <=12°/s for >=120ms.
+- Straight 200mm: encoder average distance P control, IMU yaw PID heading.
+  Test-only geometry: wheel **radius 34mm**, decoded quadrature 1430
+  counts/wheel-revolution. => 0.14940 mm/count, ~1338.79 counts per 200mm.
+  Production `include/pinout.h` diameter 35mm remains **unchanged**.
+- Control tick 1kHz TIM11, PID sample 200Hz. PWM cap **260/1000**;
+  exploratory gains are *not tuned*. Runtime watchdog 300ms, gyro stale
+  >3ms, angle anomaly, encoder mismatch and mode timeouts lock motors.
+- Timeout: 90° 4.5s, 180° 7.5s, straight 4.5s.
+  Stopping at 200 mm on the *encoder estimate* cannot guarantee 200mm
+  of actual floor travel; measure inertia/slip/overshoot externally.
+- IR obstacle avoidance is not enabled in these tests.
 
-## Menu
-- MENU: nhấn ngắn PA0 để chọn 1/2/3, nhấn giữ >=650ms rồi nhả để sang READY.
-- READY: nhấn giữ >=650ms rồi nhả **lần thứ hai** để chạy; nhấn ngắn về MENU.
-- RUN: nhấn PA0 bất kỳ để dừng trong TIM11; UART1 `S` cũng dừng. UART không thể START.
-- RESULT: nhấn ngắn về MENU; nhấn giữ về READY; không tự chạy tiếp.
-
-## An toàn và giới hạn
-- Mặc định motor locked; chỉ profile `system_test_96m` mới có API mở khóa sau xác nhận PA0.
-- PWM giới hạn 26% (260/1000); motor watchdog 300ms, mất dữ liệu MPU >3ms sẽ khóa đầu ra.
-- Mỗi bài có timeout lần lượt 4.5 / 7.5 / 4.5 giây; lỗi chiều encoder, góc quá giới hạn,
-  LCD/I2C không ổn định sẽ khóa động cơ. OLED_Shared được phục vụ ngoài TIM11.
-- OLED không hiện hoặc chưa có frame / MPU chưa calibration sẽ không cho RUN.
-- Không có tránh vật cản IR. **Bắt buộc thử bánh nâng hoặc robot được cố định, ngắt được nguồn VM 2S độc lập**.
-- PID gain/PWM min là giá trị khởi tạo, chưa hiệu chỉnh và chưa chứng minh sai số thực tế.
-- Ban đầu kiểm tra cực tính gyro/yaw, chiều motor và encoder trước khi thử trên sàn.
-
-## Build & nạp
-```powershell
-python -m platformio run -e system_test_96m
-python -m platformio run -e system_test_96m -t upload
+## UART frames (actual format)
+```text
+ST,HELLO,profile=PA0_NO_OLED,locked=1
+ST,BOOT,no_oled=1,locked=1,first=TURN90,PA0=PRESS_RELEASE,S=STOP
+ST,CAL,ms=1000,state=1,ok=0,retry=0,reason=0,count=0,good=...,err=...,age_us=...,locked=1
+ST,CAL_OK,ms=...,good=...,locked=1
+ST,READY,mode=0,name=TURN90,action=PRESS_PA0
+ST,START,mode=0,name=TURN90,target=90,pwm_limit=260,R_mm=34,CPR=1430
+ST_DATA,ms=...,mode=0,yaw_cdeg=...,gz_0p1dps=...,dist_0p01mm=...,L=...,R=...,PWM_L=...,PWM_R=...
+ST,RESULT,mode=0,reason=DONE,yaw_cdeg=...,dist_0p01mm=...,L=...,R=...,ticks=...,locked=1
+ST,READY_NEXT,mode=1,name=TURN180,action=PRESS_PA0
 ```
-UART1 115200 8N1 có các khung `ST,BOOT`, `ST,START`, `ST,ms=` mỗi 250ms.
+Live `ST_DATA` is emitted at ~20Hz. Values `yaw_cdeg` and
+`dist_0p01mm` are scaled integers (divide by 100), `gz_0p1dps`
+divide by 10. A `?` serial input prints additional calibration status.
+If calibration remains 0 indefinitely, STOP and diagnose IMU readings;
+**do not bypass calibration to force movement**.
 
-## Nghiệm thu tiếp theo
-- Build CI chỉ chứng minh biên dịch. Cần đo thật yaw +90/+180, quãng đường 200mm (10 lần),
-  độ lặp lại, overshoot, drift, độ trễ STOP và tình trạng OLED/I2C khi chạy motor.
-- Nếu động cơ không thắng ma sát ở mức PWM an toàn hiện tại, không tự tăng trước khi
-  đo dòng, áp, nhiễu và kiểm tra điều kiện gá thử.
+## Upload
+```powershell
+git pull origin giomuadongbac
+python -m platformio run -e system_test_96m -t upload
+python -m serial.tools.miniterm COM7 115200
+```
+Press RESET after opening miniterm to capture early boot messages.
 
-Additional runtime guards reject implausible gyro/NaN, >15 degree heading deviation
-in the straight test, severe encoder disagreement, or one wheel not responding.
+## Safety / hardware acceptance
+The CI build proves compilation, not physical navigation.
+First test lifted/secured wheels under guarded VM supply, with operator
+and independent motor power cutoff. Check PWM and yaw polarity against
+robot motion. Validate emergency stop, calibration, 90°/180° measured
+angles and repeat 200mm floor traversals before assuming accuracy.

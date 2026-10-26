@@ -311,3 +311,20 @@ the active branch; retrieve them from the archive as needed.
   Physical motor-on, OLED coexistence, yaw sign, position accuracy, stop latency,
   loaded VM/duty and repeatability **not yet measured**.
 - Documentation: [System Test OLED](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+
+## 2026-10-26 — Headless PA0 System Test (replaces OLED mode for `system_test_96m`)
+
+- User hardware reported repeated `SSD1306_NOT_FOUND` / `IR_OLED oled=0`.
+  The opt-in system test no longer initializes OLED or requires a display.
+- Single >=40ms PA0 press-release triggers one run after MPU calibration and
+  fresh gyro snapshot. Success advances 90° -> 180° -> 200mm; fault/STOP retries
+  the same mode. Any PA0 press during RUN locks motor in 1kHz TIM11; UART1 `S`
+  stops but never starts motors. Boot-held / pre-calibration buttons cannot arm.
+- UART1 PA9/PA10 115200 sends `ST,CAL`, `ST,READY`, `ST,START`,
+  ~20Hz `ST_DATA`, `ST,RESULT`, and `ST,READY_NEXT`.
+- IMU sample freshness <=3ms and successful nonblocking calibration are required.
+  Earlier user logs displayed `cal=0` even after 40 seconds: this needs separate
+  hardware inspection before attempting any live motor test.
+- Wheel radius=34mm, 1430 decoded counts/rev only in test module.
+  PID gains, real motion, stop behavior and geometric accuracy **UNVERIFIED**.
+- See [headless PA0 protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).

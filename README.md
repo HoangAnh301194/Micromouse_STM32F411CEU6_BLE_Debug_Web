@@ -258,13 +258,16 @@ See [BLE one-shot documentation](docs/system_debug/BLE_ONE_SHOT_PIPELINE_2026102
 No physical BLE benchmark PASS exists yet. Do not open the legacy browser Web
 Console simultaneously; the benchmark uses BLE GATT directly from Python.
 
-## System Test OLED (opt-in, 26/10/2026)
+## System Test PA0 + UART1 (no OLED, 26/10/2026)
 
-Build `python -m platformio run -e system_test_96m`. The PA0 menu provides
-+90/+180 degree IMU-only pivot PID and 200 mm straight travel (IMU heading PID,
-encoder distance position control). Test-only geometry is **radius 34 mm, 1430
-counts/revolution**, isolated from production geometry. Two physical long presses
-(select, then confirm) are required before an individual motor test; PA0 press
-while moving commands an immediate stop. Motor PWM is capped at 26%. See
-[System-test OLED protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
-The build has passed GitHub Actions, **not real-board motion acceptance**.
+Build `python -m platformio run -e system_test_96m`. This profile does **not**
+detect or update the OLED. After MPU calibration completes, **press and release
+PA0 once** to run one test. The sequence after successful runs is +90° IMU-only
+pivot, +180° IMU-only pivot, then straight 200 mm using gyro heading PID and
+encoder distance control. A subsequent PA0 press while moving stops and locks
+motor immediately; failed runs retry the same mode on a new press. UART1 PA9/PA10
+at 115200 logs readiness, calibration, results and 20 Hz samples; UART1 `S`
+stops but cannot start motion. Test-only geometry: **R=34 mm, CPR=1430**.
+PWM capped at 26%; first validate with lifted/secured wheels and an independent
+VM power cutoff. See [PA0 System-test protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+**Physical motion and distance accuracy are not yet accepted.**
