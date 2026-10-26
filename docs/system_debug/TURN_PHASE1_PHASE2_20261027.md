@@ -278,3 +278,63 @@ during motion stops; UART `S` also stops. If the first floor run is
 smooth and `reason=DONE`, then three repeats are useful to compare
 mean stop time, variance, peak angular rate, unexpected reverse
 movement and final heading against RAPID.
+
+## 2026-10-27 — GLIDE v7, FLOW jitter and high-speed brake diagnosis
+
+SOURCE LOGS from `results/turn_pid_20261027_020005` and
+`results/turn_pid_20261027_020022`: 3 FLOW DONE trials, 875/905/930ms
+stop times; peak gyro from the MCU's 1kHz log 508.7/486.8/486.0deg/s;
+heading errors 1.48/1.60/1.25deg.
+
+FLOW entered negative braking at yaw ~31–32deg and reached almost
+zero yaw rate already at yaw 60–63deg. Therefore it crawled about
+25–28 more degrees with repeated motor command cutoffs. Run2 near-tail
+motor PWM had +116/0/+48/+96/+137... toggling as desired angular
+rate shifted across the measured rate. The time from 80deg to completed
+stop was 350–365ms; yaw-rate and UART data do not support claiming
+faster final turns from increased PWM alone.
+
+GLIDE is a separate 90deg-only experimental profile (index 6, UART
+idle command `g`, host `--profile glide`). Base FLOW stays unmodified
+for comparison. It uses the same 80%-MAX PWM and 520deg/s nominal
+angular reference, but delays the SINGLE brake trigger according to a
+revised estimated stopping distance (`gyro_rate²/(2*3600) + 18deg`).
+That figure is an engineering trial based on the previous observed
+braking interval, not a measured physical invariant. Request slew limits
+(95permille per 5ms accelerating, 160permille per 5ms braking) soften
+large torque-command jumps. Existing motor driver PWM slew and the
+30ms direction-reversal interlock remain enabled. A delayed brake may
+increase overshoot: the first floor trial must be conducted in clear
+space with external motor-power cutoff ready.
+
+GLIDE phases: 18 initial forward acceleration, 19 one bounded
+reverse-torque braking interval, 20 neutral coast, 21 continuously
+controlled gentle final approach, 22 motor neutral/stable heading.
+GLIDE does not use the binary `if(rate>wanted_rate+18)u=0` rule that
+caused repeated cutoffs in FLOW. Instead a low-speed desired rate
+and smooth forward duty update are used with symmetric +/-16 permille
+per 5ms slew and 0..165permille cap. No terminal hard reversal or
+15% kick. Brake stage cannot switch to coast solely because
+error<=21deg while actual yaw-rate remains very high.
+
+The host adds `brake_first_yaw_deg`, `max_cmd_delta_20ms` (a proxy,
+not physical jerk), GLIDE stage counts and return-to-acceleration
+counts. Judge speed via stop_ms with reason DONE, full trace coverage,
+1kHz peak gyro, overshoot, remaining terminal angle time, and
+observed motion smoothness on the floor.
+
+Powerful physical motion still requires caution: keep the chassis
+free of loose cables and ensure that the 2deg overshoot guard does not
+trigger. Do not automatically repeat after unexpected reverse motion
+or translation. This is NOT a validated slalom controller, and
+firmware compilation/CI alone cannot qualify dynamic braking.
+
+Test sequence:
+```powershell
+git pull origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile glide --runs 1
+```
+Only after the single trial is physically smooth, no unexpected
+post-stop movement, and reason DONE: repeat with `--runs 3`. No ZIP
+is created; push plain results on GitHub as before.
