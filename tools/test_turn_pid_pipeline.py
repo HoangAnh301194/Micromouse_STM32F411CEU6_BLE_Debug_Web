@@ -214,6 +214,54 @@ class TurnTraceTests(unittest.TestCase):
         self.assertIsNone(parse_sample(
           "TP,D,12,20,90,5,1,100,8900,1400,1600,0,0,200,-200,200,-120,120,700,18"))
 
+    def test_v8_sprint_full_pwm_and_180deg_telemetry(self):
+        def frame(t, angle, cmd, stage, phase=1, target=180, profile=7):
+            cd=int(angle*100)
+            return parse_sample(
+                f"TP,D,16,{t},{target},{profile},{phase},{cd},"
+                f"{target*100-cd},2500,4500,80,100,{cmd},"
+                f"{-cmd},{cmd},-80,80,730,{stage}")
+        r=[frame(20,0,500,23),frame(40,42,1000,23),
+           frame(60,106,690,23),frame(80,155,-240,24),
+           frame(100,172,0,25),frame(120,177,125,26),
+           frame(140,178.9,0,27),frame(300,178.9,0,27,phase=2)]
+        self.assertTrue(all(z is not None for z in r))
+        a=analyze(r,{"reason":"DONE","stop_ms":"140",
+                     "final_cd":"17890","peak_cd":"17893",
+                     "peak_dps10":"7100"})
+        self.assertEqual(a["profile"],"SPRINT")
+        self.assertEqual(a["target_deg"],180)
+        self.assertEqual(a["max_requested_pwm_pm"],1000)
+        self.assertEqual(a["sprint_accel_samples"],3)
+        self.assertEqual(a["sprint_brake_samples"],1)
+        self.assertEqual(a["sprint_coast_samples"],1)
+        self.assertEqual(a["sprint_approach_samples"],1)
+        self.assertEqual(a["sprint_finish_samples"],1)
+        self.assertEqual(a["rapid_or_flow_brake_reaccelerations"],0)
+        self.assertEqual(a["brake_first_yaw_deg"],155.0)
+        self.assertIsNotNone(a["terminal_last10_to_stop_ms"])
+        self.assertEqual(a["peak_gyro_1khz_dps"],710)
+        self.assertIsNone(frame(20,0,1001,23))
+        self.assertIsNone(frame(20,0,1000,19))
+        self.assertIsNone(frame(20,0,1000,23,profile=6))
+
+    def test_after_stop_heading_drift_must_fail(self):
+        # A real GLIDE run in latest GitHub logs reported DONE at stop
+        # but drifted 4.6deg before the 800ms post-stop record finished.
+        rows=[sample(20,10),sample(220,80),
+              sample(400,89,phase=1),sample(500,89,phase=2),
+              sample(1200,85.4,phase=2)]
+        a=analyze(rows,{"reason":"POST_STOP_DRIFT",
+                        "stop_ms":"500","final_cd":"8540"})
+        self.assertEqual(a["reason"],"POST_STOP_DRIFT")
+        self.assertEqual(a["final_abs_error_deg"],4.6)
+        self.assertFalse(a["meets_trace_thresholds"])
+        with tempfile.TemporaryDirectory() as temp:
+            d=Path(temp)
+            write_report(d,{1:rows},{1:{"reason":"POST_STOP_DRIFT",
+                                        "stop_ms":"500","final_cd":"8540"}})
+            self.assertEqual(json.loads((d/"group_stats.json").read_text()),{})
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
