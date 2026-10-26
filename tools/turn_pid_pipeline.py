@@ -275,6 +275,8 @@ def analyze(samples: list[dict], result: dict,
                 r["yaw_deg"]<target-10.0]
     slow_mid=[r for r in midturn if abs(r["gyro_dps"])<15.0]
     reverse_mid=[r for r in midturn if r["gyro_dps"]<-3.0]
+    in_band=[r for r in ordered if abs(r["error_deg"])<=2.0]
+    fast_in_band=[r for r in in_band if abs(r["gyro_dps"])>12.0]
     imu_records = imu_records or []
     valid_imu = [w for w in imu_records if w["run_id"]==rows[0]["run_id"]]
     duration_ms=sum(w["window_ms"] for w in valid_imu)
@@ -342,6 +344,13 @@ def analyze(samples: list[dict], result: dict,
         "track_brake_samples": sum(v.get("motor_stage")==29 for v in ordered),
         "track_near_samples": sum(v.get("motor_stage")==30 for v in ordered),
         "track_settle_samples": sum(v.get("motor_stage")==31 for v in ordered),
+        "guard_forward_samples": sum(v.get("motor_stage")==32 for v in ordered),
+        "guard_brake_samples": sum(v.get("motor_stage")==33 for v in ordered),
+        "guard_near_samples": sum(v.get("motor_stage")==34 for v in ordered),
+        "guard_stop_samples": sum(v.get("motor_stage")==35 for v in ordered),
+        "guard_active_band_brake_samples": sum(v.get("motor_stage")==36 for v in ordered),
+        "in_target_band_high_rate_samples": len(fast_in_band),
+        "first_band_rate_dps": rnd(in_band[0]["gyro_dps"]) if in_band else None,
         "midturn_low_speed_samples": len(slow_mid),
         "midturn_reverse_samples": len(reverse_mid),
         "min_midturn_gyro_dps": rnd(min((r["gyro_dps"] for r in midturn),
@@ -529,7 +538,11 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "track_accel_samples","track_brake_samples",
                       "track_near_samples","track_settle_samples",
                       "midturn_low_speed_samples","midturn_reverse_samples",
-                      "min_midturn_gyro_dps"):
+                      "min_midturn_gyro_dps",
+                      "guard_forward_samples","guard_brake_samples",
+                      "guard_near_samples","guard_stop_samples",
+                      "guard_active_band_brake_samples",
+                      "in_target_band_high_rate_samples","first_band_rate_dps"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -733,8 +746,8 @@ def main(argv=None) -> int:
     if args.runs<1:parser.error("--runs must be >=1")
     if not args.analyze and args.profile in ("rapid","flow","glide") and args.mode!="90":
         parser.error("--profile rapid/flow/glide is restricted to 90-degree test only")
-    if not args.analyze and args.profile in ("sprint","track") and args.mode=="motor":
-        parser.error("--profile sprint/track supports only 90 and 180 degrees")
+    if not args.analyze and args.profile in ("sprint","track","guard") and args.mode=="motor":
+        parser.error("--profile sprint/track/guard supports only 90 and 180 degrees")
     return offline(args.analyze,make_zip=args.zip) if args.analyze else capture(args)
 
 
