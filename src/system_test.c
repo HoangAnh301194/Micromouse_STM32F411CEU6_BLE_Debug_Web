@@ -94,10 +94,20 @@ void SystemTest_ControlTick(int32_t left,int32_t right,float yaw,float rate) {
     st.left=left;st.right=right;
     st.dist=0.5f*((float)left+(float)right)*ST_MM_PER_COUNT;
     if(st.ticks>=max_ticks(st.mode)){finish(WHY_TIMEOUT);return;}
+    /* Reject NaN/implausible IMU values before floating-point PWM casting. */
+    if(!(st.yaw_delta>-720.0f && st.yaw_delta<720.0f &&
+         rate>-2500.0f && rate<2500.0f)) {
+        finish(WHY_IMU);return;
+    }
     if(st.ticks%5U)return;
     if(st.mode==MODE_200) {
+        /* A large yaw departure is not a valid straight-line test. */
+        if(fabsf(st.yaw_delta)>15.0f) {finish(WHY_ANGLE);return;}
+        /* Never accept 200mm if only one encoder is spinning. */
         if(left < -35 || right < -35 || st.dist < -5.0f ||
-           (st.ticks>1200U && left<10 && right<10)) {
+           (st.ticks>1200U && left<10 && right<10) ||
+           (st.ticks>1600U && (left<15 || right<15)) ||
+           (left+right>600 && (left-right>280 || right-left>280))) {
             finish(WHY_ENCODER);return;
         }
         if(st.dist>=ST_TARGET_MM){finish(WHY_DONE);return;}

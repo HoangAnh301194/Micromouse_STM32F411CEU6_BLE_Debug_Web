@@ -44,3 +44,6 @@ UART1 115200 8N1 có các khung `ST,BOOT`, `ST,START`, `ST,ms=` mỗi 250ms.
   độ lặp lại, overshoot, drift, độ trễ STOP và tình trạng OLED/I2C khi chạy motor.
 - Nếu động cơ không thắng ma sát ở mức PWM an toàn hiện tại, không tự tăng trước khi
   đo dòng, áp, nhiễu và kiểm tra điều kiện gá thử.
+
+Additional runtime guards reject implausible gyro/NaN, >15 degree heading deviation
+in the straight test, severe encoder disagreement, or one wheel not responding.

@@ -290,3 +290,24 @@ the active branch; retrieve them from the archive as needed.
 - **Chốt nghiệm thu phạm vi đã đo:** OLED ↔ MPU6050 trên một I2C1, motor **LOCKED**, OFF 15 s + ON 15 s, `results/oled_mpu_20261024_082616/`: pipeline verdict PASS 17/17 checks; TIM11 đúng 1000 Hz, gyro -0,73% (1000 → 992,73 Hz), OLED 1056/1056 DMA TX thành công, 73 frames, max TX 161 µs; không có lỗi bus, DMA, MPU, mất chu kỳ hay stale gyro. Giữ nguyên cả log FAIL các lần trước để truy vết.
 - **Chưa nghiệm thu ngoài phạm vi:** độ đúng trực quan ký tự/pixel SSD1306, nhiễu motor đang chạy, chạy bền nhiều giờ, dạng sóng điện, UI API/menu và OLED production (vẫn disabled); không gộp các hạng mục này vào PASS.
 - **Dọn thừa theo yêu cầu:** xóa tám bản sao trùng/đã thay thế (`tools/ble_debug_console.html`, `tools/test_ble_map_web.js`, và sáu native test có sẵn bản chuẩn ở `tests/regression/`). Chuyển đường dẫn gọi ở hai pipeline cũ sang `tests/regression/`; cập nhật docs/workflow. Còn **26 file** trong `tools/` tính cả `README.md`. Các pipeline riêng cho OLED, Flash, BLE, motor, encoder, PID, IR, UART và toàn bộ `results/` giữ nguyên; bản đầy đủ có ở nhánh `archive/debug-tools-precleanup-20261024`.
+
+## 2026-10-26 — OLED System Test (source + CI ready; hardware PENDING)
+
+- Opt-in profile `system_test_96m`: `src/system_test.c` and `include/system_test.h`,
+  reused shared-I2C OLED, MPU6050, 1kHz TIM11, RC3 Motor, encoder.
+- Three PA0 menu modes: turn +90°, +180° (IMU yaw PID, encoder not used as angle feedback)
+  and straight 200 mm (IMU heading PID plus encoder distance P feedback).
+- **Test-only geometry** radius=34mm and 1430 decoded counts/rev; expected
+  encoder mean 1338.79 counts for 200mm. Production `WHEEL_DIAMETER_MM=35`
+  remains unchanged. Physically confirm wheel radius and decoded CPR before tests.
+- Two separate long-press-release actions required: MENU -> READY -> RUN;
+  any PA0 press while running stops from TIM11; UART 'S' stops only, cannot start.
+  Motor outputs locked between tests; 26% maximum commanded PWM; gyro
+  freshness check <=3ms, test timeout and fault locking.
+- Uses `OLED_SharedService` outside TIM11; no blocking OLED rendering during
+  sensor acquisition. If OLED unavailable / bus below 300kHz, arming denied.
+- Software build **PASS** in GitHub Actions run 40347581084 (commit `0efdf92c`);
+  a subsequent safety check guards IMU NaN and one-wheel encoder stall.
+  Physical motor-on, OLED coexistence, yaw sign, position accuracy, stop latency,
+  loaded VM/duty and repeatability **not yet measured**.
+- Documentation: [System Test OLED](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).

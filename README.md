@@ -257,3 +257,14 @@ python tools/ble_full_pipeline.py --name Nezumi_Chan --motor-on --fixture-ready 
 See [BLE one-shot documentation](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
 No physical BLE benchmark PASS exists yet. Do not open the legacy browser Web
 Console simultaneously; the benchmark uses BLE GATT directly from Python.
+
+## System Test OLED (opt-in, 26/10/2026)
+
+Build `python -m platformio run -e system_test_96m`. The PA0 menu provides
++90/+180 degree IMU-only pivot PID and 200 mm straight travel (IMU heading PID,
+encoder distance position control). Test-only geometry is **radius 34 mm, 1430
+counts/revolution**, isolated from production geometry. Two physical long presses
+(select, then confirm) are required before an individual motor test; PA0 press
+while moving commands an immediate stop. Motor PWM is capped at 26%. See
+[System-test OLED protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+The build has passed GitHub Actions, **not real-board motion acceptance**.
