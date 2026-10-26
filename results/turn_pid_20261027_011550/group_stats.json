@@ -1,0 +1,66 @@
+{
+  "90deg_TUNED": {
+    "runs": 3,
+    "trace_pass": 2,
+    "rise_10_90_ms": {
+      "mean": 494.286,
+      "stdev": 0.491
+    },
+    "stop_ms": {
+      "mean": 1381.667,
+      "stdev": 7.638
+    },
+    "settling_ms": {
+      "mean": 1166.667,
+      "stdev": 41.633
+    },
+    "overshoot_deg": {
+      "mean": 0.847,
+      "stdev": 0.267
+    },
+    "max_abs_gyro_dps": {
+      "mean": 201.433,
+      "stdev": 3.755
+    },
+    "final_abs_error_deg": {
+      "mean": 0.407,
+      "stdev": 0.24
+    },
+    "coast_drift_deg": {
+      "mean": -0.103,
+      "stdev": 0.179
+    },
+    "imu_effective_hz": {
+      "mean": 999.388,
+      "stdev": 0.53
+    },
+    "imu_intervals_max_us": {
+      "mean": 1550.0,
+      "stdev": 176.009
+    },
+    "imu_intervals_mean_us": {
+      "mean": 999.974,
+      "stdev": 0.419
+    },
+    "imu_age_mean_us": {
+      "mean": 611.151,
+      "stdev": 41.871
+    },
+    "imu_age_max_us": {
+      "mean": 1120.0,
+      "stdev": 374.123
+    },
+    "max_requested_pwm_pm": {
+      "mean": 249.667,
+      "stdev": 23.861
+    },
+    "max_applied_pwm_pm": {
+      "mean": 255.333,
+      "stdev": 22.546
+    },
+    "encoder_imbalance_pct": {
+      "mean": 4.391,
+      "stdev": 3.789
+    }
+  }
+}

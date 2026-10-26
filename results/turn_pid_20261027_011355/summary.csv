@@ -1,0 +1,4 @@
+run_id,target_deg,profile,reason,t10_ms,t90_ms,rise_10_90_ms,t_first_target_ms,stop_ms,settling_ms,peak_yaw_deg,overshoot_deg,overshoot_percent,max_abs_gyro_dps,final_yaw_deg,final_abs_error_deg,coast_drift_deg,trace_samples,sampling_gap_max_ms,ring_drops,uart_drops,meets_trace_thresholds,imu_effective_hz,imu_intervals_max_us,imu_intervals_mean_us,imu_gap_gt1500,imu_gap_gt2000,imu_observer_missed,imu_status_notready,imu_i2c_errors,imu_age_mean_us,imu_age_max_us,max_requested_pwm_pm,max_applied_pwm_pm,encoder_imbalance_pct,motor_sweep_steps
+1,0,SWEEP,ANGLE_LIMIT,,,,,1298,,,,,149.6,75.56,,,105,,0,0,False,,,,,,,,,,,260,260,15.045,6
+2,0,SWEEP,ANGLE_LIMIT,,,,,1310,,,,,155.0,77.22,,,106,,0,0,False,,,,,,,,,,,260,260,2.913,6
+3,0,SWEEP,ANGLE_LIMIT,,,,,1291,,,,,159.6,73.62,,,105,,0,0,False,,,,,,,,,,,260,260,2.19,6

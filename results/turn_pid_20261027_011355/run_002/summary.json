@@ -1,0 +1,17 @@
+{
+  "run_id": 2,
+  "target_deg": 0,
+  "profile": "SWEEP",
+  "reason": "ANGLE_LIMIT",
+  "stop_ms": 1310,
+  "trace_samples": 106,
+  "motor_sweep_steps": 6,
+  "max_abs_gyro_dps": 155.0,
+  "final_yaw_deg": 77.22,
+  "max_requested_pwm_pm": 260,
+  "max_applied_pwm_pm": 260,
+  "encoder_imbalance_pct": 2.913,
+  "ring_drops": 0,
+  "uart_drops": 0,
+  "meets_trace_thresholds": false
+}

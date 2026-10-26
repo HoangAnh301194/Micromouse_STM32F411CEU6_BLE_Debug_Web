@@ -1,0 +1,9 @@
+{
+  "port": "COM7",
+  "baud": 115200,
+  "requested_mode": "motor",
+  "requested_profile": "base",
+  "requested_runs": 3,
+  "completed_runs": 3,
+  "valid_samples": 316
+}
