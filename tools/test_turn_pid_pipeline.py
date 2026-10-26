@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from turn_pid_pipeline import parse_sample,parse_kv,parse_imu,analyze,write_report,zip_session,offline
+from turn_pid_pipeline import parse_sample,parse_kv,parse_imu,analyze,write_report,zip_session,offline,motor_sweep_steps
 
 
 def sample(t,yaw,target=90,phase=1):
@@ -40,6 +40,52 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(summary["imu_effective_hz"],976.0)
         self.assertEqual(summary["imu_gap_gt2000"],1)
         self.assertEqual(summary["imu_i2c_errors"],2)
+
+    def test_new_rev3_pwm_applied_trace_and_tuned(self):
+        rec=parse_sample("TP,D,4,20,90,2,1,1090,7890,250,1200,90,110,330,-310,307,-210,190,751,0")
+        self.assertIsNotNone(rec)
+        self.assertEqual(rec["profile"],2)
+        self.assertEqual(rec["applied_l_pm"],-310)
+        self.assertEqual(rec["applied_r_pm"],307)
+        self.assertEqual(rec["motor_stage"],0)
+        self.assertEqual(rec["enc_l"],-210)
+        self.assertIsNone(parse_sample("TP,D,4,20,90,2,1,1090,7890,250,1200,90,110,999,-310,307,-210,190,751,0"))
+
+    def test_motor_sweep_step_metrics_and_archive(self):
+        levels=[70,95,120,155,200,260]
+        recs=[]
+        for t in range(20,1500,20):
+            stage=min(t//250,5)
+            pwm=levels[stage] if t%250<150 else 0
+            # Synthetic counter values increase only while command active.
+            frame=("TP,D,1,%d,0,0,1,%d,%d,%d,0,0,0,%d,%d,%d,%d,%d,500,%d"
+                   %(t,t*2,-t*2,pwm*3,pwm,-pwm,pwm,-(t//4),t//4,stage))
+            item=parse_sample(frame)
+            self.assertIsNotNone(item,frame)
+            recs.append(item)
+        steps=motor_sweep_steps(recs)
+        self.assertEqual(len(steps),6)
+        self.assertEqual(steps[0]["pwm_requested_pm"],70)
+        self.assertEqual(steps[-1]["pwm_requested_pm"],260)
+        summary=analyze(recs,{"reason":"DONE","stop_ms":"1500"})
+        self.assertEqual(summary["profile"],"SWEEP")
+        self.assertEqual(summary["motor_sweep_steps"],6)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            reports=write_report(root,{1:recs},{1:{"reason":"DONE","stop_ms":"1500"}})
+            self.assertEqual(len(reports),1)
+            self.assertTrue((root/"run_001"/"motor_steps.csv").exists())
+            self.assertNotIn("0deg_SWEEP",json.loads((root/"group_stats.json").read_text()))
+
+    def test_aborted_run_excluded_from_repeated_turn_stats(self):
+        a=[sample(t,float(t)/20) for t in range(20,220,20)]
+        b=[dict(z,run_id=2) for z in a]
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            write_report(root,{1:a,2:b},{
+                1:{"reason":"PA0_STOP","stop_ms":"200"},
+                2:{"reason":"DONE","stop_ms":"200"}})
+            self.assertEqual(json.loads((root/"group_stats.json").read_text())["90deg_BASE"]["runs"],1)
 
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
