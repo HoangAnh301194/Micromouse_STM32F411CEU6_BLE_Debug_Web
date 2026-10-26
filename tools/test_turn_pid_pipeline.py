@@ -262,6 +262,61 @@ class TurnTraceTests(unittest.TestCase):
                                         "stop_ms":"500","final_cd":"8540"}})
             self.assertEqual(json.loads((d/"group_stats.json").read_text()),{})
 
+    def test_track_continuous_rate_90_and_180_metrics(self):
+        def frame(t,angle,rate,ref,cmd,stage,target=90,phase=1):
+            cd=int(angle*100)
+            return parse_sample(
+               f"TP,D,22,{t},{target},8,{phase},{cd},{target*100-cd},"
+               f"{int(rate*10)},{int(ref*10)},0,0,{cmd},"
+               f"{-cmd},{cmd},-100,100,600,{stage}")
+        rows=[frame(20,2,60,100,360,28),
+              frame(40,21,350,500,840,28),
+              frame(60,53,515,430,-160,29),
+              frame(80,74,270,265,-80,29),
+              frame(100,83,145,130,100,30),
+              frame(120,88.6,14,20,0,31),
+              frame(300,88.8,0,0,0,31,phase=2)]
+        self.assertTrue(all(z is not None for z in rows))
+        a=analyze(rows,{"reason":"DONE","stop_ms":"120","peak_dps10":"5300"})
+        self.assertEqual(a["profile"],"TRACK")
+        self.assertEqual(a["track_accel_samples"],2)
+        self.assertEqual(a["track_brake_samples"],2)
+        self.assertEqual(a["track_near_samples"],1)
+        self.assertEqual(a["track_settle_samples"],1)
+        self.assertEqual(a["midturn_low_speed_samples"],0)
+        self.assertEqual(a["midturn_reverse_samples"],0)
+        self.assertEqual(a["min_midturn_gyro_dps"],270.0)
+        self.assertIsNone(frame(20,2,60,100,1001,28))
+        self.assertIsNone(frame(20,2,60,100,360,26))
+        rows180=[frame(20,0,30,100,360,28,target=180),
+                 frame(40,75,670,700,1000,28,target=180),
+                 frame(60,125,520,510,-180,29,target=180),
+                 frame(80,161,300,280,50,30,target=180),
+                 frame(100,179.1,10,0,0,31,target=180),
+                 frame(280,179.1,0,0,0,31,target=180,phase=2)]
+        b=analyze(rows180,{"reason":"DONE","stop_ms":"100",
+                           "final_cd":"17910","peak_dps10":"7050"})
+        self.assertEqual(b["target_deg"],180)
+        self.assertEqual(b["profile"],"TRACK")
+        self.assertEqual(b["max_requested_pwm_pm"],1000)
+        self.assertEqual(b["track_brake_samples"],1)
+
+    def test_track_metric_catches_actual_sprint_stall_at_72deg(self):
+        # Regression based on uploaded SPRINT 20261027_024310:
+        # gyro crossed zero near yaw 72deg and then relaunched.
+        series=[dict(sample(20,1),profile=7,gyro_dps=40,motor_stage=23),
+                dict(sample(120,32),profile=7,gyro_dps=570,motor_stage=24),
+                dict(sample(200,70),profile=7,gyro_dps=280,motor_stage=24),
+                dict(sample(240,72.9),profile=7,gyro_dps=-10.7,motor_stage=26),
+                dict(sample(260,72.8),profile=7,gyro_dps=-1.5,motor_stage=26),
+                dict(sample(300,74),profile=7,gyro_dps=74,motor_stage=26),
+                dict(sample(540,88.6),profile=7,gyro_dps=0,motor_stage=27),
+                dict(sample(800,88.6,phase=2),profile=7,gyro_dps=0,motor_stage=27)]
+        s=analyze(series,{"reason":"DONE","stop_ms":"540"})
+        self.assertEqual(s["midturn_low_speed_samples"],2)
+        self.assertEqual(s["midturn_reverse_samples"],2)
+        self.assertEqual(s["min_midturn_gyro_dps"],-10.7)
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
