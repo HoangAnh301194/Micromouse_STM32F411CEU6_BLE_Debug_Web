@@ -317,6 +317,44 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(s["midturn_reverse_samples"],1)  # -10.7<-3, but -1.5 is not
         self.assertEqual(s["min_midturn_gyro_dps"],-10.7)
 
+    def test_v10_guard_90_and_180_rate_sensitive_stopping(self):
+        def rec(t,yaw,rate,cmd,stage,angle=90,phase=1):
+            cd=round(yaw*100)
+            return parse_sample(
+              f"TP,D,24,{t},{angle},9,{phase},{cd},{angle*100-cd},"
+              f"{round(rate*10)},0,0,0,{cmd},{-cmd},{cmd},"
+              f"-110,110,710,{stage}")
+        q=[rec(20,2,60,250,32),rec(40,40,380,740,32),
+           rec(60,72,180,-90,33),rec(80,85,56,50,34),
+           rec(100,88.4,33,-100,36),
+           rec(120,88.9,7,0,35),
+           rec(320,88.9,0,0,35,phase=2)]
+        self.assertTrue(all(x is not None for x in q))
+        a=analyze(q,{"reason":"DONE","stop_ms":"120",
+                      "final_cd":"8890","peak_dps10":"4120"})
+        self.assertEqual(a["profile"],"GUARD")
+        self.assertEqual(a["guard_forward_samples"],2)
+        self.assertEqual(a["guard_brake_samples"],1)
+        self.assertEqual(a["guard_near_samples"],1)
+        self.assertEqual(a["guard_active_band_brake_samples"],1)
+        self.assertEqual(a["guard_stop_samples"],1)
+        self.assertEqual(a["in_target_band_high_rate_samples"],1)
+        self.assertEqual(a["first_band_rate_dps"],33.0)
+        self.assertEqual(a["max_requested_pwm_pm"],740)
+        self.assertIsNone(rec(20,2,60,751,32))
+        self.assertIsNone(rec(20,2,60,250,29))
+        v=[rec(20,4,80,300,32,angle=180),
+           rec(40,110,525,850,32,angle=180),
+           rec(60,168,160,-155,33,angle=180),
+           rec(80,178.2,7,0,35,angle=180),
+           rec(300,178.2,0,0,35,angle=180,phase=2)]
+        self.assertTrue(all(x is not None for x in v))
+        b=analyze(v,{"reason":"DONE","stop_ms":"80","final_cd":"17820"})
+        self.assertEqual(b["profile"],"GUARD")
+        self.assertEqual(b["target_deg"],180)
+        self.assertEqual(b["max_requested_pwm_pm"],850)
+        self.assertIsNone(rec(20,4,80,851,32,angle=180))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
