@@ -186,6 +186,34 @@ class TurnTraceTests(unittest.TestCase):
         self.assertGreater(m["trace_terminal_disagreement_deg"],2.0)
         self.assertFalse(m["meets_trace_thresholds"])
 
+    def test_v7_glide_stage_monotonicity_and_braking_metrics(self):
+        def frame(t,yaw,cmd,stage,phase=1):
+            cd=int(yaw*100)
+            return parse_sample(
+                f"TP,D,12,{t},90,6,{phase},{cd},{9000-cd},"
+                f"1400,1600,0,0,{cmd},{-cmd},{cmd},-120,120,700,{stage}")
+        rows=[frame(20,1,200,18),frame(40,10,420,18),
+              frame(60,44,260,19),frame(80,67,-160,19),
+              frame(100,76,0,20),frame(120,80,110,21),
+              frame(140,88.5,0,22),frame(300,88.5,0,22,phase=2)]
+        self.assertTrue(all(row is not None for row in rows))
+        metrics=analyze(rows,{"reason":"DONE","stop_ms":"140",
+                              "peak_dps10":"5101","final_cd":"8850"})
+        self.assertEqual(metrics["profile"],"GLIDE")
+        self.assertEqual(metrics["glide_accel_samples"],2)
+        self.assertEqual(metrics["glide_brake_samples"],2)
+        self.assertEqual(metrics["glide_coast_samples"],1)
+        self.assertEqual(metrics["glide_approach_samples"],1)
+        self.assertEqual(metrics["glide_finish_samples"],1)
+        self.assertEqual(metrics["brake_first_yaw_deg"],44.0)
+        self.assertEqual(metrics["max_cmd_delta_20ms"],420)
+        self.assertEqual(metrics["rapid_or_flow_brake_reaccelerations"],0)
+        self.assertEqual(metrics["peak_gyro_1khz_dps"],510.1)
+        self.assertIsNone(frame(20,1,810,18))
+        self.assertIsNone(frame(20,1,200,13))
+        self.assertIsNone(parse_sample(
+          "TP,D,12,20,90,5,1,100,8900,1400,1600,0,0,200,-200,200,-120,120,700,18"))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
