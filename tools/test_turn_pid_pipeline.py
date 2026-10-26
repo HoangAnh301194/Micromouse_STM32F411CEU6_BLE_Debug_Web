@@ -132,6 +132,37 @@ class TurnTraceTests(unittest.TestCase):
         self.assertIsNone(parse_sample(
             "TP,D,8,20,90,4,1,800,8200,500,2000,100,250,780,-780,780,-50,50,500,13"))
 
+    def test_v6_flow_faster_90deg_monotonic_stages(self):
+        def make(t,yaw,cmd,stage,phase=1):
+            cd=int(yaw*100)
+            return parse_sample(
+                f"TP,D,10,{t},90,5,{phase},{cd},{9000-cd},"
+                f"1200,2400,30,40,{cmd},{-cmd},{cmd},-50,50,540,{stage}")
+        samples=[make(20,3,680,13),make(40,33,620,13),
+                 make(60,59,-210,14),make(80,73,0,15),
+                 make(100,83,110,16),make(120,88.8,0,17),
+                 make(300,88.8,0,17,phase=2)]
+        self.assertTrue(all(s is not None for s in samples))
+        report=analyze(samples,{"reason":"DONE","stop_ms":"120",
+                                "peak_dps10":"5412"})
+        self.assertEqual(report["profile"],"FLOW")
+        self.assertEqual(report["flow_accel_samples"],2)
+        self.assertEqual(report["flow_brake_samples"],1)
+        self.assertEqual(report["flow_coast_samples"],1)
+        self.assertEqual(report["flow_approach_samples"],1)
+        self.assertEqual(report["flow_finish_samples"],1)
+        self.assertEqual(report["rapid_or_flow_brake_reaccelerations"],0)
+        self.assertEqual(report["max_requested_pwm_pm"],680)
+        self.assertEqual(report["peak_gyro_1khz_dps"],541.2)
+        # Detection of the exact path that jerked during RAPID.
+        damaged=[samples[0],samples[2],samples[1],*samples[3:]]
+        report2=analyze(damaged,{"reason":"DONE","stop_ms":"120"})
+        self.assertGreater(report2["rapid_or_flow_brake_reaccelerations"],0)
+        self.assertIsNone(make(20,3,801,13))
+        self.assertIsNone(make(20,3,680,12))
+        self.assertIsNone(parse_sample(
+          "TP,D,10,20,90,4,1,300,8700,1200,2400,30,40,680,-680,680,-50,50,540,13"))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
