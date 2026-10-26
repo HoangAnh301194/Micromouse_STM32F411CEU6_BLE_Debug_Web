@@ -35,8 +35,8 @@
  * 6 independent short pulses, neutral settling between pulses.
  * Only physical PA0 release starts; a second press is emergency STOP.
  * Test in clear floor area, start with fully charged and secured battery. */
-#define TP_SWEEP_ON_MS         150U
-#define TP_SWEEP_OFF_MS        100U
+#define TP_SWEEP_ON_MS         100U  /* 6 pulses shortened after prior +65deg aborts */
+#define TP_SWEEP_OFF_MS        150U
 #define TP_SWEEP_SEG_MS        (TP_SWEEP_ON_MS+TP_SWEEP_OFF_MS)
 #define TP_SWEEP_N            6U
 #define TP_SWEEP_MAX_YAW      65.0f
@@ -45,12 +45,21 @@
 #define TP_TUNED_KICK_MS      80U
 #define TP_TUNED_KICK_PWM     150
 #define TP_TUNED_MAX_KICKS    3U
+/* SMOOTH experimental, PA0-start only. No high-impulse stall kick or
+ * reverse motor command near target. Empirical first-step terminal duty,
+ * to be updated from isolated motor response data. */
+#define TP_SMOOTH_ZONE_DEG      8.0f
+#define TP_SMOOTH_FLOOR_PWM     108.0f
+#define TP_SMOOTH_CEIL_PWM      125.0f
+#define TP_SMOOTH_RISE_PER_5MS  9.0f
+#define TP_SMOOTH_LOW_RATE_DPS  18.0f
+#define TP_SMOOTH_STALL_MS      420U
 static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
       TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8};
 
@@ -67,12 +76,14 @@ typedef struct {
     float predict_s;      /* TUNED: measured angular-rate braking lead */
 } TP_Profile;
 
-/* BASE and FAST are left bit-for-bit comparable to previous sessions.
- * TUNED is a FIRST, UNVERIFIED controller trial, not an optimized result. */
-static const TP_Profile profiles[3]={
+/* Preserve BASE/FAST/TUNED exactly for comparison against real logs.
+ * SMOOTH: first hardware-unverified fix for strong near-target jolt.
+ * Do not infer physical stability from firmware compilation. */
+static const TP_Profile profiles[4]={
     {4.8f,1.15f,0.0f,0.35f,650.0f,150.0f,260,95,0.0f,0.0f},
     {6.0f,1.35f,0.0f,0.40f,950.0f,230.0f,300,95,0.0f,0.0f},
-    {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f}
+    {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f},
+    {7.0f,1.90f,0.0f,1.08f,950.0f,230.0f,350,0,42.0f,0.060f}
 };
 
 typedef struct {
@@ -303,8 +314,14 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     }
     /* TUNED has tighter high-speed flight envelope; BASE/FAST unchanged. */
     if(tp.yaw>(float)tp.mode+
-               (tp.profile==TP_TUNED?8.0f:22.0f) ||
-       (tp.profile==TP_TUNED && fabsf(tp.rate)>450.0f)) {
+               ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH)?8.0f:22.0f) ||
+       ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH) &&
+        fabsf(tp.rate)>450.0f)) {
+        StopAndCoast(TP_ANGLE);PushSample(age_us);return;
+    }
+    /* SMOOTH never applies a reverse near the goal: a >2deg
+     * overshoot becomes a diagnostic failure rather than a hard jerk. */
+    if(tp.profile==TP_SMOOTH && tp.err < -TP_ANGLE_BAND) {
         StopAndCoast(TP_ANGLE);PushSample(age_us);return;
     }
     if((tp.ticks%TP_CONTROL_DIV)==0U) {
@@ -339,6 +356,19 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
                 }
             } else tp.stuck_ticks=0U;
         }
+        /* When entering the permitted final angle band in SMOOTH,
+         * immediately coast. Do not command a strong reverse correction
+         * even when the measured yaw rate has not yet decayed.
+         * Stability must still be verified for 150ms to declare DONE. */
+        if(tp.profile==TP_SMOOTH && fabsf(error)<=TP_ANGLE_BAND &&
+           fabsf(tp.rate)>TP_RATE_BAND) {
+            Motor_Stop();
+            tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+            tp.ref_rate=0.0f;tp.stable_ticks=0U;
+            tp.stage=8U;
+            if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
+            return;
+        }
         if(fabsf(error)<=TP_ANGLE_BAND &&
            fabsf(tp.rate)<=TP_RATE_BAND) {
             Motor_Stop();
@@ -368,7 +398,7 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
             tp.pid_pm=(int16_t)PID_Compute(&tp.pid_rate,rate_ref,tp.rate,0.005f);
             tp.ff_pm=(int16_t)(cfg->kff_rate*rate_ref);
             u=(float)tp.pid_pm+(float)tp.ff_pm;
-            if(tp.profile==TP_TUNED) {
+            if(tp.profile==TP_TUNED || tp.profile==TP_SMOOTH) {
                 /* Continuous near-zero compensation avoids the legacy
                  * discontinuous +/-95-permille clamp on PID sign changes.
                  * Actual breakaway must be measured in phase 1 first. */
@@ -376,6 +406,30 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
                 u+=Sign(rate_ref)*cfg->static_ff*blend;
                 tp.ff_pm=(int16_t)((float)tp.ff_pm+
                                   Sign(rate_ref)*cfg->static_ff*blend);
+            }
+            if(tp.profile==TP_SMOOTH) {
+                /* Log stage 7 when a smooth terminal approach is active.
+                 * Once within 8 degrees, never reverse the drive at speed.
+                 * Near a complete stall, gently raise forward duty to a
+                 * measured provisional floor rather than pulse 150 and
+                 * snap to -130 as seen in the preceding TUNED sessions. */
+                tp.stage=0U;
+                if(error>TP_ANGLE_BAND && error<TP_SMOOTH_ZONE_DEG) {
+                    float old_cmd=(float)tp.requested_pwm;
+                    tp.stage=7U;
+                    u=Limit(u,0.0f,TP_SMOOTH_CEIL_PWM);
+                    if(tp.rate<TP_SMOOTH_LOW_RATE_DPS &&
+                       u<TP_SMOOTH_FLOOR_PWM) u=TP_SMOOTH_FLOOR_PWM;
+                    u=Limit(u,0.0f,old_cmd+TP_SMOOTH_RISE_PER_5MS);
+                    if(fabsf(tp.rate)<3.0f) {
+                        tp.stuck_ticks=(uint16_t)(tp.stuck_ticks+TP_CONTROL_DIV);
+                        if(tp.stuck_ticks>=TP_SMOOTH_STALL_MS) {
+                            StopAndCoast(TP_STALL);PushSample(age_us);return;
+                        }
+                    } else tp.stuck_ticks=0U;
+                } else {
+                    tp.stuck_ticks=0U;
+                }
             }
             u=Limit(u,-(float)cfg->max_pwm,(float)cfg->max_pwm);
             if(fabsf(u)>1.0f && fabsf(u)<cfg->min_pwm)
@@ -483,7 +537,7 @@ static void HandleUart(uint8_t c) {
             (unsigned long)q_dropped,(unsigned long)UART_GetDroppedMessages());
         return;
     }
-    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t')return;
+    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v')return;
     if(tp.phase!=TP_IDLE || !Motor_OutputsLocked()) {
         UART_SendString("TP,CONFIG_REJECT,reason=RUNNING\r\n");return;
     }
@@ -493,6 +547,7 @@ static void HandleUart(uint8_t c) {
     if(c=='b')tp.profile=TP_BASE;
     if(c=='f')tp.profile=TP_FAST;
     if(c=='t')tp.profile=TP_TUNED;
+    if(c=='v')tp.profile=TP_SMOOTH;
     UART_Printf("TP,CONFIG,mode=%u,profile=%u,locked=1\r\n",
                 (unsigned)tp.mode,(unsigned)tp.profile);
 }
@@ -551,7 +606,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v3_pivot,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v4_smooth,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
@@ -571,7 +626,7 @@ int TurnPidDiag_Main(void) {
     Control_Init(&mpu);
     tp.phase=TP_IDLE;tp.mode=TP_90;tp.profile=TP_BASE;
     Control_Start();
-    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/?/S,PA0_ONLY_START\r\n");
+    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/?/S,PA0_ONLY_START\r\n");
     for(;;) {
         uint32_t now=millis();
         MPU6050_Update(&mpu);
