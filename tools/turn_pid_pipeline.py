@@ -25,7 +25,8 @@ FIELD_NAMES = (
     "run_id", "t_ms", "target_deg", "profile", "phase",
     "yaw_deg", "error_deg", "gyro_dps", "ref_dps",
     "pid_pm", "ff_pm", "cmd_pm", "applied_l_pm", "applied_r_pm",
-    "enc_l", "enc_r", "imu_age_us", "motor_stage"
+    "enc_l", "enc_r", "encoder_l_pps", "encoder_r_pps",
+    "imu_age_us", "motor_stage"
 )
 REPORT_FIELDS = (
     "run_id", "target_deg", "profile", "reason",
@@ -98,7 +99,7 @@ def parse_sample(line: str) -> dict | None:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
-    if motor_stage is not None and not 0<=motor_stage<=5:
+    if motor_stage is not None and not 0<=motor_stage<=6:
         return None
     return dict(run_id=run_id,t_ms=t_ms,target_deg=target,
                 profile=profile,phase=phase,yaw_deg=yaw_cd/100,
@@ -142,6 +143,7 @@ MOTOR_SEG_MS=250
 MOTOR_FIELDS=("stage","pwm_requested_pm","trace_points","peak_gyro_dps",
               "mean_gyro_dps","max_applied_l_pm","max_applied_r_pm",
               "mean_applied_l_pm","mean_applied_r_pm",
+              "mean_left_pps","mean_right_pps",
               "left_encoder_delta","right_encoder_delta",
               "signed_encoder_imbalance_pct","start_yaw_deg","end_yaw_deg")
 
@@ -166,6 +168,8 @@ def motor_sweep_steps(samples: list[dict]) -> list[dict]:
               "max_applied_r_pm":max(abs(s.get("applied_r_pm") or 0) for s in active),
               "mean_applied_l_pm":round(statistics.mean(abs(s.get("applied_l_pm") or 0) for s in active),2),
               "mean_applied_r_pm":round(statistics.mean(abs(s.get("applied_r_pm") or 0) for s in active),2),
+              "mean_left_pps":round(statistics.mean(s.get("encoder_l_pps") or 0 for s in active),2),
+              "mean_right_pps":round(statistics.mean(s.get("encoder_r_pps") or 0 for s in active),2),
               "left_encoder_delta":left,"right_encoder_delta":right,
               "signed_encoder_imbalance_pct":round(100*abs(left+right)/denom,2) if denom else None,
               "start_yaw_deg":active[0]["yaw_deg"],
@@ -279,6 +283,14 @@ def analyze(samples: list[dict], result: dict,
 
 
 def save_csv(path: Path, samples: list[dict]) -> None:
+    # Derive signed wheel speed from raw tick deltas using the MCU timeline.
+    # No filtering; allows reconstructing motor asymmetry and lag offline.
+    prev = None
+    for sample in sorted(samples,key=lambda z:z["t_ms"]):
+        dt=sample["t_ms"]-prev["t_ms"] if prev else 0
+        sample["encoder_l_pps"]=(1000*(sample["enc_l"]-prev["enc_l"])/dt) if dt>0 else None
+        sample["encoder_r_pps"]=(1000*(sample["enc_r"]-prev["enc_r"])/dt) if dt>0 else None
+        prev=sample
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELD_NAMES)
         writer.writeheader()
