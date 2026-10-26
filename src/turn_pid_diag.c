@@ -102,7 +102,7 @@
 #define TP_TRACK_DECEL_DPS2       3500.0f
 #define TP_TRACK_REF_FALL_DPS2    6000.0f
 #define TP_TRACK_LOOKAHEAD_S         0.022f
-#define TP_TRACK_REMAIN_RESERVE      2.0f
+#define TP_TRACK_REMAIN_RESERVE      1.0f
 #define TP_TRACK_MAX_RATE_90      620.0f
 #define TP_TRACK_MAX_RATE_180     720.0f
 #define TP_TRACK_PWM_UP_STEP      105.0f
@@ -697,6 +697,10 @@ static void TrackControlTick(void) {
         (fabsf(old_cmd)>180.0f?TP_TRACK_PWM_DOWN_STEP:TP_TRACK_PWM_NEAR_STEP):
         TP_TRACK_PWM_UP_STEP;
     if(u<old_cmd && err>=12.0f)step=TP_TRACK_PWM_DOWN_STEP;
+    /* Clearing a pending negative command before the final approach
+     * must not take an entire extra 40ms of reverse torque. */
+    if(err<12.0f && old_cmd<0.0f && u>old_cmd)
+        step=TP_TRACK_PWM_UP_STEP;
     u=Limit(u,old_cmd-step,old_cmd+step);
     u=Limit(u,low_pwm,1000.0f);
     tp.stage=err<12.0f?30U:(u<0.0f?29U:28U);
