@@ -1,0 +1,134 @@
+{
+  "90deg_FLOW": {
+    "runs": 2,
+    "trace_pass": 1,
+    "rise_10_90_ms": {
+      "mean": 481.93,
+      "stdev": 2.902
+    },
+    "stop_ms": {
+      "mean": 917.5,
+      "stdev": 17.678
+    },
+    "settling_ms": {
+      "mean": 770.0,
+      "stdev": 14.142
+    },
+    "overshoot_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "max_abs_gyro_dps": {
+      "mean": 478.15,
+      "stdev": 4.172
+    },
+    "final_abs_error_deg": {
+      "mean": 1.425,
+      "stdev": 0.247
+    },
+    "coast_drift_deg": {
+      "mean": -0.025,
+      "stdev": 0.035
+    },
+    "imu_effective_hz": {
+      "mean": 1000.0,
+      "stdev": 0.0
+    },
+    "imu_intervals_max_us": {
+      "mean": 1323.5,
+      "stdev": 0.707
+    },
+    "imu_intervals_mean_us": {
+      "mean": 1000.0,
+      "stdev": 0.0
+    },
+    "imu_age_mean_us": {
+      "mean": 736.936,
+      "stdev": 1.488
+    },
+    "imu_age_max_us": {
+      "mean": 760.0,
+      "stdev": 1.414
+    },
+    "max_requested_pwm_pm": {
+      "mean": 645.5,
+      "stdev": 7.778
+    },
+    "max_applied_pwm_pm": {
+      "mean": 640.0,
+      "stdev": 11.314
+    },
+    "encoder_imbalance_pct": {
+      "mean": 7.137,
+      "stdev": 1.455
+    },
+    "terminal_80_to_stop_ms": {
+      "mean": 357.5,
+      "stdev": 10.607
+    },
+    "kick_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "smooth_approach_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "reverse_pwm_samples": {
+      "mean": 4.0,
+      "stdev": 0.0
+    },
+    "rapid_accel_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_brake_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_near_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_coast_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "peak_gyro_1khz_dps": {
+      "mean": 486.4,
+      "stdev": 0.566
+    },
+    "trace_first_ms": {
+      "mean": 20.0,
+      "stdev": 0.0
+    },
+    "trace_terminal_disagreement_deg": {
+      "mean": 0.005,
+      "stdev": 0.007
+    },
+    "flow_accel_samples": {
+      "mean": 6.0,
+      "stdev": 0.0
+    },
+    "flow_brake_samples": {
+      "mean": 4.0,
+      "stdev": 0.0
+    },
+    "flow_coast_samples": {
+      "mean": 1.0,
+      "stdev": 0.0
+    },
+    "flow_approach_samples": {
+      "mean": 22.0,
+      "stdev": 5.657
+    },
+    "flow_finish_samples": {
+      "mean": 8.0,
+      "stdev": 0.0
+    },
+    "rapid_or_flow_brake_reaccelerations": {
+      "mean": 0.0,
+      "stdev": 0.0
+    }
+  }
+}

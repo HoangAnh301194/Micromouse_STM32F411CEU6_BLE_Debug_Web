@@ -1,0 +1,134 @@
+{
+  "90deg_FLOW": {
+    "runs": 1,
+    "trace_pass": 1,
+    "rise_10_90_ms": {
+      "mean": 448.013,
+      "stdev": null
+    },
+    "stop_ms": {
+      "mean": 875.0,
+      "stdev": null
+    },
+    "settling_ms": {
+      "mean": 720.0,
+      "stdev": null
+    },
+    "overshoot_deg": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "max_abs_gyro_dps": {
+      "mean": 501.6,
+      "stdev": null
+    },
+    "final_abs_error_deg": {
+      "mean": 1.48,
+      "stdev": null
+    },
+    "coast_drift_deg": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "imu_effective_hz": {
+      "mean": 1000.0,
+      "stdev": null
+    },
+    "imu_intervals_max_us": {
+      "mean": 1303.0,
+      "stdev": null
+    },
+    "imu_intervals_mean_us": {
+      "mean": 1000.0,
+      "stdev": null
+    },
+    "imu_age_mean_us": {
+      "mean": 748.94,
+      "stdev": null
+    },
+    "imu_age_max_us": {
+      "mean": 759.0,
+      "stdev": null
+    },
+    "max_requested_pwm_pm": {
+      "mean": 667.0,
+      "stdev": null
+    },
+    "max_applied_pwm_pm": {
+      "mean": 681.0,
+      "stdev": null
+    },
+    "encoder_imbalance_pct": {
+      "mean": 6.698,
+      "stdev": null
+    },
+    "terminal_80_to_stop_ms": {
+      "mean": 355.0,
+      "stdev": null
+    },
+    "kick_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "smooth_approach_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "reverse_pwm_samples": {
+      "mean": 4.0,
+      "stdev": null
+    },
+    "rapid_accel_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_near_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_coast_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "peak_gyro_1khz_dps": {
+      "mean": 508.7,
+      "stdev": null
+    },
+    "trace_first_ms": {
+      "mean": 20.0,
+      "stdev": null
+    },
+    "trace_terminal_disagreement_deg": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "flow_accel_samples": {
+      "mean": 6.0,
+      "stdev": null
+    },
+    "flow_brake_samples": {
+      "mean": 4.0,
+      "stdev": null
+    },
+    "flow_coast_samples": {
+      "mean": 1.0,
+      "stdev": null
+    },
+    "flow_approach_samples": {
+      "mean": 24.0,
+      "stdev": null
+    },
+    "flow_finish_samples": {
+      "mean": 8.0,
+      "stdev": null
+    },
+    "rapid_or_flow_brake_reaccelerations": {
+      "mean": 0.0,
+      "stdev": null
+    }
+  }
+}
