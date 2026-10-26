@@ -28,3 +28,14 @@ Default one-run orchestration restores motor-locked `flash_map_diag_96m`
 on exit. Reports live under `results/ble_rx_ab_*`.
 See `docs/system_debug/BLE_RX_AB_QUALIFICATION_20261024.md`.
 This does not operate motors or change PID gains.
+
+### PA0 gyro turn optimization 90° / 180° (new)
+
+Run the **isolated** `turn_pid_diag_96m` firmware (never normal
+`system_test_96m` for this campaign), then:
+`python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile base --runs 3`.
+The capture saves 50Hz gyro/rate/PWM/encoder CSV, plots, raw serial and summary
+under `results/turn_pid_*`. UART commands select idle mode/profile but **cannot
+start motors**; only physical PA0. After accepted BASE tests, compare FAST
+(30% maximum PWM). See `docs/system_debug/TURN_PID_PIPELINE_20261026.md`.
+Offline host tests: `python tools/test_turn_pid_pipeline.py`.

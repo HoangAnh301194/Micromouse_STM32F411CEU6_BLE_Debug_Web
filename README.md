@@ -271,3 +271,14 @@ stops but cannot start motion. Test-only geometry: **R=34 mm, CPR=1430**.
 PWM capped at 26%; first validate with lifted/secured wheels and an independent
 VM power cutoff. See [PA0 System-test protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
 **Physical motion and distance accuracy are not yet accepted.**
+
+## 90° / 180° gyro turn PID diagnostics (2026-10-26)
+
+An opt-in `turn_pid_diag_96m` profile replaces OLED with PA0 and UART for
+repeatable yaw turn tuning. A one-shot physical PA0 press starts rotation;
+UART1 COM7 selects mode 90/180 and bounded BASE/FAST profiles (no remote start).
+A TIM11-timestamped 50Hz trace includes yaw, gyro rate, rate reference,
+PID/feedforward, PWM, encoders and post-stop inertial drift. Start with
+`python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile base --runs 3`.
+Logs are preserved under `results/turn_pid_*`.
+Read [turn tuning pipeline](docs/system_debug/TURN_PID_PIPELINE_20261026.md).

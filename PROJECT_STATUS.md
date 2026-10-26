@@ -328,3 +328,18 @@ the active branch; retrieve them from the archive as needed.
 - Wheel radius=34mm, 1430 decoded counts/rev only in test module.
   PID gains, real motion, stop behavior and geometric accuracy **UNVERIFIED**.
 - See [headless PA0 protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+
+## 2026-10-26 — Isolated Turn PID pipeline (bench/floor acceptance PENDING)
+
+- New `turn_pid_diag_96m` firmware: gyro-only 90°/180° turn, without OLED,
+  selectable BASE/FAST initial profiles via UART (selection never starts motor),
+  physical PA0-only start and 1kHz PA0 stop; requires fresh calibrated MPU.
+- Rate trajectory (outer angle P, bounded angular velocity + braking envelope,
+  gyro rate PI Kp with Ki=0 initial, feedforward), hard 260/300 permille caps.
+  During stop, motors lock; 800ms inertial coast trace is logged.
+- `tools/turn_pid_pipeline.py` captures 50Hz production-timestamped
+  `TP,D` records, raw UART, per-run CSV/plots, summaries for overshoot,
+  10-90 rise, settlement, peak rate, coast drift and telemetry drops.
+  Synthetic host tests `tools/test_turn_pid_pipeline.py`.
+- No physical motor-on acceptance yet. Hardware caution: prior logs showed
+  MPU `cal=0` persisting; `TP,CAL_OK` is required or PA0 cannot start.

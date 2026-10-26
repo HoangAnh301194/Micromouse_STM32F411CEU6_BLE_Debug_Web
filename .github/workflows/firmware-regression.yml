@@ -76,5 +76,7 @@ jobs:
 
       - name: Build headless PA0 system-test firmware (no physical test)
         run: python -m platformio run -e system_test_96m
+      - name: Native synthetic 90/180 turn trace parser/metric tests
+        run: python tools/test_turn_pid_pipeline.py
       - name: Build gyro 90/180 PID qualification firmware (no hardware)
         run: python -m platformio run -e turn_pid_diag_96m
