@@ -560,7 +560,7 @@ def capture(args: argparse.Namespace) -> int:
     imu_windows: dict[int,list[dict]]={}
     completed=set()
     mode_byte={"90":b"1","180":b"2","motor":b"m"}[args.mode]
-    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w","glide":b"g","sprint":b"p","track":b"k"}[args.profile]
+    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w","glide":b"g","sprint":b"p","track":b"k","guard":b"z"}[args.profile]
     pending=bytearray()
     last_serial_activity=time.monotonic()
     last_config=0.0
@@ -715,7 +715,7 @@ def main(argv=None) -> int:
     parser.add_argument("--baud",type=int,default=115200)
     parser.add_argument("--mode",choices=["90","180","motor"],default="90",
                         help="90/180 degree pivot or bounded phase-1 motor PWM sweep")
-    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow","glide","sprint","track"],default="base")
+    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow","glide","sprint","track","guard"],default="base")
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output",type=str,help="destination results folder")
     parser.add_argument("--duration",type=float,default=360,
