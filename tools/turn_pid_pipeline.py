@@ -102,8 +102,11 @@ def parse_sample(line: str) -> dict | None:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
-    if motor_stage is not None and not 0<=motor_stage<=12:
-        return None
+    if motor_stage is not None:
+        if not 0 <= motor_stage <= 12:
+            return None
+        if profile != 4 and motor_stage > 8:
+            return None
     return dict(run_id=run_id,t_ms=t_ms,target_deg=target,
                 profile=profile,phase=phase,yaw_deg=yaw_cd/100,
                 error_deg=err_cd/100,gyro_dps=gyro_tenth/10,
