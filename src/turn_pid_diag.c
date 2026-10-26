@@ -41,6 +41,10 @@
 #define TP_SWEEP_N            6U
 #define TP_SWEEP_MAX_YAW      65.0f
 #define TP_SWEEP_MAX_DPS      220.0f
+#define TP_TUNED_STUCK_MS     160U
+#define TP_TUNED_KICK_MS      80U
+#define TP_TUNED_KICK_PWM     150
+#define TP_TUNED_MAX_KICKS    3U
 static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 
@@ -48,7 +52,7 @@ enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
 enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
-      TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7};
+      TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8};
 
 typedef struct {
     float kp_angle;       /* desired deg/s per degree error */
@@ -87,7 +91,8 @@ typedef struct {
     volatile uint8_t phase, mode, profile, reason, stage;
     volatile uint8_t button_stop_consumed;
     volatile uint32_t id, ticks, post_ticks;
-    volatile uint16_t stable_ticks;
+    volatile uint16_t stable_ticks,stuck_ticks,kick_ticks;
+    volatile uint8_t kick_count;
     volatile float zero_yaw,yaw,rate,ref_rate,err,peak_yaw,peak_rate;
     volatile int16_t requested_pwm,pid_pm,ff_pm;
     volatile int32_t enc_l,enc_r;
@@ -193,6 +198,7 @@ static const char *WhyName(uint8_t reason) {
         case TP_DIRECTION:return "WRONG_DIRECTION";
         case TP_ANGLE:return "ANGLE_LIMIT";
         case TP_MOTOR:return "MOTOR_LOCKED";
+        case TP_STALL:return "STALLED_NEAR_TARGET";
         default:return "UART_STOP";
     }
 }
@@ -301,6 +307,34 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     if((tp.ticks%TP_CONTROL_DIV)==0U) {
         cfg=&profiles[tp.profile];
         error=tp.err;
+        if(tp.profile==TP_TUNED) {
+            /* Do not bang-bang +/-95 at zero crossing. Instead, after a
+             * sustained near-target stall, allow at most 3 short pulses.
+             * Each kick is bounded at 15% PWM and may be aborted by PA0. */
+            if(tp.kick_ticks>0U) {
+                int16_t kick=(int16_t)(Sign(error)*TP_TUNED_KICK_PWM);
+                tp.stage=6U;
+                tp.kick_ticks=(uint16_t)(tp.kick_ticks-TP_CONTROL_DIV);
+                tp.requested_pwm=kick;tp.pid_pm=0;tp.ff_pm=kick;tp.ref_rate=0.0f;
+                Motor_SetPairPermille(-kick,kick);
+                if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
+                return;
+            }
+            tp.stage=0U;
+            if(fabsf(error)>TP_ANGLE_BAND && fabsf(error)<12.0f &&
+               fabsf(tp.rate)<3.0f) {
+                tp.stuck_ticks=(uint16_t)(tp.stuck_ticks+TP_CONTROL_DIV);
+                if(tp.stuck_ticks>=TP_TUNED_STUCK_MS) {
+                    tp.stuck_ticks=0U;
+                    if(tp.kick_count>=TP_TUNED_MAX_KICKS) {
+                        StopAndCoast(TP_STALL);PushSample(age_us);return;
+                    }
+                    tp.kick_count++;
+                    tp.kick_ticks=TP_TUNED_KICK_MS;
+                    PID_Reset(&tp.pid_rate);
+                }
+            } else tp.stuck_ticks=0U;
+        }
         if(fabsf(error)<=TP_ANGLE_BAND &&
            fabsf(tp.rate)<=TP_RATE_BAND) {
             Motor_Stop();
@@ -379,7 +413,8 @@ static void StartByPA0(void) {
              (float)profiles[tp.profile].max_pwm,150.0f);
     ++tp.id;
     tp.ticks=0U;tp.stop_tick=0U;tp.post_ticks=0U;
-    tp.stable_ticks=0U;tp.reason=TP_DONE;
+    tp.stable_ticks=0U;tp.stuck_ticks=0U;tp.kick_ticks=0U;
+    tp.kick_count=0U;tp.reason=TP_DONE;
     tp.zero_yaw=snap.yaw_deg;
     tp.yaw=tp.rate=tp.ref_rate=0.0f;
     tp.err=(float)tp.mode;tp.peak_rate=0.0f;tp.peak_yaw=0.0f;
