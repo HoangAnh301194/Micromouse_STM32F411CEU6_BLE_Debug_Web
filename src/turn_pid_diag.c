@@ -311,6 +311,7 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
         cfg=&profiles[tp.profile];
         error=tp.err;
         if(tp.profile==TP_TUNED) {
+            if(fabsf(error)<=TP_ANGLE_BAND) tp.kick_ticks=0U;
             /* Do not bang-bang +/-95 at zero crossing. Instead, after a
              * sustained near-target stall, allow at most 3 short pulses.
              * Each kick is bounded at 15% PWM and may be aborted by PA0. */
