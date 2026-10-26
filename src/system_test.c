@@ -253,7 +253,7 @@ static void draw(void) {
 int SystemTest_Main(void) {
     MPU6050_Status init;
     uint8_t found=0U,ch,event,old_page=255U;
-    uint32_t last_draw=0U,last_uart=0U;
+    uint32_t last_draw=0U,last_uart=0U,last_diag=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
     if(Board_GetClockFault()){
@@ -263,13 +263,37 @@ int SystemTest_Main(void) {
     Encoder_Init();IR_Init();
     /* Only blocking OLED init before the MPU/TIM11 are started. */
     I2C_Init(I2C_1,1U);
-    found=SSD1306_Init()==SSD1306_OK;
+    {
+        SSD1306_Status_t oled_status=SSD1306_Init();
+        found=(oled_status==SSD1306_OK);
+        /* Boot splash is safe here: MPU acquisition and TIM11 have NOT
+         * started. Do not use blocking OLED transfers after MPU init. */
+        UART_Printf("ST,OLED_PROBE,status=%u,found=%u,scl=%lu\r\n",
+                    (unsigned)oled_status,(unsigned)found,
+                    (unsigned long)I2C_GetConfiguredSclHz());
+        if(found) {
+            SSD1306_Fill(SSD1306_BLACK);
+            SSD1306_SetCursor(0U,0U);
+            SSD1306_WriteString("SYSTEM TEST",&Font_7x10,SSD1306_WHITE);
+            SSD1306_SetCursor(0U,18U);
+            SSD1306_WriteString("MPU CALIBRATING",&Font_7x10,SSD1306_WHITE);
+            SSD1306_SetCursor(0U,38U);
+            SSD1306_WriteString("MOTOR LOCKED",&Font_7x10,SSD1306_WHITE);
+            SSD1306_UpdateScreen(); /* Boot-only: before MPU on shared I2C */
+            UART_SendString("ST,OLED_SPLASH,SENT\r\n");
+        }
+    }
+    UART_SendString("ST,MPU_INIT,BEGIN\r\n");
     init=MPU6050_Init(&mpu);
     if(init==MPU6050_OK)init=MPU6050_Calibrate(&mpu);
     if(init!=MPU6050_OK){
-        UART_Printf("ST,FATAL,MPU,%u\r\n",(unsigned)init);
+        UART_Printf("ST,FATAL,MPU,%u,step=%u,i2c=%u\r\n",
+                    (unsigned)init,(unsigned)mpu.init_step,
+                    (unsigned)mpu.init_i2c_status);
         for(;;)__WFI();
     }
+    UART_Printf("ST,MPU_INIT,OK,scl=%lu\r\n",
+                (unsigned long)I2C_GetConfiguredSclHz());
     OLED_SharedInit(found);
     OLED_SharedEnable(found);
     Motion_Init();IR_StartScan();
@@ -303,6 +327,22 @@ int SystemTest_Main(void) {
             if(OLED_SharedEnabled())draw();
         }
         OLED_SharedService(&mpu);
+        if((uint32_t)(now-last_diag)>=1000U) {
+            OLED_SharedStats os;
+            I2C_OledStats_t bus;
+            OLED_SharedGetStats(&os);
+            I2C_OledGetStats(&bus);
+            last_diag=now;
+            UART_Printf("ST_OLED,ms=%lu,found=%u,en=%u,cal=%u,scl=%lu,frame=%lu,chunk=%lu,skip=%lu,busy=%lu,err=%lu,tx=%lu,done=%lu,txerr=%lu\r\n",
+                 (unsigned long)now,(unsigned)OLED_SharedReady(),
+                 (unsigned)OLED_SharedEnabled(),(unsigned)mpu.calibrated,
+                 (unsigned long)I2C_GetConfiguredSclHz(),
+                 (unsigned long)os.frames,(unsigned long)os.chunks,
+                 (unsigned long)os.admission_skips,
+                 (unsigned long)os.busy_skips,(unsigned long)os.errors,
+                 (unsigned long)bus.started,(unsigned long)bus.completed,
+                 (unsigned long)bus.errors);
+        }
         if((uint32_t)(now-last_uart)>=250U){
             last_uart=now;
             if(st.page==PAGE_RUN || st.page==PAGE_RESULT)
