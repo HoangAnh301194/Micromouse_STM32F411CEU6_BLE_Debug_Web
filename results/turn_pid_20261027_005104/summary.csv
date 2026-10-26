@@ -1,0 +1,4 @@
+run_id,target_deg,profile,reason,t10_ms,t90_ms,rise_10_90_ms,t_first_target_ms,stop_ms,settling_ms,peak_yaw_deg,overshoot_deg,overshoot_percent,max_abs_gyro_dps,final_yaw_deg,final_abs_error_deg,coast_drift_deg,trace_samples,sampling_gap_max_ms,ring_drops,uart_drops,meets_trace_thresholds,imu_effective_hz,imu_intervals_max_us,imu_intervals_mean_us,imu_gap_gt1500,imu_gap_gt2000,imu_observer_missed,imu_status_notready,imu_i2c_errors,imu_age_mean_us,imu_age_max_us
+1,90,BASE,DONE,240.0,1189.434,949.434,,1650,1500.0,88.36,0.0,0.0,90.2,88.36,1.64,0.0,108,60,0,0,True,999.592,1679,1000.408,1,0,0,337,0,704.648,762
+2,90,BASE,DONE,261.287,1218.812,957.525,,1670,1540.0,88.08,0.0,0.0,90.1,88.07,1.93,0.0,123,20,0,0,True,1000.0,1286,1000.0,0,0,0,0,0,755.756,764
+3,90,BASE,DONE,220.0,1191.881,971.881,,1660,1520.0,88.19,0.0,0.0,93.8,88.19,1.81,0.0,123,20,0,0,True,999.593,1641,1000.0,1,0,0,507,0,690.488,764
