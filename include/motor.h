@@ -48,6 +48,9 @@ void Motor_LockOutputs(void);
 #if defined(SYSTEM_TEST_MODE)
 uint8_t Motor_SystemTestUnlockOutputs(void);
 #endif
+#if defined(TURN_PID_DIAG)
+uint8_t Motor_TurnDiagUnlockOutputs(void);
+#endif
 uint8_t Motor_OutputsLocked(void);
 void Motor_GetDiagnostics(Motor_Diagnostics_t *snapshot);
 /* MotorTest can renew the lease while enforcing its own duration/heartbeat.

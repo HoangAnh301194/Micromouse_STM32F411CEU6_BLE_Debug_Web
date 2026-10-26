@@ -6,6 +6,8 @@
 #include "motion.h"
 #if defined(SYSTEM_TEST_MODE)
 #include "system_test.h"
+#elif defined(TURN_PID_DIAG)
+#include "turn_pid_diag.h"
 #endif
 #include "motor.h"
 #include "stm32f4xx.h"
@@ -123,6 +125,8 @@ void Control_Stop(void)
      */
 #if defined(SYSTEM_TEST_MODE)
     SystemTest_Stop(1U);
+#elif defined(TURN_PID_DIAG)
+    TurnPidDiag_Stop(7U);
 #endif
     Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
@@ -242,6 +246,10 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #if defined(SYSTEM_TEST_MODE)
             SystemTest_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
                                    gyro.yaw_deg,gyro.gyro_z_dps);
+#elif defined(TURN_PID_DIAG)
+            TurnPidDiag_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
+                                    gyro.yaw_deg,gyro.gyro_z_dps,
+                                    (uint32_t)(micros()-gyro.completed_us));
 #else
             Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
                           Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
@@ -255,6 +263,8 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #endif
 #if defined(SYSTEM_TEST_MODE)
             SystemTest_Stop(3U);
+#elif defined(TURN_PID_DIAG)
+            TurnPidDiag_Stop(3U);
 #else
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
 #endif
