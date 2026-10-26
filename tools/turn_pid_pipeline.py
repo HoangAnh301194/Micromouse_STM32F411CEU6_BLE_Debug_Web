@@ -54,7 +54,11 @@ REPORT_FIELDS = (
     "trace_terminal_disagreement_deg",
     "sprint_accel_samples","sprint_brake_samples",
     "sprint_coast_samples","sprint_approach_samples",
-    "sprint_finish_samples","terminal_last10_to_stop_ms"
+    "sprint_finish_samples","terminal_last10_to_stop_ms",
+    "track_accel_samples","track_brake_samples",
+    "track_near_samples","track_settle_samples",
+    "midturn_low_speed_samples","midturn_reverse_samples",
+    "min_midturn_gyro_dps"
 )
 
 IMU_FIELDS = (
@@ -107,16 +111,18 @@ def parse_sample(line: str) -> dict | None:
          left,right,age_us,motor_stage)=raw
     if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (0,90,180):
         return None
-    if profile not in (0,1,2,3,4,5,6,7) or phase not in (1,2):
+    if profile not in (0,1,2,3,4,5,6,7,8) or phase not in (1,2):
         return None
-    if abs(cmd_pm) > (1000 if profile==7 else (800 if profile in (4,5,6) else 400)) or age_us < 0:
+    if abs(cmd_pm) > (1000 if profile in (7,8) else (800 if profile in (4,5,6) else 400)) or age_us < 0:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
     if motor_stage is not None:
-        if not 0 <= motor_stage <= 27:
+        if not 0 <= motor_stage <= 31:
             return None
-        if profile == 7:
+        if profile == 8:
+            if motor_stage not in (0,28,29,30,31):return None
+        elif profile == 7:
             if motor_stage not in (0,23,24,25,26,27):return None
         elif profile == 6:
             if motor_stage not in (0,18,19,20,21,22):return None
@@ -258,6 +264,11 @@ def analyze(samples: list[dict], result: dict,
     cmd_deltas=[abs(y["cmd_pm"]-x["cmd_pm"])
                 for x,y in zip(ordered,ordered[1:])
                 if 0<y["t_ms"]-x["t_ms"]<=20]
+    midturn=[r for r in ordered
+             if r["yaw_deg"]>target*0.30 and
+                r["yaw_deg"]<target-10.0]
+    slow_mid=[r for r in midturn if abs(r["gyro_dps"])<15.0]
+    reverse_mid=[r for r in midturn if r["gyro_dps"]<-3.0]
     imu_records = imu_records or []
     valid_imu = [w for w in imu_records if w["run_id"]==rows[0]["run_id"]]
     duration_ms=sum(w["window_ms"] for w in valid_imu)
@@ -281,7 +292,7 @@ def analyze(samples: list[dict], result: dict,
     return {
         "run_id": rows[0]["run_id"],
         "target_deg": target,
-        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW",6:"GLIDE",7:"SPRINT"}[rows[0]["profile"]],
+        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW",6:"GLIDE",7:"SPRINT",8:"TRACK"}[rows[0]["profile"]],
         "reason": result.get("reason", "PARTIAL"),
         "t10_ms": rnd(t10),
         "t90_ms": rnd(t90),
@@ -321,6 +332,14 @@ def analyze(samples: list[dict], result: dict,
         "sprint_coast_samples": sum(v.get("motor_stage")==25 for v in ordered),
         "sprint_approach_samples": sum(v.get("motor_stage")==26 for v in ordered),
         "sprint_finish_samples": sum(v.get("motor_stage")==27 for v in ordered),
+        "track_accel_samples": sum(v.get("motor_stage")==28 for v in ordered),
+        "track_brake_samples": sum(v.get("motor_stage")==29 for v in ordered),
+        "track_near_samples": sum(v.get("motor_stage")==30 for v in ordered),
+        "track_settle_samples": sum(v.get("motor_stage")==31 for v in ordered),
+        "midturn_low_speed_samples": len(slow_mid),
+        "midturn_reverse_samples": len(reverse_mid),
+        "min_midturn_gyro_dps": rnd(min((r["gyro_dps"] for r in midturn),
+                                       default=None)),
         "brake_first_yaw_deg": rnd(first_brake["yaw_deg"]) if first_brake else None,
         "max_cmd_delta_20ms": max(cmd_deltas,default=None),
         "rapid_or_flow_brake_reaccelerations": sum(
@@ -500,7 +519,11 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "max_cmd_delta_20ms","terminal_last10_to_stop_ms",
                       "sprint_accel_samples","sprint_brake_samples",
                       "sprint_coast_samples","sprint_approach_samples",
-                      "sprint_finish_samples"):
+                      "sprint_finish_samples",
+                      "track_accel_samples","track_brake_samples",
+                      "track_near_samples","track_settle_samples",
+                      "midturn_low_speed_samples","midturn_reverse_samples",
+                      "min_midturn_gyro_dps"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -537,7 +560,7 @@ def capture(args: argparse.Namespace) -> int:
     imu_windows: dict[int,list[dict]]={}
     completed=set()
     mode_byte={"90":b"1","180":b"2","motor":b"m"}[args.mode]
-    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w","glide":b"g","sprint":b"p"}[args.profile]
+    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w","glide":b"g","sprint":b"p","track":b"k"}[args.profile]
     pending=bytearray()
     last_serial_activity=time.monotonic()
     last_config=0.0
@@ -692,7 +715,7 @@ def main(argv=None) -> int:
     parser.add_argument("--baud",type=int,default=115200)
     parser.add_argument("--mode",choices=["90","180","motor"],default="90",
                         help="90/180 degree pivot or bounded phase-1 motor PWM sweep")
-    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow","glide","sprint"],default="base")
+    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow","glide","sprint","track"],default="base")
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output",type=str,help="destination results folder")
     parser.add_argument("--duration",type=float,default=360,
@@ -704,8 +727,8 @@ def main(argv=None) -> int:
     if args.runs<1:parser.error("--runs must be >=1")
     if not args.analyze and args.profile in ("rapid","flow","glide") and args.mode!="90":
         parser.error("--profile rapid/flow/glide is restricted to 90-degree test only")
-    if not args.analyze and args.profile=="sprint" and args.mode=="motor":
-        parser.error("--profile sprint supports only 90 and 180 degrees")
+    if not args.analyze and args.profile in ("sprint","track") and args.mode=="motor":
+        parser.error("--profile sprint/track supports only 90 and 180 degrees")
     return offline(args.analyze,make_zip=args.zip) if args.analyze else capture(args)
 
 
