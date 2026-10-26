@@ -348,3 +348,14 @@ the active branch; retrieve them from the archive as needed.
   if MPU loses samples during 800ms post-stop coast. Session ZIP contains
   all raw CSV, plots, per-run summary and group mean/SD. Isolated firmware
   remains physically UNTESTED.
+
+## 2026-10-27 — MPU gyro actual fresh-publish timing in turn qualification
+
+Added MCU-windowed 1Hz reporting of distinct published gyro snapshots and
+completion-time gaps during PA0 90/180-turn tests. This measures observed
+post-I2C publication frequency, **not the MPU internal nominal 1kHz rate**.
+Tracks gyro sequence gaps, DATA_RDY not-ready, I2C errors, last-sample age,
+>1.5/>2ms timing gaps; no controller gain or motor cap changes.
+Host serial parser appends `imu_windows.csv` to each run folder and
+frequency, timing jitter and age statistics to summary/ZIP, backwards
+compatible with old turn traces.

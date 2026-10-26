@@ -33,8 +33,41 @@ REPORT_FIELDS = (
     "overshoot_percent", "max_abs_gyro_dps", "final_yaw_deg",
     "final_abs_error_deg", "coast_drift_deg", "trace_samples",
     "sampling_gap_max_ms", "ring_drops", "uart_drops",
-    "meets_trace_thresholds"
+    "meets_trace_thresholds", "imu_effective_hz", "imu_intervals_max_us",
+    "imu_intervals_mean_us", "imu_gap_gt1500", "imu_gap_gt2000",
+    "imu_observer_missed", "imu_status_notready", "imu_i2c_errors",
+    "imu_age_mean_us", "imu_age_max_us"
 )
+
+IMU_FIELDS = (
+    "run_id", "t_ms", "window_ms", "new_samples", "effective_hz",
+    "interval_mean_us", "interval_min_us", "interval_max_us",
+    "gap_gt1500", "gap_gt2000", "observer_missed", "status_notready",
+    "i2c_errors", "last_age_us", "last_seq", "is_final"
+)
+def parse_imu(line: str) -> dict | None:
+    """Decode one MCU timing window; no inference from UART arrival gaps."""
+    if not line.startswith("TP,IMU,"):
+        return None
+    data=parse_kv(line,"TP,IMU,")
+    keys=("id","t","win","new","hz10","dtavg","dtmin","dtmax",
+          "g1500","g2000","miss","nr","err","age","seq","last")
+    try:
+        v={k:int(data[k]) for k in keys}
+    except (KeyError,ValueError):
+        return None
+    if v["id"]<=0 or v["win"]<=0 or v["new"]<0 or v["last"] not in (0,1):
+        return None
+    return dict(run_id=v["id"],t_ms=v["t"],window_ms=v["win"],
+                new_samples=v["new"],effective_hz=v["hz10"]/10.0,
+                interval_mean_us=v["dtavg"],interval_min_us=v["dtmin"],
+                interval_max_us=v["dtmax"],gap_gt1500=v["g1500"],
+                gap_gt2000=v["g2000"],observer_missed=v["miss"],
+                status_notready=v["nr"],i2c_errors=v["err"],
+                last_age_us=v["age"],last_seq=v["seq"],
+                is_final=v["last"])
+
+
 
 
 def parse_sample(line: str) -> dict | None:
@@ -89,7 +122,8 @@ def interpolate_crossing(samples: list[dict], threshold: float) -> float | None:
     return None
 
 
-def analyze(samples: list[dict], result: dict) -> dict:
+def analyze(samples: list[dict], result: dict,
+            imu_records: list[dict] | None = None) -> dict:
     if not samples:
         return {"error": "No valid TP,D frames", **result}
     rows = sorted((s for s in samples if s["run_id"] == samples[0]["run_id"]),
@@ -106,6 +140,13 @@ def analyze(samples: list[dict], result: dict) -> dict:
     at_stop = min(rows, key=lambda s: abs(s["t_ms"] - stop_ms)) if stop_ms is not None else None
     coast_drift = round(final_yaw - at_stop["yaw_deg"], 3) if at_stop else None
     gaps = [b["t_ms"]-a["t_ms"] for a,b in zip(rows,rows[1:])]
+    imu_records = imu_records or []
+    valid_imu = [w for w in imu_records if w["run_id"]==rows[0]["run_id"]]
+    duration_ms=sum(w["window_ms"] for w in valid_imu)
+    new_samples=sum(w["new_samples"] for w in valid_imu)
+    mean_gyro_dt=(sum(w["interval_mean_us"]*w["new_samples"] for w in valid_imu)
+                  /new_samples) if new_samples else None
+    sample_ages=[row["imu_age_us"] for row in rows]
     settling = None
     # "settled" means ALL remaining samples stay within +-2 degrees
     # for at least the final 150 ms. An isolated one-sample crossing
@@ -137,6 +178,16 @@ def analyze(samples: list[dict], result: dict) -> dict:
         "final_yaw_deg": rnd(final_yaw),
         "final_abs_error_deg": rnd(abs(target-final_yaw)),
         "coast_drift_deg": coast_drift,
+        "imu_effective_hz": rnd(new_samples*1000.0/duration_ms) if duration_ms else None,
+        "imu_intervals_max_us": max((w["interval_max_us"] for w in valid_imu),default=None),
+        "imu_intervals_mean_us": rnd(mean_gyro_dt),
+        "imu_gap_gt1500": sum(w["gap_gt1500"] for w in valid_imu) if valid_imu else None,
+        "imu_gap_gt2000": sum(w["gap_gt2000"] for w in valid_imu) if valid_imu else None,
+        "imu_observer_missed": sum(w["observer_missed"] for w in valid_imu) if valid_imu else None,
+        "imu_status_notready": sum(w["status_notready"] for w in valid_imu) if valid_imu else None,
+        "imu_i2c_errors": sum(w["i2c_errors"] for w in valid_imu) if valid_imu else None,
+        "imu_age_mean_us": rnd(statistics.mean(sample_ages)),
+        "imu_age_max_us": max(sample_ages),
         "trace_samples": len(rows),
         "sampling_gap_max_ms": max(gaps) if gaps else 0,
         "ring_drops": int(result.get("qdrop", 0)),
@@ -205,7 +256,9 @@ def plot_run(path: Path, samples: list[dict], title: str) -> bool:
 
 
 def write_report(root: Path, runs: dict[int,list[dict]],
-                 results: dict[int,dict]) -> list[dict]:
+                 results: dict[int,dict],
+                 imu_windows: dict[int,list[dict]] | None = None) -> list[dict]:
+    imu_windows = imu_windows or {}
     root.mkdir(parents=True,exist_ok=True)
     summaries=[]
     for run_id in sorted(runs):
@@ -215,7 +268,13 @@ def write_report(root: Path, runs: dict[int,list[dict]],
         folder=root/f"run_{run_id:03d}"
         folder.mkdir(exist_ok=True)
         save_csv(folder/"samples.csv",samples)
-        summary=analyze(samples,results.get(run_id,{}))
+        subset=imu_windows.get(run_id,[])
+        if subset:
+            with (folder/"imu_windows.csv").open("w",newline="",encoding="utf-8") as f:
+                w=csv.DictWriter(f,fieldnames=IMU_FIELDS)
+                w.writeheader()
+                for item in subset:w.writerow({k:item.get(k) for k in IMU_FIELDS})
+        summary=analyze(samples,results.get(run_id,{}),subset)
         (folder/"summary.json").write_text(
             json.dumps(summary,indent=2,ensure_ascii=False)+"\n",
             encoding="utf-8")
@@ -241,7 +300,10 @@ def write_report(root: Path, runs: dict[int,list[dict]],
         entry={"runs":len(items),"trace_pass":sum(bool(z.get("meets_trace_thresholds")) for z in items)}
         for field in ("rise_10_90_ms","stop_ms","settling_ms",
                       "overshoot_deg","max_abs_gyro_dps",
-                      "final_abs_error_deg","coast_drift_deg"):
+                      "final_abs_error_deg","coast_drift_deg",
+                      "imu_effective_hz","imu_intervals_max_us",
+                      "imu_intervals_mean_us","imu_age_mean_us",
+                      "imu_age_max_us"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -275,6 +337,7 @@ def capture(args: argparse.Namespace) -> int:
     root.mkdir(parents=True,exist_ok=True)
     runs: dict[int,list[dict]]={}
     results: dict[int,dict]={}
+    imu_windows: dict[int,list[dict]]={}
     completed=set()
     mode_byte=b"1" if args.mode==90 else b"2"
     profile_byte=b"b" if args.profile=="base" else b"f"
@@ -330,6 +393,17 @@ def capture(args: argparse.Namespace) -> int:
                         runs.setdefault(sample["run_id"],[]).append(sample)
                     else:
                         print(f"[WARN] Invalid trace frame: {line}")
+                elif line.startswith("TP,IMU,"):
+                    w=parse_imu(line)
+                    if w:
+                        imu_windows.setdefault(w["run_id"],[]).append(w)
+                        print(f"[IMU] run={w['run_id']} published={w['effective_hz']:.1f} Hz "
+                              f"gap_avg={w['interval_mean_us']}us "
+                              f"gap_max={w['interval_max_us']}us "
+                              f"notready={w['status_notready']} "
+                              f"i2c_err={w['i2c_errors']}")
+                    else:
+                        print(f"[WARN] Invalid IMU timing record: {line}")
                 elif line.startswith("TP,RESULT,"):
                     kv=parse_kv(line,"TP,RESULT,")
                     try:rid=int(kv["id"])
@@ -339,7 +413,7 @@ def capture(args: argparse.Namespace) -> int:
                     results[rid]=kv
                     completed.add(rid)
                     print(f"[RESULT] {line}")
-                    summaries=write_report(root,runs,results)
+                    summaries=write_report(root,runs,results,imu_windows)
                     if summaries: print("[METRICS] "+json.dumps(summaries[-1],
                                                      ensure_ascii=False))
                 elif line.startswith("TP,HELLO,") or line.startswith("TP,BOOT,"):
@@ -366,7 +440,7 @@ def capture(args: argparse.Namespace) -> int:
         try:ser.write(b"S")
         except Exception:pass
     finally:
-        summaries=write_report(root,runs,results)
+        summaries=write_report(root,runs,results,imu_windows)
         (root/"session.json").write_text(
             json.dumps({"port":args.port,"baud":args.baud,"requested_mode":args.mode,
                         "requested_profile":args.profile,"requested_runs":args.runs,
@@ -387,15 +461,19 @@ def offline(folder: Path) -> int:
         return 2
     runs={}
     results={}
+    imu_windows={}
     for line in path.read_text(encoding="utf-8",errors="replace").splitlines():
         sample=parse_sample(line)
         if sample:
             runs.setdefault(sample["run_id"],[]).append(sample)
+        elif line.startswith("TP,IMU,"):
+            w=parse_imu(line)
+            if w:imu_windows.setdefault(w["run_id"],[]).append(w)
         elif line.startswith("TP,RESULT,"):
             kv=parse_kv(line,"TP,RESULT,")
             try:results[int(kv["id"])]=kv
             except (KeyError,ValueError):pass
-    summaries=write_report(folder,runs,results)
+    summaries=write_report(folder,runs,results,imu_windows)
     for item in summaries:
         print(json.dumps(item,ensure_ascii=False))
     archive=zip_session(folder)

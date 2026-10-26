@@ -80,6 +80,88 @@ typedef struct {
 static TP_State tp;
 static MPU6050_Handle_t mpu;
 
+/* Foreground-only diagnostic: measure distinct gyro publications, not
+ * repeated reads of the same snapshot or downsampled UART frames. */
+typedef struct {
+    uint8_t active;
+    uint32_t last_seq,last_completed_us,started_ms;
+    uint32_t starts_notready,starts_error;
+    uint32_t publications,intervals,sum_dt_us,min_dt_us,max_dt_us;
+    uint32_t gap_gt1500,gap_gt2000,observer_missed;
+} TP_ImuWindow;
+static TP_ImuWindow imu_win;
+
+static void ImuWindowReset(const MPU6050_Snapshot_t *sn,uint32_t now) {
+    imu_win.active=1U;
+    imu_win.last_seq=sn->sequence;
+    imu_win.last_completed_us=sn->completed_us;
+    imu_win.started_ms=now;
+    imu_win.starts_notready=mpu.status_not_ready_reads;
+    imu_win.starts_error=mpu.error_reads;
+    imu_win.publications=0U;imu_win.intervals=0U;imu_win.sum_dt_us=0U;
+    imu_win.min_dt_us=0xFFFFFFFFUL;imu_win.max_dt_us=0U;
+    imu_win.gap_gt1500=0U;imu_win.gap_gt2000=0U;
+    imu_win.observer_missed=0U;
+}
+static void ImuObserve(void) {
+    MPU6050_Snapshot_t sn;
+    uint32_t delta,dt;
+    if(!imu_win.active || !MPU6050_GetSnapshot(&mpu,&sn))return;
+    delta=(uint32_t)(sn.sequence-imu_win.last_seq);
+    if(delta==0U)return;
+    if(delta>1U)imu_win.observer_missed+=(delta-1U);
+    imu_win.publications+=delta;
+    dt=(uint32_t)(sn.completed_us-imu_win.last_completed_us);
+    if(delta==1U && imu_win.last_completed_us!=0U) {
+        ++imu_win.intervals;
+        imu_win.sum_dt_us+=dt;
+        if(dt<imu_win.min_dt_us)imu_win.min_dt_us=dt;
+        if(dt>imu_win.max_dt_us)imu_win.max_dt_us=dt;
+        if(dt>1500U)++imu_win.gap_gt1500;
+        if(dt>2000U)++imu_win.gap_gt2000;
+    }
+    imu_win.last_seq=sn.sequence;
+    imu_win.last_completed_us=sn.completed_us;
+}
+static void ImuEmit(uint32_t now,uint8_t final) {
+    MPU6050_Snapshot_t sn;
+    uint32_t elapsed,age=0xFFFFFFFFUL,hz10,avg_dt,min_dt;
+    if(!imu_win.active)return;
+    ImuObserve();
+    elapsed=(uint32_t)(now-imu_win.started_ms);
+    if(final && elapsed<50U && imu_win.publications==0U) {
+        imu_win.active=0U;return;
+    }
+    if(elapsed==0U)return;
+    hz10=(uint32_t)((((uint64_t)imu_win.publications)*10000ULL)/elapsed);
+    avg_dt=imu_win.intervals?imu_win.sum_dt_us/imu_win.intervals:0U;
+    min_dt=imu_win.intervals?imu_win.min_dt_us:0U;
+    if(MPU6050_GetSnapshot(&mpu,&sn))
+        age=(uint32_t)(micros()-sn.completed_us);
+    /* <256-byte frame fits UART_Printf's fixed buffer.
+     * Published completions may be lower than nominal 1000 Hz. */
+    UART_Printf("TP,IMU,id=%lu,t=%lu,win=%lu,new=%lu,hz10=%lu,dtavg=%lu,dtmin=%lu,dtmax=%lu,g1500=%lu,g2000=%lu,miss=%lu,nr=%lu,err=%lu,age=%lu,seq=%lu,last=%u\r\n",
+        (unsigned long)tp.id,(unsigned long)tp.ticks,
+        (unsigned long)elapsed,(unsigned long)imu_win.publications,
+        (unsigned long)hz10,(unsigned long)avg_dt,(unsigned long)min_dt,
+        (unsigned long)imu_win.max_dt_us,(unsigned long)imu_win.gap_gt1500,
+        (unsigned long)imu_win.gap_gt2000,
+        (unsigned long)imu_win.observer_missed,
+        (unsigned long)(mpu.status_not_ready_reads-imu_win.starts_notready),
+        (unsigned long)(mpu.error_reads-imu_win.starts_error),
+        (unsigned long)age,(unsigned long)imu_win.last_seq,(unsigned)final);
+    if(final){imu_win.active=0U;return;}
+    /* Keep last sequence/timestamp across reporting windows so a real
+     * inter-window sampling delay is not lost. */
+    imu_win.started_ms=now;
+    imu_win.starts_notready=mpu.status_not_ready_reads;
+    imu_win.starts_error=mpu.error_reads;
+    imu_win.publications=0U;imu_win.intervals=0U;imu_win.sum_dt_us=0U;
+    imu_win.min_dt_us=0xFFFFFFFFUL;imu_win.max_dt_us=0U;
+    imu_win.gap_gt1500=0U;imu_win.gap_gt2000=0U;
+    imu_win.observer_missed=0U;
+}
+
 static float Limit(float x,float a,float b) {
     return x<a?a:(x>b?b:x);
 }
@@ -257,7 +339,10 @@ static void StartByPA0(void) {
     q_head=q_tail=0U;q_dropped=0U;
     if(!Motor_TurnDiagUnlockOutputs()) {
         tp.reason=TP_MOTOR;tp.phase=TP_RESULT;
-    } else tp.phase=TP_RUNNING;
+    } else {
+        tp.phase=TP_RUNNING;
+        ImuWindowReset(&snap,millis());
+    }
     if(!mask)__enable_irq();
     UART_Printf("TP,START,id=%lu,mode=%u,profile=%u,pwm_cap=%d,kp_angle_x100=%d,kp_rate_x100=%d,kff_x100=%d,accel=%u,max_rate=%u,log_hz=50\r\n",
         (unsigned long)tp.id,(unsigned)tp.mode,(unsigned)tp.profile,
@@ -373,7 +458,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v1,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v2_imu,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
@@ -398,6 +483,7 @@ int TurnPidDiag_Main(void) {
         uint32_t now=millis();
         MPU6050_Update(&mpu);
         HandleButton(now);
+        ImuObserve(); /* foreground only, no additional I2C transaction */
         {uint8_t budget=8U;
          while(budget-- && UART_ReadByte(&ch))HandleUart(ch);
         }
@@ -416,8 +502,13 @@ int TurnPidDiag_Main(void) {
             if(tp.phase==TP_COAST)tp.phase=TP_RESULT;
             if(!irq)__enable_irq();
         }
+        if(imu_win.active && (uint32_t)(now-imu_win.started_ms)>=1000U)
+            ImuEmit(now,0U);
         DrainSamples(); /* MUST precede RESULT to keep host trace ordered. */
-        if(tp.phase==TP_RESULT && q_tail==q_head)EmitResult();
+        if(tp.phase==TP_RESULT && q_tail==q_head) {
+            ImuEmit(now,1U); /* final partial window before TP,RESULT */
+            EmitResult();
+        }
         if((uint32_t)(now-last_cal)>=1000U) {
             last_cal=now;
             if(!mpu.calibrated)EmitCal(now);

@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from turn_pid_pipeline import parse_sample,parse_kv,analyze,write_report,zip_session
+from turn_pid_pipeline import parse_sample,parse_kv,parse_imu,analyze,write_report,zip_session
 
 
 def sample(t,yaw,target=90,phase=1):
@@ -28,6 +28,18 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(data["cmd_pm"],90)
         self.assertEqual(data["enc_r"],-10)
         self.assertEqual(data["imu_age_us"],500)
+
+    def test_imu_frequency_and_gap_metrics(self):
+        r=parse_imu("TP,IMU,id=2,t=1000,win=1000,new=976,hz10=9760,dtavg=1025,dtmin=930,dtmax=2100,g1500=7,g2000=1,miss=0,nr=12,err=2,age=620,seq=3021,last=0")
+        self.assertEqual(r["run_id"],2)
+        self.assertEqual(r["effective_hz"],976.0)
+        self.assertEqual(r["interval_max_us"],2100)
+        self.assertIsNone(parse_imu("TP,IMU,id=2,new=970"))
+        rows=[dict(sample(t,40),run_id=2) for t in range(0,1200,20)]
+        summary=analyze(rows,{"reason":"DONE","stop_ms":"400"},[r])
+        self.assertEqual(summary["imu_effective_hz"],976.0)
+        self.assertEqual(summary["imu_gap_gt2000"],1)
+        self.assertEqual(summary["imu_i2c_errors"],2)
 
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))

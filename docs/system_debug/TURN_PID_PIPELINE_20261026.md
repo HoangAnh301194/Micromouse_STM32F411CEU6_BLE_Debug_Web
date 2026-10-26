@@ -135,3 +135,46 @@ and slip/ground measurement are still required.
 If gyro stops returning fresh data during the post-stop coast period,
 firmware times out final reporting after 1.1s with motor already locked;
 the CSV may contain fewer post-stop samples, which must be marked incomplete.
+
+## 2026-10-27 — Live gyro publication frequency (measured)
+
+The turn-test image keeps the same controller/PWM/PA0 and adds independent
+foreground instrumentation of **distinct MPU6050 coherent snapshot
+publication sequence numbers** and timestamps. DLPF remains \`3\`,
+gyro full scale remains +/-2000 deg/s, target register reading period
+is 1000us, motor and PID profiles are unchanged. The 1000Hz **nominal**
+rate is not a measurement. The logged **effective publication rate** may
+be lower because the I2C/CPU pipeline sometimes skips new data.
+
+During RUN/COAST the MCU sends \`TP,IMU\` once per ~1000ms and one
+final partial window **before TP,RESULT**:
+
+\`\`\`text
+TP,IMU,id=1,t=1000,win=1000,new=980,hz10=9800,dtavg=1021,dtmin=960,dtmax=2050,g1500=3,g2000=1,miss=0,nr=12,err=0,age=450,seq=11020,last=0
+\`\`\`
+
+The line above is **illustrative, not actual measured data**.
+- \`new\`: number of *distinct completed published gyro snapshots* during
+  the MCU-timed window \`win\` in milliseconds. \`hz10\` is new samples
+  per second multiplied by 10 (e.g. 9800 -> 980.0Hz).
+- \`dtavg/dtmin/dtmax\`: microseconds between completed gyro
+  publications; \`g1500/g2000\`: intervals exceeding those thresholds.
+- \`miss\`: sequence numbers missed by the foreground observer (NOT
+  necessarily lost MPU hardware samples).
+- \`nr\`: sensor DATA_RDY not-ready statuses; \`err\`: I2C errors.
+- \`age\`: microseconds since latest gyro snapshot completion;
+  \`last=1\` denotes the final (possibly partial) window.
+
+The existing 50Hz \`TP,D\` log already includes per-sample \`imu_age_us\`;
+this is the age of the coherent snapshot consumed by TIM11 at a logging
+tick. 50Hz UART traces **do not** indicate the gyro is sampled at 50Hz.
+The tool now saves \`run_NNN/imu_windows.csv\`, appends
+\`imu_effective_hz\`, interval mean/max and 50Hz consumed-sample
+age mean/max to summaries, and includes them in the session ZIP.
+
+Important: reading a snapshot on each 1kHz control tick can re-use the
+same latest gyro publication. A separate count of completed *new*
+publications is the valid software metric. \`completed_us\` is the
+STM32 read-completion timestamp, not the MPU6050's internal data
+conversion edge. Logs cannot prove the MEMS internal effective sample
+frequency or external motion angle accuracy.
