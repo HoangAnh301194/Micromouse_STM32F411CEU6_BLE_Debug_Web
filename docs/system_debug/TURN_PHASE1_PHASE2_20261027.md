@@ -424,7 +424,7 @@ host `--profile track`) supports 90 and 180deg independently, with
 1000/1000 PWM ceiling, 620/720deg/s nominal maximum angular rate.
 It replaces the distinct accelerate/reverse brake/creep stage
 machine with a continuously updated angle-to-rate envelope:
-`rate_brake=sqrt(2*3500*max(0,error-2deg-0.022s*max(gyro,0)))`
+`rate_brake=sqrt(2*3500*max(0,error-1deg-0.022s*max(gyro,0)))`
 and
 `rate_target=min(620/720,14*error,rate_brake)`.
 The rate target ramps upward no faster than +4000deg/s2 and down no
