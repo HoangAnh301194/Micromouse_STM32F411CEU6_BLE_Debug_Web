@@ -129,3 +129,92 @@ Prior rev1/v2 17-field UART traces remain parseable. No ZIP is generated
 by default; commit textual `results/turn_pid_*` logs to GitHub directly.
 The Python host excludes non-DONE turns from repeated timing averages
 and keeps raw aborted traces for debugging.
+
+## 2026-10-27 — Real-log diagnosis and SMOOTH v4 pilot
+
+Measured source logs: `results/turn_pid_20261027_011355` (three motor
+sweeps), `results/turn_pid_20261027_011451` (one TUNED 90deg), and
+`results/turn_pid_20261027_011550` (three repeated TUNED 90deg).
+The motor sweep finished `ANGLE_LIMIT` in each trial after yaw exceeded
++65deg in the 6th stage (this sweep is NOT meant to turn 90deg).
+TUNED mean stop time in the repeated trial was 1.382s, peak gyro about
+205deg/s, final angle within +/-2deg; one UART trace had corrupted
+frames and a 220ms gap despite firmware UART loss counters of zero.
+
+The observed distinct physical jerk close to 90deg is supported by
+`stage=6` (bounded 15% / 80ms kick) and shortly afterward negative
+`cmd_pm` around -130..-142 at +88..+90deg. At +86.5..+87.3deg,
+positive duty ~66..87/1000 had been applied but gyro stayed at 0deg/s;
+a short kick caused a sharp forward velocity and then a reverse braking
+command. That is not acceptable smooth terminal control even if final
+angle happened to be accurate.
+
+### New `SMOOTH` profile — distinct from historical TUNED
+
+Choose `--profile smooth`, UART `v` only while idle.
+`TP,HELLO` reports `turn_pid_diag_v4_smooth`.
+The old BASE, FAST, TUNED remain UNMODIFIED for reproducibility. New
+profile is first unverified experimental improvement:
+
+| Parameter | TUNED previous | SMOOTH v4 pilot |
+| --- | ---: | ---: |
+| max nominal angular rate | 200deg/s | 230deg/s |
+| accel/decel bound | 850deg/s2 | 950deg/s2 |
+| Kp outer angle | 6.5 | 7.0 |
+| Kp inner gyro rate | 1.75 | 1.90 |
+| Ki/Kd inner | 0 / 0 | 0 / 0 |
+| gyro-rate FF | 0.95 | 1.08 |
+| smooth static FF | 48permille | 42permille |
+| angle prediction | 45ms | 60ms |
+| motor PWM cap | 35% | 35% |
+| settle angle tolerance | +/-2deg | +/-2deg |
+
+**SMOOTH does not use the 15% timed stiction kick or reverse PWM** near
+the goal. From +82 to +88deg it clamps terminal command to 0..125permille,
+and if gyro slows below 18deg/s gently increases command toward a
+provisional forward duty of 108permille, limited to +9permille per 5ms
+until motion recovers. When yaw first enters +/-2deg of target, the
+controller sends Motor_Stop (coast) and waits for gyro |rate|<=12deg/s
+and 150ms stability. Any excess >+2deg (or stall for 420ms in terminal
+zone) terminates as `ANGLE_LIMIT` / `STALLED_NEAR_TARGET` rather than
+issuing a violent reverse command. An overshoot abort is a FAILED run
+for analysis; it must not be reported as accepted 90deg accuracy.
+
+Terminal samples: `stage=7` means smooth final approach,
+`stage=8` means coasting within +/-2deg. The tool reports
+`terminal_80_to_stop_ms`, `kick_samples`, `smooth_approach_samples`
+and `reverse_pwm_samples` for comparisons. No ZIP by default.
+
+**Motor sweep fix:** stage on-time reduced from 150ms to 100ms;
+neutral-time increased from 100ms to 150ms. Same 250ms/stage, six
+7–26% duty levels and +65deg safety abort. This reduces cumulative yaw
+while keeping encoder/duty instrumentation. These shortened pulses are
+not a complete no-load motor dynamic model; externally verify results.
+
+### Safe trial sequence
+
+```powershell
+git pull origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode motor --profile base --runs 1
+```
+
+First check motors on a safe elevated fixture for direction/STOP behavior;
+perform actual motion trials on a clear unobstructed floor with external
+motor power cutoff. A rigidly fixed chassis cannot validate gyro yaw.
+Review `motor_steps.csv` and require `reason=DONE` before progressing.
+Then test only ONE SMOOTH 90deg run:
+
+```powershell
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile smooth --runs 1
+```
+
+If there is no jolt, excessive coast overshoot, odd direction, overheating
+or appreciable translation, repeat 3 SMOOTH 90deg trials. Do NOT use
+`--profile tuned` expecting the jerk to disappear; that profile is
+intentionally preserved as the known baseline.
+
+The 35% duty cap is a controlled pilot, not the mechanical limit. Do not
+raise to 80% until the brake/coast dynamics and 90deg physical path are
+validated. PID wall straightening is supplementary and cannot guarantee
+safe stopping or accurate yaw where side walls are absent.

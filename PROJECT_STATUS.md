@@ -373,3 +373,18 @@ near-target stall corrective pulses, tighter safety guard; BASE and FAST
 held fixed for comparison. Host keeps rev1/rev2 raw trace compatibility,
 adds phase-1 stage metrics and excludes PA0_STOP from turn means.
 CI compiles/tests only; no hardware-on validation of the new modes yet.
+
+## 2026-10-27 — Real motor + TUNED log diagnosis and SMOOTH v4 pilot
+
+New pushed results: `011355` motor sweeps all ANGLE_LIMIT near 75deg
+under 6 PWM stages; `011451` single TUNED 90deg DONE; `011550`
+three TUNED DONE trials mean 1.382s, final heading within +/-2deg.
+Observed late jerk traced to stage=6 150permille kick after gyro stalls
+around 86.5..87.3deg, followed by reverse PWM -130..-142 despite angle
+being near 90deg. v4 SMOOTH opt-in profile removes that kick/reverse,
+uses bounded forward terminal approach then motor neutral/coast inside
++/-2deg, logs terminal dwell and reversals and fails on excess overshoot
+or >420ms near-target stall. Expanded speed ref 230deg/s under 35% cap;
+not physically qualified. Motor sweep shortened to 100ms on/150ms neutral
+to reduce prior +65deg cumulative-angle aborts. Existing BASE/FAST/TUNED
+benchmarks remain unchanged.

@@ -48,3 +48,11 @@ After interpreting the logs, use `--mode 90 --profile tuned --runs 1`
 for a cautious first 35% TUNED turn. Captures include applied PWM,
 encoder speed (PPS), `motor_steps.csv`, gyro timing and normal turn
 response metrics. `docs/system_debug/TURN_PHASE1_PHASE2_20261027.md`.
+
+### Jolt-free pivot trial v4
+
+Use `--profile smooth` (never `tuned`) for experimental smooth terminal
+approach without a 15% stall kick or near-target reverse PWM.
+Capture 1 pilot turn before collecting 3 repeats; see
+`docs/system_debug/TURN_PHASE1_PHASE2_20261027.md`. Motor sweep on-time
+is now 100ms per stage to stay within the prior +65deg safety envelope.
