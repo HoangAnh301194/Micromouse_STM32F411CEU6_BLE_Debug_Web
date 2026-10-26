@@ -107,7 +107,7 @@
 #define TP_TRACK_MAX_RATE_180     720.0f
 #define TP_TRACK_PWM_UP_STEP      105.0f
 #define TP_TRACK_PWM_DOWN_STEP    105.0f
-#define TP_TRACK_PWM_NEAR_STEP     15.0f
+#define TP_TRACK_PWM_NEAR_STEP     35.0f
 #define TP_TRACK_BRAKE_LIMIT      320.0f
 #define TP_TRACK_NEAR_BRAKE_LIMIT 130.0f
 #define TP_TRACK_POS_FF_MAX       220.0f
@@ -690,8 +690,13 @@ static void TrackControlTick(void) {
     low_pwm=-(err<12.0f?TP_TRACK_NEAR_BRAKE_LIMIT:TP_TRACK_BRAKE_LIMIT);
     if(err<4.0f && w<65.0f)low_pwm=0.0f;
     u=Limit(u,low_pwm,1000.0f);
-    step=err<12.0f?TP_TRACK_PWM_NEAR_STEP:TP_TRACK_PWM_UP_STEP;
-    if(u<old_cmd)step=err<12.0f?TP_TRACK_PWM_NEAR_STEP:TP_TRACK_PWM_DOWN_STEP;
+    /* Do not hold high positive PWM for ~200ms on entering the last
+     * 12deg: bring duty down promptly while retaining a smooth ramp
+     * once its absolute magnitude is small. */
+    step=err<12.0f?
+        (fabsf(old_cmd)>180.0f?TP_TRACK_PWM_DOWN_STEP:TP_TRACK_PWM_NEAR_STEP):
+        TP_TRACK_PWM_UP_STEP;
+    if(u<old_cmd && err>=12.0f)step=TP_TRACK_PWM_DOWN_STEP;
     u=Limit(u,old_cmd-step,old_cmd+step);
     u=Limit(u,low_pwm,1000.0f);
     tp.stage=err<12.0f?30U:(u<0.0f?29U:28U);
