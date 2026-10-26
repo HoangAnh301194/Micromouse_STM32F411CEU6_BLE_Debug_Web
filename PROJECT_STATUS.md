@@ -359,3 +359,17 @@ Tracks gyro sequence gaps, DATA_RDY not-ready, I2C errors, last-sample age,
 Host serial parser appends `imu_windows.csv` to each run folder and
 frequency, timing jitter and age statistics to summary/ZIP, backwards
 compatible with old turn traces.
+
+## 2026-10-27 — Phase 1+2 turn-tuning implementation (hardware validation pending)
+
+Latest prior BASE run in `results/turn_pid_20261027_005104`: three DONE
+90deg trials, mean stop 1.660s, mean final error 1.793deg; actual published
+MPU gyro ~999.728 Hz, no I2C errors, commanded PWM well below cap.
+Implemented opt-in `--mode motor` physical PA0 open-loop PWM pulse sweep
+(7..26% in 6 short stages) with applied motor PWM and encoder speed logs.
+Added opt-in `--profile tuned` (initial 35% cap), angular velocity
+feedforward/stiction blending, predictive angular-rate braking, bounded
+near-target stall corrective pulses, tighter safety guard; BASE and FAST
+held fixed for comparison. Host keeps rev1/rev2 raw trace compatibility,
+adds phase-1 stage metrics and excludes PA0_STOP from turn means.
+CI compiles/tests only; no hardware-on validation of the new modes yet.

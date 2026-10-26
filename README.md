@@ -282,3 +282,11 @@ PID/feedforward, PWM, encoders and post-stop inertial drift. Start with
 `python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile base --runs 3`.
 Logs are preserved under `results/turn_pid_*`.
 Read [turn tuning pipeline](docs/system_debug/TURN_PID_PIPELINE_20261026.md).
+
+### Turn tuning stage 1 / stage 2 (2026-10-27)
+
+Added bounded open-loop PWM motor response mode (USART1 idle command `m`,
+physical PA0 start only) and new experimental `TUNED` pivot profile
+(idle command `t`, ±2° finish target). Log applies actual motor PWM and
+encoder counts/s; retain historical BASE/FAST. See
+[Phase 1 + Phase 2 test procedure](docs/system_debug/TURN_PHASE1_PHASE2_20261027.md).
