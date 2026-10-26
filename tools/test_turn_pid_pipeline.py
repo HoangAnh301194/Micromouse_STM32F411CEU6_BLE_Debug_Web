@@ -155,7 +155,7 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(report["max_requested_pwm_pm"],680)
         self.assertEqual(report["peak_gyro_1khz_dps"],541.2)
         # Detection of the exact path that jerked during RAPID.
-        damaged=[samples[0],samples[2],samples[1],*samples[3:]]
+        damaged=[samples[0],samples[2],make(70,70,770,13),*samples[3:]]
         report2=analyze(damaged,{"reason":"DONE","stop_ms":"120"})
         self.assertGreater(report2["rapid_or_flow_brake_reaccelerations"],0)
         self.assertIsNone(make(20,3,801,13))
