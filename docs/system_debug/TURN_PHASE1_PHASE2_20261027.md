@@ -338,3 +338,68 @@ python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile glide --runs 1
 Only after the single trial is physically smooth, no unexpected
 post-stop movement, and reason DONE: repeat with `--runs 3`. No ZIP
 is created; push plain results on GitHub as before.
+
+## 2026-10-27 — SPRINT v8 full 100%-PWM ceiling and 180deg test
+
+Verified newest source logs: `results/turn_pid_20261027_021854`,
+`results/turn_pid_20261027_021939`.
+Six GLIDE DONE rows recorded stop times 715,660,725,695,720,740ms
+(709ms mean), 1kHz gyro peak around 542..564deg/s, and measured
+applied wheel PWM typically ~710..717/1000. A DONE-labelled run drifted
+to 85.40deg after the motor was locked (4.6deg error), showing that
+the pre-stop verdict was insufficient. Other two traces lack terminal
+RESULT and are PARTIAL; do not count them in accepted-run averages.
+
+SPRINT v8 is a separate opt-in profile, index 7, UART idle select
+character `p`, and host `--profile sprint`. It supports `--mode 90`
+AND `--mode 180`, *not* motor sweep. It permits command PWM up to
+**1000/1000 (100%)** and keeps the hardware PWM slew limiter and
+existing 30ms direction-reversal neutral gap. This is a duty **ceiling**;
+requested PWM and measured effective gyro speed are different values.
+The controller uses a variable yaw-rate reference ceiling:
+620deg/s for a 90deg pivot, 720deg/s for a 180deg pivot,
+and angular-acceleration reference up to 4000deg/s2. A one-way
+rate-based braking transition accounts for remaining angular distance,
+under a single bounded 31% reverse torque episode. Final PWM 0..16%
+tapers starting within 6deg of the endpoint, attempting to avoid the
+visible final motor stop jolt. The motor may not reach 100% PWM or
+either reference velocity on 90deg; no measured performance is claimed.
+Rate abort guard is 850deg/s; yaw > target+2deg aborts, as does
+detected reverse motion. Physical PA0 remains the only START and a
+separate motor supply cutoff is required for high-energy tests.
+
+SPRINT stages: 23 forward high-power acceleration, 24 single braking
+interval, 25 neutral coast, 26 forward-only final approach, 27
+final angle holding with motors neutral. Existing log collection
+reports `sprint_accel_samples`, `sprint_brake_samples`, etc. and
+`terminal_last10_to_stop_ms` for **both** 90 and 180deg.
+
+**New post-stop qualification:** After any `DONE` 90/180 turn,
+the 800ms motor-locked observation checks that yaw stays inside
++/-2deg. A violation changes the terminal result to
+`POST_STOP_DRIFT`, and it is rejected from accepted aggregate means.
+It can be caused by slippage, external handling or other motion;
+it does not prove a controller defect by itself. No motor output is
+automatically reenabled during this observation.
+
+One-pass physical test procedure:
+```powershell
+git pull origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile sprint --runs 1
+# ONLY if the previous trial safely returns DONE with no jolt/drift:
+python tools/turn_pid_pipeline.py --port COM7 --mode 180 --profile sprint --runs 1
+# Additional repeatability trials, only after safe single trials:
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile sprint --runs 3
+python tools/turn_pid_pipeline.py --port COM7 --mode 180 --profile sprint --runs 3
+```
+
+The first 180deg spin covers twice the angular distance and can sustain
+high PWM for longer. Use a clear floor, no wires or obstacles, and
+verify motor power cut and PA0 STOP before running. A first 180deg run
+is not automatic; a physical PA0 press-release is needed after READY.
+If any `ANGLE_LIMIT`, `POST_STOP_DRIFT`,
+`STALLED_NEAR_TARGET`, `WRONG_DIRECTION`, abnormal mechanical
+translation or excessive heat occurs, stop the experimental series
+and review the log rather than immediately repeating at full power.
+This diagnostic is a stationary pivot, NOT a forward-moving slalom.
