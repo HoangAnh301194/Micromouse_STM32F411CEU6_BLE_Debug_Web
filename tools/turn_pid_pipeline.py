@@ -298,7 +298,7 @@ def analyze(samples: list[dict], result: dict,
     return {
         "run_id": rows[0]["run_id"],
         "target_deg": target,
-        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW",6:"GLIDE",7:"SPRINT",8:"TRACK"}[rows[0]["profile"]],
+        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW",6:"GLIDE",7:"SPRINT",8:"TRACK",9:"GUARD"}[rows[0]["profile"]],
         "reason": result.get("reason", "PARTIAL"),
         "t10_ms": rnd(t10),
         "t90_ms": rnd(t90),
