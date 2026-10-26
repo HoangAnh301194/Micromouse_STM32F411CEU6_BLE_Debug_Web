@@ -89,6 +89,23 @@ class TurnTraceTests(unittest.TestCase):
                 2:{"reason":"DONE","stop_ms":"200"}})
             self.assertEqual(json.loads((root/"group_stats.json").read_text())["90deg_BASE"]["runs"],1)
 
+    def test_v4_smooth_terminal_stage_and_metrics(self):
+        def frame(t,yaw,cmd,stage,phase=1):
+            return parse_sample(
+                f"TP,D,7,{t},90,3,{phase},{int(yaw*100)},100,"
+                f"10,20,0,0,{cmd},{-cmd},{cmd},-50,50,500,{stage}")
+        rows=[frame(20,30,210,0),frame(40,80,110,7),
+              frame(60,87,108,7),frame(80,88.3,0,8),
+              frame(100,89.0,0,8),frame(280,89.0,0,8,phase=2)]
+        self.assertTrue(all(z is not None for z in rows))
+        report=analyze(rows,{"reason":"DONE","stop_ms":"100"})
+        self.assertEqual(report["profile"],"SMOOTH")
+        self.assertEqual(report["terminal_80_to_stop_ms"],60)
+        self.assertEqual(report["smooth_approach_samples"],2)
+        self.assertEqual(report["kick_samples"],0)
+        self.assertEqual(report["reverse_pwm_samples"],0)
+        self.assertIsNone(parse_sample("TP,D,7,20,90,3,1,100,200,10,20,0,0,100,-100,100,-50,50,500,9"))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
