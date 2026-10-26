@@ -1,0 +1,1 @@
+run_id,target_deg,profile,reason,t10_ms,t90_ms,rise_10_90_ms,t_first_target_ms,stop_ms,settling_ms,peak_yaw_deg,overshoot_deg,overshoot_percent,max_abs_gyro_dps,final_yaw_deg,final_abs_error_deg,coast_drift_deg,trace_samples,sampling_gap_max_ms,ring_drops,uart_drops,meets_trace_thresholds
