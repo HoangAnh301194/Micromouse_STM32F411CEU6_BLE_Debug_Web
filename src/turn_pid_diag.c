@@ -113,6 +113,29 @@
 #define TP_TRACK_POS_FF_MAX       220.0f
 #define TP_TRACK_STALL_MS         420U
 #define TP_TRACK_MAX_RATE_ABORT   850.0f
+/* GUARD v10: speed-governed 90/180 floor validation after actual
+ * TRACK reversed near 78deg and coasted to 197.52deg in a 180 turn.
+ * This is an intentionally derated, experimental controller, not a
+ * promise of racing speed. PA0 START and motor cutoff remain required. */
+#define TP_GUARD_RATE_90          460.0f
+#define TP_GUARD_RATE_180         560.0f
+#define TP_GUARD_PWM_90           750.0f
+#define TP_GUARD_PWM_180          850.0f
+#define TP_GUARD_REF_ACCEL       3400.0f
+#define TP_GUARD_REF_DECEL       7000.0f
+#define TP_GUARD_BRAKE_DPS2      2300.0f
+#define TP_GUARD_LEAD_S             0.055f
+#define TP_GUARD_RESERVE_DEG        4.0f
+#define TP_GUARD_BRAKE_PWM        165.0f
+#define TP_GUARD_BRAKE_NEAR_PWM    110.0f
+#define TP_GUARD_ACCEL_FF          0.045f
+#define TP_GUARD_DUTY_STEP         75.0f
+#define TP_GUARD_NEAR_STEP         40.0f
+#define TP_GUARD_STALL_MS         480U
+#define TP_GUARD_GYRO_ABORT       690.0f
+#define TP_GUARD_SETTLE_ANGLE      2.0f
+#define TP_GUARD_STOP_RATE        12.0f
+
 
 
 #define TP_RING_SIZE         128U
@@ -147,7 +170,7 @@ static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
       TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8,TP_DRIFT=9};
 
@@ -167,7 +190,7 @@ typedef struct {
 /* Preserve BASE/FAST/TUNED exactly for comparison against real logs.
  * SMOOTH: first hardware-unverified fix for strong near-target jolt.
  * Do not infer physical stability from firmware compilation. */
-static const TP_Profile profiles[9]={
+static const TP_Profile profiles[10]={
     {4.8f,1.15f,0.0f,0.35f,650.0f,150.0f,260,95,0.0f,0.0f},
     {6.0f,1.35f,0.0f,0.40f,950.0f,230.0f,300,95,0.0f,0.0f},
     {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f},
@@ -181,7 +204,9 @@ static const TP_Profile profiles[9]={
     {13.0f,2.20f,0.0f,1.20f,3200.0f,520.0f,800,0,0.0f,0.0f},
     {13.0f,2.15f,0.0f,1.28f,4000.0f,720.0f,1000,0,0.0f,0.0f},
     /* Continuous speed trajectory with rate feedback (90/180). */
-    {14.0f,3.00f,0.0f,0.90f,4000.0f,720.0f,1000,0,0.0f,0.0f}
+    {14.0f,3.00f,0.0f,0.90f,4000.0f,720.0f,1000,0.0f,0.0f},
+    /* Guarded control validation: speed cap < TRACK by design. */
+    {12.0f,1.65f,0.0f,0.80f,3400.0f,560.0f,850,0,0.0f,0.0f}
 };
 
 typedef struct {
@@ -714,6 +739,87 @@ static void TrackControlTick(void) {
     tp.requested_pwm=(int16_t)u;
     Motor_SetPairPermille((int16_t)-u,(int16_t)u);
 }
+/* GUARD v10: anticipatory rate governor, capped reverse PWM and a
+ * two-dimensional stopping criterion.
+ *
+ * NOTE: TP_TRACK wrongly used Motor_Stop() immediately on entering
+ * +/-2deg even at +207deg/s; this stopped the closed loop but not the
+ * physical chassis. GUARD never neutralizes the bridge just because
+ * the target angle band is reached while angular speed is high.
+ * It continues a bounded decel request until both angle and rate
+ * satisfy the stable acceptance condition. */
+static void GuardControlTick(void) {
+    const TP_Profile *cfg=&profiles[TP_GUARD];
+    const float dt=0.005f;
+    float err=tp.err,w=tp.rate,prev=tp.ref_rate;
+    float vmax=tp.mode==TP_180?TP_GUARD_RATE_180:TP_GUARD_RATE_90;
+    float cap=tp.mode==TP_180?TP_GUARD_PWM_180:TP_GUARD_PWM_90;
+    float remaining,brake_v,want,dref,ref,rate_pid,ff,u,prior,step,low;
+    /* Abnormal overshoot is handled in the common angle watchdog.
+     * No unbounded active correction after a >=2deg failure. */
+    if(err < -TP_GUARD_SETTLE_ANGLE) {
+        StopAndCoast(TP_ANGLE);return;
+    }
+    if(fabsf(err)<=TP_GUARD_SETTLE_ANGLE &&
+       fabsf(w)<=TP_GUARD_STOP_RATE) {
+        tp.stage=35U;
+        Motor_Stop();tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+        tp.ref_rate=0.0f;
+        tp.stable_ticks+=TP_CONTROL_DIV;
+        if(tp.stable_ticks>=TP_SETTLE_TICKS) StopAndCoast(TP_DONE);
+        return;
+    }
+    tp.stable_ticks=0U;
+    remaining=Limit(err-TP_GUARD_RESERVE_DEG-
+                TP_GUARD_LEAD_S*(w>0.0f?w:0.0f),
+                0.0f,(float)tp.mode);
+    brake_v=sqrtf(2.0f*TP_GUARD_BRAKE_DPS2*remaining);
+    want=Limit(brake_v,0.0f,
+          Limit(cfg->kp_angle*(err>0.0f?err:0.0f),0.0f,vmax));
+    /* Rate must go to zero when already inside the target band.
+     * Unlike TRACK, retain ACTIVE bounded braking until gyro slow. */
+    if(err<=TP_GUARD_SETTLE_ANGLE)want=0.0f;
+    dref=Limit(want-prev,-TP_GUARD_REF_DECEL*dt,
+                            TP_GUARD_REF_ACCEL*dt);
+    ref=Limit(prev+dref,0.0f,vmax);
+    tp.ref_rate=ref;
+    rate_pid=PID_Compute(&tp.pid_rate,ref,w,dt);
+    ff=cfg->kff_rate*ref+
+        Limit(TP_GUARD_ACCEL_FF*dref/dt,-150.0f,150.0f);
+    u=rate_pid+ff;
+    /* Reversal on TB6612FNG has a >=30ms neutral gap, so cap the
+     * magnitude and start decreasing PWM well before the angle band.
+     * This is a brake command, NOT a guarantee of actual wheel torque. */
+    low=-(err<20.0f?TP_GUARD_BRAKE_NEAR_PWM:TP_GUARD_BRAKE_PWM);
+    if(err<=TP_GUARD_SETTLE_ANGLE && w>TP_GUARD_STOP_RATE)
+        u=-TP_GUARD_BRAKE_NEAR_PWM;
+    if(err>TP_GUARD_SETTLE_ANGLE && w<0.0f)
+        u=Limit(u,0.0f,cap); /* never continue braking into reverse yaw */
+    u=Limit(u,low,cap);
+    prior=(float)tp.requested_pwm;
+    step=err<20.0f?TP_GUARD_NEAR_STEP:TP_GUARD_DUTY_STEP;
+    /* Critical: a high positive request approaching the target must
+     * decrease promptly; a stale high output can cause large coast. */
+    if(u<prior && prior>180.0f)step=TP_GUARD_DUTY_STEP;
+    if(u>prior && prior<0.0f)step=TP_GUARD_DUTY_STEP;
+    u=Limit(u,prior-step,prior+step);
+    u=Limit(u,low,cap);
+    if(err<=TP_GUARD_SETTLE_ANGLE && w>TP_GUARD_STOP_RATE)
+        tp.stage=36U;
+    else if(err<20.0f)tp.stage=34U;
+    else if(u<0.0f)tp.stage=33U;
+    else tp.stage=32U;
+    if(fabsf(w)<3.0f && err>TP_GUARD_SETTLE_ANGLE && err<20.0f) {
+        tp.stuck_ticks+=TP_CONTROL_DIV;
+        if(tp.stuck_ticks>=TP_GUARD_STALL_MS) {
+            StopAndCoast(TP_STALL);return;
+        }
+    } else tp.stuck_ticks=0U;
+    tp.pid_pm=(int16_t)rate_pid;
+    tp.ff_pm=(int16_t)ff;
+    tp.requested_pwm=(int16_t)u;
+    Motor_SetPairPermille((int16_t)-u,(int16_t)u);
+}
 void TurnPidDiag_Stop(uint8_t why) {
     uint32_t mask=__get_PRIMASK();__disable_irq();
     StopAndCoast(why);
@@ -766,10 +872,13 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
         fabsf(tp.rate)>((tp.profile==TP_FLOW || tp.profile==TP_GLIDE)?TP_FLOW_MAX_GYRO:TP_RAPID_RATE_ABORT_DPS))) {
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
-    if((tp.profile==TP_SPRINT || tp.profile==TP_TRACK) &&
-       (tp.yaw<-3.0f || tp.rate<-40.0f ||
-        fabsf(tp.rate)>(tp.profile==TP_TRACK?
-                         TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT))) {
+    if((tp.profile==TP_SPRINT || tp.profile==TP_TRACK || tp.profile==TP_GUARD) &&
+       (tp.yaw<-3.0f ||
+        (tp.profile==TP_GUARD ?
+         (tp.ticks>70U && tp.rate< -45.0f) :
+         tp.rate< -40.0f) ||
+        fabsf(tp.rate)>(tp.profile==TP_GUARD?TP_GUARD_GYRO_ABORT:
+              (tp.profile==TP_TRACK?TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT)))) {
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
     if(tp.mode==TP_SWEEP) {
@@ -793,7 +902,7 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     }
     /* TUNED has tighter high-speed flight envelope; BASE/FAST unchanged. */
     if(tp.yaw>(float)tp.mode+
-               ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK)?2.0f:
+               ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK || tp.profile==TP_GUARD)?2.0f:
                 ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH)?8.0f:22.0f)) ||
        ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH) &&
         fabsf(tp.rate)>450.0f)) {
@@ -802,8 +911,13 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     /* SMOOTH never applies a reverse near the goal: a >2deg
      * overshoot becomes a diagnostic failure rather than a hard jerk. */
     if((tp.profile==TP_SMOOTH || tp.profile==TP_RAPID ||
-        tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK) && tp.err < -TP_ANGLE_BAND) {
+        tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK || tp.profile==TP_GUARD) && tp.err < -TP_ANGLE_BAND) {
         StopAndCoast(TP_ANGLE);PushSample(age_us);return;
+    }
+    if(tp.profile==TP_GUARD) {
+        if((tp.ticks%TP_CONTROL_DIV)==0U)GuardControlTick();
+        if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
+        return;
     }
     if(tp.profile==TP_TRACK) {
         if((tp.ticks%TP_CONTROL_DIV)==0U)TrackControlTick();
@@ -1005,7 +1119,7 @@ static void StartByPA0(void) {
     uint32_t mask;
     if(tp.phase!=TP_IDLE || !IsReady() ||
        ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE) && tp.mode!=TP_90) ||
-       ((tp.profile==TP_SPRINT || tp.profile==TP_TRACK) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
+       ((tp.profile==TP_SPRINT || tp.profile==TP_TRACK || tp.profile==TP_GUARD) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
         UART_Printf("TP,REJECT,mode=%u,cal=%u,reason=NOT_READY\r\n",
                     (unsigned)tp.mode,(unsigned)mpu.calibrated);
         return;
@@ -1050,8 +1164,10 @@ static void StartByPA0(void) {
         (int)(profiles[tp.profile].kp_rate*100.0f),
         (int)(profiles[tp.profile].kff_rate*100.0f),
         (unsigned)profiles[tp.profile].accel_dps2,
-        (unsigned)(((tp.profile==TP_SPRINT || tp.profile==TP_TRACK) && tp.mode==TP_90)?
-                   TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps));
+        (unsigned)((tp.profile==TP_GUARD)?
+          (tp.mode==TP_90?TP_GUARD_RATE_90:TP_GUARD_RATE_180):
+          (((tp.profile==TP_SPRINT || tp.profile==TP_TRACK) && tp.mode==TP_90)?
+           TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps)));
 }
 static void HandleButton(uint32_t now) {
     static uint8_t initialized,previous,boot_held,allowed;
@@ -1093,7 +1209,7 @@ static void HandleUart(uint8_t c) {
             (unsigned long)q_dropped,(unsigned long)UART_GetDroppedMessages());
         return;
     }
-    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v' && c!='h' && c!='w' && c!='g' && c!='p' && c!='k')return;
+    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v' && c!='h' && c!='w' && c!='g' && c!='p' && c!='k' && c!='z')return;
     if(tp.phase!=TP_IDLE || !Motor_OutputsLocked()) {
         UART_SendString("TP,CONFIG_REJECT,reason=RUNNING\r\n");return;
     }
@@ -1109,6 +1225,7 @@ static void HandleUart(uint8_t c) {
     if(c=='g')tp.profile=TP_GLIDE;
     if(c=='p')tp.profile=TP_SPRINT;
     if(c=='k')tp.profile=TP_TRACK;
+    if(c=='z')tp.profile=TP_GUARD;
     UART_Printf("TP,CONFIG,mode=%u,profile=%u,locked=1\r\n",
                 (unsigned)tp.mode,(unsigned)tp.profile);
 }
@@ -1167,7 +1284,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v9_track,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v10_guard,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
@@ -1187,7 +1304,7 @@ int TurnPidDiag_Main(void) {
     Control_Init(&mpu);
     tp.phase=TP_IDLE;tp.mode=TP_90;tp.profile=TP_BASE;
     Control_Start();
-    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/h/w/g/p/k/?/S,PA0_ONLY_START\r\n");
+    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/h/w/g/p/k/z/?/S,PA0_ONLY_START\r\n");
     for(;;) {
         uint32_t now=millis();
         MPU6050_Update(&mpu);
