@@ -40,7 +40,8 @@ REPORT_FIELDS = (
     "imu_observer_missed", "imu_status_notready", "imu_i2c_errors",
     "imu_age_mean_us", "imu_age_max_us",
     "max_requested_pwm_pm", "max_applied_pwm_pm", "encoder_imbalance_pct",
-    "motor_sweep_steps"
+    "motor_sweep_steps", "terminal_80_to_stop_ms",
+    "kick_samples", "smooth_approach_samples", "reverse_pwm_samples"
 )
 
 IMU_FIELDS = (
@@ -93,13 +94,13 @@ def parse_sample(line: str) -> dict | None:
          left,right,age_us,motor_stage)=raw
     if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (0,90,180):
         return None
-    if profile not in (0,1,2) or phase not in (1,2):
+    if profile not in (0,1,2,3) or phase not in (1,2):
         return None
     if abs(cmd_pm) > 400 or age_us < 0:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
-    if motor_stage is not None and not 0<=motor_stage<=6:
+    if motor_stage is not None and not 0<=motor_stage<=8:
         return None
     return dict(run_id=run_id,t_ms=t_ms,target_deg=target,
                 profile=profile,phase=phase,yaw_deg=yaw_cd/100,
@@ -138,7 +139,7 @@ def interpolate_crossing(samples: list[dict], threshold: float) -> float | None:
 
 
 MOTOR_SWEEP_PWM = (70, 95, 120, 155, 200, 260)
-MOTOR_ON_MS=150
+MOTOR_ON_MS=100
 MOTOR_SEG_MS=250
 MOTOR_FIELDS=("stage","pwm_requested_pm","trace_points","peak_gyro_dps",
               "mean_gyro_dps","max_applied_l_pm","max_applied_r_pm",
@@ -212,6 +213,7 @@ def analyze(samples: list[dict], result: dict,
     final_yaw = rows[-1]["yaw_deg"]
     overshoot = max(0.0, peak - target)
     stop_ms = int(result["stop_ms"]) if result.get("stop_ms") else None
+    reach_80 = next((v["t_ms"] for v in rows if v["phase"]==1 and v["yaw_deg"]>=80.0),None)
     at_stop = min(rows, key=lambda s: abs(s["t_ms"] - stop_ms)) if stop_ms is not None else None
     coast_drift = round(final_yaw - at_stop["yaw_deg"], 3) if at_stop else None
     gaps = [b["t_ms"]-a["t_ms"] for a,b in zip(rows,rows[1:])]
@@ -238,7 +240,7 @@ def analyze(samples: list[dict], result: dict,
     return {
         "run_id": rows[0]["run_id"],
         "target_deg": target,
-        "profile": {0:"BASE",1:"FAST",2:"TUNED"}[rows[0]["profile"]],
+        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH"}[rows[0]["profile"]],
         "reason": result.get("reason", "PARTIAL"),
         "t10_ms": rnd(t10),
         "t90_ms": rnd(t90),
@@ -253,6 +255,10 @@ def analyze(samples: list[dict], result: dict,
         "final_yaw_deg": rnd(final_yaw),
         "final_abs_error_deg": rnd(abs(target-final_yaw)),
         "coast_drift_deg": coast_drift,
+        "terminal_80_to_stop_ms": (stop_ms-reach_80) if stop_ms is not None and reach_80 is not None else None,
+        "kick_samples": sum(v.get("motor_stage")==6 for v in rows if v["phase"]==1),
+        "smooth_approach_samples": sum(v.get("motor_stage")==7 for v in rows if v["phase"]==1),
+        "reverse_pwm_samples": sum(v["cmd_pm"]<0 for v in rows if v["phase"]==1),
         "max_requested_pwm_pm": max(abs(s["cmd_pm"]) for s in rows),
         "max_applied_pwm_pm": max(applied_pwm) if applied_pwm else None,
         "encoder_imbalance_pct": rnd(encoder_imbalance),
@@ -404,7 +410,9 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "imu_effective_hz","imu_intervals_max_us",
                       "imu_intervals_mean_us","imu_age_mean_us",
                       "imu_age_max_us","max_requested_pwm_pm",
-                      "max_applied_pwm_pm","encoder_imbalance_pct"):
+                      "max_applied_pwm_pm","encoder_imbalance_pct",
+                      "terminal_80_to_stop_ms","kick_samples",
+                      "smooth_approach_samples","reverse_pwm_samples"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -441,7 +449,7 @@ def capture(args: argparse.Namespace) -> int:
     imu_windows: dict[int,list[dict]]={}
     completed=set()
     mode_byte={"90":b"1","180":b"2","motor":b"m"}[args.mode]
-    profile_byte={"base":b"b","fast":b"f","tuned":b"t"}[args.profile]
+    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v"}[args.profile]
     pending=bytearray()
     last_serial_activity=time.monotonic()
     last_config=0.0
@@ -596,7 +604,7 @@ def main(argv=None) -> int:
     parser.add_argument("--baud",type=int,default=115200)
     parser.add_argument("--mode",choices=["90","180","motor"],default="90",
                         help="90/180 degree pivot or bounded phase-1 motor PWM sweep")
-    parser.add_argument("--profile",choices=["base","fast","tuned"],default="base")
+    parser.add_argument("--profile",choices=["base","fast","tuned","smooth"],default="base")
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output",type=str,help="destination results folder")
     parser.add_argument("--duration",type=float,default=360,
