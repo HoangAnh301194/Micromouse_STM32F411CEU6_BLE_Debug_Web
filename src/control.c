@@ -4,6 +4,9 @@
 #include "encoder.h"
 #include "ir_sensor.h"
 #include "motion.h"
+#if defined(SYSTEM_TEST_MODE)
+#include "system_test.h"
+#endif
 #include "motor.h"
 #include "stm32f4xx.h"
 #include "system_timer.h"
@@ -118,6 +121,9 @@ void Control_Stop(void)
      * force the motor command to zero; otherwise the last PWM value could
      * remain latched after TIM11 stops.
      */
+#if defined(SYSTEM_TEST_MODE)
+    SystemTest_Stop(1U);
+#endif
     Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
     control_running = 0U;
@@ -233,8 +239,13 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             di_seen_valid = 1U;
             di_stats.gyro_valid_ticks++;
 #endif
+#if defined(SYSTEM_TEST_MODE)
+            SystemTest_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
+                                   gyro.yaw_deg,gyro.gyro_z_dps);
+#else
             Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
                           Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
+#endif
         } else {
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
             if (di_seen_valid) di_stats.gyro_invalid_after_first_valid++;
@@ -242,7 +253,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             Sweep_ImuFaultFromISR();
 #endif
 #endif
+#if defined(SYSTEM_TEST_MODE)
+            SystemTest_Stop(3U);
+#else
             Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
+#endif
         }
     }
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)

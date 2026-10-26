@@ -1,4 +1,7 @@
-#if defined(BLE_RX_DIAG)
+#if defined(SYSTEM_TEST_MODE)
+#include "system_test.h"
+int main(void) { return SystemTest_Main(); }
+#elif defined(BLE_RX_DIAG)
 int BleRxDiag_Main(void);
 int main(void) { return BleRxDiag_Main(); }
 #elif defined(OLED_MPU_DIAG)
