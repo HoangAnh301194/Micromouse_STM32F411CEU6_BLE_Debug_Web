@@ -218,3 +218,63 @@ The 35% duty cap is a controlled pilot, not the mechanical limit. Do not
 raise to 80% until the brake/coast dynamics and 90deg physical path are
 validated. PID wall straightening is supplementary and cannot guarantee
 safe stopping or accurate yaw where side walls are absent.
+
+## 2026-10-27 — FLOW v6 high-speed monotonic braking (first hardware trial)
+
+**Reason:** Actual RAPID results in `results/turn_pid_20261027_014527`
+show four completed 90-degree turns (stop_ms=785,1350,1350,975),
+and one `STALLED_NEAR_TARGET` (2075ms). 1kHz gyro peaks reached
+454.1–470deg/s. A repeated 800permille forward command occurred shortly
+AFTER negative braking: for run 2, cmd=-176 at t=160ms, +800 at t=220ms,
+and -65 at t=300ms. The motor-driver's 30ms reverse-neutral protection
+makes these direction changes especially undesirable. Long forward-only
+approach phases explain the stop-time scatter (as long as 930ms from
+80deg to stop). In aborted run 4, yaw changed by -11deg during the
+motor-locked post-stop interval with a left encoder delta while the
+right encoder did not change; investigate external movement, friction,
+wheel slip, floor and hardware before treating it as closed-loop control.
+
+**FLOW is opt-in, preserves all previous control profiles**: `--profile
+flow` maps to idle UART 'w', index 5, and is limited to 90deg. PWM
+ceiling remains 80%, angular-rate demand becomes 520deg/s, reference
+acceleration 3200deg/s2. No motor-to-body inertial model is claimed.
+A latched four-stage controller replaces RAPID's reactive sign-changing
+rate loop: `stage=13` high-power forward acceleration, `stage=14`
+one bounded reverse braking interval (maximum 28% reverse and subject
+to driver 30ms reversal gap), `stage=15` zero-duty coasting, and
+`stage=16` forward-only gentle terminal alignment (up to 17%).
+`stage=17` is final neutral/stability check. Once it leaves stage 13,
+it can NEVER return to high-power propulsion within that run. It
+uses measured gyro speed to initiate braking when the rate-based
+stopping-distance estimate plus 10deg becomes comparable to the
+remaining error. Its deceleration estimate is a first hypothesis,
+NOT measured from the new chassis. ±2deg / |gyro|<=12deg/s for
+150ms remains the acceptance tolerance, overshoot >2deg is a fault.
+
+The prior rapid profile remains available for A/B comparison.
+Log parser now tracks the five new stages and flags all
+high-power reacceleration events after the first braking phase
+(`rapid_or_flow_brake_reaccelerations`). FLOW should report ZERO
+for this metric. Historical RAPID run 2 would report a nonzero value.
+
+**Important:** RUN 4 post-stop physical yaw discrepancy is unresolved.
+Before higher-power floor trials, check the free-wheel, motor polarity,
+loose hardware/IMU mounting, and whether the chassis was picked
+up or nudged during the 800ms post-stop window. Operate on a clear
+floor with a safe motor supply cutoff; hold no obstacle/hand near
+the robot. A full-speed 90deg test should begin with ONE run.
+Neither successful CI nor 1kHz gyro logging proves a smooth,
+safe turn. Do not repeat a trial after unexpected motion.
+
+Commands (PowerShell):
+```powershell
+git pull origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile flow --runs 1
+```
+
+Physical PA0 press-release is still the ONLY start action; PA0 press
+during motion stops; UART `S` also stops. If the first floor run is
+smooth and `reason=DONE`, then three repeats are useful to compare
+mean stop time, variance, peak angular rate, unexpected reverse
+movement and final heading against RAPID.
