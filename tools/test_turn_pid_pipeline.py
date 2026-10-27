@@ -423,7 +423,8 @@ class TurnTraceTests(unittest.TestCase):
         self.assertIsNotNone(m["applied_pwm_max_step_20ms"])
         self.assertIsInstance(m["neutral_actual_high_gyro_samples"],int)
         self.assertEqual(m["first_band_rate_dps"],24.0)
-        self.assertIsNone(sample_frame(20,1,55,891,42))
+        self.assertIsNotNone(sample_frame(20,1,55,1000,42))
+        self.assertIsNone(sample_frame(20,1,55,1001,42))
         self.assertIsNone(sample_frame(20,1,55,-1,43))
         self.assertIsNone(sample_frame(20,1,55,300,39))
         long=[sample_frame(20,1,55,300,42,target=180),
@@ -438,7 +439,19 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(lm["target_deg"],180)
         self.assertEqual(lm["profile"],"COAST")
         self.assertEqual(lm["max_requested_pwm_pm"],940)
-        self.assertIsNone(sample_frame(40,75,640,941,42,target=180))
+        self.assertIsNotNone(sample_frame(40,75,640,1000,42,target=180))
+        self.assertIsNone(sample_frame(40,75,640,1001,42,target=180))
+
+    def test_coast_v13_fast_configuration_rate_and_pwm(self):
+        firmware=(Path(__file__).resolve().parent.parent/"src"/"turn_pid_diag.c").read_text()
+        for token in (
+            "#define TP_COAST_RATE_90           700.0f",
+            "#define TP_COAST_RATE_180          800.0f",
+            "#define TP_COAST_PWM_90           1000.0f",
+            "#define TP_COAST_PWM_180          1000.0f",
+            "turn_pid_diag_v13_coast_fast",
+        ):
+            self.assertIn(token,firmware)
 
     def test_coast_uart_profile_selection_matches_index_11(self):
         # Regression: TP_COAST is already the motor coast phase (2).
