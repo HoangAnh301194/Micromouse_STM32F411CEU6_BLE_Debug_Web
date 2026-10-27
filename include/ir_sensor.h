@@ -10,7 +10,7 @@ typedef struct {
     uint32_t completed_us;
 } IR_Data_t;
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
 typedef struct {
     uint32_t scans_started;
     uint32_t scans_completed;
