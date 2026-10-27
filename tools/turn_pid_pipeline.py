@@ -64,7 +64,10 @@ REPORT_FIELDS = (
     "guard_active_band_brake_samples",
     "in_target_band_high_rate_samples","first_band_rate_dps",
     "pace_drive_samples","pace_brake_samples",
-    "pace_near_samples","pace_stop_samples","pace_band_brake_samples"
+    "pace_near_samples","pace_stop_samples","pace_band_brake_samples",
+    "coast_drive_samples","coast_neutral_samples",
+    "coast_near_samples","coast_stop_samples",
+    "coast_band_neutral_samples","coast_negative_command_samples"
 )
 
 IMU_FIELDS = (
@@ -117,16 +120,19 @@ def parse_sample(line: str) -> dict | None:
          left,right,age_us,motor_stage)=raw
     if run_id <= 0 or not 0 <= t_ms <= 100_000 or target not in (0,90,180):
         return None
-    if profile not in (0,1,2,3,4,5,6,7,8,9,10) or phase not in (1,2):
+    if profile not in (0,1,2,3,4,5,6,7,8,9,10,11) or phase not in (1,2):
         return None
-    if abs(cmd_pm) > (850 if profile==10 and target==90 else (920 if profile==10 else (750 if profile==9 and target==90 else (850 if profile==9 else (1000 if profile in (7,8) else (800 if profile in (4,5,6) else 400)))))) or age_us < 0:
+    if abs(cmd_pm) > (890 if profile==11 and target==90 else (940 if profile==11 else (850 if profile==10 and target==90 else (920 if profile==10 else (750 if profile==9 and target==90 else (850 if profile==9 else (1000 if profile in (7,8) else (800 if profile in (4,5,6) else 400)))))))) or age_us < 0:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
     if motor_stage is not None:
-        if not 0 <= motor_stage <= 41:
+        if not 0 <= motor_stage <= 46:
             return None
-        if profile == 10:
+        if profile == 11:
+            if motor_stage not in (0,42,43,44,45,46):return None
+            if cmd_pm < 0:return None
+        elif profile == 10:
             if motor_stage not in (0,37,38,39,40,41):return None
         elif profile == 9:
             if motor_stage not in (0,32,33,34,35,36):return None
@@ -304,7 +310,7 @@ def analyze(samples: list[dict], result: dict,
     return {
         "run_id": rows[0]["run_id"],
         "target_deg": target,
-        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW",6:"GLIDE",7:"SPRINT",8:"TRACK",9:"GUARD",10:"PACE"}[rows[0]["profile"]],
+        "profile": {0:"BASE",1:"FAST",2:"TUNED",3:"SMOOTH",4:"RAPID",5:"FLOW",6:"GLIDE",7:"SPRINT",8:"TRACK",9:"GUARD",10:"PACE",11:"COAST"}[rows[0]["profile"]],
         "reason": result.get("reason", "PARTIAL"),
         "t10_ms": rnd(t10),
         "t90_ms": rnd(t90),
@@ -358,6 +364,12 @@ def analyze(samples: list[dict], result: dict,
         "pace_near_samples": sum(v.get("motor_stage")==39 for v in ordered),
         "pace_stop_samples": sum(v.get("motor_stage")==40 for v in ordered),
         "pace_band_brake_samples": sum(v.get("motor_stage")==41 for v in ordered),
+        "coast_drive_samples": sum(v.get("motor_stage")==42 for v in ordered),
+        "coast_neutral_samples": sum(v.get("motor_stage")==43 for v in ordered),
+        "coast_near_samples": sum(v.get("motor_stage")==44 for v in ordered),
+        "coast_stop_samples": sum(v.get("motor_stage")==45 for v in ordered),
+        "coast_band_neutral_samples": sum(v.get("motor_stage")==46 for v in ordered),
+        "coast_negative_command_samples": sum(v["cmd_pm"]<0 for v in ordered),
         "in_target_band_high_rate_samples": len(fast_in_band),
         "first_band_rate_dps": rnd(in_band[0]["gyro_dps"]) if in_band else None,
         "midturn_low_speed_samples": len(slow_mid),
@@ -553,7 +565,10 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "guard_active_band_brake_samples",
                       "in_target_band_high_rate_samples","first_band_rate_dps",
                       "pace_drive_samples","pace_brake_samples",
-                      "pace_near_samples","pace_stop_samples","pace_band_brake_samples"):
+                      "pace_near_samples","pace_stop_samples","pace_band_brake_samples",
+                      "coast_drive_samples","coast_neutral_samples",
+                      "coast_near_samples","coast_stop_samples",
+                      "coast_band_neutral_samples","coast_negative_command_samples"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
@@ -590,7 +605,7 @@ def capture(args: argparse.Namespace) -> int:
     imu_windows: dict[int,list[dict]]={}
     completed=set()
     mode_byte={"90":b"1","180":b"2","motor":b"m"}[args.mode]
-    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w","glide":b"g","sprint":b"p","track":b"k","guard":b"z","pace":b"j"}[args.profile]
+    profile_byte={"base":b"b","fast":b"f","tuned":b"t","smooth":b"v","rapid":b"h","flow":b"w","glide":b"g","sprint":b"p","track":b"k","guard":b"z","pace":b"j","coast":b"c"}[args.profile]
     pending=bytearray()
     last_serial_activity=time.monotonic()
     last_config=0.0
@@ -745,7 +760,7 @@ def main(argv=None) -> int:
     parser.add_argument("--baud",type=int,default=115200)
     parser.add_argument("--mode",choices=["90","180","motor"],default="90",
                         help="90/180 degree pivot or bounded phase-1 motor PWM sweep")
-    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow","glide","sprint","track","guard","pace"],default="base")
+    parser.add_argument("--profile",choices=["base","fast","tuned","smooth","rapid","flow","glide","sprint","track","guard","pace","coast"],default="base")
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output",type=str,help="destination results folder")
     parser.add_argument("--duration",type=float,default=360,
@@ -757,8 +772,8 @@ def main(argv=None) -> int:
     if args.runs<1:parser.error("--runs must be >=1")
     if not args.analyze and args.profile in ("rapid","flow","glide") and args.mode!="90":
         parser.error("--profile rapid/flow/glide is restricted to 90-degree test only")
-    if not args.analyze and args.profile in ("sprint","track","guard","pace") and args.mode=="motor":
-        parser.error("--profile sprint/track/guard/pace supports only 90 and 180 degrees")
+    if not args.analyze and args.profile in ("sprint","track","guard","pace","coast") and args.mode=="motor":
+        parser.error("--profile sprint/track/guard/pace/coast supports only 90 and 180 degrees")
     return offline(args.analyze,make_zip=args.zip) if args.analyze else capture(args)
 
 
