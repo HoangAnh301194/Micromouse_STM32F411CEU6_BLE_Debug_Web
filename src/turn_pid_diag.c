@@ -1151,8 +1151,8 @@ static void SingleBrakeControlTick(void) {
         /* A single 30% reverse episode; the motor's reversal deadtime
          * can consume 30+ms so braking is triggered BEFORE the target.
          * Never brake through zero angular velocity. */
-        if(w<=TP_SINGLE_BRAKE_EXIT_RATE ||
-           (err<=6.0f && w<=165.0f) ||
+        if((w<=TP_SINGLE_BRAKE_EXIT_RATE && err>6.0f) ||
+           (w<=85.0f && err<=6.0f) ||
            tp.flow_ticks>=TP_SINGLE_BRAKE_MAX_TICKS){
             tp.flow_phase=2U;
             tp.flow_ticks=0U;
