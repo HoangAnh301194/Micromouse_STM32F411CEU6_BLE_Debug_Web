@@ -266,7 +266,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #elif defined(TURN_PID_DIAG)
             TurnPidDiag_Stop(3U);
 #else
-            Motion_Stop(); /* Invalid, uncalibrated or stale gyro. */
+            Motion_SensorFault(); /* Invalid, uncalibrated or stale gyro. */
 #endif
         }
     }
