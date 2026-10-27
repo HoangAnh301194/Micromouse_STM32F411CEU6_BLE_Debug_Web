@@ -2,6 +2,11 @@
 """Synthetic parser-only regression; NEVER interpret as physical IR evidence."""
 import importlib.util
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+from unittest.mock import patch
+import json
+
 
 spec = importlib.util.spec_from_file_location("ir_full",
     Path(__file__).resolve().parents[2] / "tools" / "ir_full_qualification.py")
@@ -65,8 +70,62 @@ def test_no_edge():
     edge = module.transition(rows, "L0", "falling")
     assert edge["status"] == "INCONCLUSIVE"
 
+def test_static_wrapper_preserves_setup_and_distances():
+    # Regression for 2026-10-27 physical capture: the static collector rejects
+    # --output when the parent run directory already contains setup.json.
+    with TemporaryDirectory() as td:
+        dest = Path(td) / "run"
+        dest.mkdir()
+        original_setup = {"distance_left_mm": 60.0, "distance_right_mm": 60.0}
+        (dest / "setup.json").write_text(json.dumps(original_setup), encoding="utf-8")
+        args = SimpleNamespace(
+            port="COM6", seconds=30.0, case="static", surface="white_matte",
+            light="room", trial=1, notes="two side walls",
+            distance=None, distance_left=60.0, distance_right=60.0,
+        )
+
+        def fake_run(cmd, cwd=None, check=False):
+            pos = cmd.index("--output")
+            data = Path(cmd[pos+1])
+            assert data == dest / "data"
+            assert data.parent.is_dir()
+            assert not data.exists(), "Static collector requires nonexistent output"
+            assert "--distance-mm" not in cmd, "Distinct L/R distances must not be collapsed"
+            data.mkdir()
+            (data / "ir_filter_trace.csv").write_text("test", encoding="utf-8")
+            (data / "summary.json").write_text(
+                json.dumps({"valid_capture": True, "channels": {},
+                            "metadata": {"trial": 1, "distance_mm": None}}),
+                encoding="utf-8",
+            )
+            return SimpleNamespace(returncode=0)
+
+        with patch.object(module.subprocess, "run", side_effect=fake_run):
+            module.capture_static(args, dest)
+
+        original = json.loads((dest / "setup.json").read_text(encoding="utf-8"))
+        assert original == original_setup
+        summary = json.loads((dest / "summary.json").read_text(encoding="utf-8"))
+        assert summary["valid_capture"]
+        assert summary["metadata"]["distance_left_mm"] == 60.0
+        assert summary["metadata"]["distance_right_mm"] == 60.0
+        assert summary["trace_directory"] == "data"
+        assert (dest / "data" / "ir_filter_trace.csv").read_text(encoding="utf-8") == "test"
+        assert (dest / "data" / "summary.json").is_file()
+
+        # A repeat in the same run folder must fail closed, not overwrite data.
+        try:
+            with patch.object(module.subprocess, "run", side_effect=fake_run):
+                module.capture_static(args, dest)
+        except ValueError as exc:
+            assert "already exists" in str(exc)
+        else:
+            raise AssertionError("Capture must protect previously collected raw data")
+
+
 if __name__ == "__main__":
     for fn in (test_valid, test_falling, test_missing, test_dropped,
-               test_bad_adc, test_no_edge):
+               test_bad_adc, test_no_edge,
+               test_static_wrapper_preserves_setup_and_distances):
         fn()
     print("PASS: IR burst parser regression (synthetic, no board measurement)")
