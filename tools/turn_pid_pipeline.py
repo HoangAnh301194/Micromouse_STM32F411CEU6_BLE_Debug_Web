@@ -67,7 +67,9 @@ REPORT_FIELDS = (
     "pace_near_samples","pace_stop_samples","pace_band_brake_samples",
     "coast_drive_samples","coast_neutral_samples",
     "coast_near_samples","coast_stop_samples",
-    "coast_band_neutral_samples","coast_negative_command_samples"
+    "coast_band_neutral_samples","coast_negative_command_samples",
+    "command_polarity_flips","applied_pwm_max_step_20ms",
+    "neutral_actual_high_gyro_samples"
 )
 
 IMU_FIELDS = (
@@ -280,6 +282,17 @@ def analyze(samples: list[dict], result: dict,
     cmd_deltas=[abs(y["cmd_pm"]-x["cmd_pm"])
                 for x,y in zip(ordered,ordered[1:])
                 if 0<y["t_ms"]-x["t_ms"]<=20]
+    signs=[(1 if v["cmd_pm"]>0 else -1) for v in ordered
+           if v["cmd_pm"]!=0]
+    polarity_flips=sum(a!=b for a,b in zip(signs,signs[1:]))
+    motor_steps=[abs(y["applied_r_pm"]-x["applied_r_pm"])
+                 for x,y in zip(ordered,ordered[1:])
+                 if x["applied_r_pm"] is not None and
+                    y["applied_r_pm"] is not None and
+                    0<y["t_ms"]-x["t_ms"]<=20]
+    high_gyro_neutral=sum(1 for v in ordered
+                   if abs(v["gyro_dps"])>100.0 and
+                      v["applied_l_pm"]==0 and v["applied_r_pm"]==0)
     midturn=[r for r in ordered
              if r["yaw_deg"]>target*0.30 and
                 r["yaw_deg"]<target-10.0]
@@ -378,6 +391,9 @@ def analyze(samples: list[dict], result: dict,
                                        default=None)),
         "brake_first_yaw_deg": rnd(first_brake["yaw_deg"]) if first_brake else None,
         "max_cmd_delta_20ms": max(cmd_deltas,default=None),
+        "command_polarity_flips": polarity_flips,
+        "applied_pwm_max_step_20ms": max(motor_steps,default=None),
+        "neutral_actual_high_gyro_samples": high_gyro_neutral,
         "rapid_or_flow_brake_reaccelerations": sum(
             v.get("motor_stage") in (9,13,18,23) and any(
                 z.get("motor_stage") in (10,14,19,24) for z in rows[:i])
@@ -568,7 +584,9 @@ def write_report(root: Path, runs: dict[int,list[dict]],
                       "pace_near_samples","pace_stop_samples","pace_band_brake_samples",
                       "coast_drive_samples","coast_neutral_samples",
                       "coast_near_samples","coast_stop_samples",
-                      "coast_band_neutral_samples","coast_negative_command_samples"):
+                      "coast_band_neutral_samples","coast_negative_command_samples",
+                      "command_polarity_flips","applied_pwm_max_step_20ms",
+                      "neutral_actual_high_gyro_samples"):
             numbers=[float(z[field]) for z in items if z.get(field) is not None]
             if numbers:
                 entry[field]={"mean":round(statistics.mean(numbers),3),
