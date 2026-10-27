@@ -234,7 +234,7 @@ def main(argv=None):
         # Compile and test EVERY required image before connecting motor power.
         run_cmd([sys.executable,"tools/test_speed_pid_final.py"],out/"host_tests.log")
         for alpha,env in ENV.items():
-            run_cmd([sys.executable,"-m","platformio","run","-e",env],
+            run_cmd([sys.executable,"-m","platformio","run","-c","platformio_legacy.ini","-e",env],
                     out/f"build_alpha_{alpha:03d}.log")
         if args.offline_only:
             record["status"]="OFFLINE_TESTS_PASS"
@@ -266,7 +266,7 @@ def main(argv=None):
                       "flashing dedicated guarded diagnostic firmware",
                       flush=True)
                 run_cmd([sys.executable,"-m","platformio","run",
-                         "-e",ENV[alpha],"-t","upload"],directory/"flash.log")
+                         "-c","platformio_legacy.ini","-e",ENV[alpha],"-t","upload"],directory/"flash.log")
                 # PhaseSession verifies max PWM, stage count, exact alpha
                 # and fixed PID gains BEFORE sending MODE ON or START.
                 session=None
