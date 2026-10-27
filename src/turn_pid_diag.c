@@ -135,6 +135,30 @@
 #define TP_GUARD_GYRO_ABORT       690.0f
 #define TP_GUARD_SETTLE_ANGLE      2.0f
 #define TP_GUARD_STOP_RATE        12.0f
+/* PACE v11: experimental faster speed-governed turn, with terminal
+ * friction compensation. Keeps GUARD v10 as untouched A/B baseline.
+ * Physical floor validation required before repeat runs. */
+#define TP_PACE_RATE_90           520.0f
+#define TP_PACE_RATE_180          620.0f
+#define TP_PACE_PWM_90            850.0f
+#define TP_PACE_PWM_180           920.0f
+#define TP_PACE_REF_ACCEL        3600.0f
+#define TP_PACE_REF_DECEL        7000.0f
+#define TP_PACE_BRAKE_DPS2       2600.0f
+#define TP_PACE_LEAD_S              0.048f
+#define TP_PACE_RESERVE_DEG         0.70f
+#define TP_PACE_BRAKE_PWM         160.0f
+#define TP_PACE_BRAKE_NEAR_PWM    105.0f
+#define TP_PACE_ACCEL_FF            0.045f
+#define TP_PACE_DUTY_STEP          85.0f
+#define TP_PACE_NEAR_STEP          24.0f
+#define TP_PACE_STICTION_FF         62.0f
+#define TP_PACE_STICTION_SPEED      45.0f
+#define TP_PACE_NEAR_CAP          155.0f
+#define TP_PACE_STALL_MS          580U
+#define TP_PACE_GYRO_ABORT        720.0f
+#define TP_PACE_STOP_RATE          12.0f
+
 
 
 
@@ -170,7 +194,7 @@ static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
       TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8,TP_DRIFT=9};
 
@@ -190,7 +214,7 @@ typedef struct {
 /* Preserve BASE/FAST/TUNED exactly for comparison against real logs.
  * SMOOTH: first hardware-unverified fix for strong near-target jolt.
  * Do not infer physical stability from firmware compilation. */
-static const TP_Profile profiles[10]={
+static const TP_Profile profiles[11]={
     {4.8f,1.15f,0.0f,0.35f,650.0f,150.0f,260,95,0.0f,0.0f},
     {6.0f,1.35f,0.0f,0.40f,950.0f,230.0f,300,95,0.0f,0.0f},
     {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f},
@@ -206,7 +230,10 @@ static const TP_Profile profiles[10]={
     /* Continuous speed trajectory with rate feedback (90/180). */
     {14.0f,3.00f,0.0f,0.90f,4000.0f,720.0f,1000,0.0f,0.0f},
     /* Guarded control validation: speed cap < TRACK by design. */
-    {12.0f,1.65f,0.0f,0.80f,3400.0f,560.0f,850,0,0.0f,0.0f}
+    {12.0f,1.65f,0.0f,0.80f,3400.0f,560.0f,850,0,0.0f,0.0f},
+    /* PACE: higher rate reference, moderate damping and terminal
+     * stiction compensation, without an impulsive PWM kick. */
+    {12.0f,1.85f,0.0f,0.86f,3600.0f,620.0f,920,0,0.0f,0.0f}
 };
 
 typedef struct {
