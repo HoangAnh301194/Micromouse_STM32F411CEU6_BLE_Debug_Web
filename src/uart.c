@@ -11,7 +11,7 @@
  * The producer runs in main context; DMA completion runs in its IRQ.
  * tx_tail is advanced ONLY when DMA has finished reading the source bytes.
  */
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
 #define UART_TX_BUFFER_SIZE 2048U
 #else
 #define UART_TX_BUFFER_SIZE 1024U
