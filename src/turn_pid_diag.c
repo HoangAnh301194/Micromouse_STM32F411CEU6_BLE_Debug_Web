@@ -1488,7 +1488,7 @@ static void HandleUart(uint8_t c) {
     if(c=='k')tp.profile=TP_TRACK;
     if(c=='z')tp.profile=TP_GUARD;
     if(c=='j')tp.profile=TP_PACE;
-    if(c=='c')tp.profile=TP_COAST;
+    if(c=='c')tp.profile=TP_COAST_PROFILE;
     UART_Printf("TP,CONFIG,mode=%u,profile=%u,locked=1\r\n",
                 (unsigned)tp.mode,(unsigned)tp.profile);
 }
