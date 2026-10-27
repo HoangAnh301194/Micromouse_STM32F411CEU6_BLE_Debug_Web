@@ -18,6 +18,7 @@ def parse_lines(lines):
     result=None
     start=None
     post=None
+    fault=None
     end_seen=False
     invalid=[]
     for ix,line in enumerate(lines,1):
@@ -33,6 +34,13 @@ def parse_lines(lines):
                     k,v=f.split("=",1)
                     try:result[k]=int(v)
                     except ValueError:result[k]=v
+        elif len(fields)>=3 and fields[1]=="FAULT":
+            fault={}
+            for f in fields[2:]:
+                if "=" in f:
+                    k,v=f.split("=",1)
+                    try:fault[k]=int(v)
+                    except ValueError:fault[k]=v
         elif len(fields)>=3 and fields[1]=="START":
             start={"raw":record}
         elif len(fields)>=3 and fields[1]=="POST":
@@ -84,7 +92,18 @@ def parse_lines(lines):
         "max_speed_mm_s":max((r["speed_mm_s"] for r in rows),default=None),
         "peak_pwm_permille":max((max(r["pwm_l_permille"],r["pwm_r_permille"])
                                 for r in rows),default=None),
-        "end":result,"post":post,
+        "end":result,"post":post,"fault":fault,
+        "fault_side":(
+            "L0" if fault and fault.get("why")=="IR_EXCURSION" and
+            abs(fault.get("l",0)-fault.get("refL",0))>165 and
+            abs(fault.get("r",0)-fault.get("refR",0))<=510 else
+            "R0" if fault and fault.get("why")=="IR_EXCURSION" and
+            abs(fault.get("r",0)-fault.get("refR",0))>510 and
+            abs(fault.get("l",0)-fault.get("refL",0))<=165 else
+            "BOTH" if fault and fault.get("why")=="IR_EXCURSION" and
+            abs(fault.get("r",0)-fault.get("refR",0))>510 and
+            abs(fault.get("l",0)-fault.get("refL",0))>165 else None
+        ),
         "stop_distance_mm":result["d10"]*.1 if result and "d10" in result else None,
         "poststop_distance_mm":post["dist10"]*.1 if post and "dist10" in post else None,
         "drift_mm":post["drift10"]*.1 if post and "drift10" in post else None,
