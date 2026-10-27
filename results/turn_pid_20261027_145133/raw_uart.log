@@ -1,0 +1,4 @@
+TP,CONFIG,mode=180,profile=12,locked=1
+TP,CONFIG,mode=180,profile=12,locked=1
+TP,STATUS,phase=0,mode=180,profile=12,cal=1,cal_state=3,locked=1,id=6,qdrop=0,udrop=0
+TP,IDLE,mode=180,profile=12,locked=1
