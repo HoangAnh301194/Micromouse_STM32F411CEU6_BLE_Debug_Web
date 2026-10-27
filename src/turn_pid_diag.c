@@ -966,6 +966,100 @@ static void PaceControlTick(void) {
     tp.requested_pwm=(int16_t)u;
     Motor_SetPairPermille((int16_t)-u,(int16_t)u);
 }
+/* COAST v12 — experimental single-polarity yaw servo.
+ * Logs of PACE v11 show brief negative commands that do NOT become
+ * actual reverse PWM (motor imposes 30ms neutral polarity interlock).
+ * Instead of commanding direction flips, coast at PWM=0; closed-loop
+ * tracking resumes smoothly when speed drops below the reference.
+ * No negative torque is used, so the yaw speed envelope deliberately
+ * anticipates natural coasting latency. Full-speed trials are NOT
+ * hardware validated and can overshoot if actual coast decel varies. */
+static void CoastControlTick(void) {
+    const TP_Profile *cfg=&profiles[TP_COAST];
+    const float dt=0.005f;
+    float err=tp.err,w=tp.rate,oldref=tp.ref_rate;
+    float vmax=tp.mode==TP_180?TP_COAST_RATE_180:TP_COAST_RATE_90;
+    float cap=tp.mode==TP_180?TP_COAST_PWM_180:TP_COAST_PWM_90;
+    float remain,want,delta,ref,rate_pid,ff,u,previous,step;
+    if(err<-TP_ANGLE_BAND) {StopAndCoast(TP_ANGLE);return;}
+    /* Once genuinely settled, NEVER re-energize motors for a small
+     * ±2deg boundary crossing; flag an out-of-band drift as a failure.
+     * This prevents the near-target 0,+68,0,+64,0 command sequence. */
+    if(tp.flow_phase==1U) {
+        tp.stage=45U;
+        Motor_Stop();
+        tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+        tp.ref_rate=0.0f;
+        if(fabsf(err)>TP_ANGLE_BAND) {
+            StopAndCoast(TP_DRIFT);return;
+        }
+        tp.stable_ticks+=TP_CONTROL_DIV;
+        if(tp.stable_ticks>=TP_SETTLE_TICKS)StopAndCoast(TP_DONE);
+        return;
+    }
+    if(fabsf(err)<=TP_ANGLE_BAND &&
+       fabsf(w)<=TP_COAST_STOP_RATE) {
+        tp.flow_phase=1U;tp.stage=45U;
+        Motor_Stop();
+        tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+        tp.ref_rate=0.0f;
+        tp.stable_ticks=TP_CONTROL_DIV;
+        return;
+    }
+    if(err<=TP_ANGLE_BAND && w>TP_COAST_STOP_RATE) {
+        tp.stage=46U;tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+        tp.ref_rate=0.0f;
+        Motor_SetPairPermille(0,0);
+        return;
+    }
+    remain=Limit(err-TP_COAST_RESERVE_DEG-
+                 TP_COAST_LEAD_S*(w>0.0f?w:0.0f),
+                 0.0f,(float)tp.mode);
+    want=Limit(sqrtf(2.0f*TP_COAST_BRAKE_DPS2*remain),
+               0.0f,Limit(cfg->kp_angle*err,0.0f,vmax));
+    delta=Limit(want-oldref,-TP_COAST_REF_DECEL*dt,
+                             TP_COAST_REF_ACCEL*dt);
+    ref=Limit(oldref+delta,0.0f,vmax);
+    tp.ref_rate=ref;
+    rate_pid=PID_Compute(&tp.pid_rate,ref,w,dt);
+    ff=cfg->kff_rate*ref+
+       Limit(TP_COAST_ACCEL_FF*delta/dt,-150.0f,150.0f);
+    u=rate_pid+ff;
+    /* Stiction observed with applied duty ~65/1000 at 177.97deg.
+     * Build up duty continuously while near stationary and still
+     * outside the ±2deg acceptance band; no impulsive kick. */
+    if(err<10.0f && w<TP_COAST_STICTION_SPEED) {
+        float speed=w>0.0f?w:0.0f;
+        float blend=Limit(1.0f-speed/TP_COAST_STICTION_SPEED,
+                          0.0f,1.0f);
+        ff+=TP_COAST_STICTION_FF*blend;
+        u+=TP_COAST_STICTION_FF*blend;
+        if(err>TP_ANGLE_BAND && speed<12.0f)
+            u=Limit(u,TP_COAST_MIN_MOVE_PWM*blend,cap);
+    }
+    /* Do not request high drive when measured speed is too high close
+     * to target; zero command means true Hi-Z coast on the TB6612FNG. */
+    if(err<8.0f && w>10.0f*err+10.0f)u=0.0f;
+    u=Limit(u,0.0f,cap);
+    if(err<12.0f)u=Limit(u,0.0f,TP_COAST_NEAR_CAP);
+    previous=(float)tp.requested_pwm;
+    step=err<20.0f?TP_COAST_NEAR_STEP:TP_COAST_DUTY_STEP;
+    if(u<previous && previous>180.0f)step=TP_COAST_DUTY_STEP;
+    u=Limit(u,previous-step,previous+step);
+    u=Limit(u,0.0f,cap);
+    if(err<12.0f)u=Limit(u,0.0f,TP_COAST_NEAR_CAP);
+    tp.stage=err<20.0f?44U:(u<=0.0f?43U:42U);
+    if(fabsf(w)<3.0f && err>TP_ANGLE_BAND && err<20.0f) {
+        tp.stuck_ticks+=TP_CONTROL_DIV;
+        if(tp.stuck_ticks>=TP_COAST_STALL_MS) {
+            StopAndCoast(TP_STALL);return;
+        }
+    } else tp.stuck_ticks=0U;
+    tp.pid_pm=(int16_t)rate_pid;
+    tp.ff_pm=(int16_t)ff;
+    tp.requested_pwm=(int16_t)u;
+    Motor_SetPairPermille((int16_t)-u,(int16_t)u);
+}
 void TurnPidDiag_Stop(uint8_t why) {
     uint32_t mask=__get_PRIMASK();__disable_irq();
     StopAndCoast(why);
@@ -1019,14 +1113,14 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
     if((tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-        tp.profile==TP_GUARD || tp.profile==TP_PACE) &&
+        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) &&
        (tp.yaw<-3.0f ||
-        ((tp.profile==TP_GUARD || tp.profile==TP_PACE) ?
+        ((tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) ?
          (tp.ticks>70U && tp.rate< -45.0f) :
          tp.rate< -40.0f) ||
-        fabsf(tp.rate)>(tp.profile==TP_PACE?TP_PACE_GYRO_ABORT:
+        fabsf(tp.rate)>(tp.profile==TP_COAST?TP_COAST_GYRO_ABORT:(tp.profile==TP_PACE?TP_PACE_GYRO_ABORT:
                 (tp.profile==TP_GUARD?TP_GUARD_GYRO_ABORT:
-                  (tp.profile==TP_TRACK?TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT))))) {
+                  (tp.profile==TP_TRACK?TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT)))))) {
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
     if(tp.mode==TP_SWEEP) {
@@ -1051,7 +1145,7 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     /* TUNED has tighter high-speed flight envelope; BASE/FAST unchanged. */
     if(tp.yaw>(float)tp.mode+
                ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-                 tp.profile==TP_GUARD || tp.profile==TP_PACE)?2.0f:
+                 tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST)?2.0f:
                 ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH)?8.0f:22.0f)) ||
        ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH) &&
         fabsf(tp.rate)>450.0f)) {
@@ -1061,8 +1155,13 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
      * overshoot becomes a diagnostic failure rather than a hard jerk. */
     if((tp.profile==TP_SMOOTH || tp.profile==TP_RAPID ||
         tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-        tp.profile==TP_GUARD || tp.profile==TP_PACE) && tp.err < -TP_ANGLE_BAND) {
+        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) && tp.err < -TP_ANGLE_BAND) {
         StopAndCoast(TP_ANGLE);PushSample(age_us);return;
+    }
+    if(tp.profile==TP_COAST) {
+        if((tp.ticks%TP_CONTROL_DIV)==0U)CoastControlTick();
+        if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
+        return;
     }
     if(tp.profile==TP_PACE) {
         if((tp.ticks%TP_CONTROL_DIV)==0U)PaceControlTick();
@@ -1275,7 +1374,7 @@ static void StartByPA0(void) {
     if(tp.phase!=TP_IDLE || !IsReady() ||
        ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE) && tp.mode!=TP_90) ||
        ((tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-          tp.profile==TP_GUARD || tp.profile==TP_PACE) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
+          tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
         UART_Printf("TP,REJECT,mode=%u,cal=%u,reason=NOT_READY\r\n",
                     (unsigned)tp.mode,(unsigned)mpu.calibrated);
         return;
@@ -1368,7 +1467,7 @@ static void HandleUart(uint8_t c) {
             (unsigned long)q_dropped,(unsigned long)UART_GetDroppedMessages());
         return;
     }
-    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v' && c!='h' && c!='w' && c!='g' && c!='p' && c!='k' && c!='z' && c!='j')return;
+    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v' && c!='h' && c!='w' && c!='g' && c!='p' && c!='k' && c!='z' && c!='j' && c!='c')return;
     if(tp.phase!=TP_IDLE || !Motor_OutputsLocked()) {
         UART_SendString("TP,CONFIG_REJECT,reason=RUNNING\r\n");return;
     }
@@ -1386,6 +1485,7 @@ static void HandleUart(uint8_t c) {
     if(c=='k')tp.profile=TP_TRACK;
     if(c=='z')tp.profile=TP_GUARD;
     if(c=='j')tp.profile=TP_PACE;
+    if(c=='c')tp.profile=TP_COAST;
     UART_Printf("TP,CONFIG,mode=%u,profile=%u,locked=1\r\n",
                 (unsigned)tp.mode,(unsigned)tp.profile);
 }
@@ -1444,7 +1544,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v11_pace,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v12_coast,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
@@ -1464,7 +1564,7 @@ int TurnPidDiag_Main(void) {
     Control_Init(&mpu);
     tp.phase=TP_IDLE;tp.mode=TP_90;tp.profile=TP_BASE;
     Control_Start();
-    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/h/w/g/p/k/z/j/?/S,PA0_ONLY_START\r\n");
+    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/h/w/g/p/k/z/j/c/?/S,PA0_ONLY_START\r\n");
     for(;;) {
         uint32_t now=millis();
         MPU6050_Update(&mpu);
