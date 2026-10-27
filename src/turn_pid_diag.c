@@ -1259,14 +1259,17 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
     if((tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) &&
+        tp.profile==TP_GUARD || tp.profile==TP_PACE ||
+        tp.profile==TP_COAST_PROFILE || tp.profile==TP_SINGLEBRAKE) &&
        (tp.yaw<-3.0f ||
-        ((tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) ?
+        ((tp.profile==TP_GUARD || tp.profile==TP_PACE ||
+          tp.profile==TP_COAST_PROFILE || tp.profile==TP_SINGLEBRAKE) ?
          (tp.ticks>70U && tp.rate< -45.0f) :
          tp.rate< -40.0f) ||
-        fabsf(tp.rate)>(tp.profile==TP_COAST_PROFILE?TP_COAST_GYRO_ABORT:(tp.profile==TP_PACE?TP_PACE_GYRO_ABORT:
+        fabsf(tp.rate)>(tp.profile==TP_SINGLEBRAKE?TP_SINGLE_GYRO_ABORT:
+                         (tp.profile==TP_COAST_PROFILE?TP_COAST_GYRO_ABORT:(tp.profile==TP_PACE?TP_PACE_GYRO_ABORT:
                 (tp.profile==TP_GUARD?TP_GUARD_GYRO_ABORT:
-                  (tp.profile==TP_TRACK?TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT)))))) {
+                  (tp.profile==TP_TRACK?TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT))))))) {
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
     if(tp.mode==TP_SWEEP) {
@@ -1291,7 +1294,8 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     /* TUNED has tighter high-speed flight envelope; BASE/FAST unchanged. */
     if(tp.yaw>(float)tp.mode+
                ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-                 tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE)?2.0f:
+                 tp.profile==TP_GUARD || tp.profile==TP_PACE ||
+                 tp.profile==TP_COAST_PROFILE || tp.profile==TP_SINGLEBRAKE)?2.0f:
                 ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH)?8.0f:22.0f)) ||
        ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH) &&
         fabsf(tp.rate)>450.0f)) {
@@ -1301,8 +1305,14 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
      * overshoot becomes a diagnostic failure rather than a hard jerk. */
     if((tp.profile==TP_SMOOTH || tp.profile==TP_RAPID ||
         tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) && tp.err < -TP_ANGLE_BAND) {
+        tp.profile==TP_GUARD || tp.profile==TP_PACE ||
+        tp.profile==TP_COAST_PROFILE || tp.profile==TP_SINGLEBRAKE) && tp.err < -TP_ANGLE_BAND) {
         StopAndCoast(TP_ANGLE);PushSample(age_us);return;
+    }
+    if(tp.profile==TP_SINGLEBRAKE) {
+        if((tp.ticks%TP_CONTROL_DIV)==0U)SingleBrakeControlTick();
+        if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
+        return;
     }
     if(tp.profile==TP_COAST_PROFILE) {
         if((tp.ticks%TP_CONTROL_DIV)==0U)CoastControlTick();
@@ -1520,7 +1530,8 @@ static void StartByPA0(void) {
     if(tp.phase!=TP_IDLE || !IsReady() ||
        ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE) && tp.mode!=TP_90) ||
        ((tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-          tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
+          tp.profile==TP_GUARD || tp.profile==TP_PACE ||
+          tp.profile==TP_COAST_PROFILE || tp.profile==TP_SINGLEBRAKE) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
         UART_Printf("TP,REJECT,mode=%u,cal=%u,reason=NOT_READY\r\n",
                     (unsigned)tp.mode,(unsigned)mpu.calibrated);
         return;
@@ -1560,21 +1571,24 @@ static void StartByPA0(void) {
     if(!mask)__enable_irq();
     UART_Printf("TP,START,id=%lu,mode=%u,profile=%u,pwm_cap=%d,kp_angle_x100=%d,kp_rate_x100=%d,kff_x100=%d,accel=%u,max_rate=%u,log_hz=50,trace_rev=3,gyro_band_deg=2\r\n",
         (unsigned long)tp.id,(unsigned)tp.mode,(unsigned)tp.profile,
-        (int)(tp.profile==TP_COAST_PROFILE && tp.mode==TP_90 ? TP_COAST_PWM_90 :
+        (int)(tp.profile==TP_SINGLEBRAKE && tp.mode==TP_90 ? TP_SINGLE_PWM_90 :
+             (tp.profile==TP_COAST_PROFILE && tp.mode==TP_90 ? TP_COAST_PWM_90 :
              (tp.profile==TP_PACE && tp.mode==TP_90 ? TP_PACE_PWM_90 :
-             (tp.profile==TP_GUARD && tp.mode==TP_90 ? TP_GUARD_PWM_90 : profiles[tp.profile].max_pwm))),
+             (tp.profile==TP_GUARD && tp.mode==TP_90 ? TP_GUARD_PWM_90 : profiles[tp.profile].max_pwm)))),
         (int)(profiles[tp.profile].kp_angle*100.0f),
         (int)(profiles[tp.profile].kp_rate*100.0f),
         (int)(profiles[tp.profile].kff_rate*100.0f),
         (unsigned)profiles[tp.profile].accel_dps2,
-        (unsigned)((tp.profile==TP_COAST_PROFILE)?
+        (unsigned)((tp.profile==TP_SINGLEBRAKE)?
+          (tp.mode==TP_90?TP_SINGLE_RATE_90:TP_SINGLE_RATE_180):
+          ((tp.profile==TP_COAST_PROFILE)?
           (tp.mode==TP_90?TP_COAST_RATE_90:TP_COAST_RATE_180):
           ((tp.profile==TP_PACE) ?
           (tp.mode==TP_90?TP_PACE_RATE_90:TP_PACE_RATE_180):
           ((tp.profile==TP_GUARD)?
           (tp.mode==TP_90?TP_GUARD_RATE_90:TP_GUARD_RATE_180):
           (((tp.profile==TP_SPRINT || tp.profile==TP_TRACK) && tp.mode==TP_90)?
-           TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps)))));
+           TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps))))));
 }
 static void HandleButton(uint32_t now) {
     static uint8_t initialized,previous,boot_held,allowed;
@@ -1616,7 +1630,7 @@ static void HandleUart(uint8_t c) {
             (unsigned long)q_dropped,(unsigned long)UART_GetDroppedMessages());
         return;
     }
-    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v' && c!='h' && c!='w' && c!='g' && c!='p' && c!='k' && c!='z' && c!='j' && c!='c')return;
+    if(c!='1' && c!='2' && c!='m' && c!='b' && c!='f' && c!='t' && c!='v' && c!='h' && c!='w' && c!='g' && c!='p' && c!='k' && c!='z' && c!='j' && c!='c' && c!='n')return;
     if(tp.phase!=TP_IDLE || !Motor_OutputsLocked()) {
         UART_SendString("TP,CONFIG_REJECT,reason=RUNNING\r\n");return;
     }
@@ -1635,6 +1649,7 @@ static void HandleUart(uint8_t c) {
     if(c=='z')tp.profile=TP_GUARD;
     if(c=='j')tp.profile=TP_PACE;
     if(c=='c')tp.profile=TP_COAST_PROFILE;
+    if(c=='n')tp.profile=TP_SINGLEBRAKE;
     UART_Printf("TP,CONFIG,mode=%u,profile=%u,locked=1\r\n",
                 (unsigned)tp.mode,(unsigned)tp.profile);
 }
@@ -1693,7 +1708,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v13_coast_fast,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v14_singlebrake,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
@@ -1713,7 +1728,7 @@ int TurnPidDiag_Main(void) {
     Control_Init(&mpu);
     tp.phase=TP_IDLE;tp.mode=TP_90;tp.profile=TP_BASE;
     Control_Start();
-    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/h/w/g/p/k/z/j/c/?/S,PA0_ONLY_START\r\n");
+    UART_SendString("TP,BOOT,mode=90,profile=0,commands=1/2/m/b/f/t/v/h/w/g/p/k/z/j/c/n/?/S,PA0_ONLY_START\r\n");
     for(;;) {
         uint32_t now=millis();
         MPU6050_Update(&mpu);
