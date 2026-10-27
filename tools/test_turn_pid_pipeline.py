@@ -355,6 +355,45 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(b["max_requested_pwm_pm"],850)
         self.assertIsNone(rec(20,4,80,851,32,angle=180))
 
+    def test_v11_pace_90_180_stage_metrics_and_pwm_limits(self):
+        def record(t,yaw,rate,cmd,stage,target=90,phase=1):
+            centi=round(100*yaw)
+            return parse_sample(
+               f"TP,D,28,{t},{target},10,{phase},{centi},"
+               f"{target*100-centi},{round(rate*10)},"
+               f"{round(rate*10)},0,0,{cmd},{-cmd},{cmd},"
+               f"-100,100,700,{stage}")
+        rows=[record(20,1,35,220,37),record(40,23,360,820,37),
+              record(60,65,310,-120,38),record(80,83,70,130,39),
+              record(100,88.5,7,0,40),
+              record(300,88.5,0,0,40,phase=2)]
+        self.assertTrue(all(x is not None for x in rows))
+        s=analyze(rows,{"reason":"DONE","stop_ms":"100",
+                        "final_cd":"8850","peak_dps10":"5320"})
+        self.assertEqual(s["profile"],"PACE")
+        self.assertEqual(s["pace_drive_samples"],2)
+        self.assertEqual(s["pace_brake_samples"],1)
+        self.assertEqual(s["pace_near_samples"],1)
+        self.assertEqual(s["pace_stop_samples"],1)
+        self.assertEqual(s["pace_band_brake_samples"],0)
+        self.assertEqual(s["max_requested_pwm_pm"],820)
+        self.assertEqual(s["final_abs_error_deg"],1.5)
+        self.assertIsNone(record(20,1,35,851,37))
+        self.assertIsNone(record(20,1,35,220,34))
+        rows180=[record(20,1,35,240,37,target=180),
+                 record(40,65,560,920,37,target=180),
+                 record(60,155,230,-140,38,target=180),
+                 record(80,178.1,44,-100,41,target=180),
+                 record(100,178.7,6,0,40,target=180),
+                 record(300,178.7,0,0,40,target=180,phase=2)]
+        self.assertTrue(all(x is not None for x in rows180))
+        a=analyze(rows180,{"reason":"DONE","stop_ms":"100",
+                            "final_cd":"17870"})
+        self.assertEqual(a["profile"],"PACE")
+        self.assertEqual(a["pace_band_brake_samples"],1)
+        self.assertEqual(a["first_band_rate_dps"],44.0)
+        self.assertIsNone(record(40,65,560,921,37,target=180))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
