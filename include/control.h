@@ -3,6 +3,7 @@
 
 #include "mpu6050.h"
 #include "ir_sensor.h"
+#include "ir_wall_signal.h"
 #include <stdint.h>
 
 #define CONTROL_FREQUENCY_HZ  1000UL
@@ -11,6 +12,10 @@
 void Control_Init(MPU6050_Handle_t *mpu_handle);
 void Control_Start(void);
 void Control_Stop(void);
+/* ISR-safe copy of the six-channel EMA 0.10 wall signal.
+ * Never use ADC as distance. Check status==IR_WALL_VALID before PID use.
+ * Existing Control_GetIRSnapshot is unaffected (RAW ON-OFF). */
+IR_WallStatus Control_GetWallIRSnapshot(IR_WallSnapshot *out);
 uint8_t Control_IsRunning(void);
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
 typedef struct {
