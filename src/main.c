@@ -1,6 +1,9 @@
 /* Central entrypoint only. Real application loops and diagnostic modes
  * reside in their own source files. Keep every exclusive main isolated. */
-#if defined(TURN_PID_DIAG)
+#if defined(IR_BURST_DIAG)
+int IR_BurstDiag_Main(void);
+int main(void) { return IR_BurstDiag_Main(); }
+#elif defined(TURN_PID_DIAG)
 #include "turn_pid_diag.h"
 int main(void) { return TurnPidDiag_Main(); }
 #elif defined(SYSTEM_TEST_MODE)
