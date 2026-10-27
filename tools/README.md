@@ -28,3 +28,31 @@ Default one-run orchestration restores motor-locked `flash_map_diag_96m`
 on exit. Reports live under `results/ble_rx_ab_*`.
 See `docs/system_debug/BLE_RX_AB_QUALIFICATION_20261024.md`.
 This does not operate motors or change PID gains.
+
+### PA0 gyro turn optimization 90° / 180° (new)
+
+Run the **isolated** `turn_pid_diag_96m` firmware (never normal
+`system_test_96m` for this campaign), then:
+`python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile base --runs 3`.
+The capture saves 50Hz gyro/rate/PWM/encoder CSV, plots, raw serial and summary
+under `results/turn_pid_*`. UART commands select idle mode/profile but **cannot
+start motors**; only physical PA0. After accepted BASE tests, compare FAST
+(30% maximum PWM). See `docs/system_debug/TURN_PID_PIPELINE_20261026.md`.
+Offline host tests: `python tools/test_turn_pid_pipeline.py`.
+
+### Phase 1 motor sweep and Phase 2 tuned pivot
+
+`python tools/turn_pid_pipeline.py --port COM7 --mode motor --profile base --runs 3`
+performs **only PA0-initiated** short PWM characterization (six <=26% stages).
+After interpreting the logs, use `--mode 90 --profile tuned --runs 1`
+for a cautious first 35% TUNED turn. Captures include applied PWM,
+encoder speed (PPS), `motor_steps.csv`, gyro timing and normal turn
+response metrics. `docs/system_debug/TURN_PHASE1_PHASE2_20261027.md`.
+
+### Jolt-free pivot trial v4
+
+Use `--profile smooth` (never `tuned`) for experimental smooth terminal
+approach without a 15% stall kick or near-target reverse PWM.
+Capture 1 pilot turn before collecting 3 repeats; see
+`docs/system_debug/TURN_PHASE1_PHASE2_20261027.md`. Motor sweep on-time
+is now 100ms per stage to stay within the prior +65deg safety envelope.

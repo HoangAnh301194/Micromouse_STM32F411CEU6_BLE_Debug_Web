@@ -1,0 +1,9 @@
+{
+  "port": "COM6",
+  "baud": 115200,
+  "requested_mode": "90",
+  "requested_profile": "singlebrake",
+  "requested_runs": 5,
+  "completed_runs": 0,
+  "valid_samples": 0
+}

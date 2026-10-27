@@ -142,6 +142,28 @@ ADC counts, refreshed at most 5Hz. Optional PA9/PA10 UART frames use
 `IR6,...` at 5Hz. Motor outputs are permanently locked.
 [Wiring, caveats and restoring normal firmware](docs/system_debug/IR_OLED_VIEWER_20261024.md).
 
+## IR filter qualification (motor-locked)
+
+The separate `ir_filter_diag_96m` profile streams six-channel RAW,
+Median-3, EMA and hybrid candidates over USART1 at 115200 baud. Before
+upload or capture, physically disconnect motor VM; the firmware lock is an
+additional safeguard, not a replacement for the physical disconnect.
+
+The latest evidence reaches **ACQUISITION_ACCEPTED only**. No filter has
+been selected for production or Wall PID. See the [IR validation report](docs/ir/reports/IR_VALIDATION_20261027.md),
+[acceptance JSON](results/ir_qualification_20261027/acceptance.json),
+[capture manifest](results/ir_qualification_20261027/manifest.csv) and
+[per-channel metrics](results/ir_qualification_20261027/metrics_by_channel.csv).
+The capture pipeline preserves raw UART, ON/OFF samples, per-channel traces,
+summary JSON and six plots under `results/ir_filter_*`.
+
+Example motor-locked captures (measure and record actual fixture geometry):
+
+```powershell
+python tools/ir_filter_pipeline.py --port COM6 --seconds 30 --scenario no-wall --surface none --light room --trial 1 --plot
+python tools/ir_filter_pipeline.py --port COM6 --seconds 20 --scenario static --distance-mm 50 --surface "white matte" --light room --trial 1 --notes "record angle and fixture uncertainty" --plot
+```
+
 ## Build
 
 ```powershell
@@ -257,3 +279,36 @@ python tools/ble_full_pipeline.py --name Nezumi_Chan --motor-on --fixture-ready 
 See [BLE one-shot documentation](docs/system_debug/BLE_ONE_SHOT_PIPELINE_20261024.md).
 No physical BLE benchmark PASS exists yet. Do not open the legacy browser Web
 Console simultaneously; the benchmark uses BLE GATT directly from Python.
+
+## System Test PA0 + UART1 (no OLED, 26/10/2026)
+
+Build `python -m platformio run -e system_test_96m`. This profile does **not**
+detect or update the OLED. After MPU calibration completes, **press and release
+PA0 once** to run one test. The sequence after successful runs is +90° IMU-only
+pivot, +180° IMU-only pivot, then straight 200 mm using gyro heading PID and
+encoder distance control. A subsequent PA0 press while moving stops and locks
+motor immediately; failed runs retry the same mode on a new press. UART1 PA9/PA10
+at 115200 logs readiness, calibration, results and 20 Hz samples; UART1 `S`
+stops but cannot start motion. Test-only geometry: **R=34 mm, CPR=1430**.
+PWM capped at 26%; first validate with lifted/secured wheels and an independent
+VM power cutoff. See [PA0 System-test protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+**Physical motion and distance accuracy are not yet accepted.**
+
+## 90° / 180° gyro turn PID diagnostics (2026-10-26)
+
+An opt-in `turn_pid_diag_96m` profile replaces OLED with PA0 and UART for
+repeatable yaw turn tuning. A one-shot physical PA0 press starts rotation;
+UART1 COM7 selects mode 90/180 and bounded BASE/FAST profiles (no remote start).
+A TIM11-timestamped 50Hz trace includes yaw, gyro rate, rate reference,
+PID/feedforward, PWM, encoders and post-stop inertial drift. Start with
+`python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile base --runs 3`.
+Logs are preserved under `results/turn_pid_*`.
+Read [turn tuning pipeline](docs/system_debug/TURN_PID_PIPELINE_20261026.md).
+
+### Turn tuning stage 1 / stage 2 (2026-10-27)
+
+Added bounded open-loop PWM motor response mode (USART1 idle command `m`,
+physical PA0 start only) and new experimental `TUNED` pivot profile
+(idle command `t`, ±2° finish target). Log applies actual motor PWM and
+encoder counts/s; retain historical BASE/FAST. See
+[Phase 1 + Phase 2 test procedure](docs/system_debug/TURN_PHASE1_PHASE2_20261027.md).

@@ -1,0 +1,16 @@
+{
+  "session": "ir_wall_01",
+  "created": "2026-10-27T22:25:01.769359",
+  "status": "PREPARED_NOT_QUALIFIED",
+  "vm_disconnected_operator_confirmed": false,
+  "protocol": "ir_guided_v1",
+  "channels": [
+    "L90",
+    "L45",
+    "L0",
+    "R0",
+    "R45",
+    "R90"
+  ],
+  "notes": "Motor-locked manual translation/yaw only; no powered trials."
+}

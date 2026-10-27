@@ -1,0 +1,3 @@
+TP,CONFIG,mode=90,profile=0,locked=1
+TP,CONFIG,mode=90,profile=10,locked=1
+TP,STATUS,phase=0,mode=90,profile=10,cal=1,cal_state=3,locked=1,id=0,qdrop=0,udrop=0

@@ -13,7 +13,7 @@ def audit(files=None):
     def get(path):
         return files[path] if files is not None else (ROOT/path).read_text(encoding="utf-8")
     cfg=configparser.ConfigParser(interpolation=None)
-    cfg.read_string(get("platformio.ini"))
+    cfg.read_string(get("platformio_legacy.ini"))
     for env in ("genericSTM32F411CE","integration_diag_motor_off_96m",
                 "integration_diag_motor_on_96m","integration_diag_uart_96m"):
         flags=set(x.removeprefix("-D") for x in cfg.get(f"env:{env}","build_flags").split())
@@ -95,12 +95,12 @@ def main():
             print("PASS native Motor Driver; sweep C state machine NOT native qualified")
         elif args.self_test:
             import json
-            names=("platformio.ini","src/integration_sweep.c","src/control.c","src/main.c",
+            names=("platformio_legacy.ini","src/integration_sweep.c","src/control.c","src/main.c",
                    "src/integration_serial.c","include/encoder.h","src/uart_bench.c")
             files={name:(ROOT/name).read_text(encoding="utf-8") for name in names}
             audit(files)
             mutations=[
-                ("platformio.ini","-DCLOCK_HSI_TRIM=25","-DCLOCK_HSI_TRIM=20"),
+                ("platformio_legacy.ini","-DCLOCK_HSI_TRIM=25","-DCLOCK_HSI_TRIM=20"),
                 ("src/integration_sweep.c","SWEEP_LINK_TIMEOUT_MS 750U","SWEEP_LINK_TIMEOUT_MS 9999U"),
                 ("src/control.c","Motor_Update1ms();","/* removed */"),
                 ("src/main.c","IntegrationSerial_Poll(&mpu, now)","/* removed */"),

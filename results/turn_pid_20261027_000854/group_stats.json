@@ -1,0 +1,34 @@
+{
+  "90deg_BASE": {
+    "runs": 3,
+    "trace_pass": 3,
+    "rise_10_90_ms": {
+      "mean": 1086.496,
+      "stdev": 148.941
+    },
+    "stop_ms": {
+      "mean": 1798.333,
+      "stdev": 223.29
+    },
+    "settling_ms": {
+      "mean": 1653.333,
+      "stdev": 221.209
+    },
+    "overshoot_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "max_abs_gyro_dps": {
+      "mean": 86.833,
+      "stdev": 4.8
+    },
+    "final_abs_error_deg": {
+      "mean": 1.883,
+      "stdev": 0.151
+    },
+    "coast_drift_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    }
+  }
+}

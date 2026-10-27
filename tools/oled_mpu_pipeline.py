@@ -264,7 +264,7 @@ def main():
     if args.baseline_seconds < 8 or args.oled_seconds < 8:
         ap.error("Both phases must be >=8s for meaningful deltas")
     if args.flash:
-        subprocess.run([sys.executable, "-m", "platformio", "run", "-e",
+        subprocess.run([sys.executable, "-m", "platformio", "run", "-c", "platformio_legacy.ini", "-e",
                         "oled_mpu_diag_96m", "-t", "upload"], check=True)
     folder=args.output / ("oled_mpu_" + datetime.now().strftime("%Y%m%d_%H%M%S"))
     folder.mkdir(parents=True,exist_ok=False)

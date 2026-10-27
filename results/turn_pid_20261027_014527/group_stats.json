@@ -1,0 +1,102 @@
+{
+  "90deg_RAPID": {
+    "runs": 4,
+    "trace_pass": 4,
+    "rise_10_90_ms": {
+      "mean": 313.268,
+      "stdev": 44.547
+    },
+    "stop_ms": {
+      "mean": 1115.0,
+      "stdev": 282.223
+    },
+    "settling_ms": {
+      "mean": 955.0,
+      "stdev": 292.29
+    },
+    "overshoot_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "max_abs_gyro_dps": {
+      "mean": 455.4,
+      "stdev": 5.921
+    },
+    "final_abs_error_deg": {
+      "mean": 1.585,
+      "stdev": 0.174
+    },
+    "coast_drift_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "imu_effective_hz": {
+      "mean": 1000.0,
+      "stdev": 0.0
+    },
+    "imu_intervals_max_us": {
+      "mean": 1275.25,
+      "stdev": 115.321
+    },
+    "imu_intervals_mean_us": {
+      "mean": 1000.0,
+      "stdev": 0.0
+    },
+    "imu_age_mean_us": {
+      "mean": 728.298,
+      "stdev": 49.235
+    },
+    "imu_age_max_us": {
+      "mean": 926.5,
+      "stdev": 333.001
+    },
+    "max_requested_pwm_pm": {
+      "mean": 800.0,
+      "stdev": 0.0
+    },
+    "max_applied_pwm_pm": {
+      "mean": 576.25,
+      "stdev": 28.159
+    },
+    "encoder_imbalance_pct": {
+      "mean": 3.817,
+      "stdev": 2.715
+    },
+    "terminal_80_to_stop_ms": {
+      "mean": 705.0,
+      "stdev": 271.14
+    },
+    "kick_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "smooth_approach_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "reverse_pwm_samples": {
+      "mean": 4.75,
+      "stdev": 0.5
+    },
+    "rapid_accel_samples": {
+      "mean": 9.5,
+      "stdev": 3.0
+    },
+    "rapid_brake_samples": {
+      "mean": 4.75,
+      "stdev": 0.5
+    },
+    "rapid_near_samples": {
+      "mean": 27.0,
+      "stdev": 15.556
+    },
+    "rapid_coast_samples": {
+      "mean": 4.0,
+      "stdev": 1.155
+    },
+    "peak_gyro_1khz_dps": {
+      "mean": 464.65,
+      "stdev": 7.426
+    }
+  }
+}

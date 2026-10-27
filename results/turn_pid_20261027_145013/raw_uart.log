@@ -1,0 +1,12 @@
+TP,CONFIG,mode=90,profile=0,locked=1
+TP,CONFIG,mode=90,profile=12,locked=1
+TP,STATUS,phase=0,mode=90,profile=12,cal=0,cal_state=2,locked=1,id=0,qdrop=0,udrop=0
+TP,CAL,ms=7000,state=2,ok=0,retry=0,fail=0,blocks=3,count=1847,good=6846,err=0,locked=1
+TP,CAL,ms=8000,state=2,ok=0,retry=0,fail=0,blocks=5,count=2847,good=7846,err=0,locked=1
+TP,CAL,ms=9000,state=2,ok=0,retry=0,fail=0,blocks=7,count=3847,good=8846,err=0,locked=1
+TP,CAL_OK,ms=9152,good=8999
+TP,READY,mode=90,profile=12,PA0=PRESS_RELEASE
+TP,IDLE,mode=90,profile=12,locked=1
+TP,CONFIG,mode=90,profile=12,locked=1
+TP,CONFIG,mode=90,profile=12,locked=1
+TP,STATUS,phase=0,mode=90,profile=12,cal=1,cal_state=3,locked=1,id=0,qdrop=0,udrop=0

@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Micromouse STM32F411CEU6
 
-**Ngày cập nhật:** 24/10/2026 (UTC+7). **Nhánh làm việc:** `giomuadongbac`. **Mã nguồn đã rà soát:** `2fca0d946f751ee4af2f356d9120eaee05c13922`. Đây là hồ sơ ngữ cảnh dự án để agent/chat mới tiếp tục mà không cần đọc toàn bộ lịch sử.
+**Ngày cập nhật:** 27/10/2026 (UTC+7). **Nhánh làm việc:** `giomuadongbac`. **Mã nguồn nền đã rà soát:** `d90d5c10def6ff2a7c4f98174f738e233741cef7`; IR diagnostic/tooling và evidence được cập nhật sau revision này. Đây là hồ sơ ngữ cảnh dự án để agent/chat mới tiếp tục mà không cần đọc toàn bộ lịch sử.
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
@@ -32,7 +32,7 @@
 | **Motor Driver Rev3** | Tích hợp, hồi quy phần mềm; LIVE PWM 80–100% có phản hồi encoder khi bánh được cô lập | Dạng sóng, dòng motor, điện áp VM, nhiệt driver, phanh, chạy có tải; không đánh đồng với chứng nhận an toàn điện |
 | **Encoder hai bánh** | Có xung thực và dấu tiến dương | PPR/quãng đường theo mốc ngoài, tốc độ RPM/mm/s, miss pulse, sai lệch L/R chưa nghiệm thu đầy đủ |
 | **TIM11 và PID** | 1 kHz ổn định trong bài thử; PID giả lập chạy đủ tải không mất chu kỳ | Chưa nghiệm thu bộ PID tốc độ bánh, điều khiển bám tường, thời gian đáp ứng/quá độ khi di chuyển tốc độ cao |
-| **IR 6 kênh** | **Acquisition/timing phase đạt trên board**: ADC1/DMA2 Stream0 async, 1 kHz scan trong 30 giây; TIM11 nhận mẫu mới 100%; zero DMA/ADC errors/timeouts, TIM11 late/gap, MPU I2C errors/timeouts, UART drops | Chưa đánh giá độ chính xác/khoảng cách, nhiễu, nhiễu chéo hay phản hồi theo tường; phase này chỉ xác nhận acquisition, nhịp và tải |
+| **IR 6 kênh** | **ACQUISITION_ACCEPTED** cho diagnostic motor-locked: G0/G1 PASS; capture no-wall và tĩnh có HELLO, sáu kênh, coverage ≥95%, không lỗi/drop/clipping; scan đo được 1209.69–1210.50 Hz; ba reseat độc lập ở 50 mm | Chưa đạt nghiệm thu static filter/dynamic/LUT. P0 vách trắng 20 mm chưa chạy; 40 mm chưa đủ trials độc lập; P1 các cự ly/hình học còn lại, góc, vật liệu/ánh sáng và timestamp động chưa đo. Không tích hợp filter vào production/Wall PID |
 | **BLE USART2 PA2/PA3** | Đã có TXE IRQ + 4096B buffer, RX polling; web console hiển thị đồng thời ma trận 16×16 (Flood/Path/Explored, Stats) và terminal log, hai panel kéo chỉnh kích thước được, có Connect/Reconnect/Disconnect | Chưa đo thông lượng, RX overflow, mất bản tin, khi TX queue đầy hàm có thể bỏ phần đuôi mà không có thống kê; web UI mới chỉ kiểm tra trong trình duyệt, chưa nghiệm thu BLE với JDY-33 thật |
 | **OLED/MPU I2C1 shared debug** | **Nghiệm thu A/B trên bo, motor khóa: PASS (24/10/2026)** theo `results/oled_mpu_20261024_082616/report.json`: 17/17 checks, TIM11 1000 Hz cả hai pha; MPU 1000 → 992.73 Hz (-0.73%); OLED DMA 1056/1056 thành công, 528 chunks, 73 frames / 15s, max transaction 161 us; không có lỗi I2C/DMA, recovery, mẫu gyro trễ hay gián đoạn TIM11. Phiên trước `081626` FAIL vẫn được lưu nguyên làm đối chứng. | **Đạt nghiệm thu dùng chung I2C trong firmware diag motor-OFF 15s**. Chưa xác minh bằng máy hiện sóng, chưa có bằng chứng hiển thị ký tự đúng bằng quan sát độc lập, chưa nghiệm thu khi motor ON / production / soak dài hạn / menu thao tác. |
 | **OLED SSD1306 + renderer** | Driver SSD1306, font, incremental dirty framebuffer và DMA scheduling đã PASS kiểm thử A/B 15 s motor-OFF; log gốc `results/oled_mpu_20261024_082616/`. Không có I2C/DMA/MPU error trong bài nghiệm thu. | Chưa quan sát độc lập pixel/chữ trên panel; OLED disabled trong production; chưa có API UI/menu ứng dụng, không chứng nhận chạy motor ON hoặc soak dài hạn. |
@@ -48,6 +48,7 @@
 - **Benchmark USART1:** [104312](results/system_uart_20261019_104312/uart/uart_rate_summary.json), [104529](results/system_uart_20261019_104529/uart/uart_rate_summary.json), [105726](results/system_uart_20261019_105726/uart/uart_rate_summary.json). 60 Hz có dự phòng, 80 Hz đạt, các tần số cao hơn làm queue đầy trước khi CPU thành nút thắt.
 - **Motor OFF/ON trước đó:** [summary](results/system_uart_20261019_104529/summary.json). Một phiên OFF từng fallback I2C xuống gần 300 kHz; nguyên nhân cụ thể chưa khẳng định, các phiên MPU mới đạt nominal 400 kHz.
 - **IR 6 kênh, motor-off, 30 giây (firmware commit `9c7862ab9cc092295c14cab707bb366582db9433`):** [summary JSON](results/ir_timing_20261019_173447/summary.json) · [UART log gốc](results/ir_timing_20261019_173447/uart.log). 29.000 scan/29 s (1 kHz), 116.000/116.000 DMA completions; scan trung bình 723,71 µs, max 724 µs; age mẫu max 293 µs, TIM11 fresh 29.000/29.000 ticks; đo cycle-counter IR ISR tương ứng khoảng 1,5965% nominal 96 MHz. DMA/ADC/timeout, TIM11 late/gap, MPU I2C errors/timeouts và UART drops đều 0; UART queue peak 1049/2047 byte. Có 30 bản tin raw đủ 6 kênh; **không** đánh giá accuracy/nhiễu. Các capture thử trước được giữ lại nhưng đánh dấu invalid trong `summary.json` do telemetry bị truncate hoặc UART queue drop.
+- **IR qualification 27/10/2026, motor VM ngắt:** [báo cáo](docs/ir/reports/IR_VALIDATION_20261027.md), [acceptance.json](results/ir_qualification_20261027/acceptance.json), [manifest](results/ir_qualification_20261027/manifest.csv), [metrics](results/ir_qualification_20261027/metrics_by_channel.csv). G0/G1 PASS, mức cao nhất `ACQUISITION_ACCEPTED`; no-wall hợp lệ 30 s, hai vách bên 40 mm thăm dò và ba trial reseat độc lập tại 50 mm; scan đo khoảng 1.210 Hz, counter lỗi/drop bằng 0. Trial 50 mm có dịch chuyển được giữ nguyên nhưng loại khỏi thống kê tĩnh. P0 20 mm và P1 coverage ngoài 50 mm chưa đạt; G3–G6 còn INCONCLUSIVE; không chọn filter production.
 - **CI mã nguồn tại commit rà soát `2fca0d9`:** workflow Motor Driver, Clock, System Integration và UART+MPU RC2 đều **success**. Chỉ chứng minh mã build/hồi quy, không tự chạy lại phần cứng.
 
 **Đã dọn sau bàn giao MPU:** `tools/imu_soak_pipeline.py` và `tools/test_imu_soak_pipeline.py` cùng firmware thí nghiệm chuyên biệt không còn nằm trong working tree của nhánh hiện tại. Dữ liệu lịch sử trong `results/` **được giữ nguyên**. Tool UART/clock/motor/system khác còn tồn tại và không được xóa tùy tiện.
@@ -58,7 +59,8 @@
 
 1. **Đã làm:** thay busy-wait ADC/DMA trong TIM10 bằng state machine async, DMA IRQ, timeout/error recovery; chỉ publish đủ scan.
 2. **Đã đo:** scan rate, scan/DMA durations, ISR cycles, tuổi/freshness tại TIM11, DMA/ADC lỗi, UART queue/drop, MPU/I2C và raw ADC sáu kênh; xem biên bản và log phía trên.
-3. Phase tiếp theo (chưa làm trong phạm vi này): đánh giá theo khoảng cách/tường và nhiễu chéo giữa các cặp emitter; không suy ra độ chính xác từ log timing hiện tại.
+3. **Qualification mới:** G0/G1 đã PASS trên diagnostic motor-locked; capture no-wall và các lượt tĩnh 40/50 mm có evidence trong báo cáo IR. Đây chưa phải đánh giá đầy đủ độ chính xác/khoảng cách hoặc filter.
+4. **Ưu tiên tiếp:** P0 vách trắng 20 mm; hoàn tất 3 lượt độc lập mỗi cự ly/hình học cần dùng; đo góc/uncertainty và cross-talk; sau đó mới làm P3 timestamp động/P4 robustness/P5 LUT. Không suy ra độ trễ mili-giây từ log IRF 40 Hz.
 
 ### P1 — Encoder + PID điều khiển thực
 
@@ -290,3 +292,101 @@ the active branch; retrieve them from the archive as needed.
 - **Chốt nghiệm thu phạm vi đã đo:** OLED ↔ MPU6050 trên một I2C1, motor **LOCKED**, OFF 15 s + ON 15 s, `results/oled_mpu_20261024_082616/`: pipeline verdict PASS 17/17 checks; TIM11 đúng 1000 Hz, gyro -0,73% (1000 → 992,73 Hz), OLED 1056/1056 DMA TX thành công, 73 frames, max TX 161 µs; không có lỗi bus, DMA, MPU, mất chu kỳ hay stale gyro. Giữ nguyên cả log FAIL các lần trước để truy vết.
 - **Chưa nghiệm thu ngoài phạm vi:** độ đúng trực quan ký tự/pixel SSD1306, nhiễu motor đang chạy, chạy bền nhiều giờ, dạng sóng điện, UI API/menu và OLED production (vẫn disabled); không gộp các hạng mục này vào PASS.
 - **Dọn thừa theo yêu cầu:** xóa tám bản sao trùng/đã thay thế (`tools/ble_debug_console.html`, `tools/test_ble_map_web.js`, và sáu native test có sẵn bản chuẩn ở `tests/regression/`). Chuyển đường dẫn gọi ở hai pipeline cũ sang `tests/regression/`; cập nhật docs/workflow. Còn **26 file** trong `tools/` tính cả `README.md`. Các pipeline riêng cho OLED, Flash, BLE, motor, encoder, PID, IR, UART và toàn bộ `results/` giữ nguyên; bản đầy đủ có ở nhánh `archive/debug-tools-precleanup-20261024`.
+
+## 2026-10-26 — OLED System Test (source + CI ready; hardware PENDING)
+
+- Opt-in profile `system_test_96m`: `src/system_test.c` and `include/system_test.h`,
+  reused shared-I2C OLED, MPU6050, 1kHz TIM11, RC3 Motor, encoder.
+- Three PA0 menu modes: turn +90°, +180° (IMU yaw PID, encoder not used as angle feedback)
+  and straight 200 mm (IMU heading PID plus encoder distance P feedback).
+- **Test-only geometry** radius=34mm and 1430 decoded counts/rev; expected
+  encoder mean 1338.79 counts for 200mm. Production `WHEEL_DIAMETER_MM=35`
+  remains unchanged. Physically confirm wheel radius and decoded CPR before tests.
+- Two separate long-press-release actions required: MENU -> READY -> RUN;
+  any PA0 press while running stops from TIM11; UART 'S' stops only, cannot start.
+  Motor outputs locked between tests; 26% maximum commanded PWM; gyro
+  freshness check <=3ms, test timeout and fault locking.
+- Uses `OLED_SharedService` outside TIM11; no blocking OLED rendering during
+  sensor acquisition. If OLED unavailable / bus below 300kHz, arming denied.
+- Software build **PASS** in GitHub Actions run 40347581084 (commit `0efdf92c`);
+  a subsequent safety check guards IMU NaN and one-wheel encoder stall.
+  Physical motor-on, OLED coexistence, yaw sign, position accuracy, stop latency,
+  loaded VM/duty and repeatability **not yet measured**.
+- Documentation: [System Test OLED](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+
+## 2026-10-26 — Headless PA0 System Test (replaces OLED mode for `system_test_96m`)
+
+- User hardware reported repeated `SSD1306_NOT_FOUND` / `IR_OLED oled=0`.
+  The opt-in system test no longer initializes OLED or requires a display.
+- Single >=40ms PA0 press-release triggers one run after MPU calibration and
+  fresh gyro snapshot. Success advances 90° -> 180° -> 200mm; fault/STOP retries
+  the same mode. Any PA0 press during RUN locks motor in 1kHz TIM11; UART1 `S`
+  stops but never starts motors. Boot-held / pre-calibration buttons cannot arm.
+- UART1 PA9/PA10 115200 sends `ST,CAL`, `ST,READY`, `ST,START`,
+  ~20Hz `ST_DATA`, `ST,RESULT`, and `ST,READY_NEXT`.
+- IMU sample freshness <=3ms and successful nonblocking calibration are required.
+  Earlier user logs displayed `cal=0` even after 40 seconds: this needs separate
+  hardware inspection before attempting any live motor test.
+- Wheel radius=34mm, 1430 decoded counts/rev only in test module.
+  PID gains, real motion, stop behavior and geometric accuracy **UNVERIFIED**.
+- See [headless PA0 protocol](docs/system_debug/SYSTEM_TEST_OLED_20261026.md).
+
+## 2026-10-26 — Isolated Turn PID pipeline (bench/floor acceptance PENDING)
+
+- New `turn_pid_diag_96m` firmware: gyro-only 90°/180° turn, without OLED,
+  selectable BASE/FAST initial profiles via UART (selection never starts motor),
+  physical PA0-only start and 1kHz PA0 stop; requires fresh calibrated MPU.
+- Rate trajectory (outer angle P, bounded angular velocity + braking envelope,
+  gyro rate PI Kp with Ki=0 initial, feedforward), hard 260/300 permille caps.
+  During stop, motors lock; 800ms inertial coast trace is logged.
+- `tools/turn_pid_pipeline.py` captures 50Hz production-timestamped
+  `TP,D` records, raw UART, per-run CSV/plots, summaries for overshoot,
+  10-90 rise, settlement, peak rate, coast drift and telemetry drops.
+  Synthetic host tests `tools/test_turn_pid_pipeline.py`.
+- No physical motor-on acceptance yet. Hardware caution: prior logs showed
+  MPU `cal=0` persisting; `TP,CAL_OK` is required or PA0 cannot start.
+
+- Turn logger follow-up: hardware-stop fallback allows result emission
+  if MPU loses samples during 800ms post-stop coast. Session ZIP contains
+  all raw CSV, plots, per-run summary and group mean/SD. Isolated firmware
+  remains physically UNTESTED.
+
+## 2026-10-27 — MPU gyro actual fresh-publish timing in turn qualification
+
+Added MCU-windowed 1Hz reporting of distinct published gyro snapshots and
+completion-time gaps during PA0 90/180-turn tests. This measures observed
+post-I2C publication frequency, **not the MPU internal nominal 1kHz rate**.
+Tracks gyro sequence gaps, DATA_RDY not-ready, I2C errors, last-sample age,
+>1.5/>2ms timing gaps; no controller gain or motor cap changes.
+Host serial parser appends `imu_windows.csv` to each run folder and
+frequency, timing jitter and age statistics to summary/ZIP, backwards
+compatible with old turn traces.
+
+## 2026-10-27 — Phase 1+2 turn-tuning implementation (hardware validation pending)
+
+Latest prior BASE run in `results/turn_pid_20261027_005104`: three DONE
+90deg trials, mean stop 1.660s, mean final error 1.793deg; actual published
+MPU gyro ~999.728 Hz, no I2C errors, commanded PWM well below cap.
+Implemented opt-in `--mode motor` physical PA0 open-loop PWM pulse sweep
+(7..26% in 6 short stages) with applied motor PWM and encoder speed logs.
+Added opt-in `--profile tuned` (initial 35% cap), angular velocity
+feedforward/stiction blending, predictive angular-rate braking, bounded
+near-target stall corrective pulses, tighter safety guard; BASE and FAST
+held fixed for comparison. Host keeps rev1/rev2 raw trace compatibility,
+adds phase-1 stage metrics and excludes PA0_STOP from turn means.
+CI compiles/tests only; no hardware-on validation of the new modes yet.
+
+## 2026-10-27 — Real motor + TUNED log diagnosis and SMOOTH v4 pilot
+
+New pushed results: `011355` motor sweeps all ANGLE_LIMIT near 75deg
+under 6 PWM stages; `011451` single TUNED 90deg DONE; `011550`
+three TUNED DONE trials mean 1.382s, final heading within +/-2deg.
+Observed late jerk traced to stage=6 150permille kick after gyro stalls
+around 86.5..87.3deg, followed by reverse PWM -130..-142 despite angle
+being near 90deg. v4 SMOOTH opt-in profile removes that kick/reverse,
+uses bounded forward terminal approach then motor neutral/coast inside
++/-2deg, logs terminal dwell and reversals and fails on excess overshoot
+or >420ms near-target stall. Expanded speed ref 230deg/s under 35% cap;
+not physically qualified. Motor sweep shortened to 100ms on/150ms neutral
+to reduce prior +65deg cumulative-angle aborts. Existing BASE/FAST/TUNED
+benchmarks remain unchanged.

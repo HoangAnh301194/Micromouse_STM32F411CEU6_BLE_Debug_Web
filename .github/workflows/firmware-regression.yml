@@ -2,7 +2,7 @@ name: Production firmware and regression tests
 on:
   push:
     branches: [giomuadongbac]
-    paths: ["src/**", "include/**", "ld/**", "platformio.ini", "web/**", "tests/**", "tools/flash_map_pipeline.py", "tools/oled_mpu_pipeline.py", "tools/encoder_qualification_pipeline.py", "tools/system_integration_gate.py", ".github/workflows/firmware-regression.yml"]
+    paths: ["src/**", "include/**", "ld/**", "platformio.ini", "platformio_legacy.ini", "web/**", "tests/**", "tools/flash_map_pipeline.py", "tools/oled_mpu_pipeline.py", "tools/encoder_qualification_pipeline.py", "tools/system_integration_gate.py", "tools/turn_pid_pipeline.py", "tools/test_turn_pid_pipeline.py", "tools/ir_filter_pipeline.py", "tools/test_ir_filter_pipeline.py", "tools/ir_full_qualification.py", ".github/workflows/firmware-regression.yml"]
   pull_request:
     branches: [giomuadongbac]
   workflow_dispatch:
@@ -26,6 +26,17 @@ jobs:
           node tests/web/test_ble_map_web.js
           node tests/web/test_flash_map_gatt_control.js
           python tools/test_ble_rx_qualification.py
+      - name: Native six-channel IR filtering and capture format regression
+        run: |
+          python tests/regression/ir_filter_native_test.py
+          python tests/regression/ir_wall_signal_native_test.py
+          python tests/regression/wall_pid_4cell_native_test.py
+          python tests/regression/wall_pid_ble_report_test.py
+          python tests/regression/platformio_profile_cleanup_test.py
+          python tools/test_ir_filter_pipeline.py
+          python tests/regression/ir_full_qualification_test.py
+      - name: Native modular motion primitive tests (left/right 90 and 180, fault paths)
+        run: python tests/regression/motion_primitives_native_test.py
       - name: Verify canonical tools after OLED handover
         run: |
           python - <<'PY'
@@ -63,13 +74,22 @@ jobs:
         run: python -m pip install --disable-pip-version-check platformio
       - name: Build production firmware (no hardware)
         run: python -m platformio run -e genericSTM32F411CE
-      - name: Build six-sensor IR OLED test firmware (no hardware)
-        run: python -m platformio run -e ir_oled_test_96m
+      - name: Build isolated motor-locked IR filter capture firmware (no hardware)
+        run: python -m platformio run -e ir_filter_diag_96m
+      - name: Build PA0 motor-locked rolling IR burst firmware (no hardware)
+        run: python -m platformio run -e ir_burst_diag_96m
+      - name: Build PA0 4-cell wall PID BLE diagnostic firmware (no hardware)
+        run: python -m platformio run -e wall_pid_4cell_96m
       - name: Test OLED-MPU host parser and verdict (synthetic)
         run: python tools/oled_mpu_pipeline.py --self-test
-      - name: Build motor-locked OLED MPU diagnostic (no hardware)
-        run: python -m platformio run -e oled_mpu_diag_96m
       - name: Build optional motor-locked Flash-map firmware (no hardware)
         run: python -m platformio run -e flash_map_diag_96m
       - name: Build motor-locked JDY-33 RX A/B/C qualification image (no hardware)
         run: python -m platformio run -e ble_rx_diag_96m
+
+      - name: Build headless PA0 system-test firmware (no physical test)
+        run: python -m platformio run -e system_test_96m
+      - name: Native synthetic 90/180 turn trace parser/metric tests
+        run: python tools/test_turn_pid_pipeline.py
+      - name: Build gyro 90/180 PID qualification firmware (no hardware)
+        run: python -m platformio run -e turn_pid_diag_96m

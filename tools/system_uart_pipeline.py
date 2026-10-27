@@ -454,9 +454,11 @@ class PhaseSession:
 
 def flash(env):
     print("Building/flashing explicitly selected", env)
-    subprocess.run([sys.executable, "-m", "platformio", "run",
-                    "-e", env, "-t", "upload"], cwd=ROOT,
-                   check=True, timeout=240)
+    command = [sys.executable, "-m", "platformio", "run"]
+    if env.startswith("integration_diag_encoder_"):
+        command += ["-c", "platformio_legacy.ini"]
+    command += ["-e", env, "-t", "upload"]
+    subprocess.run(command, cwd=ROOT, check=True, timeout=240)
 
 
 def write_output(outdir, results, rows):

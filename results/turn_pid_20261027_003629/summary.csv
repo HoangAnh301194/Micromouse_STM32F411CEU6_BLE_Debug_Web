@@ -1,0 +1,4 @@
+run_id,target_deg,profile,reason,t10_ms,t90_ms,rise_10_90_ms,t_first_target_ms,stop_ms,settling_ms,peak_yaw_deg,overshoot_deg,overshoot_percent,max_abs_gyro_dps,final_yaw_deg,final_abs_error_deg,coast_drift_deg,trace_samples,sampling_gap_max_ms,ring_drops,uart_drops,meets_trace_thresholds
+1,90,BASE,DONE,239.333,1186.095,946.762,,1625,1480.0,88.09,0.0,0.0,93.4,88.06,1.94,0.0,121,20,0,0,True
+2,90,BASE,DONE,219.851,1189.608,969.757,,1665,1520.0,88.13,0.0,0.0,91.4,88.01,1.99,-0.01,123,20,0,0,True
+3,90,BASE,DONE,242.945,1203.093,960.148,,1660,1500.0,88.5,0.0,0.0,90.8,88.5,1.5,0.0,123,20,0,0,True

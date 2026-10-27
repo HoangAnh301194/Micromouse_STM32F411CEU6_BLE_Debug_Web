@@ -1,0 +1,4 @@
+run_id,t_ms,window_ms,new_samples,effective_hz,interval_mean_us,interval_min_us,interval_max_us,gap_gt1500,gap_gt2000,observer_missed,status_notready,i2c_errors,last_age_us,last_seq,is_final
+3,1000,1000,999,999.0,1000,810,1192,0,0,0,0,0,1090,17377,0
+3,2000,1000,1000,1000.0,1000,714,1286,0,0,0,0,0,1078,18377,0
+3,2525,524,525,1001.9,1000,749,1250,0,0,0,0,0,764,18902,1

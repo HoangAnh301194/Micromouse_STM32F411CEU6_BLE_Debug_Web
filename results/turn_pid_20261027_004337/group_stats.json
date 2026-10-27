@@ -1,0 +1,54 @@
+{
+  "90deg_BASE": {
+    "runs": 3,
+    "trace_pass": 2,
+    "rise_10_90_ms": {
+      "mean": 939.376,
+      "stdev": 29.925
+    },
+    "stop_ms": {
+      "mean": 2099.0,
+      "stdev": 776.752
+    },
+    "settling_ms": {
+      "mean": 1510.0,
+      "stdev": 98.995
+    },
+    "overshoot_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "max_abs_gyro_dps": {
+      "mean": 92.233,
+      "stdev": 2.248
+    },
+    "final_abs_error_deg": {
+      "mean": 1.887,
+      "stdev": 0.193
+    },
+    "coast_drift_deg": {
+      "mean": 0.1,
+      "stdev": 0.173
+    },
+    "imu_effective_hz": {
+      "mean": 1000.0,
+      "stdev": 0.0
+    },
+    "imu_intervals_max_us": {
+      "mean": 1266.0,
+      "stdev": 64.374
+    },
+    "imu_intervals_mean_us": {
+      "mean": 999.912,
+      "stdev": 0.152
+    },
+    "imu_age_mean_us": {
+      "mean": 751.665,
+      "stdev": 8.306
+    },
+    "imu_age_max_us": {
+      "mean": 764.667,
+      "stdev": 0.577
+    }
+  }
+}

@@ -37,6 +37,9 @@ typedef struct {
 } Motion_Context_t;
 
 static Motion_Context_t motion;
+/* Separate reusable primitive controller; never shares live state with
+ * the legacy heading and turn PIDs. */
+static MotionPrimitiveController pivot;
 
 static float NormalizeAngle(float angle)
 {
@@ -69,6 +72,7 @@ static void FinishMotion(void)
 
 void Motion_Init(void)
 {
+    MotionPrimitive_Init(&pivot);
     motion.state = MOTION_IDLE;
     motion.done = 1U;
     motion.target_distance_mm = 0.0f;
@@ -137,18 +141,86 @@ void Motion_CommandTurn(float angle_deg, float current_yaw_deg)
     if (!primask) __enable_irq();
 }
 
-void Motion_Stop(void)
+MotionPrimitiveResult Motion_RequestPrimitive(MotionPrimitiveKind kind,
+                                               MotionPrimitiveDirection direction,
+                                               float current_yaw_deg)
+{
+    uint32_t primask = __get_PRIMASK();
+    MotionPrimitiveResult result;
+    __disable_irq();
+
+    /* Reject unsupported motion / concurrent motion before touching
+     * encoders, PID, motor output, or changing state. */
+    if (!motion.done || motion.state != MOTION_IDLE ||
+        Motor_OutputsLocked()) {
+        if (!primask) __enable_irq();
+        return MOTION_PRIMITIVE_BUSY;
+    }
+    result = MotionPrimitive_Start(&pivot, kind, direction, current_yaw_deg);
+    if (result == MOTION_PRIMITIVE_OK) {
+        Encoder_Reset();
+        motion.target_angle_deg = (float)direction *
+                                  (kind==MOTION_PRIMITIVE_PIVOT_180?180.0f:90.0f);
+        motion.start_yaw_deg = current_yaw_deg;
+        motion.angle_error_deg = motion.target_angle_deg;
+        motion.distance_mm = 0.0f;
+        motion.current_pwm = 0.0f;
+        motion.elapsed_s = 0.0f;
+        motion.done = 0U;
+        motion.state = MOTION_PIVOT_PRIMITIVE; /* publish last */
+    }
+    if (!primask) __enable_irq();
+    return result;
+}
+
+MotionPrimitiveResult Motion_Turn90(MotionPrimitiveDirection direction,
+                                     float current_yaw_deg)
+{
+    return Motion_RequestPrimitive(MOTION_PRIMITIVE_PIVOT_90,
+                                   direction,current_yaw_deg);
+}
+MotionPrimitiveResult Motion_Turn180(MotionPrimitiveDirection direction,
+                                      float current_yaw_deg)
+{
+    return Motion_RequestPrimitive(MOTION_PRIMITIVE_PIVOT_180,
+                                   direction,current_yaw_deg);
+}
+MotionPrimitiveStatus Motion_GetPrimitiveStatus(void)
+{
+    return pivot.status;
+}
+MotionPrimitiveResult Motion_GetPrimitiveResult(void)
+{
+    return pivot.result;
+}
+MotionPivotPhase Motion_GetPrimitivePhase(void)
+{
+    return pivot.phase;
+}
+
+static void StopWithReason(MotionPrimitiveResult reason)
 {
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
 
-    /* Invalidate the command before touching PWM to close the stop/restart race. */
+    /* Publish IDLE before returning; abort reason remains queryable
+     * until next Motion_RequestPrimitive. Preserve legacy motor stop. */
+    if (motion.state == MOTION_PIVOT_PRIMITIVE)
+        MotionPrimitive_Abort(&pivot,reason);
     motion.done = 1U;
     motion.state = MOTION_IDLE;
     motion.current_pwm = 0.0f;
     Motor_Stop();
 
     if (!primask) __enable_irq();
+}
+void Motion_Stop(void)
+{
+    StopWithReason(MOTION_PRIMITIVE_STOP_REQUEST);
+}
+void Motion_SensorFault(void)
+{
+    StopWithReason(MOTION_PRIMITIVE_SENSOR_FAULT);
 }
 
 void Motion_Update(float dt_s,
@@ -168,6 +240,21 @@ void Motion_Update(float dt_s,
     left_mm = (float)encoder_left * MM_PER_PULSE;
     right_mm = (float)encoder_right * MM_PER_PULSE;
     motion.distance_mm = 0.5f * (left_mm + right_mm);
+
+    if (motion.state == MOTION_PIVOT_PRIMITIVE) {
+        MotionPrimitiveOutput out;
+        MotionPrimitive_Update(&pivot,dt_s,yaw_deg,gyro_z_dps,&out);
+        motion.angle_error_deg = (float)pivot.direction *
+                                 out.angle_error_deg;
+        motion.current_pwm = (float)out.right_pm * 0.1f;
+        if (out.status != MOTION_PRIMITIVE_RUNNING) {
+            FinishMotion(); /* DONE and FAULT both force output neutral. */
+            return;
+        }
+        if (out.immediate_neutral) Motor_Stop();
+        else Motor_SetPairPermille(out.left_pm,out.right_pm);
+        return;
+    }
 
     if (motion.state == MOTION_STRAIGHT) {
         float heading_error;

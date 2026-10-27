@@ -1,0 +1,143 @@
+{
+  "report_date": "2026-10-27",
+  "repository": "HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web",
+  "branch": "giomuadongbac",
+  "head_before_evidence_commit": "d90d5c10def6ff2a7c4f98174f738e233741cef7",
+  "overall_status": "ACQUISITION_ACCEPTED",
+  "qualification": "ACQUISITION_ACCEPTED",
+  "highest_accepted_level": "ACQUISITION_ACCEPTED",
+  "hardware_measurements_performed": true,
+  "firmware_uploaded": true,
+  "serial_port_opened": true,
+  "firmware": {
+    "platformio_environment": "ir_filter_diag_96m",
+    "motor_outputs_locked": true,
+    "uart": "USART1 PA9/PA10, 115200 baud",
+    "elf_sha256": "9C2316BFA7B4456182570416DD9AF33A7CDCDB932B19D53709C56A5B50B55228"
+  },
+  "operator_reported": {
+    "motor_vm_physically_disconnected": true,
+    "robot_secured_for_capture": true,
+    "uart_stlink_connected": true,
+    "uart_port": "COM6",
+    "independent_50mm_trials_confirmed": 3,
+    "wall_angle_for_latest_trial": "unmeasured",
+    "fixture_uncertainty_latest_trial_mm": 5
+  },
+  "software_validation": {
+    "native_and_host_ci_equivalent": "PASS",
+    "firmware_builds": "PASS",
+    "focused_ir_driver_test": "PASS",
+    "focused_ir_filter_test": "PASS",
+    "focused_ir_pipeline_test": "PASS",
+    "full_workflow_native_tests": "PASS",
+    "full_workflow_host_checks": "PASS",
+    "platformio_environments": {
+      "genericSTM32F411CE": "PASS",
+      "ir_filter_diag_96m": "PASS",
+      "ir_oled_test_96m": "PASS",
+      "oled_mpu_diag_96m": "PASS",
+      "flash_map_diag_96m": "PASS",
+      "ble_rx_diag_96m": "PASS",
+      "system_test_96m": "PASS",
+      "turn_pid_diag_96m": "PASS"
+    },
+    "github_actions_latest_observed": {
+      "status": "success",
+      "run_number": 149,
+      "head": "4c320200d1a036073993fc8f8e76b8290b756753",
+      "url": "https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/actions/runs/40495050813",
+      "current_head": false,
+      "used_as_current_validation": false
+    }
+  },
+  "acquisition_observed": {
+    "transport_valid_capture_count": 8,
+    "static_stationary_captures_used_for_exploratory_metrics": 6,
+    "static_capture_excluded_due_to_confirmed_movement": "results/ir_filter_20261027_201812/",
+    "valid_capture_coverage_min_pct": {
+      "IRF": 99.82,
+      "IRB": 99.32,
+      "IRH": 96.65
+    },
+    "scan_rate_hz_min": 1209.69,
+    "scan_rate_hz_max": 1210.5,
+    "malformed_frames": 0,
+    "uart_drop_delta": 0,
+    "dma_error_delta": 0,
+    "dma_timeout_delta": 0,
+    "adc_overrun_delta": 0,
+    "scan_failure_delta": 0,
+    "motor_locked_every_irh": true,
+    "off_on_saturation_count_at_4095": 0
+  },
+  "gates": {
+    "G0": {
+      "status": "PASS",
+      "threshold": "Motor VM physically disconnected; motor locked; no motor commands",
+      "observed": "Operator confirmed VM disconnected. Diagnostic firmware locked outputs and all valid-capture IRH records reported locked=1; no motor commands were sent.",
+      "evidence": "results/ir_filter_20261027_202455/summary.json"
+    },
+    "G1": {
+      "status": "PASS",
+      "threshold": "Native/build PASS; HELLO; >=95% IRF/IRB/IRH coverage; six channels; measured positive scan rate; malformed/drop/DMA/timeout/overrun/failure deltas zero",
+      "observed": "Full local workflow-equivalent checks passed. Eight transport-valid captures; minimum coverage IRF/IRB/IRH = 99.82/99.32/96.65%; scan 1209.69-1210.50 Hz; all error/drop deltas and malformed counts zero. Missing-HELLO attempts were correctly rejected.",
+      "evidence": "results/ir_filter_20261027_193858/summary.json; results/ir_filter_20261027_203335/summary.json; docs/ir/reports/IR_VALIDATION_20261027.md"
+    },
+    "G2": {
+      "status": "INCONCLUSIVE",
+      "threshold": "Three independent 20-second trials per in-range channel/distance with geometry and environment metadata",
+      "observed": "Three confirmed independent reseats at 50 mm in the two-side-wall configuration; 202026 independence unconfirmed. 40 mm is one setup plus same-fixture repeat. P0 white-wall 20 mm and other P1 distances are not measured; latest wall angle is unknown.",
+      "evidence": "results/ir_qualification_20261027/manifest.csv"
+    },
+    "G3": {
+      "status": "INCONCLUSIVE",
+      "threshold": "SNR >=5 in intended use region; selected filter reduces STD >=25% at most tested distances without losing wall variation",
+      "observed": "Exploratory paired SNR exceeds 5 and hybrid median STD reduction is 44.4-55.9% across channels for six stationary 40/50 mm captures. Coverage, geometry, and dynamic wall-variation evidence are insufficient to accept a filter.",
+      "evidence": "results/ir_qualification_20261027/metrics_by_channel.csv"
+    },
+    "G4": {
+      "status": "INCONCLUSIVE",
+      "threshold": "At least 10 rising and falling events per region; timestamp resolution sufficient for v_target*latency <=5 mm",
+      "observed": "No intentional step/event series. UART IRF is 40 Hz and cannot certify a 5-10 ms response.",
+      "evidence": "docs/ir/reports/IR_VALIDATION_20261027.md"
+    },
+    "G5": {
+      "status": "INCONCLUSIVE",
+      "threshold": "Quantified false-positive/negative and cross-talk across light, material, angle, and position with no safety-relevant misclassification",
+      "observed": "Only white matte walls and room lighting were measured, in a two-side-wall configuration. No single-wall, alternate-light/material, or angle/position matrix.",
+      "evidence": "results/ir_qualification_20261027/manifest.csv"
+    },
+    "G6": {
+      "status": "INCONCLUSIVE",
+      "threshold": "Per-channel monotonic LUT; independent holdout MAE <=2 mm and P95 absolute error <=5 mm; no extrapolation",
+      "observed": "No per-channel monotonic interval, LUT, or independent holdout.",
+      "evidence": "results/ir_qualification_20261027/metrics_by_channel.csv"
+    }
+  },
+  "filter_decision": "No filter selected for production or Wall PID. EMA alpha 0.10 produced the strongest static STD suppression in the measured captures; hybrid also exceeded the static reduction target there. Dynamic latency and broader repeatability are unmeasured, so all candidates remain experimental.",
+  "raw_hardware_log_paths": [
+    "results/ir_filter_20261027_193255/raw_uart.log",
+    "results/ir_filter_20261027_193540/raw_uart.log",
+    "results/ir_filter_20261027_193858/raw_uart.log",
+    "results/ir_filter_20261027_194913/raw_uart.log",
+    "results/ir_filter_20261027_195440/raw_uart.log",
+    "results/ir_filter_20261027_200844/raw_uart.log",
+    "results/ir_filter_20261027_201307/raw_uart.log",
+    "results/ir_filter_20261027_201812/raw_uart.log",
+    "results/ir_filter_20261027_202026/raw_uart.log",
+    "results/ir_filter_20261027_202455/raw_uart.log",
+    "results/ir_filter_20261027_203335/raw_uart.log"
+  ],
+  "plot_directories": [
+    "results/ir_filter_20261027_193858/",
+    "results/ir_filter_20261027_195440/",
+    "results/ir_filter_20261027_200844/",
+    "results/ir_filter_20261027_201307/",
+    "results/ir_filter_20261027_201812/",
+    "results/ir_filter_20261027_202026/",
+    "results/ir_filter_20261027_202455/",
+    "results/ir_filter_20261027_203335/"
+  ],
+  "retry_blocker": "No global hardware blocker for motor-locked acquisition. Remaining qualification needs a 20 mm fixture for P0, three independent trials per valid distance with measured channel geometry, high-resolution dynamic timestamps, robustness matrix, and holdout calibration."
+}

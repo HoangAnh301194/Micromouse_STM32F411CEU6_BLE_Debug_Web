@@ -165,6 +165,53 @@ void Motor_LockOutputs(void)
     UnlockIRQ(irq_state);
 }
 
+#if defined(SYSTEM_TEST_MODE)
+/* Deliberate, diagnostic-only unlock; never linked into production. */
+uint8_t Motor_SystemTestUnlockOutputs(void)
+{
+    uint32_t irq=LockIRQ();
+    if(!outputs_locked){UnlockIRQ(irq);return 0U;}
+    Motor_Stop();
+    command_age_ms=0U;
+    command_timeout_latched=0U;
+    outputs_locked=0U;
+    UnlockIRQ(irq);
+    return 1U;
+}
+#endif
+
+#if defined(TURN_PID_DIAG)
+/* Isolated turn qualification profile only, called after physical PA0.
+ * Production binaries do NOT contain this unlock API. */
+uint8_t Motor_TurnDiagUnlockOutputs(void)
+{
+    uint32_t irq=LockIRQ();
+    if(!outputs_locked){UnlockIRQ(irq);return 0U;}
+    Motor_Stop();
+    command_age_ms=0U;
+    command_timeout_latched=0U;
+    outputs_locked=0U;
+    UnlockIRQ(irq);
+    return 1U;
+}
+#endif
+
+#if defined(WALL_PID_TEST_MODE)
+uint8_t Motor_WallPidTestUnlockOutputs(void)
+{
+    uint32_t irq=LockIRQ();
+    if(!outputs_locked || command_timeout_latched){
+        UnlockIRQ(irq);
+        return 0U;
+    }
+    Motor_Stop();
+    command_age_ms=0U;
+    outputs_locked=0U;
+    UnlockIRQ(irq);
+    return 1U;
+}
+#endif
+
 uint8_t Motor_OutputsLocked(void)
 {
     return outputs_locked;

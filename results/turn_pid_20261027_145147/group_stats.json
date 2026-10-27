@@ -1,0 +1,322 @@
+{
+  "180deg_SINGLEBRAKE": {
+    "runs": 1,
+    "trace_pass": 1,
+    "rise_10_90_ms": {
+      "mean": 222.996,
+      "stdev": null
+    },
+    "stop_ms": {
+      "mean": 940.0,
+      "stdev": null
+    },
+    "settling_ms": {
+      "mean": 780.0,
+      "stdev": null
+    },
+    "overshoot_deg": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "max_abs_gyro_dps": {
+      "mean": 837.3,
+      "stdev": null
+    },
+    "final_abs_error_deg": {
+      "mean": 1.51,
+      "stdev": null
+    },
+    "coast_drift_deg": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "imu_effective_hz": {
+      "mean": 999.425,
+      "stdev": null
+    },
+    "imu_intervals_max_us": {
+      "mean": 1677.0,
+      "stdev": null
+    },
+    "imu_intervals_mean_us": {
+      "mean": 1000.574,
+      "stdev": null
+    },
+    "imu_age_mean_us": {
+      "mean": 641.0,
+      "stdev": null
+    },
+    "imu_age_max_us": {
+      "mean": 756.0,
+      "stdev": null
+    },
+    "max_requested_pwm_pm": {
+      "mean": 1000.0,
+      "stdev": null
+    },
+    "max_applied_pwm_pm": {
+      "mean": 1000.0,
+      "stdev": null
+    },
+    "encoder_imbalance_pct": {
+      "mean": 1.448,
+      "stdev": null
+    },
+    "terminal_80_to_stop_ms": {
+      "mean": 740.0,
+      "stdev": null
+    },
+    "kick_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "smooth_approach_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "reverse_pwm_samples": {
+      "mean": 4.0,
+      "stdev": null
+    },
+    "rapid_accel_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_near_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_coast_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "peak_gyro_1khz_dps": {
+      "mean": 845.1,
+      "stdev": null
+    },
+    "trace_first_ms": {
+      "mean": 20.0,
+      "stdev": null
+    },
+    "trace_terminal_disagreement_deg": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "flow_accel_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "flow_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "flow_coast_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "flow_approach_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "flow_finish_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "rapid_or_flow_brake_reaccelerations": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "glide_accel_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "glide_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "glide_coast_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "glide_approach_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "glide_finish_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "brake_first_yaw_deg": {
+      "mean": 111.6,
+      "stdev": null
+    },
+    "max_cmd_delta_20ms": {
+      "mean": 640.0,
+      "stdev": null
+    },
+    "terminal_last10_to_stop_ms": {
+      "mean": 380.0,
+      "stdev": null
+    },
+    "sprint_accel_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "sprint_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "sprint_coast_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "sprint_approach_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "sprint_finish_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "track_accel_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "track_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "track_near_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "track_settle_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "midturn_low_speed_samples": {
+      "mean": 5.0,
+      "stdev": null
+    },
+    "midturn_reverse_samples": {
+      "mean": 2.0,
+      "stdev": null
+    },
+    "min_midturn_gyro_dps": {
+      "mean": -35.6,
+      "stdev": null
+    },
+    "guard_forward_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "guard_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "guard_near_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "guard_stop_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "guard_active_band_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "in_target_band_high_rate_samples": {
+      "mean": 1.0,
+      "stdev": null
+    },
+    "first_band_rate_dps": {
+      "mean": 23.3,
+      "stdev": null
+    },
+    "pace_drive_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "pace_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "pace_near_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "pace_stop_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "pace_band_brake_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "coast_drive_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "coast_neutral_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "coast_near_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "coast_stop_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "coast_band_neutral_samples": {
+      "mean": 0.0,
+      "stdev": null
+    },
+    "coast_negative_command_samples": {
+      "mean": 4.0,
+      "stdev": null
+    },
+    "command_polarity_flips": {
+      "mean": 2.0,
+      "stdev": null
+    },
+    "applied_pwm_max_step_20ms": {
+      "mean": 550.0,
+      "stdev": null
+    },
+    "neutral_actual_high_gyro_samples": {
+      "mean": 2.0,
+      "stdev": null
+    },
+    "single_accel_samples": {
+      "mean": 10.0,
+      "stdev": null
+    },
+    "single_brake_samples": {
+      "mean": 5.0,
+      "stdev": null
+    },
+    "single_coast_samples": {
+      "mean": 3.0,
+      "stdev": null
+    },
+    "single_tail_samples": {
+      "mean": 20.0,
+      "stdev": null
+    },
+    "single_settle_samples": {
+      "mean": 7.0,
+      "stdev": null
+    },
+    "single_band_fast_samples": {
+      "mean": 1.0,
+      "stdev": null
+    }
+  }
+}

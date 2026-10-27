@@ -21,6 +21,12 @@ static OLED_SharedStats stats;
 /* Phase 0 idle, 1 page/column command in flight, 2 pixel DMA in flight. */
 void OLED_SharedInit(uint8_t found) {
     memset(shadow,0,sizeof(shadow));
+#if defined(SYSTEM_TEST_MODE)
+    /* System-test draws a blocking splash BEFORE MPU starts.
+     * Mirror those bytes so the later dirty renderer also clears pixels
+     * that were lit by the splash, avoiding stale OLED text. */
+    if (found) memcpy(shadow,SSD1306_GetFramebuffer(),sizeof(shadow));
+#endif
     memset(frame,0,sizeof(frame));
     memset(&stats,0,sizeof(stats));
     offset=0U;pending_pos=0U;pending_len=0U;

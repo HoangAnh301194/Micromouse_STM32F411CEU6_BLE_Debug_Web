@@ -1,0 +1,214 @@
+{
+  "180deg_TRACK": {
+    "runs": 3,
+    "trace_pass": 3,
+    "rise_10_90_ms": {
+      "mean": 273.791,
+      "stdev": 2.673
+    },
+    "stop_ms": {
+      "mean": 721.667,
+      "stdev": 58.595
+    },
+    "settling_ms": {
+      "mean": 540.0,
+      "stdev": 40.0
+    },
+    "overshoot_deg": {
+      "mean": 0.28,
+      "stdev": 0.485
+    },
+    "max_abs_gyro_dps": {
+      "mean": 743.833,
+      "stdev": 8.795
+    },
+    "final_abs_error_deg": {
+      "mean": 1.243,
+      "stdev": 0.525
+    },
+    "coast_drift_deg": {
+      "mean": 0.053,
+      "stdev": 0.092
+    },
+    "imu_effective_hz": {
+      "mean": 999.768,
+      "stdev": 0.755
+    },
+    "imu_intervals_max_us": {
+      "mean": 1519.333,
+      "stdev": 210.148
+    },
+    "imu_intervals_mean_us": {
+      "mean": 1000.134,
+      "stdev": 0.69
+    },
+    "imu_age_mean_us": {
+      "mean": 605.155,
+      "stdev": 49.198
+    },
+    "imu_age_max_us": {
+      "mean": 754.333,
+      "stdev": 4.726
+    },
+    "max_requested_pwm_pm": {
+      "mean": 951.0,
+      "stdev": 12.53
+    },
+    "max_applied_pwm_pm": {
+      "mean": 940.667,
+      "stdev": 8.505
+    },
+    "encoder_imbalance_pct": {
+      "mean": 1.366,
+      "stdev": 0.787
+    },
+    "terminal_80_to_stop_ms": {
+      "mean": 501.667,
+      "stdev": 58.595
+    },
+    "kick_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "smooth_approach_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "reverse_pwm_samples": {
+      "mean": 3.333,
+      "stdev": 0.577
+    },
+    "rapid_accel_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_brake_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_near_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_coast_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "peak_gyro_1khz_dps": {
+      "mean": 747.833,
+      "stdev": 6.341
+    },
+    "trace_first_ms": {
+      "mean": 20.0,
+      "stdev": 0.0
+    },
+    "trace_terminal_disagreement_deg": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "flow_accel_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "flow_brake_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "flow_coast_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "flow_approach_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "flow_finish_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "rapid_or_flow_brake_reaccelerations": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "glide_accel_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "glide_brake_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "glide_coast_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "glide_approach_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "glide_finish_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "brake_first_yaw_deg": {
+      "mean": null,
+      "stdev": null
+    },
+    "max_cmd_delta_20ms": {
+      "mean": 403.333,
+      "stdev": 14.742
+    },
+    "terminal_last10_to_stop_ms": {
+      "mean": 295.0,
+      "stdev": 70.0
+    },
+    "sprint_accel_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "sprint_brake_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "sprint_coast_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "sprint_approach_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "sprint_finish_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "track_accel_samples": {
+      "mean": 18.333,
+      "stdev": 0.577
+    },
+    "track_brake_samples": {
+      "mean": 1.333,
+      "stdev": 0.577
+    },
+    "track_near_samples": {
+      "mean": 6.333,
+      "stdev": 2.082
+    },
+    "track_settle_samples": {
+      "mean": 9.667,
+      "stdev": 1.528
+    },
+    "midturn_low_speed_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "midturn_reverse_samples": {
+      "mean": 0.0,
+      "stdev": 0.0
+    },
+    "min_midturn_gyro_dps": {
+      "mean": 158.233,
+      "stdev": 77.956
+    }
+  }
+}

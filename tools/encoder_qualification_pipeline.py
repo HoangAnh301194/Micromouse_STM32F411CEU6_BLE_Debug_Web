@@ -75,7 +75,7 @@ def git_state():
 def source_audit():
     enc = (ROOT/"src/encoder.c").read_text(encoding="utf-8")
     ctrl = (ROOT/"src/control.c").read_text(encoding="utf-8")
-    cfg = (ROOT/"platformio.ini").read_text(encoding="utf-8")
+    cfg = (ROOT/"platformio_legacy.ini").read_text(encoding="utf-8")
     main = (ROOT/"src/main.c").read_text(encoding="utf-8")
     checks = {
         "quadrature_x4": "(3UL << 0)" in enc,
@@ -173,10 +173,10 @@ def gates(directory, skip_build):
          "--outdir",str(directory)],"estimator_study",directory,90)
     if not skip_build:
         d["checks"]["build_locked"]=run(
-            [sys.executable,"-m","platformio","run","-e",
+            [sys.executable,"-m","platformio","run","-c","platformio_legacy.ini","-e",
              "integration_diag_encoder_motor_off_96m"],"build_locked",directory,420)
         d["checks"]["build_encoder_on"]=run(
-            [sys.executable,"-m","platformio","run","-e",
+            [sys.executable,"-m","platformio","run","-c","platformio_legacy.ini","-e",
              "integration_diag_encoder_motor_on_96m"],"build_encoder_on",directory,420)
     d["pass"]=d["source"]["pass"] and all(
         v["pass"] for v in d["checks"].values())
@@ -762,7 +762,7 @@ def main(argv=None):
                     data["warning"]=" ".join(warnings)
             finally:
                 # Attempt restoration even when a motor-on test fails or is interrupted.
-                restored=run([sys.executable,"-m","platformio","run","-e",
+                restored=run([sys.executable,"-m","platformio","run","-c","platformio_legacy.ini","-e",
                               "integration_diag_encoder_motor_off_96m","-t","upload"],
                              "restore_motor_off",path,360)
                 data["restored_motor_off"]=restored
@@ -775,7 +775,7 @@ def main(argv=None):
             if args.flash_motor_off:
                 if data["software"]["git"]["tracked_dirty"]:
                     raise RuntimeError("Tracked tree modified; motor-off flashing blocked")
-                f=run([sys.executable,"-m","platformio","run","-e",
+                f=run([sys.executable,"-m","platformio","run","-c","platformio_legacy.ini","-e",
                        "integration_diag_encoder_motor_off_96m","-t","upload"],
                       "motor_off_upload",path,360)
                 data["upload"]=f
