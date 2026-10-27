@@ -26,6 +26,8 @@ jobs:
           node tests/web/test_ble_map_web.js
           node tests/web/test_flash_map_gatt_control.js
           python tools/test_ble_rx_qualification.py
+      - name: Native modular motion primitive tests (left/right 90 and 180, fault paths)
+        run: python tests/regression/motion_primitives_native_test.py
       - name: Verify canonical tools after OLED handover
         run: |
           python - <<'PY'
