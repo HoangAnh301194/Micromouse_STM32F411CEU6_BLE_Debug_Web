@@ -118,7 +118,7 @@ static void test_faults_and_future_ids(void) {
     assert(MotionPrimitive_Start(&c,MOTION_PRIMITIVE_PIVOT_90,
                                  MOTION_DIR_LEFT,0)==MOTION_PRIMITIVE_OK);
     update_n(&c,&o,80,0,0);
-    update_n(&c,&o,1,0,-900);
+    update_n(&c,&o,1,0,900); /* overspeed in requested LEFT direction */
     assert(o.status==MOTION_PRIMITIVE_FAULT);
     assert(o.result==MOTION_PRIMITIVE_RATE_LIMIT);
 }
