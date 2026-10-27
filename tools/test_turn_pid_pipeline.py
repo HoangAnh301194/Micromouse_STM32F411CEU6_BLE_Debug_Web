@@ -449,9 +449,57 @@ class TurnTraceTests(unittest.TestCase):
             "#define TP_COAST_RATE_180          800.0f",
             "#define TP_COAST_PWM_90           1000.0f",
             "#define TP_COAST_PWM_180          1000.0f",
-            "turn_pid_diag_v13_coast_fast",
+            "turn_pid_diag_v14_singlebrake",
         ):
             self.assertIn(token,firmware)
+
+    def test_singlebrake_v14_stage_order_and_90_180_pwm(self):
+        def frame(t,yaw,gyro,cmd,stage,target=90,phase=1):
+            cd=round(100*yaw)
+            return parse_sample(
+                f"TP,D,37,{t},{target},12,{phase},{cd},{target*100-cd},"
+                f"{round(gyro*10)},0,0,0,{cmd},{-cmd},{cmd},"
+                f"-100,100,680,{stage}")
+        trial=[frame(20,2,80,350,47),
+               frame(40,30,580,900,47),
+               frame(60,44,600,440,48),
+               frame(80,70,350,-300,48),
+               frame(100,79,120,0,49),
+               frame(120,85,40,0,49),
+               frame(140,87,24,115,50),
+               frame(160,88.5,9,0,51),
+               frame(300,88.5,0,0,51,phase=2)]
+        self.assertTrue(all(x is not None for x in trial))
+        a=analyze(trial,{"reason":"DONE","stop_ms":"160",
+                         "peak_dps10":"6250","final_cd":"8850"})
+        self.assertEqual(a["profile"],"SINGLEBRAKE")
+        self.assertEqual(a["single_accel_samples"],2)
+        self.assertEqual(a["single_brake_samples"],2)
+        self.assertEqual(a["single_coast_samples"],2)
+        self.assertEqual(a["single_tail_samples"],1)
+        self.assertEqual(a["single_settle_samples"],1)
+        self.assertEqual(a["brake_first_yaw_deg"],44)
+        self.assertEqual(a["command_polarity_flips"],2)
+        self.assertIsNone(frame(20,2,80,901,47))
+        self.assertIsNone(frame(20,2,80,350,44))
+        trial180=[frame(20,2,80,350,47,target=180),
+                  frame(40,90,770,1000,47,target=180),
+                  frame(60,120,790,250,48,target=180),
+                  frame(80,170,170,-250,48,target=180),
+                  frame(100,175,80,0,49,target=180),
+                  frame(120,178.5,10,0,51,target=180),
+                  frame(300,178.5,0,0,51,target=180,phase=2)]
+        b=analyze(trial180,{"reason":"DONE","stop_ms":"120",
+                            "final_cd":"17850"})
+        self.assertEqual(b["profile"],"SINGLEBRAKE")
+        self.assertEqual(b["target_deg"],180)
+        self.assertEqual(b["single_brake_samples"],2)
+        self.assertIsNotNone(frame(40,90,770,1000,47,target=180))
+        self.assertIsNone(frame(40,90,770,1001,47,target=180))
+        firmware=(Path(__file__).resolve().parent.parent/"src"/"turn_pid_diag.c").read_text()
+        self.assertIn("TP_SINGLEBRAKE=12",firmware)
+        self.assertIn("if(c=='n')tp.profile=TP_SINGLEBRAKE;",firmware)
+        self.assertIn("TP_SINGLE_RATE_90           650.0f",firmware)
 
     def test_coast_uart_profile_selection_matches_index_11(self):
         # Regression: TP_COAST is already the motor coast phase (2).
