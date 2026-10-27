@@ -262,6 +262,8 @@ def main(argv=None)->int:
     group.add_argument("--port",help="USART1 PA9 COM port, e.g. COM7")
     group.add_argument("--input",type=Path,help="Replay raw_uart.log")
     p.add_argument("--seconds",type=float,default=20)
+    p.add_argument("--hello-timeout",type=float,default=5.0,
+                   help="Seconds to wait for the motor-locked HELLO before timing an invalid capture")
     p.add_argument("--distance-mm",type=float,default=None,
                    help="Measured target distance; omit for dynamic/step")
     p.add_argument("--surface",default="unknown")
@@ -273,7 +275,8 @@ def main(argv=None)->int:
     p.add_argument("--plot",action="store_true")
     p.add_argument("--output",type=Path,default=None)
     args=p.parse_args(argv)
-    if args.seconds<=0 or args.trial<1:p.error("seconds and trial must be positive")
+    if args.seconds<=0 or args.trial<1 or args.hello_timeout<0:
+        p.error("seconds and trial must be positive; hello-timeout cannot be negative")
     stamp=dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     dest=args.output or ROOT/"results"/f"ir_filter_{stamp}"
     if dest.exists():p.error(f"Output directory exists: {dest}")
@@ -286,15 +289,28 @@ def main(argv=None)->int:
             try:import serial
             except ImportError:raise RuntimeError("pyserial required: pip install pyserial")
             ser=serial.Serial(args.port,115200,timeout=0.2)
-            started=time.monotonic()
-            print(f"Receiving {args.port}; motor output MUST be locked. CTRL+C ends capture.")
-            while time.monotonic()-started<args.seconds:
+            opened=time.monotonic()
+            capture_started=None
+            print(f"Opened {args.port}; waiting up to {args.hello_timeout:g}s for "
+                  "IR_FILTER motor-locked HELLO. Reset the MCU now if needed.")
+            while capture_started is None or time.monotonic()-capture_started<args.seconds:
                 b=ser.readline()
-                if not b:continue
-                line=b.decode("ascii",errors="replace").strip()
-                raw_lines.append(line)
-                if line.startswith("IR_FILTER,HELLO,ir_filter_v1_motor_locked"):
-                    hello_found=True
+                now=time.monotonic()
+                if b:
+                    line=b.decode("ascii",errors="replace").strip()
+                    raw_lines.append(line)
+                    if line.startswith("IR_FILTER,HELLO,ir_filter_v1_motor_locked"):
+                        hello_found=True
+                        if capture_started is None:
+                            capture_started=now
+                    if capture_started is None and now-opened>=args.hello_timeout:
+                        capture_started=now
+                    if capture_started is None:
+                        continue
+                elif capture_started is None and now-opened>=args.hello_timeout:
+                    capture_started=now
+                if not b:
+                    continue
                 parsed=parse(line)
                 if parsed is None:
                     if line.startswith(("IRF,","IRB,","IRH,")):malformed+=1
@@ -308,7 +324,7 @@ def main(argv=None)->int:
                     preview="  ".join(f"{v['channel']}={v['raw']}/{v['ema25']}" for v in latest)
                     print(f"{latest[0]['ms']}ms {preview} (raw/EMA25)")
                     last_print=now
-            capture_elapsed_s=time.monotonic()-started
+            capture_elapsed_s=time.monotonic()-capture_started
         else:
             for line in args.input.read_text(encoding="utf-8",errors="replace").splitlines():
                 raw_lines.append(line)

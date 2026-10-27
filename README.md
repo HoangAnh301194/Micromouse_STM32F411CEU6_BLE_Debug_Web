@@ -142,6 +142,28 @@ ADC counts, refreshed at most 5Hz. Optional PA9/PA10 UART frames use
 `IR6,...` at 5Hz. Motor outputs are permanently locked.
 [Wiring, caveats and restoring normal firmware](docs/system_debug/IR_OLED_VIEWER_20261024.md).
 
+## IR filter qualification (motor-locked)
+
+The separate `ir_filter_diag_96m` profile streams six-channel RAW,
+Median-3, EMA and hybrid candidates over USART1 at 115200 baud. Before
+upload or capture, physically disconnect motor VM; the firmware lock is an
+additional safeguard, not a replacement for the physical disconnect.
+
+The latest evidence reaches **ACQUISITION_ACCEPTED only**. No filter has
+been selected for production or Wall PID. See the [IR validation report](docs/ir/reports/IR_VALIDATION_20261027.md),
+[acceptance JSON](results/ir_qualification_20261027/acceptance.json),
+[capture manifest](results/ir_qualification_20261027/manifest.csv) and
+[per-channel metrics](results/ir_qualification_20261027/metrics_by_channel.csv).
+The capture pipeline preserves raw UART, ON/OFF samples, per-channel traces,
+summary JSON and six plots under `results/ir_filter_*`.
+
+Example motor-locked captures (measure and record actual fixture geometry):
+
+```powershell
+python tools/ir_filter_pipeline.py --port COM6 --seconds 30 --scenario no-wall --surface none --light room --trial 1 --plot
+python tools/ir_filter_pipeline.py --port COM6 --seconds 20 --scenario static --distance-mm 50 --surface "white matte" --light room --trial 1 --notes "record angle and fixture uncertainty" --plot
+```
+
 ## Build
 
 ```powershell

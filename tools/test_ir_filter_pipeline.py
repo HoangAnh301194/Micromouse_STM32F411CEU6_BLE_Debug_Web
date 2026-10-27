@@ -13,6 +13,8 @@ sys.path.insert(0,str(ROOT/"tools"))
 from ir_filter_pipeline import parse,make_rows,metrics,step_response,isolated_spikes
 
 def check():
+    diag=(ROOT/"src/ir_filter_diag.c").read_text(encoding="utf-8")
+    assert diag.count("LogHello();")==2
     p="|".join(["800","801","802","803","804","805"])
     f=f"IRF,ms=1000,n=123,us=1000000,d={p},med={p},e10={p},e25={p},hy={p}"
     item=parse(f)
@@ -37,6 +39,9 @@ def check():
                 ",off=10|10|10|10|10|10,on=20|20|20|20|20|20")
             if t%1000==0:
                 lines.append(
+                    "IR_FILTER,HELLO,ir_filter_v1_motor_locked,"
+                    "channels=L90|L45|L0|R0|R45|R90,log_hz=40,unit=adc")
+                lines.append(
                     f"IRH,ms={t},n={t+1},scans={t+1},fail=0,"
                     "dma_err=0,dma_to=0,ovr=0,drop=0,locked=1,age=0")
         src.write_text("\n".join(lines)+"\n",encoding="utf-8")
@@ -60,7 +65,9 @@ def check():
         with (out/"ir_on_off.csv").open(newline="") as fh:
             assert len(list(csv.DictReader(fh)))>=15*6
         bad_src=root/"missing_hello.log"
-        bad_src.write_text("\n".join(lines[1:])+"\n",encoding="utf-8")
+        bad_src.write_text("\n".join(
+            line for line in lines if not line.startswith("IR_FILTER,HELLO,")
+        )+"\n",encoding="utf-8")
         bad_out=root/"bad"
         result=subprocess.run(
             [sys.executable,str(ROOT/"tools/ir_filter_pipeline.py"),

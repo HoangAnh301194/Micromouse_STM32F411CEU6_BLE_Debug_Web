@@ -47,6 +47,10 @@ static void LogFilter(uint32_t ms, const IR_Data_t *ir,
                 (unsigned)f->median_ema25[2],(unsigned)f->median_ema25[3],
                 (unsigned)f->median_ema25[4],(unsigned)f->median_ema25[5]);
 }
+static void LogHello(void)
+{
+    UART_SendString("IR_FILTER,HELLO,ir_filter_v1_motor_locked,channels=L90|L45|L0|R0|R45|R90,log_hz=40,unit=adc\r\n");
+}
 static void LogOnOff(uint32_t ms,const IR_Data_t *ir,
                      const IR_Diagnostics_t *d)
 {
@@ -88,7 +92,7 @@ int IR_FilterDiag_Main(void)
     }
     IR_FilterReset(&filter);
     IR_Init();
-    UART_SendString("IR_FILTER,HELLO,ir_filter_v1_motor_locked,channels=L90|L45|L0|R0|R45|R90,log_hz=40,unit=adc\r\n");
+    LogHello();
     IR_StartScan();
     last_complete_ms=last_log=last_raw=last_health=last_retry=millis();
 
@@ -120,6 +124,7 @@ int IR_FilterDiag_Main(void)
         }
         if((uint32_t)(now-last_health)>=IRF_HEALTH_PERIOD_MS){
             last_health=now;
+            LogHello();
             IR_GetDiagnostics(&diagnostics);
             UART_Printf("IRH,ms=%lu,n=%lu,scans=%lu,fail=%lu,"
                         "dma_err=%lu,dma_to=%lu,ovr=%lu,drop=%lu,"

@@ -46,6 +46,7 @@ python -m platformio run -e ir_filter_diag_96m -t upload
 ~~~
 
 Chuỗi HELLO phải chứa: IR_FILTER,HELLO,ir_filter_v1_motor_locked. Mọi bước có lỗi giữ trạng thái BLOCKED, không chuyển giai đoạn.
+Firmware diagnostic phát HELLO khi khởi động và lặp lại theo nhịp IRH 1 Hz để host có thể mở COM sau khi board đã chạy. Collector chờ HELLO trước khi tính đủ thời lượng capture; nếu hết timeout không có HELLO, dữ liệu vẫn được lưu nhưng `valid_capture=false`.
 
 ## D. Ma trận thực nghiệm và thứ tự chạy
 
