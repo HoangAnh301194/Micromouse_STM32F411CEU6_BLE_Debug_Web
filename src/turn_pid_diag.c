@@ -180,6 +180,32 @@
 #define TP_COAST_GYRO_ABORT        880.0f
 #define TP_COAST_STOP_RATE          12.0f
 #define TP_COAST_MIN_MOVE_PWM      110.0f
+/* SINGLEBRAKE v14: calibrated against actual SPRINT 90/180 logs.
+ * A single forward->reverse brake, followed by a coasting finish.
+ * NO repeated high-power acceleration, and NO repeated reverse
+ * torque toggling once the braking phase has ended.
+ * Requires cautious SINGLE floor qualification (not proven safe). */
+#define TP_SINGLE_RATE_90           650.0f
+#define TP_SINGLE_RATE_180          780.0f
+#define TP_SINGLE_PWM_90            900.0f
+#define TP_SINGLE_PWM_180          1000.0f
+#define TP_SINGLE_ACCEL_DPS2       5500.0f
+#define TP_SINGLE_DECEL_90         5500.0f
+#define TP_SINGLE_DECEL_180        5500.0f
+#define TP_SINGLE_BRAKE_LEAD_90       0.010f
+#define TP_SINGLE_BRAKE_LEAD_180      0.015f
+#define TP_SINGLE_BRAKE_RESERVE       8.0f
+#define TP_SINGLE_BRAKE_MAX        300.0f
+#define TP_SINGLE_BRAKE_CMD_SLEW   160.0f
+#define TP_SINGLE_BRAKE_EXIT_RATE  125.0f
+#define TP_SINGLE_BRAKE_MAX_TICKS  220U
+#define TP_SINGLE_COAST_EXIT_RATE   38.0f
+#define TP_SINGLE_FINAL_PWM_CAP    155.0f
+#define TP_SINGLE_FINAL_PWM_SLEW    12.0f
+#define TP_SINGLE_STOP_RATE         12.0f
+#define TP_SINGLE_GYRO_ABORT       875.0f
+#define TP_SINGLE_TAIL_STALL_MS    520U
+
 
 
 
@@ -217,7 +243,7 @@ static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10,TP_COAST_PROFILE=11};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10,TP_COAST_PROFILE=11,TP_SINGLEBRAKE=12};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
       TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8,TP_DRIFT=9};
 
@@ -237,7 +263,7 @@ typedef struct {
 /* Preserve BASE/FAST/TUNED exactly for comparison against real logs.
  * SMOOTH: first hardware-unverified fix for strong near-target jolt.
  * Do not infer physical stability from firmware compilation. */
-static const TP_Profile profiles[12]={
+static const TP_Profile profiles[13]={
     {4.8f,1.15f,0.0f,0.35f,650.0f,150.0f,260,95,0.0f,0.0f},
     {6.0f,1.35f,0.0f,0.40f,950.0f,230.0f,300,95,0.0f,0.0f},
     {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f},
@@ -257,7 +283,9 @@ static const TP_Profile profiles[12]={
     /* PACE: higher rate reference, moderate damping and terminal
      * stiction compensation, without an impulsive PWM kick. */
     {12.0f,1.85f,0.0f,0.86f,3600.0f,620.0f,920,0,0.0f,0.0f},
-    {12.0f,2.20f,0.0f,1.03f,4900.0f,800.0f,1000,0,0.0f,0.0f}
+    {12.0f,2.20f,0.0f,1.03f,4900.0f,800.0f,1000,0,0.0f,0.0f},
+    /* SINGLEBRAKE: fast launch then one physically bounded reverse. */
+    {12.0f,2.10f,0.0f,1.20f,5500.0f,780.0f,1000,0,0.0f,0.0f}
 };
 
 typedef struct {
@@ -1057,6 +1085,124 @@ static void CoastControlTick(void) {
     } else tp.stuck_ticks=0U;
     tp.pid_pm=(int16_t)rate_pid;
     tp.ff_pm=(int16_t)ff;
+    tp.requested_pwm=(int16_t)u;
+    Motor_SetPairPermille((int16_t)-u,(int16_t)u);
+}
+/* SINGLEBRAKE v14 diagnostic (90/180), informed by physical
+ * SPRINT logs, not yet hardware-qualified.
+ * 47=accelerate,48=single reverse brake,49=coast,
+ * 50=bounded forward tail,51=latched settle,52=in-band overspeed.
+ * Controller output slews; motor driver's 30ms reverse wait remains.
+ * Critical monotonic property: phase NEVER returns to acceleration
+ * or reverse-brake after advancing past that stage. */
+static void SingleBrakeControlTick(void) {
+    const TP_Profile *cfg=&profiles[TP_SINGLEBRAKE];
+    const float dt=0.005f;
+    float err=tp.err,w=tp.rate,old=(float)tp.requested_pwm,u=0.0f;
+    float vmax=tp.mode==TP_180?TP_SINGLE_RATE_180:TP_SINGLE_RATE_90;
+    float cap=tp.mode==TP_180?TP_SINGLE_PWM_180:TP_SINGLE_PWM_90;
+    if(err<-TP_ANGLE_BAND){StopAndCoast(TP_ANGLE);return;}
+    /* Neutral settling is latched; never apply another motor kick
+     * after having accepted the angle/rate together. */
+    if(tp.flow_phase==4U){
+        tp.stage=51U;
+        tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+        tp.ref_rate=0.0f;
+        Motor_Stop();
+        if(fabsf(err)>TP_ANGLE_BAND){
+            StopAndCoast(TP_DRIFT);return;
+        }
+        tp.stable_ticks+=TP_CONTROL_DIV;
+        if(tp.stable_ticks>=TP_SETTLE_TICKS)StopAndCoast(TP_DONE);
+        return;
+    }
+    if(fabsf(err)<=TP_ANGLE_BAND && fabsf(w)<=TP_SINGLE_STOP_RATE){
+        tp.flow_phase=4U;tp.stage=51U;
+        tp.stable_ticks=TP_CONTROL_DIV;
+        tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+        tp.ref_rate=0.0f;Motor_Stop();return;
+    }
+    if(tp.flow_phase==0U){
+        float positive=w>0.0f?w:0.0f;
+        float lead=tp.mode==TP_180?TP_SINGLE_BRAKE_LEAD_180:
+                                   TP_SINGLE_BRAKE_LEAD_90;
+        float a=tp.mode==TP_180?TP_SINGLE_DECEL_180:
+                                TP_SINGLE_DECEL_90;
+        float remaining_brake=positive*positive/(2.0f*a)+
+                              lead*positive+TP_SINGLE_BRAKE_RESERVE;
+        if(positive>180.0f && err<=remaining_brake){
+            tp.flow_phase=1U;tp.flow_ticks=0U;
+            tp.ref_rate=0.0f;PID_Reset(&tp.pid_rate);
+        }
+    }
+    if(tp.flow_phase==0U){
+        float ref=Limit(tp.ref_rate+TP_SINGLE_ACCEL_DPS2*dt,
+                         0.0f,vmax);
+        float pid=PID_Compute(&tp.pid_rate,ref,w,dt);
+        float ff=cfg->kff_rate*ref+0.04f*TP_SINGLE_ACCEL_DPS2;
+        float requested=Limit(pid+ff,0.0f,cap);
+        tp.ref_rate=ref;tp.stage=47U;
+        u=Limit(requested,old-105.0f,old+105.0f);
+        u=Limit(u,0.0f,cap);
+        tp.pid_pm=(int16_t)pid;tp.ff_pm=(int16_t)ff;
+    }else if(tp.flow_phase==1U){
+        tp.stage=48U;tp.flow_ticks+=TP_CONTROL_DIV;
+        tp.ref_rate=0.0f;
+        /* A single 30% reverse episode; the motor's reversal deadtime
+         * can consume 30+ms so braking is triggered BEFORE the target.
+         * Never brake through zero angular velocity. */
+        if(w<=TP_SINGLE_BRAKE_EXIT_RATE ||
+           (err<=6.0f && w<=165.0f) ||
+           tp.flow_ticks>=TP_SINGLE_BRAKE_MAX_TICKS){
+            tp.flow_phase=2U;
+            tp.flow_ticks=0U;
+            u=Limit(0.0f,old-TP_SINGLE_BRAKE_CMD_SLEW,
+                          old+TP_SINGLE_BRAKE_CMD_SLEW);
+        }else{
+            float desired=-Limit(100.0f+0.75f*(w-125.0f),
+                                  0.0f,TP_SINGLE_BRAKE_MAX);
+            u=Limit(desired,old-TP_SINGLE_BRAKE_CMD_SLEW,
+                            old+TP_SINGLE_BRAKE_CMD_SLEW);
+        }
+        tp.pid_pm=0;tp.ff_pm=(int16_t)u;
+    }else if(tp.flow_phase==2U){
+        tp.stage=49U;tp.flow_ticks+=TP_CONTROL_DIV;
+        tp.ref_rate=0.0f;tp.pid_pm=tp.ff_pm=0;
+        /* Go truly neutral; do not start a positive correction while
+         * reverse PWM is still applied or gyro remains fast. */
+        u=0.0f;
+        if(w<=TP_SINGLE_COAST_EXIT_RATE &&
+           tp.flow_ticks>=50U && err>TP_ANGLE_BAND){
+            tp.flow_phase=3U;tp.flow_ticks=0U;
+            PID_Reset(&tp.pid_rate);
+        }
+    }else{
+        float positive=old>0.0f?old:0.0f;
+        float desired_rate=Limit(6.0f*err,15.0f,90.0f);
+        float desired=Limit(105.0f+0.8f*(desired_rate-w),
+                            0.0f,TP_SINGLE_FINAL_PWM_CAP);
+        tp.stage=50U;
+        /* No "0->150->0" pulses. Both edges have slew; positive
+         * correction only, with a small maximum demand. */
+        if(err<4.0f && w>desired_rate)desired=0.0f;
+        u=Limit(desired,positive-TP_SINGLE_FINAL_PWM_SLEW,
+                         positive+TP_SINGLE_FINAL_PWM_SLEW);
+        u=Limit(u,0.0f,TP_SINGLE_FINAL_PWM_CAP);
+        tp.ref_rate=desired_rate;tp.pid_pm=(int16_t)(desired_rate-w);
+        tp.ff_pm=(int16_t)(u-(float)tp.pid_pm);
+        if(fabsf(w)<3.0f && err>TP_ANGLE_BAND){
+            tp.stuck_ticks+=TP_CONTROL_DIV;
+            if(tp.stuck_ticks>=TP_SINGLE_TAIL_STALL_MS){
+                StopAndCoast(TP_STALL);return;
+            }
+        }else tp.stuck_ticks=0U;
+    }
+    if(err<=TP_ANGLE_BAND && w>TP_SINGLE_STOP_RATE &&
+       tp.flow_phase>=2U){
+        tp.stage=52U;u=0.0f;tp.ref_rate=0.0f;
+        tp.pid_pm=tp.ff_pm=0;
+    }
+    u=Limit(u,-TP_SINGLE_BRAKE_MAX,cap);
     tp.requested_pwm=(int16_t)u;
     Motor_SetPairPermille((int16_t)-u,(int16_t)u);
 }
