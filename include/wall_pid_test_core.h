@@ -28,7 +28,7 @@ typedef enum {
     WP_NONE=0, WP_FINISHED=1, WP_PA0_STOP=2, WP_IR_STALE=3,
     WP_IMU_STALE=4, WP_WALL_LOST=5, WP_EXCURSION=6,
     WP_HEADING=7, WP_ENCODER=8, WP_TIMEOUT=9, WP_MOTOR_LOCK=10,
-    WP_START_REJECT=11
+    WP_START_REJECT=11, WP_OVERSPEED=12
 } WP_Reason;
 typedef struct {
     IR_WallSnapshot ir;
@@ -45,6 +45,8 @@ typedef struct {
     float error_mm, abs_error_sum_mm, peak_abs_error_mm;
     float distance_mm, speed_mm_s, target_speed_mm_s, ramp_speed_mm_s;
     float speed_integral_pm;
+    float peak_speed_mm_s;
+    int16_t peak_pwm_pm;
     int32_t previous_left, previous_right;
     float yaw_error_deg;
     int16_t pwm_l, pwm_r;
