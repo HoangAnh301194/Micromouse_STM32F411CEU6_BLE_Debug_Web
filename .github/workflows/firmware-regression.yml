@@ -29,6 +29,7 @@ jobs:
       - name: Native six-channel IR filtering and capture format regression
         run: |
           python tests/regression/ir_filter_native_test.py
+          python tests/regression/ir_wall_signal_native_test.py
           python tools/test_ir_filter_pipeline.py
           python tests/regression/ir_full_qualification_test.py
       - name: Native modular motion primitive tests (left/right 90 and 180, fault paths)
