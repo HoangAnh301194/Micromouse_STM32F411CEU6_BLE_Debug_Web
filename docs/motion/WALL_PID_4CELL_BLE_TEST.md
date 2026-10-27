@@ -63,7 +63,7 @@ Chỉ dùng JDY-33 BLE TX; **không dùng PA9/PA10 (UART1)**. Mở terminal Web 
 
 Firmware phát HELLO/READY/START. Khi chạy, lưu khoảng **20 mẫu/s vào RAM** để không làm nghẽn BLE và không can thiệp vào TIM11.
 
-Sau khi dừng, firmware phát `W,END`, đợi 800 ms rồi phát `W,POST` đo trôi; sau đó phát lại toàn bộ `W,<csv>` và cuối cùng `W,TRACE_END`. Mỗi chunk **tối đa 20 byte, cách 125 ms**, tức 160 byte/s từ STM32 sang USART2. Tốc độ này là giới hạn thử nghiệm bảo thủ, **không phải BLE goodput đã được xác nhận**.
+Sau khi dừng, firmware phát `W,END` và bắt đầu phát lại các dòng `W,<csv>` với nhịp giới hạn. Sau 800 ms, firmware phát thêm `W,POST` đo độ trôi (**có thể xen giữa những dòng trace**); cuối cùng phát `W,TRACE_END`. Mỗi chunk **tối đa 20 byte, cách 125 ms**, tức 160 byte/s từ STM32 sang USART2. Tốc độ này là giới hạn thử nghiệm bảo thủ, **không phải BLE goodput đã được xác nhận**.
 
 Ví dụ dạng log (giá trị chỉ minh họa, không phải số đo thực):
 
@@ -97,3 +97,19 @@ Một dòng `W,` số gồm `elapsed_ms,distance_0.1mm,L0_ADC,R0_ADC,error_0.01m
 Chụp đủ log và đánh giá ít nhất 3 lượt trên hành lang an toàn: `reason=DONE`, chiều motor/counter đúng, trung bình và P95 trị tuyệt đối sai số ngang, lệch đỉnh, vận tốc đạt, PWM hai bánh, dao động lặp lại, trôi sau dừng, và dữ liệu BLE đầy đủ.
 
 Giai đoạn này **chưa phải nghiệm thu high-speed Wall PID**. EMA0.10 vẫn thiếu đo độ trễ cạnh thực; hệ số đổi ADC→mm là ước lượng cục bộ; khi đạt tốc độ lớn, độ trễ cảm biến có thể gây lắc hoặc va chạm. Không chỉnh gain từ một lần chạy hoặc coi `DONE` là thành công về độ chính xác.
+
+### Chuyển BLE terminal log thành báo cáo
+
+Dùng nút **Export** trên `web/ble_debug_console.html`, lưu các dòng
+`W,...` thành file văn bản, ví dụ `wall_4cell_ble.txt`. Dòng
+nhận BLE phải đã được ghép theo ký tự xuống dòng; không dùng text
+rời của từng notification.
+
+```powershell
+python tools/wall_pid_ble_report.py --input wall_4cell_ble.txt
+```
+
+Tool tạo `wall_4cell_ble_report/trace.csv` và `summary.json`.
+Nếu `data_complete=false`, không dùng trace đó để tuning PID.
+Hệ số EMA 0,10 và hệ số nhạy L0/R0 phải được giữ nguyên giữa các
+lượt để so sánh đúng.
