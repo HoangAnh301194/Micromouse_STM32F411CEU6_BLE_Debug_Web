@@ -93,6 +93,11 @@ uint8_t WP_Step(WP_Controller *p,const WP_Input *in)
     velocity=((float)avg_count_delta*0.5f*WP_MM_PER_COUNT)/0.005f;
     p->speed_mm_s=Clip(0.65f*p->speed_mm_s+
                        0.35f*velocity,0.0f,2000.0f);
+    if(p->speed_mm_s>1500.0f){
+        WP_Stop(p,WP_OVERSPEED);return 0U;
+    }
+    if(p->speed_mm_s>p->peak_speed_mm_s)
+        p->peak_speed_mm_s=p->speed_mm_s;
     p->previous_left=in->left_count;p->previous_right=in->right_count;
 
     p->ramp_speed_mm_s=Clip(p->ramp_speed_mm_s+
@@ -121,6 +126,8 @@ uint8_t WP_Step(WP_Controller *p,const WP_Input *in)
     p->has_previous=1U;
     p->pwm_l=(int16_t)Clip(base+steer,0.0f,WP_PWM_CAP_PM);
     p->pwm_r=(int16_t)Clip(base-steer,0.0f,WP_PWM_CAP_PM);
+    if(p->pwm_l>p->peak_pwm_pm)p->peak_pwm_pm=p->pwm_l;
+    if(p->pwm_r>p->peak_pwm_pm)p->peak_pwm_pm=p->pwm_r;
     ++p->pid_updates;
     abs_error=Abs(p->error_mm);
     p->abs_error_sum_mm+=abs_error;
