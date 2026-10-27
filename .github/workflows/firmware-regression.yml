@@ -31,6 +31,7 @@ jobs:
           python tests/regression/ir_filter_native_test.py
           python tests/regression/ir_wall_signal_native_test.py
           python tests/regression/wall_pid_4cell_native_test.py
+          python tests/regression/wall_pid_ble_report_test.py
           python tests/regression/platformio_profile_cleanup_test.py
           python tools/test_ir_filter_pipeline.py
           python tests/regression/ir_full_qualification_test.py
