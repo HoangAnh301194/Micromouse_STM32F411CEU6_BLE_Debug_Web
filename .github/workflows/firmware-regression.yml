@@ -30,6 +30,7 @@ jobs:
         run: |
           python tests/regression/ir_filter_native_test.py
           python tests/regression/ir_wall_signal_native_test.py
+          python tests/regression/wall_pid_4cell_native_test.py
           python tests/regression/platformio_profile_cleanup_test.py
           python tools/test_ir_filter_pipeline.py
           python tests/regression/ir_full_qualification_test.py
@@ -76,6 +77,8 @@ jobs:
         run: python -m platformio run -e ir_filter_diag_96m
       - name: Build PA0 motor-locked rolling IR burst firmware (no hardware)
         run: python -m platformio run -e ir_burst_diag_96m
+      - name: Build PA0 4-cell wall PID BLE diagnostic firmware (no hardware)
+        run: python -m platformio run -e wall_pid_4cell_96m
       - name: Test OLED-MPU host parser and verdict (synthetic)
         run: python tools/oled_mpu_pipeline.py --self-test
       - name: Build optional motor-locked Flash-map firmware (no hardware)
