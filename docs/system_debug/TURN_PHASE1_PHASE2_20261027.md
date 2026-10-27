@@ -730,3 +730,81 @@ single 180deg trial be attempted. Log and compare
 `command_polarity_flips`, applied motor PWM and actual
 gyro rate. No claim of better speed or smoothness can
 be made from CI compilation alone.
+
+## 2026-10-27 — SINGLEBRAKE v15: 180deg releases negative torque early
+
+Source physical trial sessions: `results/turn_pid_20261027_145030`,
+`145052` (90deg), `145147` and `145303` (180deg).
+
+**Measured** v14 90deg: across 7 completed attempts,
+3 DONE at 385–425ms with <1.6deg absolute final error;
+4 returned WRONG_DIRECTION around ~250ms despite a fast
+physically completed heading, with recorded peak gyro
+677–704deg/s. The user perceives 90deg as satisfactory,
+but the logged 4/7 aborts prevent software acceptance
+as a repeatable motion profile. The v15 code path for
+90deg is UNCHANGED.
+
+**Measured** v14 180deg: 2/5 completed attempts were
+DONE at 940ms/955ms with final yaw 178.49deg/178.47deg,
+but 3 completed attempts ended WRONG_DIRECTION. Other
+runs were PARTIAL and do not count as successes. Braking
+started at yaw~95–112deg with gyro ~780–840deg/s.
+For 145147 run1:
+t220ms: yaw111.60deg, w837.3deg/s, applied motor +550pm;
+t280ms: yaw151.93deg, w503.7deg/s, -240pm;
+t300ms: yaw160.15deg, w296.8deg/s, -277pm;
+t320ms: yaw162.52deg, **w=-1.9deg/s**, PWM0;
+t380ms: yaw161.28deg, w=-1.5deg/s, slow forward tail starts;
+t800ms: yaw178.50deg, w0.5deg/s, settled.
+Overbraking to zero 16–19deg before the target explains
+the physical 'stop, then turn a little more' complaint.
+In v14 failure runs at 145303, at 320–340ms yaw was
+~158–160deg with rate -17..-45deg/s, triggering
+WRONG_DIRECTION; same root issue.
+
+**v15 isolated 180deg correction** in the existing
+`singlebrake` profile (12, UART 'n'; 90/180 CLI unchanged):
+- ONLY when `tp.mode==TP_180`, while SINGLE BRAKE is active,
+  release negative torque when measured gyro **<=330deg/s**
+  (still positive in normal cases), invoking `Motor_Stop()`
+  immediately to remove any pending reverse PWM, then
+  latch phase 2=COAST.
+- Allow handoff from neutral coast to bounded positive
+  final correction when gyro **<=120deg/s**, at least
+  **30ms** after entering coast, with positive angle error >2deg.
+  This is intentionally BEFORE zero gyro to avoid second launch.
+- 90deg retains its prior criterion <=125deg/s for reverse
+  brake exit and neutral coast exit <=38deg/s after >=50ms.
+  Other profiles are unchanged; 180deg maximum rates and
+  PWM limits also unchanged.
+- Phase is monotone: ACCEL -> single BRAKE -> COAST ->
+  low-power FINAL -> STOP; no second reverse braking stage.
+  Physical 30ms reversal interlock, STOP button,
+  +2deg angle guard, gyro direction guard, and
+  800ms post-stop acceptance check remain.
+
+**This is a candidate calibration, not a proven physical
+smoothness/safety result.** Releasing braking early could
+instead cause >180deg overshoot, depending on friction,
+battery, geometry and gyro dynamics. Old runs demonstrate
+big dynamic response variation across attempts; firmware
+and Python tests only prove compilation/parser contracts.
+
+Test only **one** 180deg run with secured wiring, clear
+floor and independent motor-power cutoff:
+```powershell
+git pull --ff-only origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 180 --profile singlebrake --runs 1
+```
+Verify HELLO `turn_pid_diag_v15_singlebrake_180release`
+and CONFIG `profile=12,mode=180`. If it overshoots,
+spins backward, violently jolts or aborts, stop and
+inspect original log; DO NOT blindly run five repeats.
+Compare brake release yaw, rate, phase 49->50 yaw/rate,
+`midturn_low_speed_samples`, `midturn_reverse_samples`,
+`terminal_last10_to_stop_ms`, and final yaw. A 90deg
+retest is optional to reconfirm the unchanged path,
+but 90deg reliability still must be resolved before
+full operational qualification.
