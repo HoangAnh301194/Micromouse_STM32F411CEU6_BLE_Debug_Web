@@ -287,8 +287,8 @@ def analyze(samples: list[dict], result: dict,
     polarity_flips=sum(a!=b for a,b in zip(signs,signs[1:]))
     motor_steps=[abs(y["applied_r_pm"]-x["applied_r_pm"])
                  for x,y in zip(ordered,ordered[1:])
-                 if x["applied_r_pm"] is not None and
-                    y["applied_r_pm"] is not None and
+                 if x.get("applied_r_pm") is not None and
+                    y.get("applied_r_pm") is not None and
                     0<y["t_ms"]-x["t_ms"]<=20]
     high_gyro_neutral=sum(1 for v in ordered
                    if abs(v["gyro_dps"])>100.0 and
