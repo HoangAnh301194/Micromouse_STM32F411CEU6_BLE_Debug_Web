@@ -30,6 +30,7 @@ MotionPrimitiveStatus Motion_GetPrimitiveStatus(void);
 MotionPrimitiveResult Motion_GetPrimitiveResult(void);
 MotionPivotPhase Motion_GetPrimitivePhase(void);
 void Motion_Stop(void);
+void Motion_SensorFault(void); /* Fail active primitive with SENSOR_FAULT, force motor neutral. */
 
 void Motion_Update(float dt_s,
                    int32_t encoder_left,
