@@ -1,0 +1,81 @@
+{
+  "report_date": "2026-10-27",
+  "repository": "HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web",
+  "branch": "giomuadongbac",
+  "head": "df5daa24cd2c1cb0ae7f50c7cfc304770850ecac",
+  "overall_status": "BLOCKED_HARDWARE",
+  "qualification": "NOT_QUALIFIED",
+  "highest_accepted_level": null,
+  "hardware_measurements_performed": false,
+  "firmware_uploaded": false,
+  "serial_port_opened": false,
+  "operator_reported": {
+    "motor_vm_physically_disconnected": false,
+    "motor_vm_state": "connected_and_powered",
+    "robot_secured": true,
+    "uart_stlink_connected": true,
+    "uart_port": "COM6"
+  },
+  "software_validation": {
+    "native_and_host_tests": "PASS",
+    "firmware_builds": "PASS",
+    "focused_ir_driver_test": "PASS",
+    "focused_ir_filter_test": "PASS",
+    "focused_ir_pipeline_test": "PASS",
+    "github_actions_latest_observed": {
+      "status": "success",
+      "run_number": 149,
+      "head": "4c320200d1a036073993fc8f8e76b8290b756753",
+      "url": "https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/actions/runs/40495050813",
+      "current_head": false
+    }
+  },
+  "gates": {
+    "G0": {
+      "status": "BLOCKED",
+      "threshold": "Motor VM physically disconnected; motor locked; operator confirms safe fixture",
+      "observed": "Operator reported motor VM connected and powered. No firmware was uploaded.",
+      "evidence": "docs/ir/reports/IR_VALIDATION_20261027.md"
+    },
+    "G1": {
+      "status": "BLOCKED",
+      "threshold": "HELLO; >=95% IRF/IRB/IRH expected coverage; scan rate measured; six channels; malformed/drop/DMA/timeout/overrun/failure deltas zero",
+      "observed": "Local software checks pass; no MCU data, HELLO, scan rate, or counters collected.",
+      "evidence": "docs/ir/reports/IR_VALIDATION_20261027.md"
+    },
+    "G2": {
+      "status": "BLOCKED",
+      "threshold": "Three independent 20-second trials per in-range channel/distance with geometry and environment metadata",
+      "observed": "Zero physical trials.",
+      "evidence": "results/ir_qualification_20261027/manifest.csv"
+    },
+    "G3": {
+      "status": "INCONCLUSIVE",
+      "threshold": "SNR >= 5 and >=25% STD reduction at most tested distances without loss of wall variation",
+      "observed": "No physical wall/no-wall data; no filter ranking.",
+      "evidence": "results/ir_qualification_20261027/metrics_by_channel.csv"
+    },
+    "G4": {
+      "status": "INCONCLUSIVE",
+      "threshold": "At least 10 rising and falling events per region; latency at adequate resolution; v_target * latency <= 5 mm",
+      "observed": "No event data; existing exported IRF is 40 Hz and cannot resolve a 5 ms budget.",
+      "evidence": "docs/ir/reports/IR_VALIDATION_20261027.md"
+    },
+    "G5": {
+      "status": "INCONCLUSIVE",
+      "threshold": "Measured false-positive/negative and cross-talk across light/material/angle/position with no safety-relevant misclassification",
+      "observed": "No physical robustness tests.",
+      "evidence": "results/ir_qualification_20261027/manifest.csv"
+    },
+    "G6": {
+      "status": "INCONCLUSIVE",
+      "threshold": "Per-channel monotonic LUT; independent holdout MAE <= 2 mm and P95 absolute error <= 5 mm; no extrapolation",
+      "observed": "No calibration or holdout data.",
+      "evidence": "results/ir_qualification_20261027/metrics_by_channel.csv"
+    }
+  },
+  "filter_decision": "No filter selected; keep all candidates experimental and production IR_GetLatest behavior unchanged.",
+  "raw_hardware_log_paths": [],
+  "plots": [],
+  "retry_blocker": "Physically disconnect motor VM, then reconfirm safety before upload and P0 capture."
+}

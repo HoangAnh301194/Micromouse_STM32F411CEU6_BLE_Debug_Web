@@ -41,9 +41,31 @@ def parse(line: str) -> dict | None:
             try:out[key]=int(value)
             except ValueError:return None
     required={"IRF":(*FIELDS,*KEYS),"IRB":("ms","n","off","on"),
-              "IRH":("ms","n","fail","dma_err","dma_to","ovr","drop","locked","age")}
+              "IRH":("ms","n","scans","fail","dma_err","dma_to","ovr",
+                     "drop","locked","age")}
     if not all(k in out for k in required[out["type"]]): return None
     return out
+
+def percentile(values:list[float],percent:float)->float:
+    ordered=sorted(values)
+    if len(ordered)==1:return ordered[0]
+    position=(len(ordered)-1)*percent
+    lower=int(position)
+    upper=min(lower+1,len(ordered)-1)
+    fraction=position-lower
+    return ordered[lower]+fraction*(ordered[upper]-ordered[lower])
+
+def isolated_spikes(values:list[float])->int:
+    """Count isolated one-sample excursions beyond six robust MADs."""
+    residuals=[]
+    for i in range(1,len(values)-1):
+        local_median=stats.median((values[i-1],values[i],values[i+1]))
+        residuals.append(values[i]-local_median)
+    if not residuals:return 0
+    center=stats.median(residuals)
+    mad=stats.median(abs(value-center) for value in residuals)
+    threshold=max(6.0*1.4826*mad,1.0)
+    return sum(abs(value-center)>threshold for value in residuals)
 
 def make_rows(record:dict)->list[dict]:
     if record["type"]=="IRF":
@@ -73,9 +95,22 @@ def metrics(rows:list[dict],health:list[dict]|None=None)->dict:
             std=stats.stdev(vals) if len(vals)>1 else 0.0
             med=stats.median(vals)
             mad=stats.median(abs(v-med) for v in vals)
+            raw_std=stats.stdev(float(r["raw"]) for r in subset) if len(subset)>1 else 0.0
+            raw_mean=stats.fmean(float(r["raw"]) for r in subset)
             out[src]={"mean_adc":round(mean,3),"std_adc":round(std,3),
                       "median_adc":round(med,3),"mad_adc":round(mad,3),
-                      "range_adc":round(max(vals)-min(vals),3)}
+                      "p95_adc":round(percentile(vals,0.95),3),
+                      "p99_adc":round(percentile(vals,0.99),3),
+                      "range_adc":round(max(vals)-min(vals),3),
+                      "noise_reduction_pct":(
+                          round((1.0-std/raw_std)*100.0,3) if raw_std>0 else None),
+                      "bias_vs_raw_adc":round(mean-raw_mean,3),
+                      "isolated_spikes":isolated_spikes(vals),
+                      "isolated_spike_rate_pct":round(
+                          isolated_spikes(vals)*100.0/len(vals),3),
+                      "saturation_count":sum(v>=4095.0 for v in vals),
+                      "saturation_rate_pct":round(
+                          sum(v>=4095.0 for v in vals)*100.0/len(vals),3)}
         summary["channels"][ch]=out
     if rows:
         times=sorted(set(int(r["ms"]) for r in rows))
@@ -88,12 +123,65 @@ def metrics(rows:list[dict],health:list[dict]|None=None)->dict:
                                    if len(times)>1 and times[-1]>times[0] else 0)
     if health:
         h=health[-1]
+        start=health[0]
         summary["health_final"]=h
+        summary["health_first"]=start
         summary["valid_motor_locked"]=all(x["locked"]==1 for x in health)
-        summary["telemetry_drops"]=h.get("drop",0)-health[0].get("drop",0)
-        summary["dma_error_delta"]=h.get("dma_err",0)-health[0].get("dma_err",0)
-        summary["scan_failed_delta"]=h.get("fail",0)-health[0].get("fail",0)
+        summary["telemetry_drops"]=h["drop"]-start["drop"]
+        summary["dma_error_delta"]=h["dma_err"]-start["dma_err"]
+        summary["dma_timeout_delta"]=h["dma_to"]-start["dma_to"]
+        summary["adc_overrun_delta"]=h["ovr"]-start["ovr"]
+        summary["scan_failed_delta"]=h["fail"]-start["fail"]
+        elapsed_ms=h["ms"]-start["ms"]
+        summary["scan_rate_hz"]=(
+            round((h["scans"]-start["scans"])*1000.0/elapsed_ms,2)
+            if elapsed_ms>0 else None)
     return summary
+
+def capture_quality(frames:list[dict],off_on:list[dict],health:list[dict],
+                    malformed:int,hello_found:bool,duration_s:float)->dict:
+    """Apply the predeclared 95% diagnostic stream-coverage and health gates."""
+    duration_s=max(duration_s,0.0)
+    frame_count=len({int(row["scan"]) for row in frames})
+    onoff_count=len({int(row["scan"]) for row in off_on})
+    health_count=len(health)
+    expected_irf=duration_s*40.0
+    expected_irb=duration_s*5.0
+    expected_irh=duration_s
+    result={
+        "hello_found":hello_found,
+        "capture_duration_s":round(duration_s,3),
+        "irf_frames":frame_count,
+        "irf_expected_at_40hz":round(expected_irf,2),
+        "irf_coverage_pct":round(frame_count*100.0/expected_irf,2) if expected_irf else 0.0,
+        "irb_scans":onoff_count,
+        "irb_expected_at_5hz":round(expected_irb,2),
+        "irb_coverage_pct":round(onoff_count*100.0/expected_irb,2) if expected_irb else 0.0,
+        "irh_records":health_count,
+        "irh_expected_at_1hz":round(expected_irh,2),
+        "irh_coverage_pct":round(health_count*100.0/expected_irh,2) if expected_irh else 0.0,
+        "malformed_ir_frames":malformed,
+    }
+    summary=metrics(frames,health)
+    health_ok=bool(health) and all(
+        row["locked"]==1 and row["fail"]==0 and row["dma_err"]==0
+        and row["dma_to"]==0 and row["ovr"]==0 and row["drop"]==0
+        for row in health)
+    scan_rate=summary.get("scan_rate_hz")
+    result["valid_capture"]=bool(
+        hello_found and duration_s>0
+        and frame_count>=max(1,int(expected_irf*0.95+0.999))
+        and onoff_count>=max(1,int(expected_irb*0.95+0.999))
+        and health_count>=max(2,int(expected_irh*0.95+0.999))
+        and not malformed and health_ok
+        and summary.get("valid_motor_locked",False)
+        and summary.get("telemetry_drops",999)==0
+        and summary.get("dma_error_delta",999)==0
+        and summary.get("dma_timeout_delta",999)==0
+        and summary.get("adc_overrun_delta",999)==0
+        and summary.get("scan_failed_delta",999)==0
+        and scan_rate is not None and scan_rate>0)
+    return result
 
 def step_response(rows:list[dict])->dict:
     """Rough SINGLE step edge timing on the 40Hz exported stream.
@@ -192,7 +280,7 @@ def main(argv=None)->int:
     dest.mkdir(parents=True)
     raw_lines=[]
     frames=[]; off_on=[];health=[];malformed=0;last_print=0.0
-    ser=None
+    ser=None;hello_found=False;capture_elapsed_s=0.0
     try:
         if args.port:
             try:import serial
@@ -205,6 +293,8 @@ def main(argv=None)->int:
                 if not b:continue
                 line=b.decode("ascii",errors="replace").strip()
                 raw_lines.append(line)
+                if line.startswith("IR_FILTER,HELLO,ir_filter_v1_motor_locked"):
+                    hello_found=True
                 parsed=parse(line)
                 if parsed is None:
                     if line.startswith(("IRF,","IRB,","IRH,")):malformed+=1
@@ -218,9 +308,12 @@ def main(argv=None)->int:
                     preview="  ".join(f"{v['channel']}={v['raw']}/{v['ema25']}" for v in latest)
                     print(f"{latest[0]['ms']}ms {preview} (raw/EMA25)")
                     last_print=now
+            capture_elapsed_s=time.monotonic()-started
         else:
             for line in args.input.read_text(encoding="utf-8",errors="replace").splitlines():
                 raw_lines.append(line)
+                if line.startswith("IR_FILTER,HELLO,ir_filter_v1_motor_locked"):
+                    hello_found=True
                 parsed=parse(line)
                 if parsed is None:
                     if line.startswith(("IRF,","IRB,","IRH,")):malformed+=1
@@ -239,18 +332,17 @@ def main(argv=None)->int:
     write_csv(dest/"ir_filter_trace.csv",frames,CSV_FIELDS)
     write_csv(dest/"ir_on_off.csv",off_on,RAW_FIELDS)
     summary=metrics(frames,health)
+    if args.input and frames:
+        timestamps=[int(row["ms"]) for row in frames]
+        capture_elapsed_s=(max(timestamps)-min(timestamps)+25)/1000.0
+    quality=capture_quality(frames,off_on,health,malformed,hello_found,
+                            capture_elapsed_s)
+    summary.update(quality)
     summary["metadata"]={key:getattr(args,key) for key in
         ("distance_mm","surface","light","scenario","trial","notes")}
-    summary["malformed_ir_frames"]=malformed
     summary["raw_on_off_sample_count"]=len(off_on)//6
     if args.scenario=="step":
         summary["step_response_40hz_estimate"]=step_response(frames)
-    # Explicit reject on drops, errors and missing coverage.
-    summary["valid_capture"]=(len(frames)>=60 and len(health)>=2
-         and not malformed and summary.get("valid_motor_locked",False)
-         and summary.get("telemetry_drops",999)==0
-         and summary.get("dma_error_delta",999)==0
-         and summary.get("scan_failed_delta",999)==0)
     summary["output_directory"]=str(dest)
     if args.plot:summary["plots_generated"]=plot_six(frames,dest)
     (dest/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",
