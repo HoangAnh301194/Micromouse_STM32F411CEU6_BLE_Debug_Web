@@ -643,3 +643,90 @@ turn, overshoot, impact, wobble or
 `STALLED_NEAR_TARGET`, stop tests and inspect logs.
 Run ONE 180deg only after 90deg is physically safe;
 then push raw UART, summary, metrics to GitHub.
+
+## 2026-10-27 — COAST v13 physical rejection and SINGLEBRAKE v14
+
+Newest pushed physical COAST v13 logs: `turn_pid_20261027_111007`,
+`turn_pid_20261027_111044`, `turn_pid_20261027_111107`.
+
+90deg: four hardware trials, two DONE (730 and 1025ms)
+with measured 1kHz peak gyro 477–482deg/s. One ANGLE_LIMIT
+exceeded **98.36deg** (8.36deg peak overshoot), and one
+POST_STOP_DRIFT ended 87.99deg (2.01deg error).
+Measured applied PWM max only ~62–67% despite **100% cap**.
+180deg: one POST_STOP_DRIFT at final 177.94deg, measured
+gyro peak **699.3deg/s**, effective applied PWM **94.6%**.
+No motion set is accepted for speed/precision simultaneously.
+
+Important repeated 90deg oscillation:
+111044 run5 at t100ms gyro439deg/s, cmd561;
+t120ms gyro484, reference325, cmd141;
+t140ms gyro427, cmd19; t160ms gyro256, cmd439;
+t180ms gyro212, cmd551; t200ms gyro374, cmd131;
+t220ms gyro327, ref9, cmd0. At t360ms yaw89.18
+while gyro **116.6deg/s**, no reverse brake available,
+then yaw reached **98.36deg**. COAST phase is
+positive-only and has no means to shed this angular
+momentum quickly.
+In 180deg log, rate reached699deg/s then PWM requested
+0→327→747→482→0 across t260–360ms. Repeated large
+positive/zero PWM transitions explain non-smoothness
+even without direction reversal.
+
+A direct speed ceiling change (555→700deg/s or 655→800)
+did not increase 90deg physical peak above~485 and did
+not solve stop time. Angular-rate reference couples raw
+gyro to lookahead distance and to the PI controller
+without smoothing; this can make duty oscillate.
+Significant 20ms applied-PWM jumps and neutral motor
+samples while gyro>100dps have been recorded.
+
+**SINGLEBRAKE v14** is an opt-in, separate experimental
+profile (index12, UART idle char `n`, Python CLI
+`--profile singlebrake`) for 90/180, leaving COAST
+and ALL older profiles unchanged.
+Targets: 650deg/s, max90% PWM for 90; 780deg/s,
+max100% for 180 (setpoints, NOT achieved/validated).
+Acceleration reference up to 5500deg/s2. Unlike COAST,
+it explicitly uses a single reverse braking stage at most
+30% PWM, which keeps the preexisting 30ms polarity
+reversal interlock ON. A calibrated predictive brake
+trigger includes gyro-rate²/(2*5500), rate-dependent
+latency compensation and 8deg reserve. The controller
+can then coast, perform at most one low-speed positive
+correction phase (≤15.5% PWM) and latch a neutral
+stop for 150ms when BOTH angle±2deg and gyro≤12deg/s
+pass. Never return to high-power acceleration or reverse
+braking after the single episode; abnormal overshoot,
+wrong direction and 800ms post-stop drift still FAIL.
+
+Potential flaw that must be measured: the trigger model is
+not an identified physics model. The old SPRINT stage began
+braking at ~32deg with rate~560 and stopped ~72–77deg
+in 90deg trials, while for 180 it began near74deg with
+rate~805 and stopped near136–139deg. The single-brake
+trigger has been calibrated to act somewhat later, while
+maintaining margin for the motor driver's 30ms gap.
+Result might still be undershoot, overshoot or an
+unpleasant ONE-TIME braking jolt. This is not yet a
+proven smooth, fast racing turn or an accepted motion.
+
+First physical trial ONLY (never 5 unattended runs):
+```powershell
+git pull --ff-only origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile singlebrake --runs 1
+```
+
+Confirm firmware HELLO version `turn_pid_diag_v14_singlebrake`
+and TP CONFIG profile=12, check PA0 physical emergency
+stop, physically independent power cutoff, clear and
+non-slipping test area. If there is overshoot, unexpected
+wheel translation, strong jolt, reverse yaw, ANGLE_LIMIT,
+WRONG_DIRECTION or drift, STOP further tests. Only
+after physically smooth and verified DONE 90deg may a
+single 180deg trial be attempted. Log and compare
+`brake_first_yaw_deg`, `single_brake_samples`,
+`command_polarity_flips`, applied motor PWM and actual
+gyro rate. No claim of better speed or smoothness can
+be made from CI compilation alone.
