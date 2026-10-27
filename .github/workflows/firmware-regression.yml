@@ -2,7 +2,7 @@ name: Production firmware and regression tests
 on:
   push:
     branches: [giomuadongbac]
-    paths: ["src/**", "include/**", "ld/**", "platformio.ini", "web/**", "tests/**", "tools/flash_map_pipeline.py", "tools/oled_mpu_pipeline.py", "tools/encoder_qualification_pipeline.py", "tools/system_integration_gate.py", "tools/turn_pid_pipeline.py", "tools/test_turn_pid_pipeline.py", ".github/workflows/firmware-regression.yml"]
+    paths: ["src/**", "include/**", "ld/**", "platformio.ini", "web/**", "tests/**", "tools/flash_map_pipeline.py", "tools/oled_mpu_pipeline.py", "tools/encoder_qualification_pipeline.py", "tools/system_integration_gate.py", "tools/turn_pid_pipeline.py", "tools/test_turn_pid_pipeline.py", "tools/ir_filter_pipeline.py", "tools/test_ir_filter_pipeline.py", ".github/workflows/firmware-regression.yml"]
   pull_request:
     branches: [giomuadongbac]
   workflow_dispatch:
