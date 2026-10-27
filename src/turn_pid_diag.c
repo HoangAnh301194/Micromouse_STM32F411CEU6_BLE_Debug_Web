@@ -205,6 +205,14 @@
 #define TP_SINGLE_STOP_RATE         12.0f
 #define TP_SINGLE_GYRO_ABORT       875.0f
 #define TP_SINGLE_TAIL_STALL_MS    520U
+/* 180deg-only brake-release fix from measured trials:
+ * strong reverse torque drove gyro through zero at yaw 158..164deg.
+ * Release while speed is still positive and let the wheels coast.
+ * The 90deg state machine and all its thresholds remain unchanged. */
+#define TP_SINGLE_180_BRAKE_RELEASE_RATE  330.0f
+#define TP_SINGLE_180_COAST_EXIT_RATE    120.0f
+#define TP_SINGLE_180_COAST_MIN_MS        30U
+
 
 
 
@@ -1148,6 +1156,21 @@ static void SingleBrakeControlTick(void) {
     }else if(tp.flow_phase==1U){
         tp.stage=48U;tp.flow_ticks+=TP_CONTROL_DIV;
         tp.ref_rate=0.0f;
+        /* 180deg-only: the actual v14 runs stopped completely at
+         * yaw 158..164deg because negative bridge torque continued
+         * past the useful braking interval. At 330deg/s, cut reverse
+         * H-bridge output immediately (do not merely ramp the command
+         * for another 5..10ms). Never re-enter reverse afterwards.
+         * 90deg behavior remains byte-for-byte the old branch. */
+        if(tp.mode==TP_180 &&
+           w<=TP_SINGLE_180_BRAKE_RELEASE_RATE){
+            tp.flow_phase=2U;tp.flow_ticks=0U;
+            tp.stage=49U;
+            tp.requested_pwm=tp.pid_pm=tp.ff_pm=0;
+            tp.ref_rate=0.0f;
+            Motor_Stop();
+            return;
+        }
         /* A single 30% reverse episode; the motor's reversal deadtime
          * can consume 30+ms so braking is triggered BEFORE the target.
          * Never brake through zero angular velocity. */
@@ -1171,8 +1194,19 @@ static void SingleBrakeControlTick(void) {
         /* Go truly neutral; do not start a positive correction while
          * reverse PWM is still applied or gyro remains fast. */
         u=0.0f;
-        if(w<=TP_SINGLE_COAST_EXIT_RATE &&
-           tp.flow_ticks>=50U && err>TP_ANGLE_BAND){
+        if(tp.mode==TP_180) {
+            /* Transition to low-output final tracking BEFORE gyro
+             * falls to zero; the old <=38deg/s gate caused the
+             * visible stop-then-restart during the final 16deg. */
+            if(w<=TP_SINGLE_180_COAST_EXIT_RATE &&
+               tp.flow_ticks>=TP_SINGLE_180_COAST_MIN_MS &&
+               err>TP_ANGLE_BAND){
+                tp.flow_phase=3U;tp.flow_ticks=0U;
+                PID_Reset(&tp.pid_rate);
+            }
+        } else if(w<=TP_SINGLE_COAST_EXIT_RATE &&
+                  tp.flow_ticks>=50U && err>TP_ANGLE_BAND) {
+            /* Preserve the qualified 90deg phase selection. */
             tp.flow_phase=3U;tp.flow_ticks=0U;
             PID_Reset(&tp.pid_rate);
         }
@@ -1708,7 +1742,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v14_singlebrake,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v15_singlebrake_180release,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
