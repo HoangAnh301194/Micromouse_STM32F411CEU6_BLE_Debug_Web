@@ -440,6 +440,15 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(lm["max_requested_pwm_pm"],940)
         self.assertIsNone(sample_frame(40,75,640,941,42,target=180))
 
+    def test_coast_uart_profile_selection_matches_index_11(self):
+        # Regression: TP_COAST is already the motor coast phase (2).
+        # UART 'c' must select the separate motion profile index 11.
+        firmware=(Path(__file__).resolve().parent.parent/"src"/"turn_pid_diag.c").read_text()
+        self.assertIn("TP_COAST_PROFILE=11",firmware)
+        self.assertIn("if(c=='c')tp.profile=TP_COAST_PROFILE;",firmware)
+        self.assertIn("profiles[TP_COAST_PROFILE]",firmware)
+        self.assertNotIn("if(c=='c')tp.profile=TP_COAST;",firmware)
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
