@@ -191,7 +191,7 @@ static void PollButton(uint32_t now)
 static void StartTraceReplay(void)
 {
     /* No BLE transfer in the 1kHz ISR; only after stop is latched. */
-    BT_Printf("W,END,%s,ms=%lu,d10=%ld,avgerr100=%ld,peakerr100=%ld,peakcap=%d,locked=%u,trace=%u\n",
+    BT_Printf("W,END,%s,ms=%lu,d10=%ld,avgerr100=%ld,peakerr100=%ld,vpk=%ld,pkpwm=%d,locked=%u,trace=%u\n",
        Why((WP_Reason)st.reason),
        (unsigned long)st.ctl.ticks,
        (long)(st.ctl.distance_mm*10.0f),
@@ -278,7 +278,7 @@ int WallPidTest_Main(void)
             post_logged=1U;
             /* This is independent of the 720mm motor-lock trigger:
              * passive drift may continue beyond commanded distance. */
-            BT_Printf("W,POST,dist10=%ld,drift10=%ld,locked=%u\\n",
+            BT_Printf("W,POST,dist10=%ld,drift10=%ld,locked=%u\n",
                 (long)(post_dist*10.0f),
                 (long)((post_dist-st.ctl.distance_mm)*10.0f),
                 (unsigned)Motor_OutputsLocked());
