@@ -198,20 +198,29 @@ MotionPivotPhase Motion_GetPrimitivePhase(void)
     return pivot.phase;
 }
 
-void Motion_Stop(void)
+static void StopWithReason(MotionPrimitiveResult reason)
 {
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
 
-    /* Invalidate the command before touching PWM to close the stop/restart race. */
+    /* Publish IDLE before returning; abort reason remains queryable
+     * until next Motion_RequestPrimitive. Preserve legacy motor stop. */
     if (motion.state == MOTION_PIVOT_PRIMITIVE)
-        MotionPrimitive_Abort(&pivot,MOTION_PRIMITIVE_STOP_REQUEST);
+        MotionPrimitive_Abort(&pivot,reason);
     motion.done = 1U;
     motion.state = MOTION_IDLE;
     motion.current_pwm = 0.0f;
     Motor_Stop();
 
     if (!primask) __enable_irq();
+}
+void Motion_Stop(void)
+{
+    StopWithReason(MOTION_PRIMITIVE_STOP_REQUEST);
+}
+void Motion_SensorFault(void)
+{
+    StopWithReason(MOTION_PRIMITIVE_SENSOR_FAULT);
 }
 
 void Motion_Update(float dt_s,
