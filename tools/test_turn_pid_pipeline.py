@@ -449,7 +449,7 @@ class TurnTraceTests(unittest.TestCase):
             "#define TP_COAST_RATE_180          800.0f",
             "#define TP_COAST_PWM_90           1000.0f",
             "#define TP_COAST_PWM_180          1000.0f",
-            "turn_pid_diag_v14_singlebrake",
+            "turn_pid_diag_v15_singlebrake_180release",
         ):
             self.assertIn(token,firmware)
 
