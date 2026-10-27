@@ -158,26 +158,26 @@
 #define TP_PACE_STALL_MS          580U
 #define TP_PACE_GYRO_ABORT        720.0f
 #define TP_PACE_STOP_RATE          12.0f
-/* COAST v12: opt-in experiment to remove commanded direction
+/* COAST v13: faster, opt-in experiment to remove commanded direction
  * flips that incur the driver's 30ms neutral interlock. Remains
  * physically unverified; conservative brake prediction is essential. */
-#define TP_COAST_RATE_90           555.0f
-#define TP_COAST_RATE_180          655.0f
-#define TP_COAST_PWM_90            890.0f
-#define TP_COAST_PWM_180           940.0f
-#define TP_COAST_REF_ACCEL        3750.0f
-#define TP_COAST_REF_DECEL        7200.0f
+#define TP_COAST_RATE_90           700.0f
+#define TP_COAST_RATE_180          800.0f
+#define TP_COAST_PWM_90           1000.0f
+#define TP_COAST_PWM_180          1000.0f
+#define TP_COAST_REF_ACCEL        4900.0f
+#define TP_COAST_REF_DECEL        8200.0f
 #define TP_COAST_BRAKE_DPS2       2600.0f
-#define TP_COAST_LEAD_S              0.060f
-#define TP_COAST_RESERVE_DEG         2.0f
+#define TP_COAST_LEAD_S              0.078f
+#define TP_COAST_RESERVE_DEG         3.5f
 #define TP_COAST_ACCEL_FF            0.045f
-#define TP_COAST_DUTY_STEP          75.0f
+#define TP_COAST_DUTY_STEP         105.0f
 #define TP_COAST_NEAR_STEP          20.0f
 #define TP_COAST_STICTION_FF         76.0f
 #define TP_COAST_STICTION_SPEED      45.0f
 #define TP_COAST_NEAR_CAP          165.0f
 #define TP_COAST_STALL_MS          500U
-#define TP_COAST_GYRO_ABORT        750.0f
+#define TP_COAST_GYRO_ABORT        880.0f
 #define TP_COAST_STOP_RATE          12.0f
 #define TP_COAST_MIN_MOVE_PWM      110.0f
 
@@ -257,7 +257,7 @@ static const TP_Profile profiles[12]={
     /* PACE: higher rate reference, moderate damping and terminal
      * stiction compensation, without an impulsive PWM kick. */
     {12.0f,1.85f,0.0f,0.86f,3600.0f,620.0f,920,0,0.0f,0.0f},
-    {12.0f,1.95f,0.0f,0.83f,3750.0f,655.0f,940,0,0.0f,0.0f}
+    {12.0f,2.20f,0.0f,1.03f,4900.0f,800.0f,1000,0,0.0f,0.0f}
 };
 
 typedef struct {
@@ -1547,7 +1547,7 @@ int TurnPidDiag_Main(void) {
     uint32_t last_cal=0U,last_ready=0U;
     Board_Init();SystemTimer_Init();UART_Init();
     Motor_Init();Motor_LockOutputs();
-    UART_SendString("TP,HELLO,turn_pid_diag_v12_coast,no_oled=1,motor_locked=1\r\n");
+    UART_SendString("TP,HELLO,turn_pid_diag_v13_coast_fast,no_oled=1,motor_locked=1\r\n");
     if(Board_GetClockFault()) {
         UART_Printf("TP,FATAL,CLOCK,%lu\r\n",
                     (unsigned long)Board_GetClockFault());
