@@ -1414,18 +1414,21 @@ static void StartByPA0(void) {
     if(!mask)__enable_irq();
     UART_Printf("TP,START,id=%lu,mode=%u,profile=%u,pwm_cap=%d,kp_angle_x100=%d,kp_rate_x100=%d,kff_x100=%d,accel=%u,max_rate=%u,log_hz=50,trace_rev=3,gyro_band_deg=2\r\n",
         (unsigned long)tp.id,(unsigned)tp.mode,(unsigned)tp.profile,
-        (int)(tp.profile==TP_PACE && tp.mode==TP_90 ? TP_PACE_PWM_90 :
-             (tp.profile==TP_GUARD && tp.mode==TP_90 ? TP_GUARD_PWM_90 : profiles[tp.profile].max_pwm)),
+        (int)(tp.profile==TP_COAST && tp.mode==TP_90 ? TP_COAST_PWM_90 :
+             (tp.profile==TP_PACE && tp.mode==TP_90 ? TP_PACE_PWM_90 :
+             (tp.profile==TP_GUARD && tp.mode==TP_90 ? TP_GUARD_PWM_90 : profiles[tp.profile].max_pwm))),
         (int)(profiles[tp.profile].kp_angle*100.0f),
         (int)(profiles[tp.profile].kp_rate*100.0f),
         (int)(profiles[tp.profile].kff_rate*100.0f),
         (unsigned)profiles[tp.profile].accel_dps2,
-        (unsigned)((tp.profile==TP_PACE) ?
+        (unsigned)((tp.profile==TP_COAST)?
+          (tp.mode==TP_90?TP_COAST_RATE_90:TP_COAST_RATE_180):
+          ((tp.profile==TP_PACE) ?
           (tp.mode==TP_90?TP_PACE_RATE_90:TP_PACE_RATE_180):
           ((tp.profile==TP_GUARD)?
           (tp.mode==TP_90?TP_GUARD_RATE_90:TP_GUARD_RATE_180):
           (((tp.profile==TP_SPRINT || tp.profile==TP_TRACK) && tp.mode==TP_90)?
-           TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps))));
+           TP_SPRINT_MAX_RATE_90:profiles[tp.profile].speed_dps)))));
 }
 static void HandleButton(uint32_t now) {
     static uint8_t initialized,previous,boot_held,allowed;
