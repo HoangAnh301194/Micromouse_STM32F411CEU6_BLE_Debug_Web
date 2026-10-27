@@ -270,7 +270,7 @@ def main(argv=None):
             try:
                 subprocess_live("restore_motor_off",
                     [sys.executable, "-m", "platformio", "run",
-                     "-e", OFF_ENV, "-t", "upload"],
+                     "-c", "platformio_legacy.ini", "-e", OFF_ENV, "-t", "upload"],
                     out, out / "restore_motor_off.log", report["commands"])
                 report["restored_motor_off"] = True
             except (OSError, RuntimeError, KeyboardInterrupt) as exc:
