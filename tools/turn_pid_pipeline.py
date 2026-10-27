@@ -124,7 +124,12 @@ def parse_sample(line: str) -> dict | None:
         return None
     if profile not in (0,1,2,3,4,5,6,7,8,9,10,11) or phase not in (1,2):
         return None
-    if abs(cmd_pm) > (890 if profile==11 and target==90 else (940 if profile==11 else (850 if profile==10 and target==90 else (920 if profile==10 else (750 if profile==9 and target==90 else (850 if profile==9 else (1000 if profile in (7,8) else (800 if profile in (4,5,6) else 400)))))))) or age_us < 0:
+    max_pwm_pm = {
+        0:400,1:400,2:400,3:400,4:800,5:800,6:800,
+        7:1000,8:1000,9:(750 if target==90 else 850),
+        10:(850 if target==90 else 920),11:1000,
+    }[profile]
+    if abs(cmd_pm)>max_pwm_pm or age_us < 0:
         return None
     if applied_l is not None and max(abs(applied_l),abs(applied_r))>1000:
         return None
