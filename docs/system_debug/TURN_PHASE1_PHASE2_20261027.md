@@ -473,3 +473,57 @@ despite firmware-logged qdrop=0 and uartdrop=0, so their derived metrics
 need the `meets_trace_thresholds` flag checked. The user should not
 interpret a partial result, malformed UART frame or reconstructed
 stop time as proof of motion quality.
+
+## 2026-10-27 — GUARD physical data and PACE v11 qualification
+
+Four newest pushed sessions: `101542`, `101625`, `101700` and
+`101751`. GUARD v10 provided **zero DONE** completed observations:
+six 90deg result records were STALLED_NEAR_TARGET with headings
+85.06–86.95deg after 965–1075ms. Three 180deg records also
+reported STALLED_NEAR_TARGET (1155–1295ms) with end headings
+177.06,176.73,147.20deg. Other traces were PARTIAL, not completed
+tests. Peak 1kHz yaw rate was ~434–441deg/s on 90 and
+~542–548deg/s on 180. Near-goal gyro becomes exactly zero; in
+90deg run2, UART indicated yaw=85.86deg and cmd=60permille unchanged
+for >250ms. GUARD previously used
+`max(0,error-4deg-0.055s*gyro_positive)`, which zeroed the
+velocity reference BEFORE reaching ±2deg. Its 0.8*rate command
+then failed to overcome motor stiction. This is a controller bug,
+not evidence that the hardware cannot run fast.
+
+PACE v11 is a new optional 90/180 profile (UART `j`, index 10,
+CLI `--profile pace`). GUARD remains unchanged for A/B.
+Speed-reference caps are 520deg/s (90) / 620deg/s (180).
+PWM ceilings are 850/1000 (90) and 920/1000 (180), not
+always-on duty. The continuous braking envelope now uses
+0.7deg reserve and 48ms speed-based prediction. Rather than a
+fixed high-power terminal kick, positive PWM is supplemented
+smoothly by up to 62permille of low-speed friction compensation,
+decaying to zero by 45deg/s gyro speed. Close to the target
+the PWM request is capped at 155permille when the measured
+speed is low; reverse commands stay bounded, and motor driver's
+30ms direction interlock is retained. The ±2deg AND <=12deg/s
+dwell for 150ms and the 800ms motor-locked post-stop yaw
+check remain mandatory. No claimed hardware validation yet.
+Previous high-power TRACK caused significant overshoot; the
+PACE maximum still needs physical qualification.
+
+Commands in PowerShell, first trial ONLY:
+```powershell
+git pull --ff-only origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile pace --runs 1
+```
+Confirm `turn_pid_diag_v11_pace`, calibration and READY. Press
+and release PA0 only after READY, with independent motor-power
+cutoff available. Stop the sequence on jerk, reverse rotation,
+overshoot, or STALLED/ANGLE_LIMIT/POST_STOP_DRIFT reasons.
+Only a physically smooth, safely finished 90deg run qualifies
+for a single 180deg trial:
+```powershell
+python tools/turn_pid_pipeline.py --port COM7 --mode 180 --profile pace --runs 1
+```
+Do not infer a safer/faster robot from CI success. Compare
+`stop_ms`, `final_abs_error_deg`, `midturn_low_speed_samples`,
+`midturn_reverse_samples`, `max_applied_pwm_pm`, and
+`in_target_band_high_rate_samples` using complete UART traces.
