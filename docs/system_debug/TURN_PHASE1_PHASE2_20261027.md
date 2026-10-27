@@ -527,3 +527,69 @@ Do not infer a safer/faster robot from CI success. Compare
 `stop_ms`, `final_abs_error_deg`, `midturn_low_speed_samples`,
 `midturn_reverse_samples`, `max_applied_pwm_pm`, and
 `in_target_band_high_rate_samples` using complete UART traces.
+
+## 2026-10-27 — COAST v12: remove short PWM polarity chatter
+
+Analyzed physical `PACE` UART logs in sessions
+`103237`, `103309`, `103340`, `103408`, `103453`.
+Accepted 90deg DONE turns took 625–815ms and reached gyro peaks
+467–479deg/s; accepted 180deg turns took 835–905ms, peaks
+~600–608deg/s. PACE still emitted several *short* negative PWM
+requests, including run4 session103309 requests -79 at 69.17deg,
++17 at 75.20deg, -62 at 81.81deg, then +113 at 86.94deg.
+Actual applied PWM stayed zero during many of these intervals.
+The driver implements a >=30ms neutral wait after motor direction
+reversal. Because the negative commands may expire before the gap,
+their net effect is loss of drive, not reliable physical reverse
+torque. Repeated crossings thus make the turn feel discontinuous.
+
+Session103340 run12 also alternated motor OFF/ON near yaw 88deg
+(`0,+68,0,+64,0`) because settling was not latched when sensor
+noise briefly crossed the ±2deg boundary; this increased turn time.
+
+**COAST v12** adds isolated profile 11, UART idle command `c`,
+host `--profile coast`; ALL old profiles remain unchanged. For
+90deg it uses 555deg/s maximum reference and up to 89% PWM,
+for 180deg 655deg/s and up to 94% PWM. It is **positive or zero
+PWM only** (left wheel negative, right wheel positive for the
+usual counterclockwise yaw); negative requests are rejected in the
+host parser. This removes repeated commanded sign swaps and the
+driver's polarity interlock but also REMOVES active reverse braking.
+A conservative coast stopping envelope, more advance notice and
+smoothed PWM command are used instead. The stronger endgame
+friction correction ramps output towards ~110permille when the
+robot is almost stationary outside the ±2deg band; it remains
+bounded and is not a fixed-time stall kick. The first time the
+angle is within ±2deg AND gyro magnitude <=12deg/s, motor neutral
+is latched for 150ms. If it escapes the ±2deg band, report drift,
+do not issue a second motor pulse to recapture the angle.
+The post-stop 800ms yaw check stays enabled. Stages 42=forward
+motor drive, 43=commanded neutral coast, 44=low-speed final,
+45=latched stable, 46=within angle band but too fast.
+
+**Risk:** Removing reverse torque could make an aggressive moving
+robot overshoot, especially if floor friction, battery voltage or
+payload differ from the recorded trials. CI only demonstrates
+compilation and parser tests; it does NOT establish motion safety,
+successful turnaround, smoother motion or improved lap time.
+A large previous 90deg post-stop yaw change (-46.64deg) remains
+unexplained and must be checked for chassis movement or IMU
+mounting issues independently.
+
+FIRST TEST only:
+```powershell
+git pull --ff-only origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile coast --runs 1
+```
+Observe `turn_pid_diag_v12_coast` banner, PA0 press-release START,
+and independent supply cutoff on a clear floor. Any overshoot,
+unstable physical turn, `ANGLE_LIMIT`, `WRONG_DIRECTION`,
+`STALLED_NEAR_TARGET`, or `POST_STOP_DRIFT` means DO NOT
+continue with 180deg, higher speed, or repeated tests. Inspect
+original UART logs and 50Hz trace before revising.
+
+The goal for the next log is zero `coast_negative_command_samples`,
+zero midturn reversals or stalls, a genuinely settled angle within
+±2deg, and lower time-to-complete. The 1kHz peak gyro and actual
+applied PWM must be measured rather than inferred from setpoints.
