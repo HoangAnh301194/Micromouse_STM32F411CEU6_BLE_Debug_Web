@@ -46,7 +46,7 @@ def effective_flags(cfg, name, stack=()):
     # PIO uses dollar references to expand build_flags from parent sections.
     def expand(match):
         parent = match.group(1)
-        return effective_flags(cfg, parent, stack+(name,))
+        return " ".join(effective_flags(cfg, parent, stack+(name,)))
     raw = re.sub(r"\$\{env:([^}.]+)\.build_flags\}", expand, raw)
     assert "${" not in raw, "Unresolved PIO reference in " + name
     return tuple(raw.split())
