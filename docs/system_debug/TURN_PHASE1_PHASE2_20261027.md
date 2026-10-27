@@ -593,3 +593,53 @@ The goal for the next log is zero `coast_negative_command_samples`,
 zero midturn reversals or stalls, a genuinely settled angle within
 ±2deg, and lower time-to-complete. The 1kHz peak gyro and actual
 applied PWM must be measured rather than inferred from setpoints.
+
+## 2026-10-27 — COAST v13 faster test: 700/800deg/s ref, 100% PWM limit
+
+The user prioritized greater turning speed. The opt-in `coast`
+profile (index=11, UART 'c') has been increased from nominal
+555/655deg/s to **700deg/s for 90deg** and **800deg/s for 180deg**.
+Both PWM ceilings become **1000permille (100%)**, rather than
+890/940. Angular acceleration reference is increased from
+3750 to 4900deg/s2, and rate feedback/feedforward
+(1.95/0.83 -> 2.20/1.03) can request higher acceleration
+torque. Request slew is still active (105pm per 5ms at
+higher speed); the motor driver also limits slew at 1kHz.
+COAST remains positive torque or neutral ONLY, with no
+brief reversing torque or 30ms reversal gaps.
+
+The 78ms speed-prediction lead (was 60ms) and an extra 3.5deg
+reserve (was 2deg) make the calculated coasting envelope
+more conservative in response to larger acceleration.
+This is a **speed experiment, NOT a guaranteed measured
+700/800deg/s physical turn**. Because COAST provides no
+active reverse braking, it may overshoot substantially on
+a low-friction/high-inertia robot; abort logic alone
+cannot undo physical angular momentum. 90deg/180deg
+must NOT be tested as a 5-run unattended batch until
+individual motion is judged safe.
+
+The speed ceiling and hardware motor torque/voltage constraints
+are not identical. Already observed PACE physical applied
+PWM peaked roughly ~60% (90) / ~75% (180); raising only
+the PWM cap would not have changed those runs. The stronger
+initial acceleration/rate feedforward aim to produce an
+observable change. Existing `command_polarity_flips`,
+`applied_pwm_max_step_20ms`, and
+`neutral_actual_high_gyro_samples` metrics remain.
+
+Run only ONE 90deg:
+```powershell
+git pull --ff-only origin giomuadongbac
+python -m platformio run -e turn_pid_diag_96m -t upload
+python tools/turn_pid_pipeline.py --port COM7 --mode 90 --profile coast --runs 1
+```
+
+Expected banner: `TP,HELLO,turn_pid_diag_v13_coast_fast`.
+Ensure PA0 emergency stop and independent motor power
+cutoff, clear floor and secured wires. If any unexpected
+turn, overshoot, impact, wobble or
+`ANGLE_LIMIT`/`WRONG_DIRECTION`/`POST_STOP_DRIFT`/
+`STALLED_NEAR_TARGET`, stop tests and inspect logs.
+Run ONE 180deg only after 90deg is physically safe;
+then push raw UART, summary, metrics to GitHub.
