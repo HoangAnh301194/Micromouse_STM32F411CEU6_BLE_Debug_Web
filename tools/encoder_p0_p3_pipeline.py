@@ -216,7 +216,7 @@ def main(argv=None):
              "--mode", "offline", "--outdir", out / "preflight"],
             out, out / "preflight.log", report["commands"])
         subprocess_live("build_limited",
-            [sys.executable, "-m", "platformio", "run", "-e", LIMITED_ENV],
+            [sys.executable, "-m", "platformio", "run", "-c", "platformio_legacy.ini", "-e", LIMITED_ENV],
             out, out / "build_limited.log", report["commands"])
         if args.offline_only:
             report["status"] = "SOFTWARE_ONLY_PASS"
