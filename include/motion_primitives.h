@@ -76,6 +76,7 @@ typedef struct {
 typedef struct {
     int16_t left_pm;       /* [-1000,1000] motor API permille */
     int16_t right_pm;
+    uint8_t immediate_neutral; /* Apply Motor_Stop now, bypass PWM down-slew. */
     MotionPrimitiveStatus status;
     MotionPrimitiveResult result;
     MotionPivotPhase phase;
