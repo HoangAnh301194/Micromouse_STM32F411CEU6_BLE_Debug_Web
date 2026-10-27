@@ -376,6 +376,48 @@ def report(args: argparse.Namespace) -> None:
                         "median_relative_lag_ms": round(st.median(delays) / 1000, 3),
                         "p95_relative_lag_ms": round(sorted(delays)[math.ceil(.95 * len(delays))-1]/1000, 3),
                         "qualified_for_wall_pid": False})
+    # Joint exploratory comparison of static noise and high-rate relative lag.
+    # Static 40Hz STD is not sufficient for a production filter decision.
+    statics = {}
+    for r in runs:
+        if not r["valid"] or r["kind"] != "static":
+            continue
+        s = load_json(p / r["folder"] / "summary.json")
+        for ch, variants in s.get("channels", {}).items():
+            if not isinstance(variants, dict):
+                continue
+            for f in FILTERS[1:]:
+                metric = variants.get(f, {})
+                if metric.get("noise_reduction_pct") is not None:
+                    statics.setdefault((ch, f), []).append(metric)
+    comparison = []
+    for ch in CHANNELS:
+        for f in FILTERS[1:]:
+            records = statics.get((ch, f), [])
+            lags = candidates.get((ch, f), [])
+            noise = (round(st.median(float(m["noise_reduction_pct"]) for m in records), 2)
+                     if records else None)
+            bias = (round(st.median(float(m["bias_vs_raw_adc"]) for m in records), 3)
+                    if records else None)
+            lag_p95 = (round(sorted(lags)[math.ceil(.95 * len(lags))-1] / 1000, 3)
+                       if lags else None)
+            comparison.append({
+                "channel": ch, "filter": f, "static_runs": len(records),
+                "median_static_std_reduction_pct": noise,
+                "median_static_bias_adc": bias,
+                "relative_edge_events": len(lags),
+                "p95_relative_lag_ms": lag_p95,
+                "passes_25pct_static_screen": noise is not None and noise >= 25.0,
+                "has_lag_within_5ms_screen": lag_p95 is not None and 0 <= lag_p95 <= 5.0,
+                "decision": "EXPLORATORY_ONLY_NOT_ACCEPTED",
+            })
+    with (p / "filter_comparison.csv").open("w", encoding="utf-8", newline="") as f:
+        fieldnames = ("channel", "filter", "static_runs", "median_static_std_reduction_pct",
+                      "median_static_bias_adc", "relative_edge_events", "p95_relative_lag_ms",
+                      "passes_25pct_static_screen", "has_lag_within_5ms_screen", "decision")
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(comparison)
     report_data = {
         "status": "INCONCLUSIVE_NOT_PRODUCTION_QUALIFIED",
         "safety": "Manual-unpowered diagnostic only, based on operator confirmation",
@@ -385,6 +427,7 @@ def report(args: argparse.Namespace) -> None:
                   "G4": "INCONCLUSIVE_NO_INDEPENDENT_EVENT_TIMESTAMP",
                   "G5": "INCONCLUSIVE", "G6": "INCONCLUSIVE"},
         "edges": table, "relative_filter_lag": ranking,
+        "static_dynamic_comparison": "filter_comparison.csv",
         "decision": "Do not select production filter without distance coverage, "
                     "repeatability, independently labeled events and robustness.",
     }
@@ -398,6 +441,7 @@ def report(args: argparse.Namespace) -> None:
             wr.writeheader()
             wr.writerows(data)
     print("Report:", p / "acceptance.json")
+    print("Combined comparison:", p / "filter_comparison.csv")
     print("Relative lags only; no automatic filter approval.")
 
 def main() -> None:
