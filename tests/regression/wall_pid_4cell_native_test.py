@@ -84,6 +84,31 @@ int main(void)
     for(int n=0;n<90;n++)tick(&p,&i);
     assert(p.target_speed_mm_s>0.0f);
     assert(p.pid_updates>0);
+    /* Regression: the old controller artificially capped speed base
+       at 600‰ even with zero wall error because it ALWAYS reserved 200‰
+       for steering. New cap is 800-abs(actual_steer). */
+    WP_Init(&p);i=input();assert(WP_Start(&p,&i));
+    for(int n=0;n<430;n++)tick(&p,&i);
+    assert(p.state==WP_RUNNING);
+    assert(p.pwm_l>600 && p.pwm_r>600);
+    assert(p.pwm_l==p.pwm_r); /* error=0 => no yaw correction */
+    /* Confirm ISR input snapshot available in the POST-STOP BLE FAULT. */
+    i.ir.ema10_adc[IR_WALL_L0]=830;
+    i.ir.raw_adc[IR_WALL_L0]=900;
+    i.ir.ema10_adc[IR_WALL_R0]=666;
+    i.ir.raw_adc[IR_WALL_R0]=671;
+    i.ir.age_us=250;
+    i.ir.scan_count=12345;
+    tick(&p,&i);
+    assert(p.reason==WP_EXCURSION && p.state==WP_FAULT);
+    assert(p.last_l0_adc==830 && p.last_r0_adc==666);
+    assert(p.last_l0_raw==900 && p.last_r0_raw==671);
+    assert(p.last_ir_age_us==250 && p.last_ir_scan==12345);
+
+    WP_Init(&p);i=input();assert(WP_Start(&p,&i));
+    for(int n=0;n<90;n++)tick(&p,&i);
+    assert(p.target_speed_mm_s>0.0f);
+    assert(p.pid_updates>0);
     i.left_count=9640;i.right_count=9640;
     tick(&p,&i);
     assert(p.state==WP_DONE&&p.reason==WP_FINISHED);
