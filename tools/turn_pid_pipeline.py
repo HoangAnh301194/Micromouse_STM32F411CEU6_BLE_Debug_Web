@@ -292,7 +292,7 @@ def analyze(samples: list[dict], result: dict,
                     0<y["t_ms"]-x["t_ms"]<=20]
     high_gyro_neutral=sum(1 for v in ordered
                    if abs(v["gyro_dps"])>100.0 and
-                      v["applied_l_pm"]==0 and v["applied_r_pm"]==0)
+                      v.get("applied_l_pm")==0 and v.get("applied_r_pm")==0)
     midturn=[r for r in ordered
              if r["yaw_deg"]>target*0.30 and
                 r["yaw_deg"]<target-10.0]
