@@ -20,6 +20,7 @@ ACTIVE = (
     "system_test_96m",
     "turn_pid_diag_96m",
     "ir_burst_diag_96m",
+    "wall_pid_4cell_96m",
 )
 RETIRED = (
     "integration_diag_uart_96m",
