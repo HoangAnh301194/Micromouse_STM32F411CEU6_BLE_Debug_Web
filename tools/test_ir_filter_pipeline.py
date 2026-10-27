@@ -10,7 +10,7 @@ import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"tools"))
-from ir_filter_pipeline import parse,make_rows,metrics
+from ir_filter_pipeline import parse,make_rows,metrics,step_response
 
 def check():
     p="|".join(["800","801","802","803","804","805"])
@@ -54,5 +54,19 @@ def check():
             assert len(list(csv.DictReader(fh)))==124*6
         with (out/"ir_on_off.csv").open(newline="") as fh:
             assert len(list(csv.DictReader(fh)))>=15*6
+    # One known 40Hz rising edge; EMA trails raw. Do not claim ms-
+    # resolution below the 25ms transmit decimation interval.
+    step=[]
+    for k in range(50):
+        raw=100 if k<20 else 600
+        ema=100 if k<20 else round(600-500*(0.5**(k-19)))
+        for ch in ("L90","L45","L0","R0","R45","R90"):
+            step.append({"ms":k*25,"scan":k*25+1,"channel":ch,
+                         "raw":raw,"median3":raw,"ema10":ema,
+                         "ema25":ema,"hybrid":ema})
+    sr=step_response(step)
+    assert sr["L90"]["status"]=="single_step_estimate"
+    assert sr["L90"]["filters"]["raw"]["t50_ms"]==500
+    assert sr["L90"]["filters"]["ema25"]["lag_vs_raw_t50_ms"]>=0
     print("IR_FILTER_PIPELINE_SYNTHETIC_PASS")
 if __name__=="__main__":check()
