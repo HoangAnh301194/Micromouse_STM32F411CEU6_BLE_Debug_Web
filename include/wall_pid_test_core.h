@@ -40,6 +40,9 @@ typedef struct {
     WP_Reason reason;
     uint32_t ticks, pid_updates;
     uint16_t ref_l_adc, ref_r_adc;
+    /* Last full-rate frame retained for post-stop fault diagnosis. */
+    uint16_t last_l0_adc, last_r0_adc, last_l0_raw, last_r0_raw;
+    uint32_t last_ir_age_us, last_ir_scan;
     float initial_yaw_deg;
     float integral_error, last_error_mm, derivative_mm_s;
     float error_mm, abs_error_sum_mm, peak_abs_error_mm;

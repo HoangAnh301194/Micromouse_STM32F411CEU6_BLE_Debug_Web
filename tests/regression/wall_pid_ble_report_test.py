@@ -39,6 +39,13 @@ def main():
     bad[1]=bad[1].replace("locked=1","locked=0")
     _,rep=m.parse_lines(bad)
     assert not rep["data_complete"]
+    fault_line="W,FAULT,why=IR_EXCURSION,ms=440,l=835,r=750,rawL=1050,rawR=740,refL=669,refR=750,age=400,scan=10022"
+    _,fr=m.parse_lines(good+[fault_line])
+    assert fr["fault"]["l"]==835 and fr["fault"]["rawL"]==1050
+    assert fr["fault_side"]=="L0"
+    right_fault=fault_line.replace("l=835,r=750","l=669,r=1261").replace("rawL=1050","rawL=650")
+    _,fr=m.parse_lines(good+[right_fault])
+    assert fr["fault_side"]=="R0"
     print("WALL_PID_BLE_REPORT_TEST_PASS")
 
 if __name__=="__main__":main()

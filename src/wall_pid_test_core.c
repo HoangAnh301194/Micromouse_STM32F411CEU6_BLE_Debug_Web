@@ -40,6 +40,12 @@ uint8_t WP_Step(WP_Controller *p,const WP_Input *in)
     int32_t avg_count_delta;
     if(!p||!in||p->state!=WP_RUNNING)return 0U;
     ++p->ticks;
+    p->last_l0_adc=in->ir.ema10_adc[IR_WALL_L0];
+    p->last_r0_adc=in->ir.ema10_adc[IR_WALL_R0];
+    p->last_l0_raw=in->ir.raw_adc[IR_WALL_L0];
+    p->last_r0_raw=in->ir.raw_adc[IR_WALL_R0];
+    p->last_ir_age_us=in->ir.age_us;
+    p->last_ir_scan=in->ir.scan_count;
     if(in->ir.status!=IR_WALL_VALID||in->ir.age_us>IR_WALL_MAX_AGE_US){
         WP_Stop(p,WP_IR_STALE);return 0U;
     }
@@ -111,7 +117,7 @@ uint8_t WP_Step(WP_Controller *p,const WP_Input *in)
                              -160.0f,160.0f);
     base=Clip(75.0f + p->target_speed_mm_s*0.51f+
               0.32f*velocity_error+p->speed_integral_pm,
-              0.0f,(float)WP_PWM_CAP_PM-(float)WP_STEER_CAP_PM);
+              0.0f,(float)WP_PWM_CAP_PM);
     derivative=p->has_previous?
         0.75f*p->derivative_mm_s+
         0.25f*((p->error_mm-p->last_error_mm)/0.005f):0.0f;
@@ -122,6 +128,10 @@ uint8_t WP_Step(WP_Controller *p,const WP_Input *in)
     steer=6.0f*p->error_mm+0.6f*integral_next+0.018f*derivative;
     if(Abs(steer)<WP_STEER_CAP_PM)p->integral_error=integral_next;
     steer=Clip(steer,-(float)WP_STEER_CAP_PM,(float)WP_STEER_CAP_PM);
+    /* Before: base PWM hard-capped at 600 (800-200) even when
+     * steering requested 0. Now reserve only actual abs(steer) so
+     * BOTH commands remain <=800; do not make correction asymmetric. */
+    base=Clip(base,0.0f,(float)WP_PWM_CAP_PM-Abs(steer));
     p->derivative_mm_s=derivative;p->last_error_mm=p->error_mm;
     p->has_previous=1U;
     p->pwm_l=(int16_t)Clip(base+steer,0.0f,WP_PWM_CAP_PM);

@@ -113,3 +113,73 @@ Tool tạo `wall_4cell_ble_report/trace.csv` và `summary.json`.
 Nếu `data_complete=false`, không dùng trace đó để tuning PID.
 Hệ số EMA 0,10 và hệ số nhạy L0/R0 phải được giữ nguyên giữa các
 lượt để so sánh đúng.
+
+## Phân tích thực nghiệm 28/10/2026 — dừng bất thường sau ~1 cell
+
+Ảnh terminal do người vận hành cung cấp:
+
+```text
+W,START,mm=720,diam=34,cpr=1430,pwmcap=800,l=669,r=750
+W,END,IR_EXCURSION,ms=440,d10=705,avgerr100=49,peakerr100=573,vpk=319,pkpwm=638,locked=1,trace=8
+W,POST,dist10=1508,drift10=802,locked=1
+W,TRACE_END
+```
+
+**Kết luận được chứng minh:** firmware chưa hoàn tất 4 cell;
+thời điểm dừng chỉ 70,5 mm (đếm encoder); sau 800 ms tăng
+đến 150,8 mm, tức **80,2 mm** tiếp tục di chuyển. Tốc độ đỉnh
+319 mm/s, thấp hơn tốc độ đặt 900 mm/s. Việc ngắt là
+`IR_EXCURSION`, không phải `DONE`. Độ chính xác mm theo encoder
+vẫn tùy thuộc đường kính thực tế, trượt bánh, độ phân giải giải mã.
+
+**Chưa xác định nguyên nhân ngắt IR.** Trong 8 khung đã thấy,
+L0 ≈650–669, R0 ≈729–761; không có khung đúng tại ms440.
+Điều kiện ngắt trước đó là `|L0-L0_start|>165 ADC` hoặc
+`|R0-R0_start|>510 ADC`. Đối với lần này, L0_start=669,
+R0_start=750, nên các mốc là **L0 < 504 hoặc >834;
+R0 <240 hoặc >1260**. Một khung nhiễu, tường bị mất mép,
+căn chỉnh hình học và hiện tượng nhiễu điện đều có thể giải thích;
+không có căn cứ để chọn một nguyên nhân duy nhất.
+
+**Sửa phần mềm sau phân tích:**
+
+1. `src/wall_pid_test.c` gửi thêm `W,FAULT` sau khi dừng,
+   chứa **EMA + RAW L0/R0 ở đúng scan fault**, hai giá trị tham chiếu,
+   tuổi mẫu và số thứ tự scan. Việc log vẫn diễn ra từ main, không
+   gửi BLE trong TIM11.
+2. `src/wall_pid_test_core.c` bỏ cách **luôn dành sẵn 200‰**
+   cho lái, làm PWM nền bị chặn 600‰ dù lái=0. Giờ
+   **chỉ dành biên PWM bằng |steer| đang yêu cầu**,
+   tổng PWM vẫn chặn 800‰, điều khiển lái đối xứng.
+3. **Không thay đổi ngưỡng ngắt IR**, không thay đổi mục tiêu
+   tốc độ 900 mm/s, không giảm kiểm tra motor/gyro/encoder,
+   không tự động thử lại khi lỗi.
+4. Thêm kiểm thử regression rằng không còn chặn 600‰ khi sai
+   số lái=0, chụp đúng khung fault và nhận dạng cảm biến lỗi
+   khi phân tích `tools/wall_pid_ble_report.py`.
+
+**Quan trọng về an toàn:** do firmware mới có thể sử dụng
+PWM nền cao hơn trước, phải xác minh trên gá nâng bánh, với
+VM cutoff độc lập, trước mọi lượt chạy trên mặt sàn.
+Không cho phép robot đâm vào tường cuối hành lang:
+`Motor_LockOutputs` sử dụng coast, tức dừng cấp lực chứ
+**không phanh chủ động**. Quãng trôi 80,2 mm là dữ liệu
+ở khoảng 319 mm/s, **không ngoại suy tuyến tính** thành quãng
+trôi ở 900 mm/s. Cần đo riêng mới thiết kế dừng dự đoán/phanh.
+
+### Kế hoạch thử lại có kiểm soát
+
+- **Bước A:** cắt VM, kiểm tra giá trị L0/R0 tĩnh trước/sau di chuyển
+  tường; giá trị khởi điểm hiện tại (L0=669 R0=750) không khớp
+  với phép đo hai bên 60 mm trước đó (khoảng 460/664 ADC);
+  không suy luận rằng robot đã cân giữa hai tường chỉ từ ADC.
+- **Bước B:** nâng bánh trên giá, nạp firmware, xác minh chiều
+  encoder, giới hạn PWM, dừng PA0 và `W,FAULT`.
+- **Bước C:** thử có giám sát trong hành lang dài hơn 720 mm
+  cộng vùng thoát/dừng đủ rộng, ngắt VM độc lập; không có vật
+  cản cuối hành lang. Không nhảy thẳng sang tốc độ cao
+  khi 80,2 mm trôi chưa được làm rõ.
+- **Bước D:** cung cấp `W,END`, `W,FAULT`, `W,POST`,
+  toàn bộ trace sau `W,TRACE_END` và quãng đường đo bằng thước.
+  Xác định L0/R0 nào vượt ngưỡng trước khi quyết định lọc
+  glitch, nới ngưỡng, hoặc hiệu chuẩn lại.
