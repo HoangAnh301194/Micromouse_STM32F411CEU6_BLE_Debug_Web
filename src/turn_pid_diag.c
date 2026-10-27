@@ -217,7 +217,7 @@ static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10,TP_COAST=11};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10,TP_COAST_PROFILE=11};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
       TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8,TP_DRIFT=9};
 
@@ -975,7 +975,7 @@ static void PaceControlTick(void) {
  * anticipates natural coasting latency. Full-speed trials are NOT
  * hardware validated and can overshoot if actual coast decel varies. */
 static void CoastControlTick(void) {
-    const TP_Profile *cfg=&profiles[TP_COAST];
+    const TP_Profile *cfg=&profiles[TP_COAST_PROFILE];
     const float dt=0.005f;
     float err=tp.err,w=tp.rate,oldref=tp.ref_rate;
     float vmax=tp.mode==TP_180?TP_COAST_RATE_180:TP_COAST_RATE_90;
@@ -1113,12 +1113,12 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
     }
     if((tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) &&
+        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) &&
        (tp.yaw<-3.0f ||
-        ((tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) ?
+        ((tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) ?
          (tp.ticks>70U && tp.rate< -45.0f) :
          tp.rate< -40.0f) ||
-        fabsf(tp.rate)>(tp.profile==TP_COAST?TP_COAST_GYRO_ABORT:(tp.profile==TP_PACE?TP_PACE_GYRO_ABORT:
+        fabsf(tp.rate)>(tp.profile==TP_COAST_PROFILE?TP_COAST_GYRO_ABORT:(tp.profile==TP_PACE?TP_PACE_GYRO_ABORT:
                 (tp.profile==TP_GUARD?TP_GUARD_GYRO_ABORT:
                   (tp.profile==TP_TRACK?TP_TRACK_MAX_RATE_ABORT:TP_SPRINT_GYRO_ABORT)))))) {
         StopAndCoast(TP_DIRECTION);PushSample(age_us);return;
@@ -1145,7 +1145,7 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
     /* TUNED has tighter high-speed flight envelope; BASE/FAST unchanged. */
     if(tp.yaw>(float)tp.mode+
                ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-                 tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST)?2.0f:
+                 tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE)?2.0f:
                 ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH)?8.0f:22.0f)) ||
        ((tp.profile==TP_TUNED || tp.profile==TP_SMOOTH) &&
         fabsf(tp.rate)>450.0f)) {
@@ -1155,10 +1155,10 @@ void TurnPidDiag_ControlTick(int32_t left,int32_t right,float yaw_deg,
      * overshoot becomes a diagnostic failure rather than a hard jerk. */
     if((tp.profile==TP_SMOOTH || tp.profile==TP_RAPID ||
         tp.profile==TP_FLOW || tp.profile==TP_GLIDE || tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) && tp.err < -TP_ANGLE_BAND) {
+        tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) && tp.err < -TP_ANGLE_BAND) {
         StopAndCoast(TP_ANGLE);PushSample(age_us);return;
     }
-    if(tp.profile==TP_COAST) {
+    if(tp.profile==TP_COAST_PROFILE) {
         if((tp.ticks%TP_CONTROL_DIV)==0U)CoastControlTick();
         if((tp.ticks%TP_LOG_DIV)==0U)PushSample(age_us);
         return;
@@ -1374,7 +1374,7 @@ static void StartByPA0(void) {
     if(tp.phase!=TP_IDLE || !IsReady() ||
        ((tp.profile==TP_RAPID || tp.profile==TP_FLOW || tp.profile==TP_GLIDE) && tp.mode!=TP_90) ||
        ((tp.profile==TP_SPRINT || tp.profile==TP_TRACK ||
-          tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
+          tp.profile==TP_GUARD || tp.profile==TP_PACE || tp.profile==TP_COAST_PROFILE) && tp.mode!=TP_90 && tp.mode!=TP_180)) {
         UART_Printf("TP,REJECT,mode=%u,cal=%u,reason=NOT_READY\r\n",
                     (unsigned)tp.mode,(unsigned)mpu.calibrated);
         return;
@@ -1414,14 +1414,14 @@ static void StartByPA0(void) {
     if(!mask)__enable_irq();
     UART_Printf("TP,START,id=%lu,mode=%u,profile=%u,pwm_cap=%d,kp_angle_x100=%d,kp_rate_x100=%d,kff_x100=%d,accel=%u,max_rate=%u,log_hz=50,trace_rev=3,gyro_band_deg=2\r\n",
         (unsigned long)tp.id,(unsigned)tp.mode,(unsigned)tp.profile,
-        (int)(tp.profile==TP_COAST && tp.mode==TP_90 ? TP_COAST_PWM_90 :
+        (int)(tp.profile==TP_COAST_PROFILE && tp.mode==TP_90 ? TP_COAST_PWM_90 :
              (tp.profile==TP_PACE && tp.mode==TP_90 ? TP_PACE_PWM_90 :
              (tp.profile==TP_GUARD && tp.mode==TP_90 ? TP_GUARD_PWM_90 : profiles[tp.profile].max_pwm))),
         (int)(profiles[tp.profile].kp_angle*100.0f),
         (int)(profiles[tp.profile].kp_rate*100.0f),
         (int)(profiles[tp.profile].kff_rate*100.0f),
         (unsigned)profiles[tp.profile].accel_dps2,
-        (unsigned)((tp.profile==TP_COAST)?
+        (unsigned)((tp.profile==TP_COAST_PROFILE)?
           (tp.mode==TP_90?TP_COAST_RATE_90:TP_COAST_RATE_180):
           ((tp.profile==TP_PACE) ?
           (tp.mode==TP_90?TP_PACE_RATE_90:TP_PACE_RATE_180):
