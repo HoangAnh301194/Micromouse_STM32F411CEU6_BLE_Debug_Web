@@ -808,3 +808,63 @@ Compare brake release yaw, rate, phase 49->50 yaw/rate,
 retest is optional to reconfirm the unchanged path,
 but 90deg reliability still must be resolved before
 full operational qualification.
+
+## 2026-10-27 — Provisional integration sign-off: in-place pivot motions
+
+**Decision (explicit user sign-off):** provisionally close the pivot-motion
+workstream and proceed to the next robot motion modules. Treat these
+as the two required **motion classes**:
+
+1. **In-place quarter-turn, 90deg** — intended left and right.
+2. **In-place half-turn, 180deg** — intended change of heading.
+
+**Freeze** the currently selected control tuning, braking strategy,
+motor PWM limits and single-brake profile settings as the working
+integration baseline. Do not tune or substitute a new profile without
+an explicit request. Current diagnostics:
+`singlebrake` (profile 12), `turn_pid_diag_v15_singlebrake_180release`;
+corresponding entry points remain `tools/turn_pid_pipeline.py`
+with `--mode 90` or `--mode 180`. Separate diagnostic profiles
+are historical baselines rather than universally qualified controls.
+
+**Important scope limits — this is not full quantitative hardware
+qualification:**
+- The experimental `src/turn_pid_diag.c` currently controls
+  **positive yaw only**: `TP_90=90`, `TP_180=180` and
+  `Motor_SetPairPermille(-u,+u)`. The high-speed
+  `--profile singlebrake` 90deg tests therefore do **not**
+  demonstrate its mirrored right-turn behavior. By contrast,
+  the *older and separate* `Motion_CommandTurn(float angle_deg,...)`
+  in `src/motion.c` accepts a signed angle and reverses PWM polarity
+  when output is negative. That module has different conservative
+  limits; its right-turn dynamics must not be assumed identical
+  to the high-speed SINGLEBRAKE results.
+- The last on-hardware SINGLEBRAKE v14 90deg sessions showed
+  3/7 completed trials `DONE` at 385–425ms, with other trials
+  stopped as `WRONG_DIRECTION`. Hence repeatability remains
+  below any strict 100% quantitative acceptance criterion.
+- v14 180deg on-hardware data showed 2/5 complete trials `DONE`
+  at 940–955ms; additional trials failed as `WRONG_DIRECTION`.
+  The v15 180deg brake-release correction has passed software CI
+  but **has not yet been physically re-tested**.
+- Do not label physical right-90deg or v15 half-turn as verified
+  precision/speed benchmarks until directional tests and repeated
+  floor runs are performed. Label their status as
+  `PROVISIONAL_FUNCTION_SCOPE`, not `HARDWARE_PASS`.
+
+**Future integration interface recommendation** (not yet implemented
+or validated): `turn_in_place(signed_angle_deg)`, with `+90`
+counterclockwise/left, `-90` clockwise/right, and a documented
+signed convention for `180` versus `-180`. To migrate, adapt
+heading sign, gyro/angle-error sign, and opposite wheel PWM signs;
+test both directions separately rather than simply aliasing
+`--mode 90` to a right turn. The diagnostic mode numbers are
+unsigned and must not be treated as a signed-angle interface.
+
+**Acceptance status:** user-approved **provisional milestone** for
+project scheduling only. Remaining risk/follow-up work is
+bidirectional high-speed right-turn validation, repeated-motion
+reliability, post-stop drift, v15 180deg floor validation, and
+integration of the tested control law into the runtime
+`Motion_CommandTurn` path. Preserve raw UART evidence and
+do not delete safety checks when integrating the modules.
