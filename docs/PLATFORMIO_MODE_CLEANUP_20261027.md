@@ -9,7 +9,7 @@ Move previously used, now-retired qualification environments out of the
 `platformio_legacy.ini`. No source modules, diagnostic evidence, Flash
 sectors, hardware calibration or historical logs were deleted.
 
-The default config now lists **12 active environments**, down from 21.
+The default config now lists **13 active environments**, up from 12 after adding the 4-cell Wall PID prototype.
 **9 historical environments** are available only via explicit `-c
 platformio_legacy.ini`. The original build flags for *all twelve retained
 environments* are preserved; `ble_profile_motor_on_pid_115200_96m` now
