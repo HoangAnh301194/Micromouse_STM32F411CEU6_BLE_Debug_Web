@@ -95,6 +95,50 @@ def metrics(rows:list[dict],health:list[dict]|None=None)->dict:
         summary["scan_failed_delta"]=h.get("fail",0)-health[0].get("fail",0)
     return summary
 
+def step_response(rows:list[dict])->dict:
+    """Rough SINGLE step edge timing on the 40Hz exported stream.
+    Threshold crossing is quantized to 25ms and is not a 1kHz delay
+    measurement. Use one wall insertion/removal per capture.
+    """
+    out={}
+    for ch in CHANNELS:
+        part=sorted((r for r in rows if r["channel"]==ch),
+                    key=lambda v:int(v["ms"]))
+        if len(part)<15:continue
+        n=max(4,len(part)//6)
+        before=stats.median(float(r["raw"]) for r in part[:n])
+        after=stats.median(float(r["raw"]) for r in part[-n:])
+        span=after-before
+        if abs(span)<max(15.0,0.10*max(before,1.0)):
+            out[ch]={"status":"insufficient_change","delta_adc":round(span,2)}
+            continue
+        direction=1.0 if span>0 else -1.0
+        t0=int(part[0]["ms"])
+        channels={}
+        for src in FILTER_MAP.values():
+            low=stats.median(float(r[src]) for r in part[:n])
+            hi=stats.median(float(r[src]) for r in part[-n:])
+            if abs(hi-low)<10.0:
+                channels[src]={"status":"no_response"};continue
+            crossing={}
+            for pct in (0.1,0.5,0.9):
+                threshold=low+pct*(hi-low)
+                t=next((int(r["ms"])-t0 for r in part
+                        if (float(r[src])-threshold)*direction>=0),None)
+                crossing[f"t{round(pct*100)}_ms"]=t
+            if crossing["t10_ms"] is not None and crossing["t90_ms"] is not None:
+                crossing["rise_10_90_ms"]=max(0,crossing["t90_ms"]-crossing["t10_ms"])
+            channels[src]=crossing
+        if channels.get("raw",{}).get("t50_ms") is not None:
+            raw_mid=channels["raw"]["t50_ms"]
+            for stage in channels.values():
+                if "t50_ms" in stage and stage["t50_ms"] is not None:
+                    stage["lag_vs_raw_t50_ms"]=stage["t50_ms"]-raw_mid
+        out[ch]={"status":"single_step_estimate","delta_adc":round(span,2),
+                 "direction":"rising" if span>0 else "falling",
+                 "filters":channels}
+    return out
+
 def plot_six(rows:list[dict],dest:Path)->int:
     try:import matplotlib.pyplot as plt
     except ImportError:
@@ -199,6 +243,8 @@ def main(argv=None)->int:
         ("distance_mm","surface","light","scenario","trial","notes")}
     summary["malformed_ir_frames"]=malformed
     summary["raw_on_off_sample_count"]=len(off_on)//6
+    if args.scenario=="step":
+        summary["step_response_40hz_estimate"]=step_response(frames)
     # Explicit reject on drops, errors and missing coverage.
     summary["valid_capture"]=(len(frames)>=60 and len(health)>=2
          and not malformed and summary.get("valid_motor_locked",False)
