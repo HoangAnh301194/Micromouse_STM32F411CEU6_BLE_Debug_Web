@@ -284,19 +284,46 @@ def capture_burst(args: argparse.Namespace, dest: Path) -> None:
     print("Saved:", dest)
 
 def capture_static(args: argparse.Namespace, dest: Path) -> None:
+    # The caller has already created dest/setup.json. The original static
+    # collector REFUSES any pre-existing --output directory. Use a fresh
+    # child path, then publish an enriched summary at the run root so status
+    # and report retain their existing, stable interfaces.
+    data_dir = dest / "data"
+    if data_dir.exists():
+        raise ValueError("Static data folder already exists; refusing overwrite: " + str(data_dir))
     cmd = [sys.executable, str(ROOT / "tools" / "ir_filter_pipeline.py"),
            "--port", args.port, "--seconds", str(args.seconds),
            "--scenario", args.case if args.case in
            ("static", "no-wall", "ambient", "crosstalk", "step") else "static",
            "--surface", args.surface, "--light", args.light,
            "--trial", str(args.trial), "--notes", args.notes,
-           "--output", str(dest), "--plot"]
+           "--output", str(data_dir), "--plot"]
     if args.distance is not None:
         cmd += ["--distance-mm", str(args.distance)]
     print("RUN", " ".join(cmd), flush=True)
     result = subprocess.run(cmd, cwd=ROOT, check=False)
+    original_summary = data_dir / "summary.json"
+    if original_summary.is_file():
+        summary = load_json(original_summary)
+        metadata = summary.setdefault("metadata", {})
+        metadata.update({
+            "distance_left_mm": args.distance_left,
+            "distance_right_mm": args.distance_right,
+            "distance_mm": args.distance,
+            "run_setup": "setup.json",
+            "trace_directory": "data",
+        })
+        summary["run_setup"] = "setup.json"
+        summary["trace_directory"] = "data"
+        # Retain the complete untouched original under data/summary.json.
+        save_json(dest / "summary.json", summary)
     if result.returncode:
-        raise RuntimeError("Static capture failed; inspect existing raw/summary output")
+        raise RuntimeError("Static capture failed (exit=%d); check %s for retained logs" %
+                           (result.returncode, data_dir))
+    if not original_summary.is_file():
+        raise RuntimeError("Collector exited successfully but produced no summary: " + str(data_dir))
+    print("Static data:", data_dir)
+    print("Run summary:", dest / "summary.json")
 
 def capture(args: argparse.Namespace) -> None:
     p = require_session(args.session)
