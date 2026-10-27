@@ -201,6 +201,22 @@ static void StartTraceReplay(void)
        (long)st.ctl.peak_speed_mm_s,(int)st.ctl.peak_pwm_pm,
        (unsigned)Motor_OutputsLocked(),
        (unsigned)st.trace_count);
+    /* This frame is from the exact 1-kHz step that requested STOP,
+     * not the preceding 50-ms sampling point. Check left and right
+     * separately before touching the safety thresholds. */
+    if(st.reason!=WP_FINISHED){
+        BT_Printf("W,FAULT,why=%s,ms=%lu,l=%u,r=%u,rawL=%u,rawR=%u,refL=%u,refR=%u,age=%lu,scan=%lu\n",
+                  Why((WP_Reason)st.reason),
+                  (unsigned long)st.ctl.ticks,
+                  (unsigned)st.ctl.last_l0_adc,
+                  (unsigned)st.ctl.last_r0_adc,
+                  (unsigned)st.ctl.last_l0_raw,
+                  (unsigned)st.ctl.last_r0_raw,
+                  (unsigned)st.ctl.ref_l_adc,
+                  (unsigned)st.ctl.ref_r_adc,
+                  (unsigned long)st.ctl.last_ir_age_us,
+                  (unsigned long)st.ctl.last_ir_scan);
+    }
     tx_active=1U;tx_index=0U;tx_offset=0U;tx_last_ms=millis();
     tx_line_len=0U;
 }
