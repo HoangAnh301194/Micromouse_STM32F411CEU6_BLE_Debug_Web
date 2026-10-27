@@ -501,6 +501,53 @@ class TurnTraceTests(unittest.TestCase):
         self.assertIn("if(c=='n')tp.profile=TP_SINGLEBRAKE;",firmware)
         self.assertIn("TP_SINGLE_RATE_90           650.0f",firmware)
 
+    def test_singlebrake_v15_180_early_release_preserves_90(self):
+        # Source-level regression guard. Hardware trajectory itself still
+        # requires real floor data; this does NOT simulate dynamics.
+        firmware=(Path(__file__).resolve().parent.parent/"src"/"turn_pid_diag.c").read_text()
+        self.assertIn("#define TP_SINGLE_180_BRAKE_RELEASE_RATE  330.0f",firmware)
+        self.assertIn("#define TP_SINGLE_180_COAST_EXIT_RATE    120.0f",firmware)
+        self.assertIn("#define TP_SINGLE_180_COAST_MIN_MS        30U",firmware)
+        start=firmware.index("static void SingleBrakeControlTick(void)")
+        end=firmware.index("void TurnPidDiag_Stop(uint8_t why)",start)
+        controller=firmware[start:end]
+        self.assertIn("if(tp.mode==TP_180 &&",controller)
+        self.assertIn("w<=TP_SINGLE_180_BRAKE_RELEASE_RATE",controller)
+        self.assertIn("Motor_Stop();\n            return;",controller)
+        self.assertIn("if(tp.mode==TP_180) {",controller)
+        self.assertIn("w<=TP_SINGLE_180_COAST_EXIT_RATE",controller)
+        self.assertIn("tp.flow_ticks>=TP_SINGLE_180_COAST_MIN_MS",controller)
+        self.assertIn("} else if(w<=TP_SINGLE_COAST_EXIT_RATE &&",controller)
+        self.assertIn("tp.flow_ticks>=50U && err>TP_ANGLE_BAND",controller)
+        self.assertIn("turn_pid_diag_v15_singlebrake_180release",firmware)
+
+    def test_singlebrake_180_positive_speed_coast_trace_metrics(self):
+        def frame(t,yaw,gyro,cmd,stage,phase=1):
+            cd=round(yaw*100)
+            return parse_sample(
+                f"TP,D,40,{t},180,12,{phase},{cd},{18000-cd},"
+                f"{round(gyro*10)},0,0,0,{cmd},{-cmd},{cmd},"
+                f"-95,95,600,{stage}")
+        rows=[frame(20,0,15,420,47),frame(80,15,440,850,47),
+              frame(140,60,735,1000,47),frame(200,108,825,680,48),
+              frame(240,140,600,-250,48),
+              frame(280,157,325,0,49),
+              frame(300,162,220,0,49),
+              frame(340,169,110,90,50),
+              frame(380,173,90,98,50),
+              frame(460,178.7,8,0,51),
+              frame(650,178.7,0,0,51,phase=2)]
+        self.assertTrue(all(v is not None for v in rows))
+        r=analyze(rows,{"reason":"DONE","stop_ms":"460",
+                        "final_cd":"17870","peak_dps10":"8320"})
+        self.assertEqual(r["profile"],"SINGLEBRAKE")
+        self.assertEqual(r["target_deg"],180)
+        self.assertEqual(r["single_brake_samples"],2)
+        self.assertEqual(r["single_coast_samples"],2)
+        self.assertEqual(r["single_tail_samples"],2)
+        self.assertEqual(r["midturn_low_speed_samples"],0)
+        self.assertEqual(r["midturn_reverse_samples"],0)
+
     def test_coast_uart_profile_selection_matches_index_11(self):
         # Regression: TP_COAST is already the motor coast phase (2).
         # UART 'c' must select the separate motion profile index 11.
