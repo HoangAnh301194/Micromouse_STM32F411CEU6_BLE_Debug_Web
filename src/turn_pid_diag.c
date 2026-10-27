@@ -158,6 +158,29 @@
 #define TP_PACE_STALL_MS          580U
 #define TP_PACE_GYRO_ABORT        720.0f
 #define TP_PACE_STOP_RATE          12.0f
+/* COAST v12: opt-in experiment to remove commanded direction
+ * flips that incur the driver's 30ms neutral interlock. Remains
+ * physically unverified; conservative brake prediction is essential. */
+#define TP_COAST_RATE_90           555.0f
+#define TP_COAST_RATE_180          655.0f
+#define TP_COAST_PWM_90            890.0f
+#define TP_COAST_PWM_180           940.0f
+#define TP_COAST_REF_ACCEL        3750.0f
+#define TP_COAST_REF_DECEL        7200.0f
+#define TP_COAST_BRAKE_DPS2       2600.0f
+#define TP_COAST_LEAD_S              0.060f
+#define TP_COAST_RESERVE_DEG         2.0f
+#define TP_COAST_ACCEL_FF            0.045f
+#define TP_COAST_DUTY_STEP          75.0f
+#define TP_COAST_NEAR_STEP          20.0f
+#define TP_COAST_STICTION_FF         76.0f
+#define TP_COAST_STICTION_SPEED      45.0f
+#define TP_COAST_NEAR_CAP          165.0f
+#define TP_COAST_STALL_MS          500U
+#define TP_COAST_GYRO_ABORT        750.0f
+#define TP_COAST_STOP_RATE          12.0f
+#define TP_COAST_MIN_MOVE_PWM      110.0f
+
 
 
 
@@ -194,7 +217,7 @@ static const int16_t tp_sweep_pwm[TP_SWEEP_N]={70,95,120,155,200,260};
 
 enum {TP_IDLE=0,TP_RUNNING=1,TP_COAST=2,TP_RESULT=3};
 enum {TP_SWEEP=0,TP_90=90,TP_180=180};
-enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10};
+enum {TP_BASE=0,TP_FAST=1,TP_TUNED=2,TP_SMOOTH=3,TP_RAPID=4,TP_FLOW=5,TP_GLIDE=6,TP_SPRINT=7,TP_TRACK=8,TP_GUARD=9,TP_PACE=10,TP_COAST=11};
 enum {TP_DONE=0,TP_BUTTON=1,TP_TIMEOUT=2,TP_IMU=3,
       TP_DIRECTION=4,TP_ANGLE=5,TP_MOTOR=6,TP_UART=7,TP_STALL=8,TP_DRIFT=9};
 
@@ -214,7 +237,7 @@ typedef struct {
 /* Preserve BASE/FAST/TUNED exactly for comparison against real logs.
  * SMOOTH: first hardware-unverified fix for strong near-target jolt.
  * Do not infer physical stability from firmware compilation. */
-static const TP_Profile profiles[11]={
+static const TP_Profile profiles[12]={
     {4.8f,1.15f,0.0f,0.35f,650.0f,150.0f,260,95,0.0f,0.0f},
     {6.0f,1.35f,0.0f,0.40f,950.0f,230.0f,300,95,0.0f,0.0f},
     {6.5f,1.75f,0.0f,0.95f,850.0f,200.0f,350,0,48.0f,0.045f},
@@ -233,7 +256,8 @@ static const TP_Profile profiles[11]={
     {12.0f,1.65f,0.0f,0.80f,3400.0f,560.0f,850,0,0.0f,0.0f},
     /* PACE: higher rate reference, moderate damping and terminal
      * stiction compensation, without an impulsive PWM kick. */
-    {12.0f,1.85f,0.0f,0.86f,3600.0f,620.0f,920,0,0.0f,0.0f}
+    {12.0f,1.85f,0.0f,0.86f,3600.0f,620.0f,920,0,0.0f,0.0f},
+    {12.0f,1.95f,0.0f,0.83f,3750.0f,655.0f,940,0,0.0f,0.0f}
 };
 
 typedef struct {
