@@ -394,6 +394,49 @@ class TurnTraceTests(unittest.TestCase):
         self.assertEqual(a["first_band_rate_dps"],44.0)
         self.assertIsNone(record(40,65,560,921,37,target=180))
 
+    def test_coast_v12_90_180_no_reverse_and_stage_decoder(self):
+        def sample_frame(t,angle,gyro,cmd,stage,target=90,phase=1):
+            centi=round(angle*100)
+            return parse_sample(
+               f"TP,D,31,{t},{target},11,{phase},{centi},"
+               f"{target*100-centi},{round(gyro*10)},"
+               f"{round(gyro*10)},0,0,{cmd},{-cmd},{cmd},"
+               f"-100,100,650,{stage}")
+        rows=[sample_frame(20,1,55,300,42),
+              sample_frame(40,25,400,830,42),
+              sample_frame(60,58,320,0,43),
+              sample_frame(80,80,90,110,44),
+              sample_frame(100,88.4,24,0,46),
+              sample_frame(120,88.5,8,0,45),
+              sample_frame(300,88.5,0,0,45,phase=2)]
+        self.assertTrue(all(v is not None for v in rows))
+        m=analyze(rows,{"reason":"DONE","stop_ms":"120",
+                         "peak_dps10":"5550","final_cd":"8850"})
+        self.assertEqual(m["profile"],"COAST")
+        self.assertEqual(m["coast_drive_samples"],2)
+        self.assertEqual(m["coast_neutral_samples"],1)
+        self.assertEqual(m["coast_near_samples"],1)
+        self.assertEqual(m["coast_band_neutral_samples"],1)
+        self.assertEqual(m["coast_stop_samples"],1)
+        self.assertEqual(m["coast_negative_command_samples"],0)
+        self.assertEqual(m["first_band_rate_dps"],24.0)
+        self.assertIsNone(sample_frame(20,1,55,891,42))
+        self.assertIsNone(sample_frame(20,1,55,-1,43))
+        self.assertIsNone(sample_frame(20,1,55,300,39))
+        long=[sample_frame(20,1,55,300,42,target=180),
+              sample_frame(40,75,640,940,42,target=180),
+              sample_frame(60,142,300,0,43,target=180),
+              sample_frame(80,173,80,125,44,target=180),
+              sample_frame(100,178.5,7,0,45,target=180),
+              sample_frame(280,178.5,0,0,45,target=180,phase=2)]
+        self.assertTrue(all(v is not None for v in long))
+        lm=analyze(long,{"reason":"DONE","stop_ms":"100",
+                         "final_cd":"17850"})
+        self.assertEqual(lm["target_deg"],180)
+        self.assertEqual(lm["profile"],"COAST")
+        self.assertEqual(lm["max_requested_pwm_pm"],940)
+        self.assertIsNone(sample_frame(40,75,640,941,42,target=180))
+
     def test_reject_partial_and_unsafe_value(self):
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,1"))
         self.assertIsNone(parse_sample("TP,D,1,20,90,0,1,100,8900,50,60,70,80,900,10,-10,500"))
