@@ -3,6 +3,9 @@
 #if defined(IR_BURST_DIAG)
 int IR_BurstDiag_Main(void);
 int main(void) { return IR_BurstDiag_Main(); }
+#elif defined(WALL_PID_TEST_MODE)
+#include "wall_pid_test.h"
+int main(void) { return WallPidTest_Main(); }
 #elif defined(TURN_PID_DIAG)
 #include "turn_pid_diag.h"
 int main(void) { return TurnPidDiag_Main(); }
