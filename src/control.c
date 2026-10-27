@@ -9,6 +9,8 @@
 #include "system_test.h"
 #elif defined(TURN_PID_DIAG)
 #include "turn_pid_diag.h"
+#elif defined(WALL_PID_TEST_MODE)
+#include "wall_pid_test.h"
 #endif
 #include "motor.h"
 #include "stm32f4xx.h"
@@ -145,6 +147,8 @@ void Control_Stop(void)
     SystemTest_Stop(1U);
 #elif defined(TURN_PID_DIAG)
     TurnPidDiag_Stop(7U);
+#elif defined(WALL_PID_TEST_MODE)
+    WallPidTest_Stop(WP_TIMEOUT);
 #endif
     Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
@@ -273,6 +277,13 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             TurnPidDiag_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
                                     gyro.yaw_deg,gyro.gyro_z_dps,
                                     (uint32_t)(micros()-gyro.completed_us));
+#elif defined(WALL_PID_TEST_MODE)
+            {
+                IR_WallSnapshot ir_frame;
+                (void)IR_WallSignal_Read(&wall_ir_ema10,micros(),&ir_frame);
+                WallPidTest_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
+                                        gyro.yaw_deg,gyro.gyro_z_dps,&ir_frame);
+            }
 #else
             Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
                           Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
@@ -288,6 +299,8 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             SystemTest_Stop(3U);
 #elif defined(TURN_PID_DIAG)
             TurnPidDiag_Stop(3U);
+#elif defined(WALL_PID_TEST_MODE)
+            WallPidTest_Stop(WP_IMU_STALE);
 #else
             Motion_SensorFault(); /* Invalid, uncalibrated or stale gyro. */
 #endif
