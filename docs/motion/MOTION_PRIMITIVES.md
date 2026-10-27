@@ -108,7 +108,9 @@ không đồng nghĩa dừng cơ học tức thời.
   BLE `L/R/F` **chưa chuyển sang primitive mới**, tránh âm thầm
   thay các động tác đang có. Muốn dùng điều khiển mới phải gọi
   `Motion_Turn90/180` rõ ràng.
-- `Motion_Stop()` vẫn dừng động cơ. Robot phải có nguồn ngắt
+- `Motion_Stop()` dừng theo yêu cầu người dùng, `Motion_SensorFault()`
+  báo lý do `SENSOR_FAULT` khi MPU6050 không có snapshot hợp lệ;
+  cả hai đều buộc motor về trung tính. Robot phải có nguồn ngắt
   motor độc lập và kiểm tra thao tác dừng khẩn cấp trước mỗi test.
 - Module mới không phụ thuộc UART, BLE, web, IR, mê cung. Slalom
   sau này có thể thêm bộ tạo quỹ đạo cung cong với vận tốc vào/ra
