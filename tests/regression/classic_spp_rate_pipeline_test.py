@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
-from classic_spp_rate_pipeline import assess, refine_against_baseline
+from classic_spp_rate_pipeline import assess, refine_against_baseline, measured_recommendations, EXPECTED_CASES
 from ble_full_pipeline import Decoder, crc16
 
 
@@ -55,6 +55,7 @@ class SppRateTests(unittest.TestCase):
         self.assertEqual(dec.frames[0]["session"], 3)
         self.assertEqual(dec.frames[0]["seq"], 13)
         self.assertEqual(dec.events[0]["state"], "START")
+        self.assertEqual(EXPECTED_CASES, 57)
 
     def test_good_case_and_baseline(self):
         events = session_events(1, 32, 0) + session_events(2, 64, 50)
@@ -67,13 +68,46 @@ class SppRateTests(unittest.TestCase):
         self.assertEqual(rows[1]["ctrl_Hz"], 1000)
         self.assertEqual(rows[1]["imu_fresh_Hz"], 995.0)
 
-    def test_high_utilization_rejected_even_if_link_delivers(self):
+    def test_above_40pct_can_pass_if_tim11_imu_ir_and_delivery_hold(self):
         events = session_events(1, 32, 0) + session_events(2, 128, 80)
-        frames = session_frames(2, 80, 128)
-        rows = assess(events, frames, 0)
+        rows = assess(events, session_frames(2, 80, 128), 0)
         refine_against_baseline(rows)
-        self.assertEqual(rows[1]["verdict"], "STRESS_CLEAN_ABOVE_BUDGET")
+        self.assertEqual(rows[1]["verdict"], "CANDIDATE")
         self.assertGreater(rows[1]["uart_pct"], 80)
+
+    def test_above_8n1_wire_ceiling_is_not_sustainable(self):
+        events = session_events(1, 32, 0) + session_events(2, 128, 100)
+        rows = assess(events, session_frames(2, 100, 128), 0)
+        self.assertEqual(rows[1]["verdict"], "LIMIT_OR_FAIL")
+
+    def test_selection_uses_first_failure_and_measured_headroom(self):
+        rates = (10, 20, 30, 40, 50, 60, 70, 80, 100)
+        rows = [{"size_B": 128, "target_Hz": hz,
+                 "payload_Bps": 128 * hz,
+                 "uart_pct": round(128 * hz * 100 / 11520, 2),
+                 "verdict": "LIMIT_OR_FAIL" if hz >= 100 else "CANDIDATE"}
+                for hz in rates]
+        r = measured_recommendations(rows)["128"]
+        self.assertEqual(r["clean_frontier_Hz"], 80)
+        self.assertEqual(r["first_failure_Hz"], 100)
+        self.assertEqual(r["recommended_tested_Hz"], 70)
+        self.assertGreater(r["recommended_uart_pct"], 40)
+
+    def test_one_bad_step_breaks_frontier_even_if_later_step_passes(self):
+        rows = [{"size_B": 64, "target_Hz": hz,
+                 "payload_Bps": 64 * hz, "uart_pct": 64 * hz / 115.2,
+                 "verdict": verdict}
+                for hz, verdict in ((20, "CANDIDATE"), (40, "LIMIT_OR_FAIL"),
+                                    (60, "CANDIDATE"), (80, "CANDIDATE"))]
+        r = measured_recommendations(rows)["64"]
+        self.assertEqual(r["clean_frontier_Hz"], 20)
+        self.assertIsNone(r["recommended_tested_Hz"])
+
+    def test_missing_low_rate_baseline_does_not_invent_recommendation(self):
+        rows = [{"size_B": 64, "target_Hz": 10,
+                 "payload_Bps": 640, "uart_pct": 5.6,
+                 "verdict": "INCOMPLETE"}]
+        self.assertIsNone(measured_recommendations(rows)["64"]["recommended_tested_Hz"])
 
     def test_crc16_bad_frame_rejected(self):
         payload = bytearray([0xb5, 0x62, 1, ord("D"), 20, 1])
@@ -102,6 +136,14 @@ class SppRateTests(unittest.TestCase):
         events = session_events(1, 32, 0) + session_events(2, 64, 40, gyro=3500)
         rows = assess(events, session_frames(2, 40, 64), 0)
         self.assertEqual(rows[1]["verdict"], "LIMIT_OR_FAIL")
+
+    def test_crc_failure_scoped_to_current_session(self):
+        events = (session_events(1, 32, 0) + session_events(2, 64, 40)
+                  + session_events(3, 64, 60))
+        frames = session_frames(2, 40, 64) + session_frames(3, 60, 64)
+        rows = assess(events, frames, 1, {2: 1})
+        self.assertEqual(rows[1]["verdict"], "LIMIT_OR_FAIL")
+        self.assertEqual(rows[2]["verdict"], "CANDIDATE")
 
     def test_crc_failure_blocks_qualification(self):
         events = session_events(1, 32, 0) + session_events(2, 64, 40)
