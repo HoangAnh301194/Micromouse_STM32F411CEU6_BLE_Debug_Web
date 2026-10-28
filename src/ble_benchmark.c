@@ -51,7 +51,7 @@ static uint32_t run_start_ms;
  * Packet size is TOTAL bytes, including CRC16 (not ASCII encoded length). */
 typedef struct { uint8_t size; uint16_t hz; } SppCase;
 /* Ascending utilization per frame size; low-load calibration through
- * intentional ~120-140% UART overdrive. The PC decides the recommendation
+ * intentional up to ~156% UART overdrive. The PC decides the recommendation
  * from MCU timing + loss measurements, NEVER from a fixed 40% cutoff.
  * All frames are 8N1 UART bytes including their binary CRC16.
  * This is a TX-only, permanently MOTOR-LOCKED qualification profile. */
