@@ -52,9 +52,11 @@ static uint32_t run_start_ms;
 typedef struct { uint8_t size; uint16_t hz; } SppCase;
 static const SppCase spp_cases[] = {
     {32U,0U},    /* quiet baseline with all 1-kHz sensors enabled */
-    {20U,100U}, {20U,200U}, {32U,50U}, {32U,100U},
+    {20U,100U}, {20U,200U}, {20U,300U},
+    {32U,50U}, {32U,100U}, {32U,120U}, {32U,180U},
     {64U,20U}, {64U,40U}, {64U,60U}, {64U,80U}, {64U,120U},
-    {96U,25U}, {96U,50U}, {128U,20U}, {128U,40U}, {128U,80U}
+    {96U,25U}, {96U,40U}, {96U,50U},
+    {128U,20U}, {128U,30U}, {128U,40U}, {128U,80U}
 };
 #define SPP_CASE_COUNT (sizeof(spp_cases)/sizeof(spp_cases[0]))
 #define SPP_CASE_MS 4000U
@@ -369,9 +371,12 @@ static void SppAutoPoll(uint32_t now_ms)
         pressed=Board_ButtonPressed();
         /* Discard a button held during boot; require observed release first.
          * A full new press + release begins the sweep, never the motors. */
-        if (!pressed && !spp_button_armed) spp_button_armed=1U;
-        if (spp_button_armed && spp_button_prev && !pressed &&
-            SensorsReady()) {
+        if (!pressed && !spp_button_armed) {
+            spp_button_armed=1U;
+            /* Do not start on release of a button held at boot. */
+            spp_button_prev=0U;
+        } else if (spp_button_armed && spp_button_prev && !pressed &&
+                   SensorsReady()) {
             spp_started=1U;
             spp_index=0U;
             spp_have_end=0U;
