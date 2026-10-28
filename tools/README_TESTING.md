@@ -50,3 +50,11 @@ Xem [quy trình đo đầy đủ](../docs/maze/MICROMOUSE_SENSOR_DEBUG_TOOLKIT.m
 | Replay encoder + gyro, đối chiếu sai số IR | `python tools/maze_pose_fusion_lab.py --trace maze_01_ble_maze_capture/trace.csv --wheel-track-mm <track_mm>` |
 
 **Trạng thái:** Test synthetic + firmware build CI không tương đương nghiệm thu trên robot. Chưa có logger sáu IR khi **motor chạy**; mode mới khóa motor vĩnh viễn và thao tác đo bằng tay. Không gán `WALL` hay `NEXT_CELL` cho Maze Solve nếu chưa có ground truth và thông số hình học đã đo.
+
+**Chạy một thể sau khi Export BLE:**
+
+```powershell
+python tools/maze_sensor_suite.py --ble maze_01_ble.txt --manifest calib_manifest.csv --model results/maze_readiness/wall_events/wall_detection_report.json --wheel-track-mm 75
+```
+
+Lệnh minh họa dùng `75` mm **chỉ làm placeholder** cho wheel-track phải đo thật. Có thể bỏ `--manifest`, `--model`, `--wheel-track-mm` nếu chưa có dữ liệu; tool vẫn kiểm tra checksum + vẽ 6 kênh + tìm ứng viên cạnh tường. Kết quả tạo `results/maze_sensor_suite/all_summary.json`, cùng `capture/viewer.html`, `calibration/calibration_viewer.html` và `wall_fusion/wall_state_viewer.html` nếu đủ đầu vào.
