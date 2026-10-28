@@ -146,6 +146,16 @@ uint8_t BT_Available(void) { return rx_head!=rx_tail; }
 void BT_SendChar(char c) { while (!(USART2->SR & USART_SR_TXE)) {} USART2->DR=c; }
 char BT_ReceiveChar(void) { uint8_t c; while (!BT_ReadByte(&c)) {} return (char)c; }
 
+void BT_ResetTxQueuePeak(void)
+{
+    /* BT_TrySendData has one main-context producer. Snapshot queue
+     * atomically relative to USART2 TXE interrupt consuming tx_tail. */
+    uint32_t primask=__get_PRIMASK();
+    __disable_irq();
+    profile.tx_queue_peak=(uint16_t)((tx_head-tx_tail)&TX_MASK);
+    if (!primask) __enable_irq();
+}
+
 void BT_GetProfile(BT_Profile_t *out)
 {
     uint32_t primask;

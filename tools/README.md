@@ -3,6 +3,9 @@
 > **Mới — JDY-33 Bluetooth Classic SPP / Windows:** [Hướng dẫn kết nối đã nghiệm thu trên COM16](../docs/classic_spp/README.md), gồm `classic_spp_dashboard.py`, `classic_spp_link_diag.py`, `classic_spp_ports.py`, `classic_spp_protocol.py`, và `windows_bluetooth_link_debug.ps1`.
 
 
+
+> **Tool kiểm tra tốc độ telemetry SPP + hệ cảm biến 1 kHz:** `tools/classic_spp_rate_pipeline.py`, firmware `classic_spp_rate_diag_96m`, [README thao tác + metric + ngưỡng nghiệm thu](../docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Chạy một lần sau khi nạp motor-locked firmware: `python tools/classic_spp_rate_pipeline.py --port COM16 --seconds 600`; chờ `READY` rồi nhấn-thả PA0. Không gửi lệnh điều khiển motor.
+
 ## Bluetooth Classic SPP / JDY-33 — Hướng dẫn kết nối trực tiếp (Windows)
 
 **Đọc README đầy đủ:** [../docs/classic_spp/README.md](../docs/classic_spp/README.md).

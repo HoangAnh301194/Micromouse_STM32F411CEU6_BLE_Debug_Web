@@ -14,6 +14,7 @@ ACTIVE = (
     "flash_map_diag_96m",
     "ble_profile_motor_off_115200_96m",
     "ble_profile_motor_off_38400_96m",
+    "classic_spp_rate_diag_96m",
     "ble_profile_motor_on_pid_115200_96m",
     "ble_rx_diag_96m",
     "ir_filter_diag_96m",

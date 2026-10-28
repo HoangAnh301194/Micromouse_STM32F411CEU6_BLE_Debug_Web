@@ -6,7 +6,10 @@ on:
     paths:
       - 'tools/classic_spp_protocol.py'
       - 'tools/classic_spp_dashboard.py'
+      - 'tools/classic_spp_rate_pipeline.py'
+      - 'tools/ble_full_pipeline.py'
       - 'tests/regression/classic_spp_protocol_test.py'
+      - 'tests/regression/classic_spp_rate_pipeline_test.py'
       - '.github/workflows/classic-spp-regression.yml'
   workflow_dispatch:
 
@@ -19,6 +22,8 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run offline parser regression tests
-        run: python tests/regression/classic_spp_protocol_test.py
+        run: |
+          python tests/regression/classic_spp_protocol_test.py
+          python tests/regression/classic_spp_rate_pipeline_test.py
       - name: Check desktop source compiles without a GUI
-        run: python -m py_compile tools/classic_spp_protocol.py tools/classic_spp_dashboard.py
+        run: python -m py_compile tools/classic_spp_protocol.py tools/classic_spp_dashboard.py tools/classic_spp_rate_pipeline.py
