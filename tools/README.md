@@ -4,7 +4,7 @@
 
 
 
-> **Tool kiểm tra tốc độ telemetry SPP + hệ cảm biến 1 kHz:** `tools/classic_spp_rate_pipeline.py`, firmware `classic_spp_rate_diag_96m`, [README thao tác + metric + ngưỡng nghiệm thu](../docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Chạy một lần sau khi nạp motor-locked firmware: `python tools/classic_spp_rate_pipeline.py --port COM16 --seconds 220`; chờ `READY` rồi nhấn-thả PA0. Không gửi lệnh điều khiển motor.
+> **Tool kiểm tra tốc độ telemetry SPP + hệ cảm biến 1 kHz:** `tools/classic_spp_rate_pipeline.py`, firmware `classic_spp_rate_diag_96m`, [README thao tác + metric + ngưỡng nghiệm thu](../docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Chạy một lần sau khi nạp motor-locked firmware: `python tools/classic_spp_rate_pipeline.py --port COM16 --seconds 600`; chờ `READY` rồi nhấn-thả PA0. Không gửi lệnh điều khiển motor.
 
 ## Bluetooth Classic SPP / JDY-33 — Hướng dẫn kết nối trực tiếp (Windows)
 
