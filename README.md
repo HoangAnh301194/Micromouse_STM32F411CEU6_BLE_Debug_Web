@@ -1,5 +1,8 @@
 # Micromouse STM32F411CEU6 - Minimal Core
 
+> **Bluetooth Classic SPP trên Windows (đã test COM16):** [README kết nối + module/file + lệnh pull + Dashboard](docs/classic_spp/README.md). Không cần USB–TTL/ST-Link để xem telemetry qua Bluetooth; dùng cổng COM **Outgoing** của Nezumi_Chan_SPP.
+
+
 > **Bàn giao OLED và dọn tools trùng lặp (24/10/2026):** Bộ 33 file lịch sử được khôi phục từ [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024). Sau yêu cầu dọn của người dùng, loại 8 bản sao không cần thiết, còn **26 file trong `tools/`** (gồm `tools/README.md`); regression chuẩn ở `tests/`, WebBLE ở [`web/ble_debug_console.html`](web/ble_debug_console.html). **Toàn bộ log `results/`, pipeline nghiệm thu OLED và firmware gốc được giữ nguyên.**
 
 
