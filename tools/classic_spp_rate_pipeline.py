@@ -22,10 +22,13 @@ from classic_spp_ports import classify_port
 BAUD = 115200
 WIRE_BYTES_PER_S = BAUD / 10.0  # UART 8N1: start + 8 data + stop
 SENSOR_MIN_HZ = 980.0
-MAX_UTILIZATION = 0.40
+# No fixed 40% qualification ceiling. Test up to overload, then derive
+# recommendation from measured first failure and a 20% throughput headroom.
+RECOMMEND_HEADROOM = 0.20
+EXPECTED_CASES = 57
 HEADER = ("session", "size_B", "target_Hz", "payload_Bps", "uart_pct",
           "generated", "accepted", "host_received", "host_receive_pct",
-          "crc_global", "tx_rejected", "scheduler_skipped", "uart_drop",
+          "crc_global", "crc_case", "tx_rejected", "scheduler_skipped", "uart_drop",
           "ctrl_Hz", "imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz", "ir_fail",
           "control_late", "control_gap", "irq_gt48_per_k", "tx_queue_peak",
           "elapsed_s", "verdict")
@@ -52,7 +55,8 @@ def percent(values, q: int):
     return round(v[max(0, min(len(v) - 1, (len(v) * q + 99) // 100 - 1))], 3)
 
 
-def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict]:
+def assess(events: list[dict], frames: list[dict], crc_global: int,
+           crc_by_session: dict[int, int] | None = None) -> list[dict]:
     """Score only sessions with matching START/END markers and MCU snapshots.
 
     Receive timestamps are PC arrival time, not MCU->PC one-way latency.
@@ -109,6 +113,7 @@ def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict
                     generated == accepted + (rejected or 0))
         rec_count = len({f["seq"] for f in rec})
         reception = divide(rec_count * 100, accepted)
+        case_crc = crc_by_session.get(session, 0) if crc_by_session is not None else crc_global
         # No PASS from host records without two MCU snapshots, even if COM worked.
         complete = (begin is not None and end is not None and
                     before is not None and after is not None and
@@ -122,7 +127,7 @@ def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict
             "uart_pct": utilization,
             "generated": generated, "accepted": accepted,
             "host_received": rec_count, "host_receive_pct": reception,
-            "crc_global": crc_global,
+            "crc_global": crc_global, "crc_case": case_crc,
             "tx_rejected": rejected,
             "scheduler_skipped": skipped,
             "uart_drop": end.get("drop") if end else None,
@@ -146,6 +151,9 @@ def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict
             if hz == 0:
                 row["verdict"] = "BASELINE"
             elif any((
+                # 8N1 UART cannot sustain traffic above its wire ceiling,
+                # even if a 4s burst temporarily fits in the TX FIFO.
+                size * hz > WIRE_BYTES_PER_S,
                 rejected != 0,
                 skipped is None or skipped > max(1, generated * 0.01),
                 end.get("drop") != 0,
@@ -156,13 +164,12 @@ def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict
                 row["ir_fresh_Hz"] is None or row["ir_fresh_Hz"] < SENSOR_MIN_HZ,
                 ir_fail != 0,
                 reception is None or reception < 99.0,
-                crc_global != 0,
+                case_crc != 0,
                 row["tx_queue_peak"] is None or row["tx_queue_peak"] > 3072,
             )):
                 row["verdict"] = "LIMIT_OR_FAIL"
             else:
-                row["verdict"] = ("STRESS_CLEAN_ABOVE_BUDGET"
-                                  if utilization > MAX_UTILIZATION * 100 else "CANDIDATE")
+                row["verdict"] = "CANDIDATE"
         results.append(row)
     return results
 
@@ -171,11 +178,11 @@ def refine_against_baseline(rows: list[dict]) -> None:
     baseline = next((x for x in rows if x["verdict"] == "BASELINE"), None)
     if not baseline:
         for row in rows:
-            if row["verdict"] in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
+            if row["verdict"] == "CANDIDATE":
                 row["verdict"] = "NO_BASELINE"
         return
     for row in rows:
-        if row["verdict"] not in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
+        if row["verdict"] != "CANDIDATE":
             continue
         for key in ("imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz"):
             value, base = row.get(key), baseline.get(key)
@@ -201,8 +208,61 @@ def refine_against_baseline(rows: list[dict]) -> None:
            for k in ("ctrl_Hz", "imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz")):
         baseline["verdict"] = "BASELINE_INSUFFICIENT"
         for row in rows:
-            if row["verdict"] in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
+            if row["verdict"] == "CANDIDATE":
                 row["verdict"] = "BASELINE_INSUFFICIENT"
+
+
+
+def measured_recommendations(rows: list[dict], headroom: float = RECOMMEND_HEADROOM) -> dict:
+    """Return a tested rate, not a guessed link bandwidth.
+
+    Rates for each size are ordered low to high. Only a contiguous CLEAN
+    prefix may establish a safe frontier; a later isolated pass does not
+    reverse an earlier failure. The recommended tested rate must lie below
+    80% of the first observed failing rate AND below 80% of physical 8N1
+    bandwidth. No fixed 40% ceiling is used.
+    """
+    if not 0 < headroom < 1:
+        raise ValueError("headroom must be between zero and one")
+    by_size = {}
+    for row in rows:
+        size, hz = row.get("size_B"), row.get("target_Hz")
+        if not isinstance(size, int) or not isinstance(hz, int) or not hz:
+            continue
+        by_size.setdefault(size, []).append(row)
+    report = {}
+    for size, group in sorted(by_size.items()):
+        group.sort(key=lambda row: row["target_Hz"])
+        first_failure = next((row for row in group
+                              if row["verdict"] != "CANDIDATE"), None)
+        clean_prefix = []
+        for row in group:
+            if row["verdict"] != "CANDIDATE":
+                break
+            clean_prefix.append(row)
+        first_failure_hz = first_failure["target_Hz"] if first_failure else None
+        measured_frontier_hz = clean_prefix[-1]["target_Hz"] if clean_prefix else None
+        # For a frame size of 64 B, the ~11.5k B/s physical 8N1 limit
+        # is at 180 Hz; the radio may fail MUCH sooner.
+        physical_cap_hz = WIRE_BYTES_PER_S / size
+        measured_bound_hz = min(physical_cap_hz,
+                                first_failure_hz or physical_cap_hz)
+        advised_max_hz = measured_bound_hz * (1.0 - headroom)
+        eligible = [row for row in clean_prefix
+                    if row["target_Hz"] <= advised_max_hz]
+        chosen = eligible[-1] if eligible else None
+        report[str(size)] = {
+            "first_failure_Hz": first_failure_hz,
+            "first_failure_reason": first_failure["verdict"] if first_failure else None,
+            "clean_frontier_Hz": measured_frontier_hz,
+            "recommended_tested_Hz": chosen["target_Hz"] if chosen else None,
+            "recommended_Bps": chosen["payload_Bps"] if chosen else None,
+            "recommended_uart_pct": chosen["uart_pct"] if chosen else None,
+            "headroom_fraction": headroom,
+            "qualifier": "PRELIMINARY_MOTOR_LOCKED" if chosen else "NO_RECOMMENDATION",
+            "tests": len(group),
+        }
+    return report
 
 
 def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
@@ -221,14 +281,15 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
         w.writerows(frames)
     with (out / "events.json").open("w", encoding="utf-8") as f:
         json.dump(events, f, indent=2)
-    recommended = {}
+    selection = measured_recommendations(rows)
     observed = {}
     for row in rows:
-        if row["verdict"] in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
+        if row["verdict"] == "CANDIDATE":
             k = str(row["size_B"])
             observed[k] = max(observed.get(k, 0), row["target_Hz"])
-            if row["verdict"] == "CANDIDATE":
-                recommended[k] = max(recommended.get(k, 0), row["target_Hz"])
+    recommended = {size: info["recommended_tested_Hz"]
+                   for size, info in selection.items()
+                   if info["recommended_tested_Hz"] is not None}
     summary = {
         "environment": "JDY-33 Classic SPP Windows outgoing COM",
         "port": port, "baud": BAUD, "uart_8n1_ceiling_Bps": WIRE_BYTES_PER_S,
@@ -240,13 +301,16 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
         "rows": rows,
         "candidate_max_hz_by_packet_size": recommended,
         "observed_clean_max_hz_by_packet_size": observed,
+        "recommendation_analysis": selection,
+        "recommendation_basis": "First failing measured step per packet size, 20% tested-rate headroom; no 40% cap",
         "no_one_way_latency_claim": True,
         "qualification_limitations": [
             "SPP PC receive path only; no Windows->MCU commands",
             "No motor-on, maze exploration motion, vibration, electrical motor noise",
             "Host serial arrival gap is not one-way latency without clock synchronization",
             "All pass limits are engineering trial gates, not physical qualification until collected",
-            "Rates >40pct of 115200 8N1 link may be STRESS_CLEAN_ABOVE_BUDGET but are not recommended",
+            "The upper sweep tests past 100% UART capacity as deliberate overload; cannot be sustained",
+            "Recommendation is a tested rate below 80% of the first failing load or physical UART 8N1 limit",
             "A baseline/control verdict is a 4-second test window; repeat multiple trials and validate live navigation"
         ]
     }
@@ -271,6 +335,8 @@ def run(port: str, seconds: int, out: Path, baud: int):
     start = time.monotonic()
     done = False
     seen_events = 0
+    crc_by_session = {}
+    active_session = None
     with (out / "raw.bin").open("wb") as raw, serial.Serial(
             port=port, baudrate=baud, timeout=0.15) as link:
         print("Connected COM. Wait for !Q,state=READY,ready=1 then press-and-release PA0.", flush=True)
@@ -279,9 +345,19 @@ def run(port: str, seconds: int, out: Path, baud: int):
             if not data:
                 continue
             raw.write(data)
+            old_crc = decoder.crc_failures
             decoder.feed(data, time.perf_counter_ns())
+            if decoder.crc_failures > old_crc and active_session is not None:
+                # Assign CRC failures to the currently streaming session.
+                # Markers may share a read chunk; always keep global count.
+                crc_by_session[active_session] = (crc_by_session.get(active_session, 0)
+                                                  + decoder.crc_failures - old_crc)
             for event in decoder.events[seen_events:]:
                 kind = event.get("type")
+                if kind == "!B" and isinstance(event.get("s"), int):
+                    active_session = event["s"]
+                if kind == "!E" and event.get("s") == active_session:
+                    active_session = None
                 if kind in ("!Q", "!B", "!E", "!R"):
                     print(event, flush=True)
                 if kind == "!Q" and event.get("state") == "DONE":
@@ -289,7 +365,8 @@ def run(port: str, seconds: int, out: Path, baud: int):
             seen_events = len(decoder.events)
             if done:
                 break
-    rows = assess(decoder.events, decoder.frames, decoder.crc_failures)
+    rows = assess(decoder.events, decoder.frames, decoder.crc_failures,
+                  crc_by_session)
     refine_against_baseline(rows)
     summary = save(out, rows, decoder.events, decoder.frames,
                    decoder, time.monotonic() - start, done, port)
@@ -300,21 +377,29 @@ def run(port: str, seconds: int, out: Path, baud: int):
               f'{str(row["ctrl_Hz"]):>8} {str(row["imu_fresh_Hz"]):>7} '
               f'{str(row["ir_Hz"]):>7} '
               f'{row["host_received"]}/{row["accepted"]}  {row["verdict"]}')
-    print(f'\nCapture suite complete: {done}; outputs: {out}', flush=True)
-    return 0 if done and rows and all(r["mcu_snapshot_ok"] for r in rows) else 2
+    print("\\n MEASURED RECOMMENDATIONS (20% reserve from first failure / wire ceiling):")
+    for size, info in summary["recommendation_analysis"].items():
+        print(f'  {size:>3} B: clean={info["clean_frontier_Hz"]} Hz '
+              f'fail={info["first_failure_Hz"]} Hz '
+              f'recommend={info["recommended_tested_Hz"]} Hz')
+    print(f'\\nCapture suite complete: {done}; outputs: {out}', flush=True)
+    # Overload cases are allowed to FAIL by design; incomplete markers are not.
+    return 0 if (done and len(rows) == EXPECTED_CASES and
+                 all(r["mcu_snapshot_ok"] for r in rows)) else 2
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--port", default="COM16", help="Windows outgoing Classic SPP serial port")
-    p.add_argument("--seconds", type=int, default=180, help="Capture timeout incl. PA0 wait")
+    p.add_argument("--seconds", type=int, default=600,
+                   help="Capture timeout incl. PA0/calibration wait; full 57-case suite takes >5min")
     p.add_argument("--baud", type=int, default=115200)
     p.add_argument("--output", type=Path)
     args = p.parse_args()
     if args.baud != 115200:
         p.error("This firmware bench is fixed at UART2 115200; --baud must be 115200")
-    if args.seconds < 30:
-        p.error("--seconds must be >=30 to include sweep")
+    if args.seconds < 400:
+        p.error("--seconds must be >=400 for full expanded sweep and PA0 wait")
     out = args.output or (Path("results") / ("classic_spp_rate_" +
           datetime.now().strftime("%Y%m%d_%H%M%S")))
     try:
