@@ -405,7 +405,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--port", default="COM16", help="Windows outgoing Classic SPP serial port")
     p.add_argument("--seconds", type=int, default=600,
-                   help="Capture timeout incl. PA0/calibration wait; full 57-case suite takes >5min")
+                   help="Capture timeout incl. PA0/calibration wait; full 64-case suite takes about 6min")
     p.add_argument("--baud", type=int, default=115200)
     p.add_argument("--output", type=Path)
     args = p.parse_args()
