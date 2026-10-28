@@ -55,7 +55,7 @@ class SppRateTests(unittest.TestCase):
         self.assertEqual(dec.frames[0]["session"], 3)
         self.assertEqual(dec.frames[0]["seq"], 13)
         self.assertEqual(dec.events[0]["state"], "START")
-        self.assertEqual(EXPECTED_CASES, 57)
+        self.assertEqual(EXPECTED_CASES, 64)
 
     def test_good_case_and_baseline(self):
         events = session_events(1, 32, 0) + session_events(2, 64, 50)
