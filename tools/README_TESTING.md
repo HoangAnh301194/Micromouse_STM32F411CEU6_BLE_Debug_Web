@@ -34,3 +34,19 @@ Các tool khác đã có: `python tools/turn_pid_pipeline.py --analyze results/t
 | **P1** | Map consistency + flood-fill replay | Kiểm tra tường hai ô liền kề và cập nhật bản đồ |
 
 **Lưu ý:** ngưỡng học được trong `wall-events` chỉ phục vụ **detect tường offline**, không áp dụng làm ngưỡng dừng ADC của Wall PID. L90/R90 nằm phía sau nhưng nhìn **thẳng về trước**. Không nghiệm thu Maze Solve khi chưa có kiểm thử hiện trường và số đo độc lập về giữ tâm/dừng.
+
+## Bổ sung 28/10 — 6 IR, calibration, fusion và next-cell
+
+Xem [quy trình đo đầy đủ](../docs/maze/MICROMOUSE_SENSOR_DEBUG_TOOLKIT.md).
+
+| Việc | Lệnh |
+|---|---|
+| Firmware thu 6 IR + encoder + IMU, **motor OFF** | `python -m platformio run -e maze_sensor_capture_96m -t upload` |
+| Giải mã và vẽ đồ thị BLE | `python tools/maze_sensor_capture_report.py --input maze_01_ble.txt` |
+| Tạo manifest từ các kết quả IR cũ | `python tools/ir_calibration_lab.py manifest --session results/ir_full_qualification/ir_wall_01 --output calib_manifest.csv` |
+| Fit LUT phi tuyến có holdout | `python tools/ir_calibration_lab.py fit --manifest calib_manifest.csv` |
+| Tìm mép tường/mất tường theo mm encoder | `python tools/maze_wall_observer.py edges --trace maze_01_ble_maze_capture/trace.csv` |
+| Fusion WALL/OPEN/UNKNOWN từ 6 cảm biến | `python tools/maze_wall_observer.py fusion --trace maze_01_ble_maze_capture/trace.csv --model results/maze_readiness/wall_events/wall_detection_report.json` |
+| Replay encoder + gyro, đối chiếu sai số IR | `python tools/maze_pose_fusion_lab.py --trace maze_01_ble_maze_capture/trace.csv --wheel-track-mm <track_mm>` |
+
+**Trạng thái:** Test synthetic + firmware build CI không tương đương nghiệm thu trên robot. Chưa có logger sáu IR khi **motor chạy**; mode mới khóa motor vĩnh viễn và thao tác đo bằng tay. Không gán `WALL` hay `NEXT_CELL` cho Maze Solve nếu chưa có ground truth và thông số hình học đã đo.
