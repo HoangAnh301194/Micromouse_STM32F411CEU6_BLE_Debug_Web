@@ -18,16 +18,27 @@
 
 ### Vì sao không dùng L0−R0 thô?
 
-Tại 50→60 mm, L0 giảm ≈97,8 ADC/10 mm trong khi R0 giảm ≈316,6 ADC/10 mm.
-Do đó các cảm biến **không cùng thang đo ADC**. Trong firmware:
+Các cảm biến có đáp ứng quang học phi tuyến: ADC có thể tăng từ
+vài trăm lên trên 3000 khi khoảng cách giảm từ khoảng 70 mm về 20 mm.
+Hai điểm 50–60 mm không đủ để suy ra khoảng cách theo hàm tuyến tính.
+
+**Công thức firmware hiện tại (2026-10-28):**
 
 ```text
-delta_L_mm ≈ (L0_ADC_luc_start - L0_EMA) / 9.7811
-delta_R_mm ≈ (R0_ADC_luc_start - R0_EMA) / 31.6575
-error_mm = (delta_R_mm - delta_L_mm) / 2
+uL = (L0_EMA - L0_start) / (L0_EMA + L0_start + 32)
+uR = (R0_EMA - R0_start) / (R0_EMA + R0_start + 32)
+error_norm = clamp(uL - uR, -1, +1)
+steer_PWM = clamp(Kp*error_norm + Ki*I + Kd*D, -200, +200)
 ```
 
-Đây là **sai số tương đối so với vị trí bắt đầu**, không phải LUT khoảng cách chính xác. Nếu robot khởi động lệch tâm, bộ điều khiển sẽ cố duy trì vị trí lệch đó.
+**`error_norm` không có đơn vị mm**; `32` chỉ giúp mẫu số luôn
+dương, **không phải ngưỡng ADC dùng để dừng robot**. Dải
+`-1..+1` là giới hạn đầu ra PID, không phải ngưỡng bảo vệ cảm biến.
+
+Cách chuẩn hóa này giảm phụ thuộc vào mức ADC riêng của L0/R0 nhưng
+**không tuyến tính hóa quang học** và chưa bảo đảm sai số tương ứng
+độ lệch tâm thực tính theo mm. Nếu robot khởi động lệch tâm, nó vẫn có
+thể cố duy trì vị trí lệch đó.
 
 **Dấu điều khiển:** lệch sang trái → error dương → PWM bánh trái tăng, PWM bánh phải giảm → robot quay về phải.
 
@@ -69,22 +80,22 @@ Ví dụ dạng log (giá trị chỉ minh họa, không phải số đo thực)
 
 ```text
 W,READY,l=460,r=664,PA0=PRESS_RELEASE
-W,START,mm=720,diam=34,cpr=1430,pwmcap=800,l=460,r=664
-W,END,DONE,ms=1400,d10=7203,avgerr100=85,peakerr100=220,vpk=912,pkpwm=690,locked=1,trace=28
+W,START,mm=720,diam=34,cpr=1430,pwmcap=800,error=REL_NORM,l=460,r=664
+W,END,DONE,ms=1400,d10=7203,avgen1000=35,peakn1000=100,vpk=912,pkpwm=690,locked=1,trace=28
 W,POST,dist10=7260,drift10=57,locked=1
 W,50,8,461,660,6,31,85,117,117
 ...
 W,TRACE_END
 ```
 
-Một dòng `W,` số gồm `elapsed_ms,distance_0.1mm,L0_ADC,R0_ADC,error_0.01mm,speed_mm_s,target_mm_s,PWM_L_permille,PWM_R_permille`. Dòng `W,END` nêu kết quả tổng hợp, `W,POST` là quãng đường thực theo encoder sau 800 ms trôi (không có độc lập đo bằng thước).
+Một dòng `W,` số gồm `elapsed_ms,distance_0.1mm,L0_ADC,R0_ADC,error_norm_0.001,speed_mm_s,target_mm_s,PWM_L_permille,PWM_R_permille`. Trường `error_norm_0.001` là sai số quang học không đơn vị được nhân 1000, **không phải mm**. Dòng `W,END` nêu kết quả tổng hợp, `W,POST` là quãng đường thực theo encoder sau 800 ms trôi (không có độc lập đo bằng thước).
 
 **Không coi log qua BLE thành công chỉ vì TX IRQ không báo lỗi.** Nếu mất dòng, thiếu `W,TRACE_END`, sai thứ tự hoặc `trace` trong END khác số dòng thực, log không đạt điều kiện dùng để tune.
 
 ## 5. Tự dừng và fault guards
 
 - PA0 STOP: ưu tiên cao nhất, thăm dò 1 kHz trong TIM11.
-- Lỗi IR: thiếu EMA hợp lệ, mẫu quá 3 ms, mất một trong hai tường hoặc biên dao động ADC vượt vùng cho phép.
+- Lỗi IR: thiếu EMA hợp lệ hoặc mẫu quá 3 ms. **Không có ngưỡng cắt vì biên độ L0/R0.**
 - Lỗi gyro: mẫu không hợp lệ/quá 3 ms, góc lệch khởi điểm quá 15°.
 - Lỗi encoder: đếm lùi quá giới hạn, mất di chuyển kéo dài, chênh lệch hai bánh quá lớn.
 - Tốc độ encoder > 1500 mm/s, timeout 5 giây.
@@ -183,3 +194,29 @@ trôi ở 900 mm/s. Cần đo riêng mới thiết kế dừng dự đoán/phanh
   toàn bộ trace sau `W,TRACE_END` và quãng đường đo bằng thước.
   Xác định L0/R0 nào vượt ngưỡng trước khi quyết định lọc
   glitch, nới ngưỡng, hoặc hiệu chuẩn lại.
+
+## Thay đổi 28/10: Bỏ ngưỡng biên độ IR theo yêu cầu
+
+Đã loại khỏi `WP_Start()` và `WP_Step()` tất cả các điều kiện
+giới hạn ADC tùy ý, bao gồm:
+
+- `L0 < 290 / > 750`, `R0 < 390 / > 1300` lúc khởi động.
+- `L0 < 145 / > 1500`, `R0 < 200 / > 2100` (`WALL_LOST`).
+- `abs(L0 - L0_start) > 165`,
+  `abs(R0 - R0_start) > 510` (`IR_EXCURSION`).
+
+Các nhãn lỗi cũ vẫn có thể xuất hiện trong **báo cáo lịch sử**, nhưng
+không còn nhánh code chủ động dừng vì ADC cao/thấp hoặc biến thiên lớn
+trong controller mới.
+
+**Giữ:** dừng khẩn PA0, giới hạn góc IMU, dữ liệu IR/MPU quá hạn,
+bảo vệ encoder/tốc độ, timeout, PWM cap và khóa motor sau khi hoàn thành.
+Khi mất tường thật, firmware hiện tại **không thể bảo đảm phát hiện mất tường chỉ từ biên độ ADC**.
+Đừng thử trên hành lang có khe hở/ngã rẽ/đoạn cuối chắn gần; phải có
+ngắt VM độc lập. 80,2 mm trôi sau khóa motor ở lượt chạy trước
+là một rủi ro vật lý chưa được giải quyết bằng sửa bộ lọc.
+
+Bộ gain mới sử dụng `error_norm` không đơn vị và **chưa được hiệu chỉnh
+trên robot thật**. Những báo cáo cũ dùng `avgerr100`, các báo cáo
+mới dùng `avgen1000` và `peakn1000`; không so sánh trực tiếp hai loại.
+`tools/wall_pid_ble_report.py` tự nhận dạng bản log cũ/mới.
