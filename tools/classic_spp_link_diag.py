@@ -76,12 +76,13 @@ def run(port_name: str, baud: int, seconds: float, sample_ms: int,
     preview = bytearray()
     try:
         # Do not drive modem control signals before the port opens by accident.
-        with serial.Serial(port=None, baudrate=baud, timeout=sample_ms / 1000.0,
-                           write_timeout=1) as link:
-            link.dtr = dtr
-            link.rts = rts
-            link.port = port_name
-            link.open()
+        link = serial.Serial(port=None, baudrate=baud, timeout=sample_ms / 1000.0,
+                             write_timeout=1)
+        link.dtr = dtr
+        link.rts = rts
+        link.port = port_name
+        link.open()
+        try:
             recorder.emit("com_open", open_ms=round((time.monotonic() - start) * 1000),
                           note="COM open does not prove radio data arrives")
             next_progress = time.monotonic() + 2.0
@@ -108,6 +109,8 @@ def run(port_name: str, baud: int, seconds: float, sample_ms: int,
                           total_bytes=rx_bytes, chunks=chunks,
                           first_256_bytes_hex=preview.hex(" "))
             return 0
+        finally:
+            link.close()
     except (serial.SerialException, OSError) as exc:
         recorder.emit("serial_error", error_type=type(exc).__name__, error=str(exc),
                       after_open_s=round(time.monotonic() - start, 3),
