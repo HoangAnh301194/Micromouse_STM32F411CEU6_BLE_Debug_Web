@@ -40,16 +40,28 @@ Event Viewer; a blank monitor is not proof of success.
 
 ## Step 2 - Open the actual outgoing SPP COM in a second PowerShell
 
-First find ports:
+First find ports and their likely direction:
+
+    python tools/classic_spp_link_diag.py --list
+
+For the 2026-10-28 user capture, COM16 had remote address
+000000000000 (likely **Incoming**); opening it for 40 seconds returned
+**zero bytes and no serial error**, not a successful JDY SPP connection.
+COM5, COM13 and COM15 had nonzero remote addresses, but these may
+belong to other Bluetooth devices. Verify the exact JDY entry in
+**More Bluetooth settings > COM Ports > Outgoing**.
 
     python -m serial.tools.list_ports -v
 
-Then connect, replacing COM16 with the actual Outgoing SPP COM:
+Then connect, replacing COMxx with the actual JDY-33 Outgoing SPP COM:
 
-    python tools/classic_spp_link_diag.py --port COM16 --seconds 40
+    python tools/classic_spp_link_diag.py --port COMxx --seconds 40
 
-Do this while the Windows monitor in Step 1 is active, and compare
-timestamps. This second command logs: COM opened, elapsed time,
+Run **both tools at the same time** (the Windows monitor in one shell,
+then immediately the SPP diagnostic in the second shell). Their
+original captures did NOT overlap: Windows monitoring ended at
+14:52:01 and the COM16 test started at 14:52:34.
+Compare timestamps only from a simultaneous capture. This second command logs: COM opened, elapsed time,
 bytes/chunks received, the first bytes (hex + UTF-8), any SerialException
 or Windows error, and the COM list before and after disconnection.
 Its JSONL logs are under results\classic_spp\.
