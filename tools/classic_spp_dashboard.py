@@ -18,6 +18,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from classic_spp_protocol import LineFramer, MazeState, numeric_fields
+from classic_spp_ports import classify_port
 
 
 BAUD = 115200
@@ -281,7 +282,17 @@ class Dashboard:
         except ValueError:
             messagebox.showerror("Baud", "Invalid baudrate.")
             return
-        if not any(p.device.lower() == port.lower() for p in available_ports()):
+        candidates = [p for p in available_ports() if p.device.lower() == port.lower()]
+        if candidates and classify_port(candidates[0].hwid or "")[0] == "incoming":
+            messagebox.showerror(
+                "Incorrect Bluetooth COM",
+                "%s is probably an INCOMING Windows Bluetooth serial port.\n"
+                "It cannot initiate SPP to the JDY-33.\n\n"
+                "Use Windows > More Bluetooth settings > COM Ports > "
+                "Outgoing for Nezumi_Chan_SPP." % port
+            )
+            return
+        if not candidates:
             if not messagebox.askyesno(
                 "Unlisted COM", port + " is not in Windows serial port list.\n"
                 "Try opening anyway? (COM37 is only a preference)"
