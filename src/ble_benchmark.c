@@ -294,6 +294,9 @@ static void StartRun(uint8_t size, uint16_t hz, uint32_t duration_ms)
     run_start_ms=millis();
     due_us=micros()+(hz ? 1000000UL/hz : 0U);
     end_us=micros()+duration_ms*1000UL;
+#if defined(CLASSIC_SPP_RATE_DIAG)
+    BT_ResetTxQueuePeak(); /* Per-case watermark, not a previous stress peak. */
+#endif
     BT_GetProfile(&b);
     base_tx_drop=b.tx_drop;
     base_rx_error=RxErrors(&b);
