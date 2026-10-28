@@ -1,5 +1,7 @@
 # Host diagnostic and qualification tools (restored)
 
+**Quickstart hiện tại:** [README_TESTING.md](README_TESTING.md) — lệnh chạy Wall PID, IR, BLE và bộ kiểm thử Maze Readiness tất cả trong một.
+
 The 33 historical `tools/` files were restored from `archive/debug-tools-precleanup-20261024`. At explicit user request on 24/10/2026, eight redundant copies are retired; **26 live files remain** (including this README and the OLED A/B qualification runner). Canonical regression tests live in `tests/regression/` and `tests/web/`, and the unique browser console lives in `web/ble_debug_console.html`. The archive remains unchanged.
 
 Keep the guarded Flash-map runner, BLE one-shot qualification, OLED/MPU hardware acceptance (`tools/oled_mpu_pipeline.py`), UART, IR, encoder, PID pipelines and nonduplicate host regressions; removing them would compromise future requalification. **Never delete or rewrite real `results/` logs**. Software tests cannot substitute for hardware acceptance.
