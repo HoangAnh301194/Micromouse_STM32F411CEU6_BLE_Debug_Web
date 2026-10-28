@@ -1,5 +1,8 @@
 # JDY-33 Bluetooth Classic SPP desktop console (2026-10-28)
 
+> **Windows quickstart cập nhật sau test phần cứng:** [docs/classic_spp/README.md](../classic_spp/README.md). COM16 Outgoing đã xác nhận 1.955 byte trong 40 s; COM37 bên dưới chỉ là tùy chọn đặt số COM, **không phải yêu cầu**.
+
+
 ## Scope
 
 This is a host-side-only Python dashboard. It **does not** add a second Bluetooth module, rewrite firmware, or reassign STM32 pins.
