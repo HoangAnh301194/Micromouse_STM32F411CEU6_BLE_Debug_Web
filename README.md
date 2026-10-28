@@ -1,3 +1,6 @@
+
+> **Mới — kiểm thử giới hạn Bluetooth Classic SPP khi TIM11/IMU/IR chạy 1 kHz:** [Hướng dẫn benchmark 20 mức tải, firmware motor-locked và Python report](docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Profile `classic_spp_rate_diag_96m`; tool `tools/classic_spp_rate_pipeline.py`. Đây là bài kiểm tra motor-OFF, chưa nghiệm thu debug khi robot chạy thực tế.
+
 # Micromouse STM32F411CEU6 - Minimal Core
 
 > **Bluetooth Classic SPP trên Windows (đã test COM16):** [README kết nối + module/file + lệnh pull + Dashboard](docs/classic_spp/README.md). Không cần USB–TTL/ST-Link để xem telemetry qua Bluetooth; dùng cổng COM **Outgoing** của Nezumi_Chan_SPP.
