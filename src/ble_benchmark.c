@@ -214,7 +214,7 @@ static void MakePacket(uint8_t size)
     uint8_t frame[MAX_PACKET], i;
     uint32_t start=DWT->CYCCNT, stamp=micros();
     uint16_t crc, off;
-    MPU6050_Snapshot_t imu;
+    MPU6050_Snapshot_t imu={0}; /* Safe defaults if sensor snapshot is stale. */
     IR_Data_t ir;
     int16_t applied_l=0, applied_r=0;
     /* Fixed-size frame: B5 62 ver type length session seq32 t_us32 payload CRC16.
