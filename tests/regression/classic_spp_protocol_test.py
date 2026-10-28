@@ -6,6 +6,7 @@ import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 from classic_spp_protocol import LineFramer, MazeState, numeric_fields
+from classic_spp_ports import classify_port
 
 
 def map_frames(n=5, corrupt=False):
@@ -28,6 +29,15 @@ def map_frames(n=5, corrupt=False):
 
 
 class ClassicProtocolTests(unittest.TestCase):
+    def test_windows_com_direction(self):
+        spp = r"BTHENUM\{00001101-0000-1000-8000-00805F9B34FB}_LOCALMFG&0000\7&31AD681E&0&000000000000_0000000C"
+        self.assertEqual(classify_port(spp), ("incoming", None))
+        spp = r"BTHENUM\{00001101-0000-1000-8000-00805F9B34FB}_LOCALMFG&0002\7&31AD681E&0&107100E9347B_C00000000"
+        self.assertEqual(classify_port(spp), ("outgoing", "107100E9347B"))
+        spp = r"BTHENUM\{00001101-0000-1000-8000-00805F9B34FB}_VID&0001004C_PID&2006\7&31AD681E&0&3CCD36769BEF_C00000000"
+        self.assertEqual(classify_port(spp), ("outgoing", "3CCD36769BEF"))
+        self.assertEqual(classify_port("PCI\\VEN_8086"), ("other", None))
+
     def test_fragmented_crlf(self):
         framer = LineFramer()
         self.assertEqual(framer.feed(b"MAPCFG,fmt=1\r"), [])
