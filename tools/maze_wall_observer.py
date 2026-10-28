@@ -209,6 +209,54 @@ def classify_trace(rows:list[dict],model:dict,debounce:int=3,
             "warning":"Projection-offset cell association is preliminary; validate beam-wall geometry and separate truth labels."}
     return observations,{"trace":combined,"summary":report}
 
+def build_wall_dashboard(states:list[dict],observations:list[dict])->str:
+    # Offline self-contained 9-lane state timeline. No network/CDN.
+    rows=json.dumps(states,separators=(",",":"),ensure_ascii=True).replace("<","\\u003c")
+    events=json.dumps(observations,separators=(",",":"),ensure_ascii=True).replace("<","\\u003c")
+    return """<!doctype html><html lang="vi"><meta charset="utf-8">
+<title>Micromouse Wall States</title>
+<style>body{font:14px system-ui;color:#eef2fb;background:#101827;padding:22px;max-width:1200px}
+section{border:1px solid #40516a;background:#1b293c;border-radius:10px;padding:15px;margin:10px 0}
+canvas{width:100%;height:390px}pre{white-space:pre-wrap}select{padding:6px}
+small{color:#a7bdd3}</style>
+<h1>6 IR + FUSION — WALL / OPEN / UNKNOWN</h1>
+<section><p>WALL <b style="color:#42ccaa">■</b> OPEN <b style="color:#669dde">■</b>
+UNKNOWN <b style="color:#9a9da6">■</b> CONFLICT <b style="color:#f56d80">■</b></p>
+<label>Trục X <select id="axis"><option value="distance_mm">Encoder mm</option>
+<option value="ms">Time ms</option></select></label><canvas id="vis"></canvas>
+<small>180mm/cell; biểu diễn ứng viên offline. UNKNOWN khác OPEN.
+Góc chiếu L45/R45 có thể quan sát cell khác L0/R0.</small></section>
+<section>Frame <input id="index" type="range" min="0" value="0" style="width:90%">
+<pre id="frame"></pre></section><section>Next-cell observations <pre id="next"></pre></section>
+<script>
+const rows="""+rows+""",obs="""+events+""";
+const names=['L90','L45','L0','R0','R45','R90','left','right','front'];
+const palette={WALL:'#42ccaa',OPEN:'#669dde',UNKNOWN:'#838e9e'};
+const slider=document.getElementById('index'),axis=document.getElementById('axis');
+slider.max=Math.max(0,rows.length-1);
+function draw(){let c=document.getElementById('vis'),w=Math.max(450,c.clientWidth),h=390;
+c.width=w*devicePixelRatio;c.height=h*devicePixelRatio;let g=c.getContext('2d');
+g.scale(devicePixelRatio,devicePixelRatio);g.fillStyle='#132033';g.fillRect(0,0,w,h);
+if(!rows.length)return;const L=86,R=w-25,T=15,xkey=axis.value;
+let xmin=rows[0][xkey],xmax=rows[rows.length-1][xkey];
+const pos=x=>L+(x-xmin)/(xmax-xmin||1)*(R-L);
+if(xkey==='distance_mm'){g.setLineDash([3,4]);g.strokeStyle='#66798e';
+for(let d=Math.ceil(xmin/180)*180;d<=xmax;d+=180){let px=pos(d);g.beginPath();
+g.moveTo(px,15);g.lineTo(px,350);g.stroke();g.fillStyle='#b9cadc';g.fillText(d/180+'c',px+2,12);}
+g.setLineDash([]);}
+names.forEach((name,j)=>{const Y=28+j*35;g.fillStyle='#e1eaf6';g.fillText(name,8,Y+15);
+rows.forEach((r,i)=>{let px=pos(r[xkey]),right=pos(i<rows.length-1?rows[i+1][xkey]:xmax);
+g.fillStyle=palette[r[name]]||palette.UNKNOWN;g.fillRect(px,Y,Math.max(1,right-px),26);
+if(j>=6 && r[name+'_conflict']){g.fillStyle='#f56d80';g.fillRect(px,Y,3,26);}});});
+const r=rows[Number(slider.value)];if(r){g.strokeStyle='#fff';let px=pos(r[xkey]);
+g.beginPath();g.moveTo(px,16);g.lineTo(px,355);g.stroke();}
+document.getElementById('frame').textContent=JSON.stringify(r,null,2);
+document.getElementById('next').textContent=JSON.stringify(obs.slice(0,70),null,2)+
+(obs.length>70?' ...':'');}
+slider.oninput=draw;axis.onchange=draw;window.onresize=draw;draw();
+</script></html>"""
+
+
 def run_edges(trace:Path,out:Path,truth:Path|None,window:int,
               relative:float,refractory:float,max_error:float)->dict:
     rows=read_trace(trace)
@@ -247,6 +295,8 @@ def run_fusion(trace:Path,model_file:Path,out:Path,
                  if o["side"]==side) for side in PAIR}
     save(out,"fusion_report.json",report)
     save(out,"timeline.json",states)
+    (out/"wall_state_viewer.html").write_text(
+        build_wall_dashboard(states,observations),encoding="utf-8")
     return report
 
 def main(argv=None):
