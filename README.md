@@ -1,5 +1,5 @@
 
-> **Mới — kiểm thử giới hạn Bluetooth Classic SPP khi TIM11/IMU/IR chạy 1 kHz:** [Hướng dẫn benchmark 20 mức tải, firmware motor-locked và Python report](docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Profile `classic_spp_rate_diag_96m`; tool `tools/classic_spp_rate_pipeline.py`. Đây là bài kiểm tra motor-OFF, chưa nghiệm thu debug khi robot chạy thực tế.
+> **Mới — kiểm thử giới hạn Bluetooth Classic SPP khi TIM11/IMU/IR chạy 1 kHz:** [Hướng dẫn benchmark 64 mức tải, tới 156% giới hạn UART, firmware motor-locked và Python report](docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Profile `classic_spp_rate_diag_96m`; tool `tools/classic_spp_rate_pipeline.py`. Đây là bài kiểm tra motor-OFF, chưa nghiệm thu debug khi robot chạy thực tế.
 
 # Micromouse STM32F411CEU6 - Minimal Core
 
