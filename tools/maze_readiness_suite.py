@@ -5,6 +5,7 @@ preflight   Execute safe existing software regression tests; optional compile on
 motion      Analyze several exported BLE wall-PID terminal logs together.
 wall-events Calibrate one threshold per IR channel on labelled TRAIN CSV and
             evaluate on a separate labelled TEST CSV with hysteresis and debounce.
+all         Run preflight + BLE motion batch + wall-events together, offline.
 
 No threshold here is wired into the Wall PID motion controller.
 """
@@ -342,6 +343,35 @@ def analyze_wall_events(train_file: Path, test_file: Path, out: Path,
     return report
 
 
+def analyze_all(logs: list[Path], train: Path, test: Path,
+                out: Path, build: bool = False, confirm_frames: int = 3) -> dict:
+    # Independent stages preserve their own detailed results. Never move
+    # a motor or flash firmware, including when --build is requested.
+    p = preflight(out / "preflight", build)
+    motion = analyze_motion(logs, out / "motion")
+    wall = analyze_wall_events(train, test, out / "wall_events",
+                               confirm_frames=confirm_frames)
+    report = {
+        "mode": "offline_combined_readiness",
+        "software_checks_ok": p["software_checks_ok"],
+        "ble_logs_complete": motion["complete_logs"] == motion["runs"],
+        "motion_traces": motion["runs"],
+        "motion_done_runs": motion["done_runs"],
+        "motion_review_flags": motion["runs"] - motion["review_no_flags"],
+        "wall_eval_samples": wall["test_frames"],
+        "per_channel_f1": {x["channel"]: x["f1"] for x in wall["results"]},
+        "per_channel_p95_lag_ms": {x["channel"]: x["p95_detection_delay_ms"]
+                                    for x in wall["results"]},
+        "physical_acceptance": False,
+        "next_step": (
+            "Review hardware braking clearance, geometry/LUT and "
+            "unseen wall/edge tests; this suite never certifies high-speed maze solve."
+        ),
+    }
+    write_json(out / "all_summary.json", report)
+    return report
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -354,6 +384,13 @@ def main(argv=None):
     b.add_argument("--target-mm", type=float, default=720.0)
     b.add_argument("--tolerance-mm", type=float, default=15.0)
     b.add_argument("--drift-review-mm", type=float, default=30.0)
+    d = sub.add_parser("all", help="One-command offline pipeline: checks + motor logs + wall events")
+    d.add_argument("--logs", type=Path, nargs="+", required=True)
+    d.add_argument("--train", type=Path, required=True)
+    d.add_argument("--test", type=Path, required=True)
+    d.add_argument("--out", type=Path, default=ROOT/"results/maze_readiness/all")
+    d.add_argument("--build", action="store_true")
+    d.add_argument("--confirm-frames", type=int, default=3)
     c = sub.add_parser("wall-events", help="Holdout per-sensor labelled wall/no-wall benchmark")
     c.add_argument("--train", type=Path, required=True)
     c.add_argument("--test", type=Path, required=True)
@@ -366,6 +403,14 @@ def main(argv=None):
             result = preflight(args.out, args.build)
             print("PREFLIGHT:", "OK" if result["software_checks_ok"] else "FAILED",
                   "|", str(args.out/"preflight.json"))
+            return 0 if result["software_checks_ok"] else 2
+        if args.cmd == "all":
+            result = analyze_all(args.logs, args.train, args.test, args.out,
+                                 args.build, args.confirm_frames)
+            print("ALL:", "software OK" if result["software_checks_ok"] else "software FAILED",
+                  "traces", result["motion_traces"],
+                  "complete BLE", result["ble_logs_complete"])
+            print("OUTPUT:", args.out / "all_summary.json")
             return 0 if result["software_checks_ok"] else 2
         if args.cmd == "motion":
             if args.target_mm <= 0 or args.tolerance_mm < 0 or args.drift_review_mm < 0:
