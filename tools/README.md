@@ -1,5 +1,8 @@
 # Host diagnostic and qualification tools (restored)
 
+> **Mới — JDY-33 Bluetooth Classic SPP / Windows:** [Hướng dẫn kết nối đã nghiệm thu trên COM16](../docs/classic_spp/README.md), gồm `classic_spp_dashboard.py`, `classic_spp_link_diag.py`, `classic_spp_ports.py`, `classic_spp_protocol.py`, và `windows_bluetooth_link_debug.ps1`.
+
+
 **Quickstart hiện tại:** [README_TESTING.md](README_TESTING.md) — lệnh chạy Wall PID, IR, BLE và bộ kiểm thử Maze Readiness tất cả trong một.
 
 The 33 historical `tools/` files were restored from `archive/debug-tools-precleanup-20261024`. At explicit user request on 24/10/2026, eight redundant copies are retired; **26 live files remain** (including this README and the OLED A/B qualification runner). Canonical regression tests live in `tests/regression/` and `tests/web/`, and the unique browser console lives in `web/ble_debug_console.html`. The archive remains unchanged.
