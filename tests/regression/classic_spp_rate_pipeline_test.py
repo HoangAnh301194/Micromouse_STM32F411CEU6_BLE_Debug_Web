@@ -101,7 +101,9 @@ class SppRateTests(unittest.TestCase):
                                     (60, "CANDIDATE"), (80, "CANDIDATE"))]
         r = measured_recommendations(rows)["64"]
         self.assertEqual(r["clean_frontier_Hz"], 20)
-        self.assertIsNone(r["recommended_tested_Hz"])
+        # 20 Hz is below 80% of the first failure at 40 Hz.
+        # A later isolated 60/80 Hz pass must not override that limit.
+        self.assertEqual(r["recommended_tested_Hz"], 20)
 
     def test_missing_low_rate_baseline_does_not_invent_recommendation(self):
         rows = [{"size_B": 64, "target_Hz": 10,
