@@ -50,17 +50,30 @@ static uint32_t run_start_ms;
  * motor-locked, sensor-loaded sweep; only main context formats/sends frames.
  * Packet size is TOTAL bytes, including CRC16 (not ASCII encoded length). */
 typedef struct { uint8_t size; uint16_t hz; } SppCase;
+/* Ascending utilization per frame size; low-load calibration through
+ * intentional ~120-140% UART overdrive. The PC decides the recommendation
+ * from MCU timing + loss measurements, NEVER from a fixed 40% cutoff.
+ * All frames are 8N1 UART bytes including their binary CRC16.
+ * This is a TX-only, permanently MOTOR-LOCKED qualification profile. */
 static const SppCase spp_cases[] = {
-    {32U,0U},    /* quiet baseline with all 1-kHz sensors enabled */
-    {20U,100U}, {20U,200U}, {20U,300U},
-    {32U,50U}, {32U,100U}, {32U,120U}, {32U,180U},
-    {64U,20U}, {64U,40U}, {64U,60U}, {64U,80U}, {64U,120U},
-    {96U,25U}, {96U,40U}, {96U,50U},
-    {128U,20U}, {128U,30U}, {128U,40U}, {128U,80U}
+    {32U,0U}, /* quiet 1kHz control, IMU and IR reference */
+    {20U,50U}, {20U,100U}, {20U,150U}, {20U,200U},
+    {20U,250U}, {20U,300U}, {20U,350U}, {20U,400U},
+    {20U,450U}, {20U,500U}, {20U,600U}, {20U,700U},
+    {32U,25U}, {32U,50U}, {32U,75U}, {32U,100U},
+    {32U,125U}, {32U,150U}, {32U,175U}, {32U,200U},
+    {32U,225U}, {32U,250U}, {32U,300U}, {32U,360U}, {32U,450U},
+    {64U,10U}, {64U,20U}, {64U,30U}, {64U,40U},
+    {64U,50U}, {64U,60U}, {64U,70U}, {64U,80U},
+    {64U,90U}, {64U,100U}, {64U,120U}, {64U,140U}, {64U,180U},
+    {96U,10U}, {96U,20U}, {96U,30U}, {96U,40U},
+    {96U,50U}, {96U,60U}, {96U,80U}, {96U,100U}, {96U,130U},
+    {128U,10U}, {128U,20U}, {128U,30U}, {128U,40U},
+    {128U,50U}, {128U,60U}, {128U,70U}, {128U,80U}, {128U,100U}
 };
 #define SPP_CASE_COUNT (sizeof(spp_cases)/sizeof(spp_cases[0]))
 #define SPP_CASE_MS 4000U
-#define SPP_GAP_MS 2000U
+#define SPP_GAP_MS 1500U
 static uint8_t spp_started, spp_finished, spp_index;
 static uint8_t spp_button_prev, spp_button_armed;
 static uint32_t spp_wait_at, spp_hello_at;
@@ -269,7 +282,13 @@ static void StartRun(uint8_t size, uint16_t hz, uint32_t duration_ms)
     if (running || size<16U || size>MAX_PACKET ||
         (size!=16U && size!=20U && size!=32U &&
          size!=64U && size!=96U && size!=128U) ||
-        hz>400U || duration_ms<1000U || duration_ms>MAX_RUN_MS ||
+        hz>
+#if defined(CLASSIC_SPP_RATE_DIAG)
+        800U
+#else
+        400U
+#endif
+        || duration_ms<1000U || duration_ms>MAX_RUN_MS ||
         !SensorsReady()) {
         BT_SendString("!ERR,reason=RUN_REJECTED\n");
         return;
@@ -409,6 +428,13 @@ static void SppAutoPoll(uint32_t now_ms)
                   (unsigned)SPP_CASE_COUNT,(unsigned)Motor_OutputsLocked());
         return;
     }
+    if (!SensorsReady()) {
+        /* Do not quietly hang the sweep if the 1kHz IMU task degraded. */
+        spp_finished=1U;
+        BT_Printf("!Q,state=ABORT,reason=SENSOR_NOT_READY,case=%u,locked=1\n",
+                  (unsigned)spp_index);
+        return;
+    }
     StartRun(spp_cases[spp_index].size,spp_cases[spp_index].hz,SPP_CASE_MS);
 }
 #endif
@@ -444,6 +470,16 @@ static void PollRun(void)
     if (!running) return;
     now=micros();
     if ((int32_t)(now-end_us)>=0) {
+#if defined(CLASSIC_SPP_RATE_DIAG)
+        /* Stop producing immediately. Allow USART2 TX queue to drain
+         * before sending mandatory end markers; otherwise an overload
+         * would erase the very evidence needed to identify its limit. */
+        {
+            BT_Profile_t q;
+            BT_GetProfile(&q);
+            if (q.tx_queue>256U) return;
+        }
+#endif
         EndRun();
         return;
     }
