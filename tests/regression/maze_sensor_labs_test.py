@@ -19,6 +19,7 @@ def load(name):
 capture=load("maze_sensor_capture_report")
 lut=load("ir_calibration_lab")
 observer=load("maze_wall_observer")
+pose=load("maze_pose_fusion_lab")
 
 def check_capture(root:Path):
     records=[]
@@ -150,12 +151,39 @@ def check_observer(root:Path,trace:Path):
     else:raise AssertionError("Unreviewed geometry should be rejected")
     assert not fused.get("maze_wall_detection_qualified",False)
 
+def check_pose(root:Path,trace:Path):
+    samples=pose.load_capture(trace)
+    assert len(samples)==64
+    track_mm=80.0  # test input only, not measured robot wheelbase
+    states,report=pose.replay(samples,track_mm,imu_weight=.98)
+    assert len(states)==len(samples)
+    assert report["IR_used_as_control_or_position_update"] is False
+    assert report["physical_ground_truth"] is False
+    assert all(r["status"]=="VALID" for r in states)
+    assert states[-1]["x_mm"]>0
+    assert states[-1]["y_mm"]>0
+    assert all(r["ir_side_error_norm"]==0 for r in states)
+    assert pose.main(["--trace",str(trace),"--wheel-track-mm","80",
+                      "--output",str(root/"pose")])==0
+    assert (root/"pose"/"pose_fusion.csv").exists()
+    assert (root/"pose"/"pose_fusion_report.json").exists()
+    try:pose.replay(samples,0.0)
+    except ValueError:pass
+    else:raise AssertionError("Unmeasured/invalid wheel track must be rejected")
+    corrupt=[dict(x) for x in samples]
+    corrupt[4]["valid"]=0
+    result,report=pose.replay(corrupt,track_mm)
+    assert result[4]["status"]=="PREDICTED_ONLY"
+    assert report["valid_frames"]==len(samples)-1
+
+
 def main():
     with tempfile.TemporaryDirectory(prefix="maze_sensor_lab_") as d:
         root=Path(d)
         trace=check_capture(root)
         check_calibrate(root)
         check_observer(root,trace)
+        check_pose(root,trace)
     print("MAZE_SENSOR_LABS_SYNTHETIC_PASS")
 
 if __name__=="__main__":main()
