@@ -124,7 +124,171 @@ UART, CSV and JSON evidence under `results/oled_mpu_YYYYMMDD_HHMMSS`.
 equivalent to MCU/hardware acceptance. For measured criteria and wiring,
 see [OLED/MPU shared-I2C acceptance](docs/system_debug/OLED_MPU_SHARED_20261024.md).
 
-**Handover (2026-10-24):** Board A/B acceptance PASS (15 s OFF + 15 s ON): TIM11 1 kHz, gyro 1000 → 992.73 Hz (-0.73%), OLED 1056/1056 DMA TX completed, 73 frames, zero OLED/MPU bus faults; see [`report.json`](results/oled_mpu_20261024_082616/report.json). **Scope:** OLED transport with motor outputs locked; production OLED/menu/API are not enabled, visual pixel verification, motor noise and long soak remain unqualified. The acceptance pipeline remains available for future regressions.
+**Handover (2026-10-24):** Board A/B acceptance PASS (15 s OFF + 15 s ON): TIM11 1 kHz, gyro 1000 → 992.73 Hz (-0.73%), OLED 1056/1056 DMA TX completed, 73 frames, zero OLED/MPU bus faults; see [`report.json`](results/oled_mpu_20261024_082616/report.json). **Scope:** OLED transport with motor outputs locked; the status-only production profile was added later, but production menu/API, visual pixel verification, motor noise and long soak remain unqualified. The acceptance pipeline remains available for future regressions.
+
+## Production OLED integration status
+
+The SSD1306 driver and font are present, and a separate cooperative DMA
+transport has been tested with MPU6050 on shared I2C1. The default
+`genericSTM32F411CE` build keeps OLED disabled. A new
+`production_oled_status_96m` profile enables a read-only status screen in the
+normal BLE/motion application using the shared renderer. It does not add a
+menu or button-driven motion control.
+
+| Item | Status |
+|---|---|
+| SSD1306 initialize, cursor, text, drawing and framebuffer refresh APIs | Implemented in `src/ssd1306.c` / `include/ssd1306.h`. |
+| Shared I2C1 OLED DMA renderer | Implemented in `src/oled_shared.c` and `src/i2c.c`; used by the motor-locked `oled_mpu_diag_96m` profile. |
+| Production read-only OLED status screen | Implemented in the opt-in `production_oled_status_96m` profile; absent from the default `genericSTM32F411CE` build. |
+| Production `Display_Menu()` / seven-item OLED menu | Not implemented. No `Display_Menu()` was found in the repository. |
+| OLED navigation by short press / long press | Not implemented. PA0 is used by a separate headless system-test profile, not an OLED menu. |
+| Return to an OLED menu after a mode/test | Not implemented. |
+| OLED ACK, voltage, pull-ups and signal quality on the current board | Not verified in this review; check on the assembled hardware. |
+| ST-Link upload and visible OLED confirmation in this review | Not performed. |
+| OLED with production BLE, moving motors and long-duration motor-noise workload | Not qualified. |
+
+Build and upload the status-screen profile:
+
+```powershell
+python -m platformio run -e production_oled_status_96m
+python -m platformio run -e production_oled_status_96m -t upload
+```
+
+This profile retains the existing BLE and motion-control behavior. Before
+first hardware validation, keep the motor VM supply disconnected or the wheels
+lifted and secured; OLED/MPU telemetry has not been re-qualified with the
+motors running.
+
+### I2C1 wiring
+
+OLED and MPU6050 share the same I2C1 wires in parallel:
+
+| STM32F411 | OLED module | MPU6050 module |
+|---|---|---|
+| PB8 / I2C1 SCL | SCL | SCL |
+| PB9 / I2C1 SDA | SDA | SDA |
+| GND | GND | GND |
+| Supply | VCC (verify module voltage) | VCC (verify module voltage) |
+
+The firmware uses 7-bit addresses `0x3C` for the OLED and `0x68` for the
+MPU6050. Some OLED modules use `0x3D`; confirm the actual module address.
+All modules need common ground. Verify that pull-ups and bus voltage are safe
+for the STM32's 3.3 V GPIO before connecting hardware. Source definitions are
+in `include/pinout.h`; firmware configuration does not prove physical voltage,
+rise time, pull-up value or signal integrity.
+
+### DMA and update rules
+
+`SSD1306_Init()` performs blocking I2C writes and a blocking full-screen
+refresh. It is called before MPU startup in the shared-I2C diagnostic.
+After MPU sampling starts, do **not** call blocking
+`SSD1306_UpdateScreen()` on I2C1: it bypasses the shared renderer's bus
+admission and MPU-priority scheduling. The legacy full-page
+`SSD1306_Init_DMA()` path is also not the shared-bus solution; in a build with
+`OLED_SHARED_I2C`, it returns `SSD1306_ERROR` and
+`SSD1306_UpdateScreen_DMA()` returns `0`. Use `OLED_SharedService()` from the
+main loop for shared OLED/MPU operation. Do not render or perform OLED I2C
+transfers in TIM11.
+
+A DMA API only moves bytes; it does not by itself guarantee arbitration,
+sensor freshness, valid bus electrical levels or coexistence under motor
+noise. Shared-bus confidence requires both devices active and monitored on
+the target board.
+
+### Build, automated tests and hardware evidence
+
+The following local checks passed during the 2026-10-27 review:
+
+```powershell
+python -m platformio run -e genericSTM32F411CE -e production_oled_status_96m -e oled_mpu_diag_96m -e ir_oled_test_96m -e system_test_96m
+python tools/oled_mpu_pipeline.py --self-test
+python tests/regression/ssd1306_native_test.py
+```
+
+All listed builds and host tests passed locally. The parser and numeric
+framebuffer tests are synthetic host-side validation, not physical tests.
+GitHub Actions run [#147](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/actions/runs/40494254234)
+passed the OLED profile builds and parser test. The newer run
+[#148](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/actions/runs/40494354956)
+failed earlier in an IR native regression, so its OLED steps were skipped.
+These runs were for `giomuadongbac`, not the local `nhi` branch.
+
+Historical motor-locked OLED/MPU telemetry is recorded as passing in
+[`report.json`](results/oled_mpu_20261024_082616/report.json). It does not
+establish visual pixel correctness, production-menu behavior, motor-on
+electrical immunity or extended-soak stability. The report
+[OLED Driver, I2C Integration and Firmware Review](docs/OLED_DRIVER_REVIEW.md)
+contains the detailed source review, acceptance limits and remaining work.
+
+Driver fixes added in this review:
+
+- `SSD1306_WriteFloat()` now rejects precision above seven digits and
+  unrepresentable/non-finite values by rendering `ERR`, avoiding buffer
+  overflow and out-of-range float-to-integer conversion.
+- `SSD1306_WriteInt()` now formats `INT32_MIN` without signed overflow.
+- `SSD1306_DMA_Callback()` is excluded from shared-I2C builds where the legacy
+  DMA path is disabled, removing the unused-function warning.
+- The native regression covers integer boundaries and float formatting/error
+  cases in the framebuffer.
+
+### OLED implementation change report (2026-10-27)
+
+This section records the complete source, configuration, test and
+documentation changes made for the read-only production OLED status profile.
+It distinguishes new files from edits to files that already existed.
+
+#### New files
+
+| File | Added content |
+|---|---|
+| `tests/regression/ssd1306_native_test.py` | Host-compiled regression harness that exercises the real SSD1306 framebuffer code for `INT32_MIN`/`INT32_MAX`, valid float output, precision above seven digits, out-of-range values and NaN. It uses I2C/timer stubs and does not test a physical display. |
+| `docs/OLED_DRIVER_REVIEW.md` | Detailed source review of the SSD1306 APIs, shared I2C1 behavior, menu/button status, wiring, local/CI evidence and outstanding hardware acceptance. |
+
+#### Existing files changed
+
+| File | What was added or changed |
+|---|---|
+| `src/main.c` | Added profile-guarded OLED initialization and splash; added a read-only status screen for MPU calibration/init status, motion state, BLE command hints and fresh yaw. If MPU initialization fails, attempts to show `MPU INIT FAILED` before the existing safe-stop path. Dynamic refresh is rate-limited to 5 Hz and serviced from the main loop through `OLED_SharedService()`, not from TIM11. |
+| `src/oled_shared.c` | `OLED_SharedInit()` now mirrors the current SSD1306 framebuffer into the renderer shadow whenever the display is found. This keeps the dirty-frame comparison synchronized with a splash already sent during initialization. |
+| `src/ssd1306.c` | Fixed signed integer formatting for `INT32_MIN`; bounded float formatting to precision 0-7 and rejected NaN/out-of-range input with `ERR`; compiled the legacy DMA callback only when that DMA path is enabled. |
+| `include/ssd1306.h` | Documented the supported `SSD1306_WriteFloat()` precision range and invalid-input rendering behavior. |
+| `platformio.ini` | Added opt-in `production_oled_status_96m`, enabling `OLED_SHARED_I2C` and `OLED_PRODUCTION_STATUS`. The existing `genericSTM32F411CE` default remains OLED-disabled. |
+| `.github/workflows/firmware-regression.yml` | Added CI execution of the SSD1306 native regression and a build of `production_oled_status_96m`. |
+| `README.md` | Added the profile build/upload instructions, status/menu scope, I2C wiring and DMA constraints, validation evidence and this change inventory. |
+| `PROJECT_STATUS.md` | Recorded the new profile, software validation, unchanged default profile, and hardware/menu limitations. |
+| `docs/system_debug/OLED_MPU_SHARED_20261024.md` | Clarified that the historical handover predates the new opt-in status profile; preserved the original motor-locked test scope and results. |
+
+#### Behavior and scope
+
+- The new application display is **status-only**. It does not implement
+  `Display_Menu()`, the seven-item menu, short/long-press navigation, or
+  button-triggered motion.
+- Existing BLE and motion-control behavior is retained. The normal
+  `genericSTM32F411CE` profile does not enable the new OLED application code.
+- The OLED and MPU6050 remain on shared I2C1 (PB8/SCL, PB9/SDA). The initial
+  OLED splash uses blocking initialization before MPU sampling; subsequent
+  updates must use the shared renderer. Do not call full-screen blocking
+  refresh or the legacy full-page DMA path after MPU acquisition starts.
+- The source, native tests and builds do not prove that the current board's
+  OLED acknowledges at `0x3C`, has correct electrical levels, or displays
+  correctly. The new production profile has not been flashed or qualified
+  with moving motors or during a long-duration run.
+
+#### Validation recorded for this change
+
+The following local commands passed on 2026-10-27:
+
+```powershell
+python -m platformio run -e genericSTM32F411CE -e production_oled_status_96m -e oled_mpu_diag_96m -e ir_oled_test_96m -e system_test_96m
+python tests/regression/ssd1306_native_test.py
+python tools/oled_mpu_pipeline.py --self-test
+python tests/regression/motion_primitives_native_test.py
+git diff --check
+```
+
+These are firmware-build and host-side checks. Physical OLED visibility,
+production-profile I2C coexistence, motor-on operation, bus signal quality
+and long-term stability remain pending hardware tests.
 
 ## IR sensor + OLED 128x64 bench mode (motor locked)
 

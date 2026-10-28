@@ -4,6 +4,14 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Cập nhật OLED — 27/10/2026
+
+- Thêm profile opt-in `production_oled_status_96m`: ứng dụng BLE/motion production có màn hình trạng thái chỉ đọc, khởi tạo và gửi splash trước khi MPU bắt đầu lấy mẫu; các lần cập nhật sau dùng `OLED_SharedService()` ngoài TIM11. Profile `genericSTM32F411CE` mặc định vẫn giữ OLED tắt.
+- Chưa có menu 7 mục hay thao tác nhấn ngắn/nhấn giữ cho OLED; không thêm hành vi bắt đầu chuyển động từ nút.
+- Sửa formatter SSD1306 cho `INT32_MIN`, precision/giá trị float không hợp lệ; bỏ cảnh báo callback DMA không dùng trong build shared-I2C.
+- Xác minh local: build `genericSTM32F411CE`, `production_oled_status_96m`, `oled_mpu_diag_96m`, `ir_oled_test_96m`, `system_test_96m` PASS; `tools/oled_mpu_pipeline.py --self-test` và `tests/regression/ssd1306_native_test.py` PASS.
+- **Chưa nghiệm thu phần cứng profile production mới:** chưa nạp ST-Link, chưa xác nhận pixel/menu, bus voltage/rise-time, motor-on coexistence hoặc soak dài hạn. Giữ motor VM ngắt hoặc bánh xe được kê khi lần đầu kiểm tra.
+
 ## 1. Nền tảng và quyền sở hữu ngoại vi
 
 | Thành phần | Trạng thái cấu hình |
@@ -35,7 +43,7 @@
 | **IR 6 kênh** | **Acquisition/timing phase đạt trên board**: ADC1/DMA2 Stream0 async, 1 kHz scan trong 30 giây; TIM11 nhận mẫu mới 100%; zero DMA/ADC errors/timeouts, TIM11 late/gap, MPU I2C errors/timeouts, UART drops | Chưa đánh giá độ chính xác/khoảng cách, nhiễu, nhiễu chéo hay phản hồi theo tường; phase này chỉ xác nhận acquisition, nhịp và tải |
 | **BLE USART2 PA2/PA3** | Đã có TXE IRQ + 4096B buffer, RX polling; web console hiển thị đồng thời ma trận 16×16 (Flood/Path/Explored, Stats) và terminal log, hai panel kéo chỉnh kích thước được, có Connect/Reconnect/Disconnect | Chưa đo thông lượng, RX overflow, mất bản tin, khi TX queue đầy hàm có thể bỏ phần đuôi mà không có thống kê; web UI mới chỉ kiểm tra trong trình duyệt, chưa nghiệm thu BLE với JDY-33 thật |
 | **OLED/MPU I2C1 shared debug** | **Nghiệm thu A/B trên bo, motor khóa: PASS (24/10/2026)** theo `results/oled_mpu_20261024_082616/report.json`: 17/17 checks, TIM11 1000 Hz cả hai pha; MPU 1000 → 992.73 Hz (-0.73%); OLED DMA 1056/1056 thành công, 528 chunks, 73 frames / 15s, max transaction 161 us; không có lỗi I2C/DMA, recovery, mẫu gyro trễ hay gián đoạn TIM11. Phiên trước `081626` FAIL vẫn được lưu nguyên làm đối chứng. | **Đạt nghiệm thu dùng chung I2C trong firmware diag motor-OFF 15s**. Chưa xác minh bằng máy hiện sóng, chưa có bằng chứng hiển thị ký tự đúng bằng quan sát độc lập, chưa nghiệm thu khi motor ON / production / soak dài hạn / menu thao tác. |
-| **OLED SSD1306 + renderer** | Driver SSD1306, font, incremental dirty framebuffer và DMA scheduling đã PASS kiểm thử A/B 15 s motor-OFF; log gốc `results/oled_mpu_20261024_082616/`. Không có I2C/DMA/MPU error trong bài nghiệm thu. | Chưa quan sát độc lập pixel/chữ trên panel; OLED disabled trong production; chưa có API UI/menu ứng dụng, không chứng nhận chạy motor ON hoặc soak dài hạn. |
+| **OLED SSD1306 + renderer** | Driver SSD1306, font, incremental dirty framebuffer và DMA scheduling đã PASS kiểm thử A/B 15 s motor-OFF; log gốc `results/oled_mpu_20261024_082616/`. Profile ứng dụng status-only `production_oled_status_96m` hiện build PASS; mặc định `genericSTM32F411CE` vẫn tắt OLED. | Chưa quan sát độc lập pixel/chữ trên panel với profile mới; chưa có API menu/điều hướng nút, không chứng nhận chạy motor ON hoặc soak dài hạn. |
 | **Flash storage, Sectors 6/7** | Firmware linker giới hạn 256 KiB (sector 0–5); lưu Flash dùng bản ghi append-only 1 KiB/slot, CRC32, commit marker, xác minh sau ghi, timeout TIM5, PG cleanup, kiểm tra điều kiện Control stopped + Motor locked; dữ liệu legacy đọc tương thích | Chưa nghiệm thu read/write/reset/mất nguồn trên board; mỗi sector 127 lần ghi trước khi cần maintenance; chưa nối save-map khi đến đích; xem [Flash storage](docs/flash_storage.md) |
 | **Wall-follow, flood-fill, fast-run** | Core tối giản có trạng thái IDLE/STRAIGHT/TURN và lệnh F/L/R/S/Z | Chưa có nghiệm thu điều khiển mê cung và chạy tốc độ cao; UI BLE cũ không chứng minh tính năng firmware đang hoạt động |
 

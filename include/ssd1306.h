@@ -202,7 +202,7 @@ void SSD1306_WriteInt(int32_t num, FontDef_t *font, SSD1306_Color_t color);
 /**
  * @brief Write float number
  * @param num: Number to write
- * @param decimals: Number of decimal places
+ * @param decimals: Number of decimal places (0-7; invalid values render "ERR")
  * @param font: Pointer to font structure
  * @param color: Text color
  */

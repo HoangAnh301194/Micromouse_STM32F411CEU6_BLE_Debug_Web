@@ -36,6 +36,10 @@ int main(void) { return FlashMapDiag_Main(); }
 #include "system_timer.h"
 #include "uart.h"
 #include "integration_sweep.h"
+#if defined(OLED_PRODUCTION_STATUS)
+#include "oled_shared.h"
+#include "ssd1306.h"
+#endif
 #if defined(INTEGRATION_DIAG)
 #include "integration_serial.h"
 #if defined(UART_PROFILE_DIAG)
@@ -51,6 +55,61 @@ int main(void) { return FlashMapDiag_Main(); }
 #define DEBUG_PERIOD_MS 100UL
 
 static MPU6050_Handle_t mpu;
+
+#if defined(OLED_PRODUCTION_STATUS)
+static uint32_t last_oled_draw_ms;
+
+static void OLED_DrawProductionStatus(uint32_t now)
+{
+    MPU6050_Snapshot_t snapshot;
+    Motion_State_t motion_state;
+    uint8_t fresh;
+
+    if (!OLED_SharedReady() ||
+        (uint32_t)(now - last_oled_draw_ms) < 200U) {
+        return;
+    }
+    last_oled_draw_ms = now;
+
+    SSD1306_Fill(SSD1306_BLACK);
+    SSD1306_SetCursor(0U, 0U);
+    SSD1306_WriteString("MICROMOUSE", &Font_7x10, SSD1306_WHITE);
+
+    SSD1306_SetCursor(0U, 13U);
+    if (mpu.calibrated) {
+        SSD1306_WriteString("MPU: READY", &Font_7x10, SSD1306_WHITE);
+    } else if (mpu.cal_state == 4U) {
+        SSD1306_WriteString("MPU: CAL FAILED", &Font_7x10, SSD1306_WHITE);
+    } else {
+        SSD1306_WriteString("MPU: CALIBRATING", &Font_7x10, SSD1306_WHITE);
+    }
+
+    motion_state = Motion_GetState();
+    SSD1306_SetCursor(0U, 26U);
+    if (motion_state == MOTION_STRAIGHT) {
+        SSD1306_WriteString("MOTION: STRAIGHT", &Font_7x10, SSD1306_WHITE);
+    } else if (motion_state == MOTION_TURN) {
+        SSD1306_WriteString("MOTION: TURN", &Font_7x10, SSD1306_WHITE);
+    } else if (motion_state == MOTION_PIVOT_PRIMITIVE) {
+        SSD1306_WriteString("MOTION: PIVOT", &Font_7x10, SSD1306_WHITE);
+    } else {
+        SSD1306_WriteString("MOTION: IDLE", &Font_7x10, SSD1306_WHITE);
+    }
+
+    SSD1306_SetCursor(0U, 39U);
+    SSD1306_WriteString("BLE: F/L/R/S", &Font_7x10, SSD1306_WHITE);
+
+    SSD1306_SetCursor(0U, 52U);
+    SSD1306_WriteString("YAW:", &Font_7x10, SSD1306_WHITE);
+    fresh = MPU6050_GetSnapshot(&mpu, &snapshot) &&
+            (uint32_t)(micros() - snapshot.completed_us) <= 3000U;
+    if (fresh && mpu.calibrated) {
+        SSD1306_WriteFloat(snapshot.yaw_deg, 1U, &Font_7x10, SSD1306_WHITE);
+    } else {
+        SSD1306_WriteString("--", &Font_7x10, SSD1306_WHITE);
+    }
+}
+#endif
 
 static void HandleBleCommand(char c)
 {
@@ -212,6 +271,29 @@ int main(void)
     IR_Init();
 
     mpu_status = MPU6050_Init(&mpu);
+#if defined(OLED_PRODUCTION_STATUS)
+    {
+        uint8_t oled_found = (SSD1306_Init() == SSD1306_OK) ? 1U : 0U;
+        if (oled_found) {
+            SSD1306_Fill(SSD1306_BLACK);
+            SSD1306_SetCursor(0U, 0U);
+            SSD1306_WriteString("MICROMOUSE", &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 20U);
+            SSD1306_WriteString(
+                (mpu_status == MPU6050_OK) ? "MPU: CALIBRATING" :
+                                              "MPU INIT FAILED",
+                &Font_7x10, SSD1306_WHITE);
+            SSD1306_UpdateScreen();
+        }
+        if (mpu_status == MPU6050_OK) {
+            OLED_SharedInit(oled_found);
+            OLED_SharedEnable(oled_found);
+        }
+        UART_Printf("OLED_BOOT,ready=%u,scl=%lu\r\n",
+                    (unsigned)oled_found,
+                    (unsigned long)I2C_GetConfiguredSclHz());
+    }
+#endif
     if (mpu_status == MPU6050_OK) {
         mpu_status = MPU6050_Calibrate(&mpu); /* Starts async calibration. */
     }
@@ -247,6 +329,9 @@ int main(void)
     IR_StartScan();
     Control_Init(&mpu);
     Control_Start();
+#if defined(OLED_PRODUCTION_STATUS)
+    last_oled_draw_ms = millis() - 200U;
+#endif
 
     BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
     UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
@@ -264,6 +349,10 @@ int main(void)
     while (1) {
         uint32_t now = millis();
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
+#if defined(OLED_PRODUCTION_STATUS)
+        OLED_DrawProductionStatus(now);
+        OLED_SharedService(&mpu);
+#endif
 
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());

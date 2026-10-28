@@ -117,6 +117,7 @@ static void SSD1306_WriteData(uint8_t *data, uint16_t len) {
 /**
  * @brief DMA completion callback
  */
+#if !defined(OLED_SHARED_I2C)
 static void SSD1306_DMA_Callback(void) {
     /* Move to next page */
     ssd1306_dma_page++;
@@ -127,6 +128,7 @@ static void SSD1306_DMA_Callback(void) {
         ssd1306_dma_page = 0;
     }
 }
+#endif
 
 /* ========================================================================== */
 /* CORE INITIALIZATION FUNCTIONS                                              */
@@ -541,24 +543,21 @@ char SSD1306_WriteString(const char *str, FontDef_t *font, SSD1306_Color_t color
 
 void SSD1306_WriteInt(int32_t num, FontDef_t *font, SSD1306_Color_t color) {
     char buffer[12];
-    char *ptr = buffer + 11;
-    uint8_t negative = 0;
-    
+    char *ptr = buffer + sizeof(buffer) - 1U;
+    uint8_t negative = (num < 0) ? 1U : 0U;
+    uint32_t magnitude = negative ? (uint32_t)(-(int64_t)num) :
+                                    (uint32_t)num;
+
     *ptr = '\0';
-    
-    if (num == 0) {
+
+    if (magnitude == 0U) {
         *--ptr = '0';
     } else {
-        if (num < 0) {
-            negative = 1;
-            num = -num;
+        while (magnitude > 0U) {
+            *--ptr = (char)('0' + (magnitude % 10U));
+            magnitude /= 10U;
         }
-        
-        while (num > 0) {
-            *--ptr = '0' + (num % 10);
-            num /= 10;
-        }
-        
+
         if (negative) {
             *--ptr = '-';
         }
@@ -569,46 +568,57 @@ void SSD1306_WriteInt(int32_t num, FontDef_t *font, SSD1306_Color_t color) {
 
 void SSD1306_WriteFloat(float num, uint8_t decimals, FontDef_t *font, SSD1306_Color_t color) {
     char buffer[20];
-    int32_t int_part;
+    uint32_t int_part;
     float frac_part;
     uint8_t i;
     char *ptr = buffer;
     char temp[12];
     char *tp;
-    
+
+    if (decimals > 7U || num != num ||
+        num >= 4294967296.0f || num <= -4294967296.0f) {
+        SSD1306_WriteString("ERR", font, color);
+        return;
+    }
+
     if (num < 0) {
         *ptr++ = '-';
         num = -num;
     }
-    
-    int_part = (int32_t)num;
+
+    int_part = (uint32_t)num;
     frac_part = num - (float)int_part;
-    
+
     tp = temp + 11;
     *tp = '\0';
-    
-    if (int_part == 0) {
+
+    if (int_part == 0U) {
         *--tp = '0';
     } else {
-        while (int_part > 0) {
-            *--tp = '0' + (int_part % 10);
-            int_part /= 10;
+        while (int_part > 0U) {
+            *--tp = (char)('0' + (int_part % 10U));
+            int_part /= 10U;
         }
     }
-    
+
     while (*tp) {
         *ptr++ = *tp++;
     }
-    
+
     if (decimals > 0) {
         *ptr++ = '.';
-        
+
         for (i = 0; i < decimals; i++) {
             frac_part *= 10;
-            *ptr++ = '0' + (int)(frac_part) % 10;
+            {
+                uint8_t digit = (uint8_t)frac_part;
+                if (digit > 9U) digit = 9U;
+                *ptr++ = (char)('0' + digit);
+                frac_part -= (float)digit;
+            }
         }
     }
-    
+
     *ptr = '\0';
     SSD1306_WriteString(buffer, font, color);
 }
