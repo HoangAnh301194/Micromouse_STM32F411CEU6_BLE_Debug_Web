@@ -202,7 +202,7 @@ class Console:
 
 def flash():
     subprocess.run([sys.executable,"-m","platformio","run",
-                    "-e","integration_diag_uart_96m","-t","upload"],
+                    "-c","platformio_legacy.ini","-e","integration_diag_uart_96m","-t","upload"],
                    check=True,cwd=ROOT,timeout=240)
 
 

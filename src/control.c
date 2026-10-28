@@ -3,11 +3,14 @@
 #include "board.h"
 #include "encoder.h"
 #include "ir_sensor.h"
+#include "ir_wall_signal.h"
 #include "motion.h"
 #if defined(SYSTEM_TEST_MODE)
 #include "system_test.h"
 #elif defined(TURN_PID_DIAG)
 #include "turn_pid_diag.h"
+#elif defined(WALL_PID_TEST_MODE)
+#include "wall_pid_test.h"
 #endif
 #include "motor.h"
 #include "stm32f4xx.h"
@@ -19,6 +22,8 @@
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
 static volatile IR_Data_t ir_latest;
+/* Updated by TIM11 only; read from main with a short IRQ-safe copy. */
+static IR_WallSignal wall_ir_ema10;
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
 static volatile Control_DebugStats_t di_stats;
 static volatile uint32_t di_prev_irq_us;
@@ -59,6 +64,18 @@ void Control_GetDebugStats(Control_DebugStats_t *out)
 }
 #endif
 
+IR_WallStatus Control_GetWallIRSnapshot(IR_WallSnapshot *out)
+{
+    uint32_t primask;
+    IR_WallStatus status;
+    if (!out) return IR_WALL_NO_SAMPLE;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    status = IR_WallSignal_Read(&wall_ir_ema10, micros(), out);
+    if (!primask) __enable_irq();
+    return status;
+}
+
 void Control_Init(MPU6050_Handle_t *mpu_handle)
 {
     uint32_t timer_clock;
@@ -67,6 +84,7 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     control_mpu = mpu_handle;
     control_running = 0;
+    IR_WallSignal_Init(&wall_ir_ema10);
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     di_stats = (Control_DebugStats_t){0};
     di_prev_irq_us = 0U;
@@ -110,6 +128,8 @@ void Control_Start(void)
         return;
     }
 
+    /* A restarted control loop must not reuse stale EMA state. */
+    IR_WallSignal_Init(&wall_ir_ema10);
     TIM11->CNT = 0;
     TIM11->SR &= ~TIM_SR_UIF;
     control_running = 1U;
@@ -127,6 +147,8 @@ void Control_Stop(void)
     SystemTest_Stop(1U);
 #elif defined(TURN_PID_DIAG)
     TurnPidDiag_Stop(7U);
+#elif defined(WALL_PID_TEST_MODE)
+    WallPidTest_Stop(WP_TIMEOUT);
 #endif
     Motion_Stop();
     TIM11->CR1 &= ~TIM_CR1_CEN;
@@ -214,6 +236,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
         }
         ir_latest.scan_count = sample.scan_count;
         ir_latest.completed_us = sample.completed_us;
+        /* Passive handover interface: six ambient-subtracted IR values.
+         * Runs once per consumed scan, not once per 1kHz tick if no new data.
+         * Does NOT alter raw sensor snapshots or actuate motors. */
+        (void)IR_WallSignal_Update(&wall_ir_ema10, sample.value,
+                                   sample.scan_count, sample.completed_us);
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
         di_stats.ir_scan_count = sample.scan_count;
         di_stats.ir_fresh_ticks++;
@@ -250,6 +277,13 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             TurnPidDiag_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
                                     gyro.yaw_deg,gyro.gyro_z_dps,
                                     (uint32_t)(micros()-gyro.completed_us));
+#elif defined(WALL_PID_TEST_MODE)
+            {
+                IR_WallSnapshot ir_frame;
+                (void)IR_WallSignal_Read(&wall_ir_ema10,micros(),&ir_frame);
+                WallPidTest_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
+                                        gyro.yaw_deg,gyro.gyro_z_dps,&ir_frame);
+            }
 #else
             Motion_Update(CONTROL_DT_S, Encoder_GetLeftCount(),
                           Encoder_GetRightCount(), gyro.yaw_deg, gyro.gyro_z_dps);
@@ -265,6 +299,8 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             SystemTest_Stop(3U);
 #elif defined(TURN_PID_DIAG)
             TurnPidDiag_Stop(3U);
+#elif defined(WALL_PID_TEST_MODE)
+            WallPidTest_Stop(WP_IMU_STALE);
 #else
             Motion_SensorFault(); /* Invalid, uncalibrated or stale gyro. */
 #endif

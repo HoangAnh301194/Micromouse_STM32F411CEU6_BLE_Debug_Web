@@ -39,12 +39,12 @@ static volatile uint32_t scan_count = 0;
 static volatile uint32_t completed_us = 0U;
 static volatile uint32_t scan_started_us = 0U;
 static volatile uint32_t dma_started_us = 0U;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
 static uint16_t ambient_work[IR_SENSOR_COUNT];
 static uint16_t emitter_work[IR_SENSOR_COUNT];
 #endif
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
 static volatile IR_Diagnostics_t diagnostics;
 #endif
 
@@ -93,7 +93,7 @@ static uint8_t ADC_StartDma(void)
     DMA2_Stream0->CR |= DMA_SxCR_EN;
     ADC1->SR = 0U;
     dma_started_us = micros();
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     diagnostics.dma_started++;
 #endif
     ADC1->CR2 |= ADC_CR2_SWSTART;
@@ -108,7 +108,7 @@ static void IR_Fail(IR_Failure_t reason)
     DMA2->LIFCR = DMA2_STREAM0_FLAGS;
     AllEmittersOff();
     state = IR_IDLE;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     diagnostics.scans_failed++;
     if (reason == IR_FAILURE_TIMEOUT) diagnostics.dma_timeouts++;
     else if (reason == IR_FAILURE_DMA) diagnostics.dma_errors++;
@@ -122,7 +122,7 @@ static void IR_CompleteDma(void)
     uint8_t i;
     uint32_t now = micros();
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     uint32_t dma_duration = now - dma_started_us;
     diagnostics.dma_completed++;
     diagnostics.dma_total_us += dma_duration;
@@ -134,18 +134,18 @@ static void IR_CompleteDma(void)
     case IR_AMBIENT_DMA:
         for (i = 0U; i < IR_SENSOR_COUNT; i++) {
             ambient[i] = dma_buffer[i];
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
             ambient_work[i] = dma_buffer[i];
 #endif
         }
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.ambient_reads++;
 #endif
         state = IR_PAIR1_ON;
         break;
 
     case IR_PAIR1_DMA:
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         emitter_work[0] = dma_buffer[0];
         emitter_work[4] = dma_buffer[4];
 #endif
@@ -155,14 +155,14 @@ static void IR_CompleteDma(void)
                     ((uint32_t)dma_buffer[4] - ambient[4]) : 0U;
         IR_LED_OFF(IR_LED_L90_PORT, IR_LED_L90_PIN);
         IR_LED_OFF(IR_LED_R45_PORT, IR_LED_R45_PIN);
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.pair1_reads++;
 #endif
         state = IR_PAIR2_ON;
         break;
 
     case IR_PAIR2_DMA:
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         emitter_work[1] = dma_buffer[1];
         emitter_work[5] = dma_buffer[5];
 #endif
@@ -172,14 +172,14 @@ static void IR_CompleteDma(void)
                     ((uint32_t)dma_buffer[5] - ambient[5]) : 0U;
         IR_LED_OFF(IR_LED_L45_PORT, IR_LED_L45_PIN);
         IR_LED_OFF(IR_LED_R90_PORT, IR_LED_R90_PIN);
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.pair2_reads++;
 #endif
         state = IR_PAIR3_ON;
         break;
 
     case IR_PAIR3_DMA:
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         emitter_work[2] = dma_buffer[2];
         emitter_work[3] = dma_buffer[3];
 #endif
@@ -189,14 +189,14 @@ static void IR_CompleteDma(void)
                     ((uint32_t)dma_buffer[3] - ambient[3]) : 0U;
         IR_LED_OFF(IR_LED_L0_PORT, IR_LED_L0_PIN);
         IR_LED_OFF(IR_LED_R0_PORT, IR_LED_R0_PIN);
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.pair3_reads++;
 #endif
         scan_count++;
         completed_us = now;
         state = IR_READY;
         TIM10->CR1 &= ~TIM_CR1_CEN;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         {
             for (i = 0U; i < IR_SENSOR_COUNT; i++) {
                 diagnostics.ambient_raw[i] = ambient_work[i];
@@ -310,7 +310,7 @@ void IR_Init(void)
     }
     scan_count = 0U;
     completed_us = 0U;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     diagnostics = (IR_Diagnostics_t){0};
 #endif
 
@@ -323,7 +323,7 @@ void IR_StartScan(void)
 {
     if (state == IR_IDLE) {
         if ((DMA2_Stream0->CR & DMA_SxCR_EN) != 0U) {
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
             diagnostics.start_busy++;
 #endif
             return;
@@ -335,14 +335,14 @@ void IR_StartScan(void)
         } else {
             state = IR_AMBIENT_START;
         }
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.scans_started++;
 #endif
         TIM10->CNT = 0U;
         TIM10->SR &= ~TIM_SR_UIF;
         TIM10->CR1 |= TIM_CR1_CEN;
     } else {
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.start_busy++;
 #endif
     }
@@ -378,7 +378,7 @@ uint8_t IR_GetLatest(IR_Data_t *out)
     return 1U;
 }
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
 void IR_GetDiagnostics(IR_Diagnostics_t *out)
 {
     uint32_t primask;
@@ -392,13 +392,13 @@ void IR_GetDiagnostics(IR_Diagnostics_t *out)
 
 void TIM1_UP_TIM10_IRQHandler(void)
 {
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     uint32_t irq_start = DWT->CYCCNT;
 #endif
 
     if ((TIM10->SR & TIM_SR_UIF) == 0U) return;
     TIM10->SR &= ~TIM_SR_UIF;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     diagnostics.tim10_irq_count++;
 #endif
 
@@ -460,7 +460,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
         break;
     }
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - irq_start;
         diagnostics.tim10_irq_total_cycles += cycles;
@@ -474,12 +474,12 @@ void DMA2_Stream0_IRQHandler(void)
 {
     uint32_t status = DMA2->LISR;
     uint8_t adc_overrun = (ADC1->SR & ADC_SR_OVR) ? 1U : 0U;
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     uint32_t irq_start = DWT->CYCCNT;
 #endif
 
     if (adc_overrun) {
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         diagnostics.adc_overruns++;
 #endif
         ADC1->SR &= ~ADC_SR_OVR;
@@ -497,7 +497,7 @@ void DMA2_Stream0_IRQHandler(void)
         IR_CompleteDma();
     }
 
-#if defined(INTEGRATION_DIAG)
+#if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
     {
         diagnostics.dma_irq_count++;
         uint32_t cycles = DWT->CYCCNT - irq_start;

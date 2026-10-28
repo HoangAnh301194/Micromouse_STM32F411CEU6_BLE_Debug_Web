@@ -1,0 +1,15 @@
+{
+  "case": "static",
+  "kind": "static",
+  "channel": null,
+  "direction": "static",
+  "trial": 1,
+  "distance_mm": null,
+  "distance_left_mm": 60.0,
+  "distance_right_mm": 60.0,
+  "light": "room",
+  "surface": "white_matte",
+  "notes": "two side walls, independently measured",
+  "vm_disconnected_operator_confirmed": true,
+  "created": "2026-10-27T22:28:11.274257"
+}

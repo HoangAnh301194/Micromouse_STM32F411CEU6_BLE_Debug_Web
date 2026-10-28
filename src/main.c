@@ -1,4 +1,15 @@
-#if defined(TURN_PID_DIAG)
+/* Central entrypoint only. Real application loops and diagnostic modes
+ * reside in their own source files. Keep every exclusive main isolated. */
+#if defined(MAZE_SENSOR_CAPTURE_MODE)
+int MazeSensorCapture_Main(void);
+int main(void) { return MazeSensorCapture_Main(); }
+#elif defined(IR_BURST_DIAG)
+int IR_BurstDiag_Main(void);
+int main(void) { return IR_BurstDiag_Main(); }
+#elif defined(WALL_PID_TEST_MODE)
+#include "wall_pid_test.h"
+int main(void) { return WallPidTest_Main(); }
+#elif defined(TURN_PID_DIAG)
 #include "turn_pid_diag.h"
 int main(void) { return TurnPidDiag_Main(); }
 #elif defined(SYSTEM_TEST_MODE)
@@ -13,6 +24,9 @@ int main(void) { return OLED_MPU_DiagMain(); }
 #elif defined(IR_OLED_TEST)
 int IR_OLED_TestMain(void);
 int main(void) { return IR_OLED_TestMain(); }
+#elif defined(IR_FILTER_DIAG)
+int IR_FilterDiag_Main(void);
+int main(void) { return IR_FilterDiag_Main(); }
 #elif defined(BLE_PROFILE_DIAG)
 int BleBenchmark_Main(void);
 int main(void) { return BleBenchmark_Main(); }
@@ -20,12 +34,10 @@ int main(void) { return BleBenchmark_Main(); }
 #include "flash_map_diag.h"
 int main(void) { return FlashMapDiag_Main(); }
 #else
-#include "board.h"
-#include "bt_debug.h"
-#if defined(ENCODER_PROFILE_DIAG) && (!defined(INTEGRATION_DIAG) || \
-    !(defined(INTEGRATION_DIAG_MOTOR_OFF) || defined(INTEGRATION_DIAG_MOTOR_ON)))
-#error "Encoder telemetry requires an explicit integration diagnostic mode"
+int Main_Runtime(void);
+int main(void) { return Main_Runtime(); }
 #endif
+<<<<<<< HEAD
 
 #include "control.h"
 #include "encoder.h"
@@ -809,3 +821,5 @@ int main(void)
 }
 
 #endif /* BLE_PROFILE_DIAG / FLASH_MAP_DIAG */
+=======
+>>>>>>> e41c1a1f73c3c25492cf61c7dede937855026fcc

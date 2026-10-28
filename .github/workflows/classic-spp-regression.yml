@@ -1,0 +1,24 @@
+name: Classic SPP host regression
+
+on:
+  push:
+    branches: [giomuadongbac]
+    paths:
+      - 'tools/classic_spp_protocol.py'
+      - 'tools/classic_spp_dashboard.py'
+      - 'tests/regression/classic_spp_protocol_test.py'
+      - '.github/workflows/classic-spp-regression.yml'
+  workflow_dispatch:
+
+jobs:
+  host-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline parser regression tests
+        run: python tests/regression/classic_spp_protocol_test.py
+      - name: Check desktop source compiles without a GUI
+        run: python -m py_compile tools/classic_spp_protocol.py tools/classic_spp_dashboard.py

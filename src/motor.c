@@ -196,6 +196,22 @@ uint8_t Motor_TurnDiagUnlockOutputs(void)
 }
 #endif
 
+#if defined(WALL_PID_TEST_MODE)
+uint8_t Motor_WallPidTestUnlockOutputs(void)
+{
+    uint32_t irq=LockIRQ();
+    if(!outputs_locked || command_timeout_latched){
+        UnlockIRQ(irq);
+        return 0U;
+    }
+    Motor_Stop();
+    command_age_ms=0U;
+    outputs_locked=0U;
+    UnlockIRQ(irq);
+    return 1U;
+}
+#endif
+
 uint8_t Motor_OutputsLocked(void)
 {
     return outputs_locked;
