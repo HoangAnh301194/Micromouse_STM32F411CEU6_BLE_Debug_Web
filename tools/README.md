@@ -44,7 +44,7 @@ STM32 không xác nhận đã điều khiển MCU qua SPP hay chạy đồng th�
 
 ### B. Pull code, chuẩn bị phần cứng
 
-Trong PowerShell từ **thư mục gốc repo** (ví dụ `D:\\MICROMOUSE_26\\code_mau`):
+Trong PowerShell từ **thư mục gốc repo** (ví dụ `D:\MICROMOUSE_26\code_mau`):
 
 ```powershell
 cd D:\MICROMOUSE_26\code_mau
