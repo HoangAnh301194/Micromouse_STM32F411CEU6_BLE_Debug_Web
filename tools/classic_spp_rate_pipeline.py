@@ -146,7 +146,6 @@ def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict
             if hz == 0:
                 row["verdict"] = "BASELINE"
             elif any((
-                utilization > MAX_UTILIZATION * 100,
                 rejected != 0,
                 skipped is None or skipped > max(1, generated * 0.01),
                 end.get("drop") != 0,
@@ -162,7 +161,8 @@ def assess(events: list[dict], frames: list[dict], crc_global: int) -> list[dict
             )):
                 row["verdict"] = "LIMIT_OR_FAIL"
             else:
-                row["verdict"] = "CANDIDATE"
+                row["verdict"] = ("STRESS_CLEAN_ABOVE_BUDGET"
+                                  if utilization > MAX_UTILIZATION * 100 else "CANDIDATE")
         results.append(row)
     return results
 
@@ -171,11 +171,11 @@ def refine_against_baseline(rows: list[dict]) -> None:
     baseline = next((x for x in rows if x["verdict"] == "BASELINE"), None)
     if not baseline:
         for row in rows:
-            if row["verdict"] == "CANDIDATE":
+            if row["verdict"] in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
                 row["verdict"] = "NO_BASELINE"
         return
     for row in rows:
-        if row["verdict"] != "CANDIDATE":
+        if row["verdict"] not in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
             continue
         for key in ("imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz"):
             value, base = row.get(key), baseline.get(key)
@@ -201,7 +201,7 @@ def refine_against_baseline(rows: list[dict]) -> None:
            for k in ("ctrl_Hz", "imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz")):
         baseline["verdict"] = "BASELINE_INSUFFICIENT"
         for row in rows:
-            if row["verdict"] == "CANDIDATE":
+            if row["verdict"] in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
                 row["verdict"] = "BASELINE_INSUFFICIENT"
 
 
@@ -222,10 +222,13 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
     with (out / "events.json").open("w", encoding="utf-8") as f:
         json.dump(events, f, indent=2)
     recommended = {}
+    observed = {}
     for row in rows:
-        if row["verdict"] == "CANDIDATE":
+        if row["verdict"] in ("CANDIDATE", "STRESS_CLEAN_ABOVE_BUDGET"):
             k = str(row["size_B"])
-            recommended[k] = max(recommended.get(k, 0), row["target_Hz"])
+            observed[k] = max(observed.get(k, 0), row["target_Hz"])
+            if row["verdict"] == "CANDIDATE":
+                recommended[k] = max(recommended.get(k, 0), row["target_Hz"])
     summary = {
         "environment": "JDY-33 Classic SPP Windows outgoing COM",
         "port": port, "baud": BAUD, "uart_8n1_ceiling_Bps": WIRE_BYTES_PER_S,
@@ -234,14 +237,16 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
         "packet_crc_failures": decoder.crc_failures,
         "unframed_bytes": decoder.discarded,
         "raw_received_bytes": decoder.raw_bytes,
-        "rows": rows, "candidate_max_hz_by_packet_size": recommended,
+        "rows": rows,
+        "candidate_max_hz_by_packet_size": recommended,
+        "observed_clean_max_hz_by_packet_size": observed,
         "no_one_way_latency_claim": True,
         "qualification_limitations": [
             "SPP PC receive path only; no Windows->MCU commands",
             "No motor-on, maze exploration motion, vibration, electrical motor noise",
             "Host serial arrival gap is not one-way latency without clock synchronization",
             "All pass limits are engineering trial gates, not physical qualification until collected",
-            "Rates >40pct of 115200 8N1 link are treated as stress/limit, not recommended",
+            "Rates >40pct of 115200 8N1 link may be STRESS_CLEAN_ABOVE_BUDGET but are not recommended",
             "A baseline/control verdict is a 4-second test window; repeat multiple trials and validate live navigation"
         ]
     }
