@@ -107,6 +107,8 @@ static void Collect(uint32_t now)
     last_ms=now;
     if(count>=MC_CAPACITY){Freeze();return;}
     row=&frames[count];
+    memset(&ir,0,sizeof(ir));
+    memset(&g,0,sizeof(g));
     irq=__get_PRIMASK();__disable_irq();
     valid=(uint8_t)(Control_GetWallIRSnapshot(&ir)==IR_WALL_VALID &&
          MPU6050_GetSnapshot(&gyro,&g) &&
