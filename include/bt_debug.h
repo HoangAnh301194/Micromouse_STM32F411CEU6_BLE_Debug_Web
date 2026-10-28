@@ -85,6 +85,8 @@ void BT_SendData(const uint8_t *data, uint16_t len);
 uint8_t BT_TrySendData(const uint8_t *data, uint16_t len);
 uint8_t BT_ReadByte(uint8_t *out);
 void BT_GetProfile(BT_Profile_t *out);
+/* Benchmark-only: restart per-test TX queue watermark at current occupancy. */
+void BT_ResetTxQueuePeak(void);
 
 /**
  * @brief Check if data has been received on USART2
