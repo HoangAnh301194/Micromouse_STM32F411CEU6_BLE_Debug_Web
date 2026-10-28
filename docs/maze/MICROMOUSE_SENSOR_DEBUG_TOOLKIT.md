@@ -23,7 +23,7 @@
 | `ir_calibration_lab.py` | PC offline | Fit LUT phi tuyến **từng kênh + vật liệu + ánh sáng** trên các khoảng cách đo thật, isotonic monotonic, holdout; không extrapolate. |
 | `maze_wall_observer.py edges` | PC offline | Phát hiện ứng viên cạnh tường xuất hiện/mất; đo sai số vị trí mép với nhãn ground truth tính theo mm encoder. |
 | `maze_wall_observer.py fusion` | PC offline | Wall state `WALL/OPEN/UNKNOWN`, hai kênh mâu thuẫn → `UNKNOWN`; tạo ứng viên dữ liệu cell kế tiếp khi có hình học được đo. |
-| `maze_readiness_suite.py` (đã có) | PC offline | Tiền kiểm, so sánh nhiều Wall PID run, confusion matrix theo nhãn TRAIN/TEST của 6 kênh. |
+| `maze_readiness_suite.py` (đã có) | PC offline | Tiền kiểm, so sánh nhiều Wall PID run, confusion matrix theo nhãn TRAIN/TEST của 6 kênh. |\n| `maze_pose_fusion_lab.py` | PC offline | Replay sai số yaw gyro–encoder và pose tích phân bằng complementary filter; xuất optical residual L0/R0 độc lập. |
 
 ## 3. Quy trình thu log lần đầu (không cho motor chạy)
 
@@ -105,7 +105,26 @@ Không có hình học, tool vẫn xuất timeline của từng kênh và ba hư
 
 **Các số 0 phía trên chỉ là placeholder của cấu trúc, không phải thông số hình học hợp lệ để đem đo.** Điền 6 giá trị thật rồi thêm `--geometry geometry.json`. Công cụ mới dùng phép dịch chiếu dọc x như **phép gán nhãn ứng viên ban đầu**; chưa phải ray casting 2D hay phương pháp xác định đúng tường trước trong mọi góc quay. Muốn triển khai thực, phải đo vị trí/góc LED và kiểm chứng từng edge/cell trên track có ground truth.
 
-## 6. Những bộ cần phát triển tiếp
+## 6. Replay encoder + gyro và kiểm tra lỗi sensor fusion
+
+Đo **wheel-track** (khoảng cách động học giữa hai bánh, tính mm);
+không được nhầm với đường kính bánh 34 mm. Dùng dữ liệu thu bằng
+firmware MC:
+
+```powershell
+python tools/maze_pose_fusion_lab.py --trace maze_01_ble_maze_capture/trace.csv --wheel-track-mm 75
+```
+
+`75` ở đây **chỉ là ví dụ cú pháp**; phải thay bằng wheel-track thực tế.
+Tool xuất `pose_fusion.csv`, `pose_fusion_report.json` gồm
+`odom_yaw_deg`, `imu_yaw_rel_deg`, `fused_yaw_deg`,
+`imu_minus_encoder_deg`, quỹ đạo dự đoán và `ir_side_error_norm`.
+Lưu ý IMU và encoder chưa có ground truth độc lập; đây là
+đánh giá bất đồng/cảm biến trượt, **chưa phải SLAM hoặc vị trí chính xác**.
+`ir_side_error_norm` chỉ quan sát quang học, chưa được đưa vào
+cập nhật pose/Wall PID vì LUT, góc cảm biến và độ tin cậy chưa nghiệm thu.
+
+## 7. Những bộ cần phát triển tiếp
 
 **P0 trước chạy maze liên tục tốc độ cao:** (1) logger 6 IR trong chính firmware motor-on `wall_pid_4cell_96m` với RAM snapshot 200 Hz, một mode *opt-in* riêng và giám sát dừng độc lập; (2) đo braking/coast stopping distance trên mặt sàn với mốc thật — lượt cũ từng trôi **80,2 mm** sau motor lock; (3) bộ gán nhãn tường theo tọa độ cell và vị trí sensor-ray chuẩn. **Chưa triển khai các bộ này trên phần cứng motor-on.**
 
