@@ -46,6 +46,19 @@ def main():
     right_fault=fault_line.replace("l=835,r=750","l=669,r=1261").replace("rawL=1050","rawL=650")
     _,fr=m.parse_lines(good+[right_fault])
     assert fr["fault_side"]=="R0"
+    # New firmware: error=REL_NORM means the steering error is a
+    # dimensionless nonlinear-safe optical proxy, NOT millimetres.
+    new=[line.replace("pwmcap=800,","pwmcap=800,error=REL_NORM,")
+         .replace("avgerr100=30,peakerr100=60,","avgen1000=30,peakn1000=60,")
+         for line in good]
+    nrows,nreport=m.parse_lines(new)
+    assert nreport["data_complete"],nreport
+    assert nreport["error_units"]=="dimensionless"
+    assert nreport["mae_wall_error_norm"]==0.0225
+    assert nreport["mae_relative_wall_mm"] is None
+    assert "wall_error_norm_1000" in nrows[0]
+    assert "wall_error_0p01mm" not in nrows[0]
+    assert abs(nreport["p95_abs_wall_error_norm"]-0.02)<1e-6
     print("WALL_PID_BLE_REPORT_TEST_PASS")
 
 if __name__=="__main__":main()
