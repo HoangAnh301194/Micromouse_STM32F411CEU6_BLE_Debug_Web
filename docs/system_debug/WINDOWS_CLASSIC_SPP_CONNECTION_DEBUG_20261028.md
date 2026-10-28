@@ -1,5 +1,8 @@
 # Diagnose Windows Bluetooth Classic pairing / RFCOMM disconnect (JDY-33)
 
+> **Kết quả mới sau tái tạo cổng (28/10/2026):** [README Classic SPP](../classic_spp/README.md). **COM16 đã đổi từ Incoming sang Outgoing** và nhận 1.955 byte trong 40 giây, không có SerialException. Mục COM16 Incoming bên dưới là lịch sử lần test trước khi tạo lại COM.
+
+
 Date: 2026-10-28. Branch: giomuadongbac. Hardware is still the same
 JDY-33 on STM32F411 USART2 PA2/PA3; no second Bluetooth module.
 
