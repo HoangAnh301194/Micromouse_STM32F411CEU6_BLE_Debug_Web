@@ -20,6 +20,7 @@ capture=load("maze_sensor_capture_report")
 lut=load("ir_calibration_lab")
 observer=load("maze_wall_observer")
 pose=load("maze_pose_fusion_lab")
+suite=load("maze_sensor_suite")
 
 def check_capture(root:Path):
     records=[]
@@ -144,6 +145,7 @@ def check_observer(root:Path,trace:Path):
     assert fused["cell_observations"]>0
     assert any(v>0 for v in fused["next_cell_candidates"].values())
     assert (root/"fusion"/"cell_observations.csv").is_file()
+    assert "<canvas" in (root/"fusion"/"wall_state_viewer.html").read_text(encoding="utf-8")
     # Refuse a fabricated geometry file with no independent review flag.
     geo.write_text(json.dumps({"forward_projection_mm":geometry["forward_projection_mm"]}))
     try:observer.run_fusion(trace,model_file,root/"unsafe",3,geo)
@@ -177,6 +179,27 @@ def check_pose(root:Path,trace:Path):
     assert report["valid_frames"]==len(samples)-1
 
 
+def check_all_in_one(root:Path):
+    # Exercises entire workflow with independently fabricated inputs.
+    result=suite.run(root/"ble.txt",root/"suite",
+                     manifest=root/"manifest.csv",
+                     model=root/"model.json",track_mm=80.0)
+    assert result["BLE_complete"] and result["capture_rows"]==64
+    assert result["calibration"]["channel_groups"]==2
+    assert result["wall_fusion"]["geometry_confirmed"] is False
+    assert result["maze_solve_hardware_accepted"] is False
+    assert (root/"suite"/"capture"/"viewer.html").is_file()
+    assert (root/"suite"/"calibration"/"calibration_viewer.html").is_file()
+    assert (root/"suite"/"wall_fusion"/"wall_state_viewer.html").is_file()
+    assert (root/"suite"/"pose"/"pose_fusion_report.json").is_file()
+    assert suite.main(["--ble",str(root/"ble.txt"),
+                       "--out",str(root/"suite_cli")])==0
+    assert (root/"suite_cli"/"all_summary.json").is_file()
+    try:suite.run(root/"ble_bad.txt",root/"suite_bad")
+    except ValueError as exc:assert "not complete" in str(exc)
+    else:raise AssertionError("Must reject incomplete BLE capture")
+
+
 def main():
     with tempfile.TemporaryDirectory(prefix="maze_sensor_lab_") as d:
         root=Path(d)
@@ -184,6 +207,7 @@ def main():
         check_calibrate(root)
         check_observer(root,trace)
         check_pose(root,trace)
+        check_all_in_one(root)
     print("MAZE_SENSOR_LABS_SYNTHETIC_PASS")
 
 if __name__=="__main__":main()
