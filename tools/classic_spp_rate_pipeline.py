@@ -21,7 +21,7 @@ from classic_spp_ports import classify_port
 
 BAUD = 115200
 WIRE_BYTES_PER_S = BAUD / 10.0  # UART 8N1: start + 8 data + stop
-SENSOR_MIN_HZ = 900.0
+SENSOR_MIN_HZ = 980.0
 MAX_UTILIZATION = 0.40
 HEADER = ("session", "size_B", "target_Hz", "payload_Bps", "uart_pct",
           "generated", "accepted", "host_received", "host_receive_pct",
@@ -184,11 +184,25 @@ def refine_against_baseline(rows: list[dict]) -> None:
                 break
         if row["verdict"] != "CANDIDATE":
             continue
-        # Long-term phase-matched counts, not current COM timing, assess ISR.
-        base_late = (baseline.get("control_late") or 0) / max(1, baseline.get("generated") or 4000)
-        allowed_late = max(2, int(4000 * base_late) + 2)
-        if (row.get("control_late") or 0) > allowed_late:
+        # Compare phase-matched 1kHz IRQ counters with the quiet stage.
+        # Keep strictly <1 extra late tick per 1000 ticks; this is
+        # an engineering acceptance screen, not a hard real-time proof.
+        baseline_late_per_k = ((baseline.get("control_late") or 0) /
+                               max(1.0, (baseline.get("elapsed_s") or 4) * 1.0))
+        allowed_late = max(2, int(baseline_late_per_k * (row.get("elapsed_s") or 4)) + 2)
+        base_irq = baseline.get("irq_gt48_per_k")
+        test_irq = row.get("irq_gt48_per_k")
+        if (row.get("control_late") or 0) > allowed_late or (
+            base_irq is not None and test_irq is not None and
+            test_irq > base_irq + 1.0
+        ):
             row["verdict"] = "CONTROL_JITTER"
+    if any(baseline.get(k) is None or baseline[k] < SENSOR_MIN_HZ
+           for k in ("ctrl_Hz", "imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz")):
+        baseline["verdict"] = "BASELINE_INSUFFICIENT"
+        for row in rows:
+            if row["verdict"] == "CANDIDATE":
+                row["verdict"] = "BASELINE_INSUFFICIENT"
 
 
 def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
@@ -213,7 +227,7 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
             k = str(row["size_B"])
             recommended[k] = max(recommended.get(k, 0), row["target_Hz"])
     summary = {
-        "environment": "Classic SPP COM16 or other Windows outgoing port",
+        "environment": "JDY-33 Classic SPP Windows outgoing COM",
         "port": port, "baud": BAUD, "uart_8n1_ceiling_Bps": WIRE_BYTES_PER_S,
         "elapsed_capture_s": round(duration_s, 3),
         "suite_done": complete, "motor": "LOCKED (no motor PWM applied)",
@@ -227,14 +241,15 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
             "No motor-on, maze exploration motion, vibration, electrical motor noise",
             "Host serial arrival gap is not one-way latency without clock synchronization",
             "All pass limits are engineering trial gates, not physical qualification until collected",
-            "Rates >40pct of 115200 8N1 link are treated as stress/limit, not recommended"
+            "Rates >40pct of 115200 8N1 link are treated as stress/limit, not recommended",
+            "A baseline/control verdict is a 4-second test window; repeat multiple trials and validate live navigation"
         ]
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary
 
 
-def run(port: str, seconds: int, out: Path, baud: int, baud_override: bool=False):
+def run(port: str, seconds: int, out: Path, baud: int):
     import serial
     from serial.tools import list_ports
     candidate = next((p for p in list_ports.comports()
