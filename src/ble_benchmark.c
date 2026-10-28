@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(CLASSIC_SPP_RATE_DIAG) && !defined(INTEGRATION_DIAG_MOTOR_OFF)
+#error "Classic SPP rate qualification is motor-OFF only"
+#endif
 #define MAX_PACKET 128U
 #define RX_CMD 48U
 #define MAX_RUN_MS 12000U
@@ -42,6 +45,53 @@ static uint32_t due_us, end_us, seq, generated, accepted, rejected, skipped;
 static uint32_t encode_cycles, encode_max, status_cycles, last_status_ms;
 static uint32_t base_tx_drop, base_rx_error;
 static uint32_t run_start_ms;
+#if defined(CLASSIC_SPP_RATE_DIAG)
+/* No Bluetooth downlink dependency. PA0 release after press starts a fixed
+ * motor-locked, sensor-loaded sweep; only main context formats/sends frames.
+ * Packet size is TOTAL bytes, including CRC16 (not ASCII encoded length). */
+typedef struct { uint8_t size; uint16_t hz; } SppCase;
+static const SppCase spp_cases[] = {
+    {32U,0U},    /* quiet baseline with all 1-kHz sensors enabled */
+    {20U,100U}, {20U,200U}, {32U,50U}, {32U,100U},
+    {64U,20U}, {64U,40U}, {64U,60U}, {64U,80U}, {64U,120U},
+    {96U,25U}, {96U,50U}, {128U,20U}, {128U,40U}, {128U,80U}
+};
+#define SPP_CASE_COUNT (sizeof(spp_cases)/sizeof(spp_cases[0]))
+#define SPP_CASE_MS 4000U
+#define SPP_GAP_MS 2000U
+static uint8_t spp_started, spp_finished, spp_index;
+static uint8_t spp_button_prev, spp_button_armed;
+static uint32_t spp_wait_at, spp_hello_at;
+static uint8_t spp_have_end;
+static void SppSnapshot(char phase)
+{
+    Control_DebugStats_t c;
+    IR_Diagnostics_t ir;
+    BT_Profile_t b;
+    MPU6050_Snapshot_t snap={0};
+    Control_GetDebugStats(&c);
+    IR_GetDiagnostics(&ir);
+    BT_GetProfile(&b);
+    (void)MPU6050_GetSnapshot(&mpu,&snap);
+    BT_Printf("!R,s=%u,p=%c,ms=%lu,tick=%lu,late=%lu,gap=%lu,gyro=%lu,valid=%lu,stale=%lu,ir=%lu,irfail=%lu,irfresh=%lu,drop=%lu,q=%u,locked=%u\n",
+        (unsigned)session,phase,(unsigned long)millis(),
+        (unsigned long)c.ticks,(unsigned long)c.late_gt50us,
+        (unsigned long)c.gaps_gt1500us,(unsigned long)mpu.fresh_gyro_reads,
+        (unsigned long)c.gyro_valid_ticks,
+        (unsigned long)c.gyro_invalid_after_first_valid,
+        (unsigned long)ir.scans_completed,(unsigned long)ir.scans_failed,
+        (unsigned long)c.ir_fresh_ticks,(unsigned long)b.tx_drop,
+        (unsigned)b.tx_queue,(unsigned)Motor_OutputsLocked());
+    /* Cumulative histogram; PC computes per-case differences. */
+    BT_Printf("!T,s=%u,p=%c,b0=%lu,b1=%lu,b2=%lu,b3=%lu,b4=%lu,b5=%lu,b6=%lu,b7=%lu\n",
+        (unsigned)session,phase,
+        (unsigned long)c.irq_hist[0],(unsigned long)c.irq_hist[1],
+        (unsigned long)c.irq_hist[2],(unsigned long)c.irq_hist[3],
+        (unsigned long)c.irq_hist[4],(unsigned long)c.irq_hist[5],
+        (unsigned long)c.irq_hist[6],(unsigned long)c.irq_hist[7]);
+}
+static void SppAutoPoll(uint32_t now_ms);
+#endif
 
 static void Put16(uint8_t *d, int16_t v)
 {
@@ -151,6 +201,11 @@ static void EndRun(void)
          (unsigned)b.tx_queue_peak,
          (unsigned long)(b.tx_drop-base_tx_drop),
          (unsigned long)(RxErrors(&b)-base_rx_error));
+#if defined(CLASSIC_SPP_RATE_DIAG)
+    SppSnapshot('E');
+    spp_have_end=1U;
+    spp_wait_at=millis();
+#endif
 }
 static void MakePacket(uint8_t size)
 {
@@ -211,7 +266,7 @@ static void StartRun(uint8_t size, uint16_t hz, uint32_t duration_ms)
     BT_Profile_t b;
     if (running || size<16U || size>MAX_PACKET ||
         (size!=16U && size!=20U && size!=32U &&
-         size!=64U && size!=128U) ||
+         size!=64U && size!=96U && size!=128U) ||
         hz>400U || duration_ms<1000U || duration_ms>MAX_RUN_MS ||
         !SensorsReady()) {
         BT_SendString("!ERR,reason=RUN_REJECTED\n");
@@ -241,6 +296,9 @@ static void StartRun(uint8_t size, uint16_t hz, uint32_t duration_ms)
     base_tx_drop=b.tx_drop;
     base_rx_error=RxErrors(&b);
     running=1U;
+#if defined(CLASSIC_SPP_RATE_DIAG)
+    SppSnapshot('B');
+#endif
     BT_Printf("!B,s=%u,size=%u,hz=%u,ms=%lu\n",
         (unsigned)session,(unsigned)size,(unsigned)hz,
         (unsigned long)duration_ms);
@@ -301,6 +359,51 @@ static void Handle(const char *cmd)
                   hex, (unsigned)n);
     }
 }
+#if defined(CLASSIC_SPP_RATE_DIAG)
+static void SppAutoPoll(uint32_t now_ms)
+{
+    uint8_t pressed;
+    BT_Profile_t b;
+    if (spp_finished) return;
+    if (!spp_started) {
+        pressed=Board_ButtonPressed();
+        /* Discard a button held during boot; require observed release first.
+         * A full new press + release begins the sweep, never the motors. */
+        if (!pressed && !spp_button_armed) spp_button_armed=1U;
+        if (spp_button_armed && spp_button_prev && !pressed &&
+            SensorsReady()) {
+            spp_started=1U;
+            spp_index=0U;
+            spp_have_end=0U;
+            BT_Printf("!Q,state=START,cases=%u,duration_ms=%u,gap_ms=%u,locked=1\n",
+                (unsigned)SPP_CASE_COUNT,(unsigned)SPP_CASE_MS,
+                (unsigned)SPP_GAP_MS);
+            StartRun(spp_cases[0].size,spp_cases[0].hz,SPP_CASE_MS);
+        }
+        spp_button_prev=pressed;
+        if ((uint32_t)(now_ms-spp_hello_at)>=2000U) {
+            spp_hello_at=now_ms;
+            BT_Printf("!Q,state=READY,cal=%u,ready=%u,locked=%u,pa0=PRESS_RELEASE\n",
+                (unsigned)mpu.cal_state,(unsigned)SensorsReady(),
+                (unsigned)Motor_OutputsLocked());
+        }
+        return;
+    }
+    if (running || !spp_have_end ||
+        (uint32_t)(now_ms-spp_wait_at)<SPP_GAP_MS) return;
+    BT_GetProfile(&b);
+    if (b.tx_queue>256U) return; /* Drain before next step, no backlog bursts. */
+    spp_have_end=0U;
+    spp_index++;
+    if (spp_index>=SPP_CASE_COUNT) {
+        spp_finished=1U;
+        BT_Printf("!Q,state=DONE,cases=%u,locked=%u\n",
+                  (unsigned)SPP_CASE_COUNT,(unsigned)Motor_OutputsLocked());
+        return;
+    }
+    StartRun(spp_cases[spp_index].size,spp_cases[spp_index].hz,SPP_CASE_MS);
+}
+#endif
 static void PumpCommands(void)
 {
     uint8_t byte, budget=48U;
@@ -372,6 +475,11 @@ int BleBenchmark_Main(void)
     IR_StartScan();
     Control_Init(&mpu);
     Control_Start();
+#if defined(CLASSIC_SPP_RATE_DIAG)
+    /* TX-only qualification: MCU never consumes unqualified Classic
+     * downlink bytes. No commands may start motion in this firmware. */
+    USART2->CR1 &= ~(USART_CR1_RE | USART_CR1_RXNEIE);
+#endif
     BT_Printf("!BOOT,ver=1,mode=%s,baud=%lu\n",
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
             "ON",
@@ -382,7 +490,9 @@ int BleBenchmark_Main(void)
     for (;;) {
         uint32_t now_ms;
         MPU6050_Update(&mpu);
+#if !defined(CLASSIC_SPP_RATE_DIAG)
         PumpCommands();
+#endif
         now_ms=millis();
 #if defined(INTEGRATION_DIAG_MOTOR_ON)
         Sweep_Update(now_ms,&mpu);
@@ -392,6 +502,9 @@ int BleBenchmark_Main(void)
         if (running && !Sweep_IsActive()) EndRun();
 #endif
         PollRun();
+#if defined(CLASSIC_SPP_RATE_DIAG)
+        SppAutoPoll(now_ms);
+#endif
         if ((uint32_t)(now_ms-last_status_ms)>=1000U) {
             last_status_ms=now_ms;
             PrintStatus(0U);
