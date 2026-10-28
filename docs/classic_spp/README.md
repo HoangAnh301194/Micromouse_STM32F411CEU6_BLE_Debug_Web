@@ -170,6 +170,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\windows_bluetooth_li
 
 Log có thể chứa tên thiết bị và Bluetooth address; tránh đăng nguyên bản công khai.
 
+## 9A. Kiểm thử giới hạn SPP với TIM11/IR/IMU 1 kHz
+
+Có bộ **`classic_spp_rate_diag_96m`** và **`tools/classic_spp_rate_pipeline.py`** để đo tốc độ telemetry 20 mức tải 20–128 B, so sánh dữ liệu PC với bộ đếm thời gian thực trên MCU, sinh `cases.csv`/`summary.json`. Chế độ benchmark khóa motor và khởi động bằng PA0; **không tự đánh giá được tải motor/điều hướng thực tế**.
+
+[Chi tiết cách nạp, chạy và ngưỡng nghiệm thu](../system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md).
+
 ## 9. Kiểm thử offline
 
 ~~~powershell
