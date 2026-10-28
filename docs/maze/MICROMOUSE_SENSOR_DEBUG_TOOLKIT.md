@@ -23,7 +23,7 @@
 | `ir_calibration_lab.py` | PC offline | Fit LUT phi tuyến **từng kênh + vật liệu + ánh sáng** trên các khoảng cách đo thật, isotonic monotonic, holdout; không extrapolate. |
 | `maze_wall_observer.py edges` | PC offline | Phát hiện ứng viên cạnh tường xuất hiện/mất; đo sai số vị trí mép với nhãn ground truth tính theo mm encoder. |
 | `maze_wall_observer.py fusion` | PC offline | Wall state `WALL/OPEN/UNKNOWN`, hai kênh mâu thuẫn → `UNKNOWN`; tạo ứng viên dữ liệu cell kế tiếp khi có hình học được đo. |
-| `maze_readiness_suite.py` (đã có) | PC offline | Tiền kiểm, so sánh nhiều Wall PID run, confusion matrix theo nhãn TRAIN/TEST của 6 kênh. |\n| `maze_pose_fusion_lab.py` | PC offline | Replay sai số yaw gyro–encoder và pose tích phân bằng complementary filter; xuất optical residual L0/R0 độc lập. |
+| `maze_readiness_suite.py` (đã có) | PC offline | Tiền kiểm, so sánh nhiều Wall PID run, confusion matrix theo nhãn TRAIN/TEST của 6 kênh. |\n| `maze_pose_fusion_lab.py` | PC offline | Replay sai số yaw gyro–encoder và pose tích phân bằng complementary filter; xuất optical residual L0/R0 độc lập. |\n| `maze_sensor_suite.py` | PC offline | **Chạy một lệnh** decode/checksum + viewer + edges, tùy chọn calibration/fusion/pose với cùng dữ liệu. |
 
 ## 3. Quy trình thu log lần đầu (không cho motor chạy)
 
