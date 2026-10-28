@@ -29,7 +29,7 @@ def parse_lines(lines):
     for ix,line in enumerate(lines,1):
         # MW is a separate six-IR capture protocol. A substring search
         # accidentally treated "MW,<seq>" as legacy "W,<seq>" rows.
-        match=re.search(r"(?<![\\w])W,",line)
+        match=re.search(r"(?<![A-Za-z0-9_])W,",line)
         if not match:continue
         pos=match.start()
         record=line[pos:].strip()
