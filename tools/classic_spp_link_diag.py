@@ -75,7 +75,7 @@ def run(port_name: str, baud: int, seconds: float, sample_ms: int,
     raw_preview_limit = 256
     preview = bytearray()
     try:
-        # Do not drive modem control signals before the port opens by accident.
+        # Explicitly match the GUI default modem control state for A/B testing.
         link = serial.Serial(port=None, baudrate=baud, timeout=sample_ms / 1000.0,
                              write_timeout=1)
         link.dtr = dtr
@@ -128,8 +128,10 @@ def main() -> int:
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--seconds", type=float, default=30.0)
     parser.add_argument("--sample-ms", type=int, default=200)
-    parser.add_argument("--dtr", action="store_true", help="Test DTR enabled (default disabled)")
-    parser.add_argument("--rts", action="store_true", help="Test RTS enabled (default disabled)")
+    parser.add_argument("--dtr", action=argparse.BooleanOptionalAction, default=True,
+                        help="DTR enabled by default, matching the GUI; --no-dtr for A/B")
+    parser.add_argument("--rts", action=argparse.BooleanOptionalAction, default=True,
+                        help="RTS enabled by default, matching the GUI; --no-rts for A/B")
     parser.add_argument("--log", type=Path, help="JSON Lines diagnostic log destination")
     args = parser.parse_args()
     if args.seconds <= 0 or args.sample_ms < 50 or args.baud <= 0:
