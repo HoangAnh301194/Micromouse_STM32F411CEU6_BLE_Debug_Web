@@ -58,3 +58,19 @@ python tools/maze_sensor_suite.py --ble maze_01_ble.txt --manifest calib_manifes
 ```
 
 Lệnh minh họa dùng `75` mm **chỉ làm placeholder** cho wheel-track phải đo thật. Có thể bỏ `--manifest`, `--model`, `--wheel-track-mm` nếu chưa có dữ liệu; tool vẫn kiểm tra checksum + vẽ 6 kênh + tìm ứng viên cạnh tường. Kết quả tạo `results/maze_sensor_suite/all_summary.json`, cùng `capture/viewer.html`, `calibration/calibration_viewer.html` và `wall_fusion/wall_state_viewer.html` nếu đủ đầu vào.
+
+## P0 mới — đo 6 IR trong khi Wall PID tự chạy 720 mm
+
+**Không cần firmware mode khác:** `wall_pid_4cell_96m` hiện ghi 6× EMA0,10, encoder, gyro, PWM, speed/error ở **200 Hz vào RAM**. Kết thúc motion mới phát BLE `W` (20 Hz) rồi `MW` (200 Hz, FNV32). **Không xóa log cũ.** Hướng dẫn an toàn và giới hạn thực tế: [WALL_PID_6IR_FULLRATE_BLE.md](../docs/motion/WALL_PID_6IR_FULLRATE_BLE.md).
+
+```powershell
+git pull --ff-only origin giomuadongbac
+python tests/regression/wall_pid_6ir_report_test.py
+python -m platformio run -e wall_pid_4cell_96m -t upload
+# Sau test: Export Web BLE terminal thành wall_run01.txt
+python tools/wall_pid_6ir_report.py --input wall_run01.txt
+# Mở wall_run01_wall_6ir/viewer.html
+python tools/maze_wall_observer.py edges --trace wall_run01_wall_6ir/full_trace_200hz.csv
+```
+
+**Trước khi chạy motor:** gá nâng bánh, test PA0 dừng khẩn, bố trí VM cutoff độc lập và đường trống có vùng hãm dư. Dữ liệu PWM/IR có thể ghi khi robot chạy, nhưng **không có nghĩa Wall PID/độ trôi đã nghiệm thu**. Cần đợi `MW,END` (có thể mất vài phút) mới Export BLE. Nếu FNV32 hoặc frame count sai, tool đánh dấu log không đầy đủ.
