@@ -38,11 +38,12 @@ def available_ports():
 def suggested_port(ports):
     """Prefer a clearly identified JDY/SPP COM port; never infer USB-TTL."""
     for port in ports:
-        descriptor = " ".join((port.description or "", port.manufacturer or "",
-                               port.hwid or "")).lower()
-        if any(tag in descriptor for tag in ("jdy-33", "standard serial over bluetooth",
-                                             "bluetooth serial", "spp")):
+        descriptor = " ".join((port.description or "", port.manufacturer or "")).lower()
+        if "jdy-33" in descriptor or "nezumi_chan_spp" in descriptor:
             return port.device
+    # Multiple "Standard Serial over Bluetooth" ports often include INCOMING
+    # virtual ports, which cannot initiate a connection to the robot.
+    # Never silently pick the first generic Bluetooth COM.
     if any(p.device.upper() == PREFERRED_PORT for p in ports):
         return PREFERRED_PORT
     return None
@@ -75,25 +76,39 @@ class SPPReader:
         self.stop.set()
 
     def _run(self, port: str, baud: int):
+        connected_at = None
+        total_bytes = 0
+        fault = None
         try:
             import serial
             with serial.Serial(port=port, baudrate=baud, timeout=0.15,
                                write_timeout=0.5) as link:
-                self._emit("state", "Connected to %s at %d (RX-only)" % (port, baud))
+                connected_at = time.monotonic()
+                self._emit("state", "%s COM open; waiting for SPP RX bytes" % port)
                 framer = LineFramer()
                 while not self.stop.is_set():
                     chunk = link.read(link.in_waiting or 1)
                     if not chunk:
                         continue
+                    total_bytes += len(chunk)
+                    if total_bytes == len(chunk):
+                        self._emit("state", "SPP RX CONFIRMED: %s (%d bytes)" % (port, len(chunk)))
                     for line in framer.feed(chunk):
                         self._emit("line", line)
                     if framer.discarded:
                         self._emit("warning", "Line buffer overflow: %d" % framer.discarded)
                         framer.discarded = 0
         except Exception as exc:
-            self._emit("warning", "SPP: %s" % exc)
+            age = ("before COM opened" if connected_at is None else
+                   "%.2fs after COM open" % (time.monotonic() - connected_at))
+            fault = "%s: %s (%s; %d RX bytes)" % (type(exc).__name__,
+                                                   exc, age, total_bytes)
+            self._emit("warning", "SPP DISCONNECT: " + fault)
         finally:
-            self._emit("closed", "Disconnected")
+            state = ("Disconnected after SPP error: " + fault if fault else
+                     "Disconnected by user" if self.stop.is_set() else
+                     "SPP port closed")
+            self._emit("closed", state)
 
 
 class Dashboard:
