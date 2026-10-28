@@ -34,9 +34,11 @@ REGRESSION = (
     "tests/regression/wall_pid_ble_report_test.py",
     "tests/regression/ir_full_qualification_test.py",
     "tests/regression/platformio_profile_cleanup_test.py",
+    "tests/regression/maze_sensor_labs_test.py",
 )
 ENVIRONMENTS = ("wall_pid_4cell_96m", "ir_burst_diag_96m",
-                "turn_pid_diag_96m", "flash_map_diag_96m")
+                "turn_pid_diag_96m", "flash_map_diag_96m",
+                "maze_sensor_capture_96m")
 
 
 def write_json(path: Path, data: object) -> None:
