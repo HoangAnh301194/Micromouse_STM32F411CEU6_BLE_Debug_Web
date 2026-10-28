@@ -47,9 +47,9 @@ def check_capture(root:Path):
     missing=s.replace("MC,30,150,130","BAD,30,150,130",1)
     _,bad=capture.decode_text(missing)
     assert not bad["complete"] and any("COUNT_MISMATCH" in x for x in bad["faults"])
-    assert capture.main(["--input",str(root/"ble_bad.txt")])==2 if (
-        root.joinpath("ble_bad.txt").write_text(missing,encoding="utf8") is None
-    ) else False
+    (root/"ble_bad.txt").write_text(missing,encoding="utf8")
+    assert capture.main(["--input",str(root/"ble_bad.txt"),
+                         "--output",str(root/"bad_output")])==2
     return root/"decoded"/"trace.csv"
 
 def write_trace(path:Path,channel:str,signal:int):
