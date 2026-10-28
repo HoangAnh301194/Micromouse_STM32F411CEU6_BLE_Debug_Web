@@ -1,10 +1,12 @@
 /* Single-shot 4-cell L0/R0 dual-wall PID; PA0 physical START/STOP.
  * BLE PA2/PA3 TX only. DO NOT initialize USART1 PA9/PA10.
- * Live acquisition + control in TIM11, 20Hz RAM trace, post-run
- * paced BLE text replay at <=20 ASCII bytes per 125ms.
+ * Live control TIM11 1kHz; retain existing 20Hz W trace AND
+ * add full six-channel 200Hz MW trace in SRAM. All telemetry replay
+ * only after motor lock, 20-byte chunks every 125ms.
  * Motor outputs are locked at boot and latched at termination. */
 #if defined(WALL_PID_TEST_MODE)
 #include "wall_pid_test.h"
+#include "wall_pid_trace.h"
 #include "board.h"
 #include "bt_debug.h"
 #include "control.h"
@@ -98,6 +100,9 @@ void WallPidTest_ControlTick(int32_t left,int32_t right,
     in.left_count=left;in.right_count=right;
     in.yaw_deg=yaw;in.gyro_dps=rate;
     write=WP_Step(&st.ctl,&in);
+    /* Copy six EMA IR channels, both encoders, gyro, PID & PWM at 200Hz.
+     * Constant-time SRAM writes only; no BLE, heap or Flash in TIM11. */
+    WPT_Append(st.ctl.ticks,&in,&st.ctl);
     if(st.ctl.state!=WP_RUNNING){
         Finish(st.ctl.reason);
         return;
@@ -153,6 +158,7 @@ static void StartPhysical(void)
         WP_Init(&st.ctl);
         if(WP_Start(&st.ctl,&in) && Motor_WallPidTestUnlockOutputs()){
             st.trace_count=0U;st.stop_consumed=0U;
+            WPT_Reset();
             st.reason=WP_NONE;
             st.started_once=1U;st.started_ms=millis();
             st.phase=WT_RUN;success=1U;
@@ -298,6 +304,13 @@ int WallPidTest_Main(void)
                 (long)(post_dist*10.0f),
                 (long)((post_dist-st.ctl.distance_mm)*10.0f),
                 (unsigned)Motor_OutputsLocked());
+        }
+        /* Preserve the legacy W 20Hz summary. Once its TRACE_END and
+         * W,POST are queued, replay the independent 200Hz six-IR log.
+         * BLE transfer starts only after Motor_LockOutputs(). */
+        if(st.phase==WT_RESULT && tx_done && post_logged){
+            WPT_BeginReplay();
+            (void)WPT_ServiceReplay(now);
         }
         if(st.phase==WT_IDLE && (uint32_t)(now-last_status)>=1500U){
             IR_WallSnapshot ir;
