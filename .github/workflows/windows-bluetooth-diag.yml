@@ -1,0 +1,35 @@
+name: Windows Bluetooth host diagnostics
+
+on:
+  push:
+    branches: [giomuadongbac]
+    paths:
+      - 'tools/windows_bluetooth_link_debug.ps1'
+      - 'tools/classic_spp_link_diag.py'
+      - 'tools/classic_spp_dashboard.py'
+      - '.github/workflows/windows-bluetooth-diag.yml'
+  workflow_dispatch:
+
+jobs:
+  windows-debug-script:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PowerShell monitor syntax and self-test (no Bluetooth hardware)
+        shell: powershell
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'tools/windows_bluetooth_link_debug.ps1').Path,
+            [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Host
+            throw 'PowerShell parser errors'
+          }
+          & '.\tools\windows_bluetooth_link_debug.ps1' -SelfTest
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check diagnostic Python syntax
+        run: python -m py_compile tools/classic_spp_link_diag.py tools/classic_spp_dashboard.py
