@@ -27,7 +27,8 @@ SENSOR_MIN_HZ = 980.0
 RECOMMEND_HEADROOM = 0.20
 EXPECTED_CASES = 64
 HEADER = ("session", "size_B", "target_Hz", "payload_Bps", "uart_pct",
-          "generated", "accepted", "host_received", "host_receive_pct",
+          "generated", "generated_Hz", "schedule_achieved_pct",
+          "accepted", "host_received", "host_receive_pct",
           "crc_global", "crc_case", "tx_rejected", "scheduler_skipped", "uart_drop",
           "ctrl_Hz", "imu_fresh_Hz", "ir_Hz", "ir_fresh_Hz", "ir_fail",
           "control_late", "control_gap", "irq_gt48_per_k", "tx_queue_peak",
@@ -114,6 +115,11 @@ def assess(events: list[dict], frames: list[dict], crc_global: int,
         rec_count = len({f["seq"] for f in rec})
         reception = divide(rec_count * 100, accepted)
         case_crc = crc_by_session.get(session, 0) if crc_by_session is not None else crc_global
+        # SPP queue may take extra time to drain after the requested TX
+        # interval, so use !B's requested active duration, not delayed !E.
+        active_s = (begin.get("ms") / 1000.0) if begin and begin.get("ms") else None
+        generated_hz = divide(generated, active_s) if active_s else None
+        scheduled_pct = divide(100 * generated, hz * active_s) if active_s and hz and generated is not None else None
         # No PASS from host records without two MCU snapshots, even if COM worked.
         complete = (begin is not None and end is not None and
                     before is not None and after is not None and
@@ -125,7 +131,10 @@ def assess(events: list[dict], frames: list[dict], crc_global: int,
             "session": session, "size_B": size, "target_Hz": hz,
             "payload_Bps": size * hz if size is not None and hz is not None else None,
             "uart_pct": utilization,
-            "generated": generated, "accepted": accepted,
+            "generated": generated,
+            "generated_Hz": generated_hz,
+            "schedule_achieved_pct": scheduled_pct,
+            "accepted": accepted,
             "host_received": rec_count, "host_receive_pct": reception,
             "crc_global": crc_global, "crc_case": case_crc,
             "tx_rejected": rejected,
@@ -155,6 +164,7 @@ def assess(events: list[dict], frames: list[dict], crc_global: int,
                 # even if a 4s burst temporarily fits in the TX FIFO.
                 size * hz > WIRE_BYTES_PER_S,
                 rejected != 0,
+                scheduled_pct is None or scheduled_pct < 98.0,
                 skipped is None or skipped > max(1, generated * 0.01),
                 end.get("drop") != 0,
                 ctrl_gap != 0,
@@ -296,6 +306,8 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
         "elapsed_capture_s": round(duration_s, 3),
         "suite_done": complete, "motor": "LOCKED (no motor PWM applied)",
         "packet_crc_failures": decoder.crc_failures,
+        "crc_unattributed_to_case": max(0, decoder.crc_failures -
+                                       sum(int(row["crc_case"] or 0) for row in rows)),
         "unframed_bytes": decoder.discarded,
         "raw_received_bytes": decoder.raw_bytes,
         "rows": rows,
@@ -311,6 +323,7 @@ def save(out: Path, rows: list[dict], events: list[dict], frames: list[dict],
             "All pass limits are engineering trial gates, not physical qualification until collected",
             "The upper sweep tests past 100% UART capacity as deliberate overload; cannot be sustained",
             "Recommendation is a tested rate below 80% of the first failing load or physical UART 8N1 limit",
+            "A missing/corrupt marker or unattributed CRC error must be reviewed before using a recommendation",
             "A baseline/control verdict is a 4-second test window; repeat multiple trials and validate live navigation"
         ]
     }
