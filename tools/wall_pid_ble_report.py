@@ -6,6 +6,7 @@ Example: python tools/wall_pid_ble_report.py --input my_terminal.txt
 import argparse
 import csv
 import json
+import re
 from pathlib import Path
 import statistics
 
@@ -26,8 +27,11 @@ def parse_lines(lines):
     end_seen=False
     invalid=[]
     for ix,line in enumerate(lines,1):
-        pos=line.find("W,")
-        if pos<0:continue
+        # MW is a separate six-IR capture protocol. A substring search
+        # accidentally treated "MW,<seq>" as legacy "W,<seq>" rows.
+        match=re.search(r"(?<![\\w])W,",line)
+        if not match:continue
+        pos=match.start()
         record=line[pos:].strip()
         fields=record.split(",")
         if len(fields)>=3 and fields[1]=="END":
