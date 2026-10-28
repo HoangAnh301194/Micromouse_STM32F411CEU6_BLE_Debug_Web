@@ -72,8 +72,19 @@ class SppRateTests(unittest.TestCase):
         frames = session_frames(2, 80, 128)
         rows = assess(events, frames, 0)
         refine_against_baseline(rows)
-        self.assertEqual(rows[1]["verdict"], "LIMIT_OR_FAIL")
+        self.assertEqual(rows[1]["verdict"], "STRESS_CLEAN_ABOVE_BUDGET")
         self.assertGreater(rows[1]["uart_pct"], 80)
+
+    def test_crc16_bad_frame_rejected(self):
+        payload = bytearray([0xb5, 0x62, 1, ord("D"), 20, 1])
+        payload += (1).to_bytes(4, "little") + (42).to_bytes(4, "little")
+        payload += bytes([0, 0, 0, 0])
+        payload += crc16(payload).to_bytes(2, "little")
+        payload[10] ^= 0x01
+        dec = Decoder()
+        dec.feed(bytes(payload))
+        self.assertEqual(len(dec.frames), 0)
+        self.assertGreater(dec.crc_failures, 0)
 
     def test_control_gap_rejected(self):
         events = session_events(1, 32, 0) + session_events(2, 64, 40, gap=1)
