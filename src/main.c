@@ -1,6 +1,9 @@
 /* Central entrypoint only. Real application loops and diagnostic modes
  * reside in their own source files. Keep every exclusive main isolated. */
-#if defined(IR_BURST_DIAG)
+#if defined(MAZE_SENSOR_CAPTURE_MODE)
+int MazeSensorCapture_Main(void);
+int main(void) { return MazeSensorCapture_Main(); }
+#elif defined(IR_BURST_DIAG)
 int IR_BurstDiag_Main(void);
 int main(void) { return IR_BurstDiag_Main(); }
 #elif defined(WALL_PID_TEST_MODE)
