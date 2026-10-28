@@ -25,7 +25,7 @@ SENSOR_MIN_HZ = 980.0
 # No fixed 40% qualification ceiling. Test up to overload, then derive
 # recommendation from measured first failure and a 20% throughput headroom.
 RECOMMEND_HEADROOM = 0.20
-EXPECTED_CASES = 57
+EXPECTED_CASES = 64
 HEADER = ("session", "size_B", "target_Hz", "payload_Bps", "uart_pct",
           "generated", "accepted", "host_received", "host_receive_pct",
           "crc_global", "crc_case", "tx_rejected", "scheduler_skipped", "uart_drop",
