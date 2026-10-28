@@ -29,7 +29,7 @@ typedef struct {
     uint16_t elapsed_ms;
     uint16_t distance_10mm;
     uint16_t l0,r0;
-    int16_t error_100mm,speed_mm_s,target_mm_s;
+    int16_t error_norm_1000,speed_mm_s,target_mm_s;
     int16_t pwm_l,pwm_r;
 } WT_Trace;
 
@@ -109,7 +109,7 @@ void WallPidTest_ControlTick(int32_t left,int32_t right,
         t->distance_10mm=(uint16_t)(st.ctl.distance_mm*10.0f);
         t->l0=ir->ema10_adc[IR_WALL_L0];
         t->r0=ir->ema10_adc[IR_WALL_R0];
-        t->error_100mm=(int16_t)(st.ctl.error_mm*100.0f);
+        t->error_norm_1000=(int16_t)(st.ctl.error_norm*1000.0f);
         t->speed_mm_s=(int16_t)st.ctl.speed_mm_s;
         t->target_mm_s=(int16_t)st.ctl.target_speed_mm_s;
         t->pwm_l=st.ctl.pwm_l;
@@ -162,7 +162,7 @@ static void StartPhysical(void)
     }
     if(!irq)__enable_irq();
     if(success){
-        BT_Printf("W,START,mm=720,diam=34,cpr=1430,pwmcap=800,l=%u,r=%u\n",
+        BT_Printf("W,START,mm=720,diam=34,cpr=1430,pwmcap=800,error=REL_NORM,l=%u,r=%u\n",
                   (unsigned)in.ir.ema10_adc[IR_WALL_L0],
                   (unsigned)in.ir.ema10_adc[IR_WALL_R0]);
     } else BT_SendString("W,REJECT,WALL_ADC_OR_MOTOR\n");
@@ -191,13 +191,13 @@ static void PollButton(uint32_t now)
 static void StartTraceReplay(void)
 {
     /* No BLE transfer in the 1kHz ISR; only after stop is latched. */
-    BT_Printf("W,END,%s,ms=%lu,d10=%ld,avgerr100=%ld,peakerr100=%ld,vpk=%ld,pkpwm=%d,locked=%u,trace=%u\n",
+    BT_Printf("W,END,%s,ms=%lu,d10=%ld,avgen1000=%ld,peakn1000=%ld,vpk=%ld,pkpwm=%d,locked=%u,trace=%u\n",
        Why((WP_Reason)st.reason),
        (unsigned long)st.ctl.ticks,
        (long)(st.ctl.distance_mm*10.0f),
        (long)(st.ctl.pid_updates>0U?
-              100.0f*st.ctl.abs_error_sum_mm/(float)st.ctl.pid_updates:0.0f),
-       (long)(st.ctl.peak_abs_error_mm*100.0f),
+              1000.0f*st.ctl.abs_error_sum_norm/(float)st.ctl.pid_updates:0.0f),
+       (long)(st.ctl.peak_abs_error_norm*1000.0f),
        (long)st.ctl.peak_speed_mm_s,(int)st.ctl.peak_pwm_pm,
        (unsigned)Motor_OutputsLocked(),
        (unsigned)st.trace_count);
@@ -234,7 +234,7 @@ static void ServiceTraceBle(uint32_t now)
         int k=snprintf(tx_line,sizeof(tx_line),
             "W,%u,%u,%u,%u,%d,%d,%d,%d,%d\n",
             (unsigned)t->elapsed_ms,(unsigned)t->distance_10mm,
-            (unsigned)t->l0,(unsigned)t->r0,(int)t->error_100mm,
+            (unsigned)t->l0,(unsigned)t->r0,(int)t->error_norm_1000,
             (int)t->speed_mm_s,(int)t->target_mm_s,
             (int)t->pwm_l,(int)t->pwm_r);
         if(k<=0||(size_t)k>=sizeof(tx_line)){
