@@ -19,6 +19,8 @@ import sys
 import time
 import traceback
 
+from classic_spp_ports import classify_port
+
 
 def iso_now() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="milliseconds")
@@ -50,7 +52,9 @@ def find_port(port_name: str):
         if p.device.lower() == port_name.lower():
             selected = p
     return selected, [
-        {"port": p.device, "description": p.description, "hwid": p.hwid}
+        {"port": p.device, "description": p.description, "hwid": p.hwid,
+         "direction_guess": classify_port(p.hwid or "")[0],
+         "remote_address": classify_port(p.hwid or "")[1]}
         for p in ports
     ]
 
@@ -65,8 +69,21 @@ def run(port_name: str, baud: int, seconds: float, sample_ms: int,
         recorder.emit("not_listed", explanation="Outgoing SPP port not listed by Windows; verify COM Ports tab")
         return 2
     hwid = (chosen.hwid or "").upper()
-    if "BTHENUM" not in hwid:
-        recorder.emit("warning", message="Selected COM is not identified as a Bluetooth serial port by Windows")
+    direction, remote_address = classify_port(hwid)
+    recorder.emit("port_classification", port=port_name,
+                  direction_guess=direction, remote_address=remote_address)
+    if direction == "incoming":
+        recorder.emit("wrong_port", message=(
+            "This COM has all-zero remote Bluetooth address: likely an INCOMING "
+            "Windows listener, not the JDY-33 outgoing SPP port. "
+            "Select the Outgoing port shown in More Bluetooth settings > COM Ports."
+        ))
+        return 3
+    if direction in ("unknown", "other"):
+        recorder.emit("warning", message=(
+            "Cannot confirm this COM is outgoing Bluetooth SPP. "
+            "Check its Direction and Name in Windows Bluetooth COM Ports."
+        ))
     recorder.emit("opening", port=port_name, baud=baud, dtr=dtr, rts=rts)
     start = time.monotonic()
     rx_bytes = 0
@@ -124,7 +141,8 @@ def run(port_name: str, baud: int, seconds: float, sample_ms: int,
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--port", required=True, help="Windows OUTGOING Bluetooth SPP COM, e.g. COM16")
+    parser.add_argument("--port", help="Windows OUTGOING Bluetooth SPP COM; avoid Incoming")
+    parser.add_argument("--list", action="store_true", help="Print Bluetooth COM directions and remote addresses without opening any port")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--seconds", type=float, default=30.0)
     parser.add_argument("--sample-ms", type=int, default=200)
@@ -134,6 +152,16 @@ def main() -> int:
                         help="RTS enabled by default, matching the GUI; --no-rts for A/B")
     parser.add_argument("--log", type=Path, help="JSON Lines diagnostic log destination")
     args = parser.parse_args()
+    if args.list:
+        _, ports = find_port("")
+        for item in ports:
+            print("%-7s %-10s %-14s %s" % (
+                item["port"], item["direction_guess"],
+                item["remote_address"] or "-", item["description"]))
+        print("Heuristic only: verify the Outgoing port's device name in Windows Bluetooth COM Ports.")
+        return 0
+    if not args.port:
+        parser.error("--port required unless --list is specified")
     if args.seconds <= 0 or args.sample_ms < 50 or args.baud <= 0:
         parser.error("seconds, sample-ms and baud must be positive (sample-ms >= 50)")
     try:
