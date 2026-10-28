@@ -1,6 +1,6 @@
 /* Legacy production/integration orchestration extracted from main.c.
  * Body unchanged, to isolate motion and IR diagnostic entrypoints. */
-#if !defined(TURN_PID_DIAG) && !defined(WALL_PID_TEST_MODE) && !defined(SYSTEM_TEST_MODE) && \
+#if !defined(MAZE_SENSOR_CAPTURE_MODE) && !defined(TURN_PID_DIAG) && !defined(WALL_PID_TEST_MODE) && !defined(SYSTEM_TEST_MODE) && \
     !defined(BLE_RX_DIAG) && !defined(OLED_MPU_DIAG) && \
     !defined(IR_OLED_TEST) && !defined(IR_FILTER_DIAG) && \
     !defined(BLE_PROFILE_DIAG) && !defined(FLASH_MAP_DIAG)

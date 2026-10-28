@@ -6,7 +6,8 @@
 /* Dedicated 4-cell dual-wall prototype. Start/reference geometry:
  * user places the robot centred, both L0/R0 facing side walls.
  * Only L0/R0 contribute lateral PID error. IMU is FAULT GUARD ONLY.
- * 50..60mm slopes are provisional local scale factors, NOT a distance LUT. */
+ * IR transfer functions are nonlinear and UNCALIBRATED over 20..70mm.
+ * Use a bounded RELATIVE optical error, not fabricated millimetres. */
 #define WP_CELLS                 4U
 #define WP_CELL_MM             180.0f
 #define WP_TARGET_MM          (WP_CELLS * WP_CELL_MM)
@@ -20,8 +21,13 @@
 #define WP_DECEL_MM_S2      2000.0f
 #define WP_PWM_CAP_PM         800     /* PWM LIMIT, NOT continuously requested duty */
 #define WP_STEER_CAP_PM       200
-#define WP_LEFT_ADC_PER_MM     9.7811f
-#define WP_RIGHT_ADC_PER_MM   31.6575f
+/* Numeric regularizer ONLY, not an ADC wall/no-wall threshold. */
+#define WP_IR_NORM_OFFSET_ADC   32.0f
+#define WP_IR_ERROR_LIMIT       1.0f
+/* Gains use a dimensionless relative error and require hardware tuning. */
+#define WP_WALL_KP             200.0f
+#define WP_WALL_KI              20.0f
+#define WP_WALL_KD               0.5f
 
 typedef enum { WP_IDLE=0, WP_RUNNING=1, WP_DONE=2, WP_FAULT=3 } WP_State;
 typedef enum {
@@ -44,8 +50,8 @@ typedef struct {
     uint16_t last_l0_adc, last_r0_adc, last_l0_raw, last_r0_raw;
     uint32_t last_ir_age_us, last_ir_scan;
     float initial_yaw_deg;
-    float integral_error, last_error_mm, derivative_mm_s;
-    float error_mm, abs_error_sum_mm, peak_abs_error_mm;
+    float integral_error, last_error_norm, derivative_norm_s;
+    float error_norm, abs_error_sum_norm, peak_abs_error_norm;
     float distance_mm, speed_mm_s, target_speed_mm_s, ramp_speed_mm_s;
     float speed_integral_pm;
     float peak_speed_mm_s;

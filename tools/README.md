@@ -1,6 +1,128 @@
 # Host diagnostic and qualification tools (restored)
 
-The 33 historical `tools/` files were restored from `archive/debug-tools-precleanup-20261024`. At explicit user request on 24/10/2026, eight redundant copies are retired; **26 live files remain** (including this README and the OLED A/B qualification runner). Canonical regression tests live in `tests/regression/` and `tests/web/`, and the unique browser console lives in `web/ble_debug_console.html`. The archive remains unchanged.
+> **Mới — JDY-33 Bluetooth Classic SPP / Windows:** [Hướng dẫn kết nối đã nghiệm thu trên COM16](../docs/classic_spp/README.md), gồm `classic_spp_dashboard.py`, `classic_spp_link_diag.py`, `classic_spp_ports.py`, `classic_spp_protocol.py`, và `windows_bluetooth_link_debug.ps1`.
+
+
+## Bluetooth Classic SPP / JDY-33 — Hướng dẫn kết nối trực tiếp (Windows)
+
+**Đọc README đầy đủ:** [../docs/classic_spp/README.md](../docs/classic_spp/README.md).
+Đây là bộ công cụ SPP trên **cùng module JDY-33** của Micromouse STM32F411CEU6,
+không phải module phần cứng mới. Cấu hình đã thử trên Windows 11 ngày 28/10/2026:
+**Nezumi_Chan_SPP**, **COM16 Outgoing**, **115200 baud**, **40 giây RX = 1.955 byte**,
+không phát sinh lỗi nối tiếp. **COM16 không cố định ở máy khác.**
+
+### A. Sơ đồ hệ thống và module
+
+```text
+STM32F411CEU6 -- USART2 PA2(TX)/PA3(RX) -- JDY-33
+                                             |
+                                             | Bluetooth Classic SPP (không dây)
+                                             v
+                                 Windows COM Outgoing
+                                             |
+                     +-----------------------+-----------------------+
+                     |                                               |
+      classic_spp_link_diag.py                         classic_spp_dashboard.py
+       (thu log, test link)                            (Terminal / Maze / PID)
+```
+
+| File (tính từ gốc repository) | Vai trò |
+|---|---|
+| `src/bt_debug.c`, `include/bt_debug.h` | Driver UART USART2 115200 8N1 của STM32, giao tiếp JDY-33 |
+| `src/main.c`, `platformio.ini` | Firmware đang chạy và các cấu hình build |
+| `src/flash_map_diag.c`, `src/flash_map_protocol.c` | Phát map thử nghiệm `MAPCFG/MAPROW/MAPEND` khi nạp chế độ `flash_map_diag_96m` |
+| **`tools/classic_spp_dashboard.py`** | **Giao diện Python chính**: Terminal, bản đồ Maze, telemetry/PID, lưu và xem lại log |
+| `tools/classic_spp_link_diag.py` | Liệt kê COM; ghi thời gian mở kết nối, dữ liệu RX, các lỗi serial vào JSONL |
+| `tools/classic_spp_ports.py` | Hỗ trợ phân biệt cổng Windows Incoming/Outgoing; chỉ là heuristic |
+| `tools/classic_spp_protocol.py` | Xử lý các dòng UART, parser telemetry và map CRC32 |
+| `tools/windows_bluetooth_link_debug.ps1` | Theo dõi sự kiện Windows Bluetooth và PnP khi gặp lỗi |
+| `tests/regression/classic_spp_protocol_test.py` | Kiểm thử tự động cho parser và nhận diện COM |
+| `web/ble_debug_console.html` | Web BLE cũ (tên `Nezumi_Chan`), tách biệt Classic SPP |
+
+**Cảnh báo:** GUI hiện **chỉ nhận dữ liệu (RX-only)**; việc có thể thu telemetry từ
+STM32 không xác nhận đã điều khiển MCU qua SPP hay chạy đồng thời BLE + Classic.
+
+### B. Pull code, chuẩn bị phần cứng
+
+Trong PowerShell từ **thư mục gốc repo** (ví dụ `D:\MICROMOUSE_26\code_mau`):
+
+```powershell
+cd D:\MICROMOUSE_26\code_mau
+git switch giomuadongbac
+git pull --ff-only origin giomuadongbac
+python -m pip install pyserial
+```
+
+1. Cấp nguồn cho Micromouse để JDY-33 hoạt động; bật Bluetooth trên Windows.
+2. **Không cần cắm ST-Link, USB–TTL hoặc dây USB vào PC** cho kết nối SPP.
+   ST-Link chỉ cần khi nạp firmware; USB–TTL dùng khi gửi lệnh AT/debug UART bằng dây.
+3. Tạm ngắt Web BLE `Nezumi_Chan`; chỉ test Classic SPP.
+4. Pair `Nezumi_Chan_SPP` trong **Settings > Bluetooth & devices**.
+   Windows hiện **Paired / Not connected** khi chưa mở cổng serial là bình thường.
+5. Nhấn **Win+R** > `bthprops.cpl` > **COM Ports**; tìm dòng
+   **Direction: Outgoing; Name: Nezumi_Chan_SPP**.
+   Nếu chưa có, **Add > Outgoing > Nezumi_Chan_SPP > Port**.
+   Ghi nhớ số COM thực tế; không chọn cổng Incoming.
+
+### C. Lệnh kiểm tra rồi chạy Dashboard
+
+Kiểm tra các cổng (không mở kết nối):
+
+```powershell
+python tools/classic_spp_link_diag.py --list
+```
+
+Chạy test SPP trên cổng Outgoing đã xác nhận (ví dụ máy hiện tại là COM16):
+
+```powershell
+python tools/classic_spp_link_diag.py --port COM16 --seconds 40
+```
+
+Trong log, `com_open` nghĩa là Windows đã mở COM;
+**`rx` và `rx_bytes > 0`** mới chứng minh có dữ liệu qua JDY-33.
+Ví dụ máy đã thử nhận:
+
+```text
+PID,READY,state=IDLE,locked=1,calibrated=1,rxbytes=12,ore=0,fe=126,ne=3,rxoverflow=0
+```
+
+Đóng tool chẩn đoán trước khi mở Dashboard: mỗi COM chỉ nên có **một ứng dụng** mở.
+
+```powershell
+python tools/classic_spp_dashboard.py --port COM16
+```
+
+Trong GUI: **Connect** > tab **Terminal** để thấy bản tin `PID,READY`;
+tab **Maze** chỉ có bản đồ khi firmware phát `MAPCFG/MAPROW/MAPEND`.
+Không cần nạp `flash_map_diag_96m` chỉ để xem Terminal.
+
+### D. Nếu gặp lỗi
+
+- **COM không đúng / 0 byte:** kiểm tra Outgoing và Name trong `bthprops.cpl`;
+  COM16 từng là Incoming trước khi Windows tái tạo thành Outgoing trên máy test.
+- **Access is denied:** đóng miniterm, Dashboard hoặc chương trình khác đang dùng cùng COM.
+- **Paired nhưng Not connected:** chạy tool hoặc Dashboard trên **Outgoing COM** để Windows tự kết nối.
+- **SerialException / mất link:** thu log Windows và log SPP **cùng thời điểm**
+  bằng hai PowerShell khác nhau:
+
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\windows_bluetooth_link_debug.ps1 -DurationSeconds 90
+  ```
+
+  ```powershell
+  python tools/classic_spp_link_diag.py --port COM16 --seconds 40
+  ```
+
+- **Có PID nhưng Maze trống:** firmware hiện tại chưa phát khung map, không phải lỗi SPP.
+
+Chi tiết thêm: [Windows connection debug](../docs/system_debug/WINDOWS_CLASSIC_SPP_CONNECTION_DEBUG_20261028.md),
+[JDY-33 desktop docs](../docs/system_debug/JDY33_CLASSIC_SPP_DESKTOP_20261028.md).
+
+---
+
+**Quickstart hiện tại:** [README_TESTING.md](README_TESTING.md) — lệnh chạy Wall PID, IR, BLE và bộ kiểm thử Maze Readiness tất cả trong một.
+
+The 33 historical `tools/` files were restored from `archive/debug-tools-precleanup-20261024`; on 24/10/2026, eight redundant copies were retired. Additional Classic SPP tools were added subsequently, so the historical count of 26 files is **not** the current directory size. Canonical regression tests live in `tests/regression/` and `tests/web/`, and the browser console lives in `web/ble_debug_console.html`. The archive remains unchanged.
 
 Keep the guarded Flash-map runner, BLE one-shot qualification, OLED/MPU hardware acceptance (`tools/oled_mpu_pipeline.py`), UART, IR, encoder, PID pipelines and nonduplicate host regressions; removing them would compromise future requalification. **Never delete or rewrite real `results/` logs**. Software tests cannot substitute for hardware acceptance.
 

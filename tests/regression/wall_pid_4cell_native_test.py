@@ -50,7 +50,7 @@ int main(void)
     i.ir.ema10_adc[IR_WALL_L0]=500U;
     i.ir.ema10_adc[IR_WALL_R0]=544U;
     for(int n=0;n<5;n++)tick(&p,&i);
-    assert(p.error_mm>2.0f);
+    assert(p.error_norm>0.05f);
     assert(p.pwm_l>p.pwm_r); /* closer LEFT -> steer RIGHT */
     WP_Stop(&p,WP_PA0_STOP);
     assert(p.state==WP_FAULT&&p.reason==WP_PA0_STOP);
@@ -61,16 +61,28 @@ int main(void)
     i.ir.ema10_adc[IR_WALL_L0]=420U;
     i.ir.ema10_adc[IR_WALL_R0]=784U;
     for(int n=0;n<5;n++)tick(&p,&i);
-    assert(p.error_mm< -2.0f);
+    assert(p.error_norm<-0.05f);
     assert(p.pwm_l<p.pwm_r); /* closer RIGHT -> steer LEFT */
 
     WP_Init(&p);i=input();assert(WP_Start(&p,&i));
     i.ir.status=IR_WALL_STALE;
     tick(&p,&i);assert(p.reason==WP_IR_STALE&&p.state==WP_FAULT);
 
+    /* 0..3500 ADC is a legal optical signal range. No intensity
+       threshold may trigger IR_EXCURSION or WALL_LOST abort. */
     WP_Init(&p);i=input();assert(WP_Start(&p,&i));
-    i.ir.ema10_adc[IR_WALL_L0]=50;
-    tick(&p,&i);assert(p.reason==WP_WALL_LOST);
+    i.ir.ema10_adc[IR_WALL_L0]=3500;
+    i.ir.ema10_adc[IR_WALL_R0]=0;
+    for(int n=0;n<20;n++)tick(&p,&i);
+    assert(p.state==WP_RUNNING);
+    assert(p.error_norm>0.5f&&p.error_norm<=1.0f);
+    assert(p.pwm_l<=WP_PWM_CAP_PM && p.pwm_r<=WP_PWM_CAP_PM);
+
+    i.ir.ema10_adc[IR_WALL_L0]=0;
+    i.ir.ema10_adc[IR_WALL_R0]=3500;
+    for(int n=0;n<20;n++)tick(&p,&i);
+    assert(p.state==WP_RUNNING);
+    assert(p.error_norm< -0.5f&&p.error_norm>=-1.0f);
 
     WP_Init(&p);i=input();assert(WP_Start(&p,&i));
     i.yaw_deg=16.0f;
@@ -100,7 +112,7 @@ int main(void)
     i.ir.age_us=250;
     i.ir.scan_count=12345;
     tick(&p,&i);
-    assert(p.reason==WP_EXCURSION && p.state==WP_FAULT);
+    assert(p.state==WP_RUNNING && p.reason==WP_NONE);
     assert(p.last_l0_adc==830 && p.last_r0_adc==666);
     assert(p.last_l0_raw==900 && p.last_r0_raw==671);
     assert(p.last_ir_age_us==250 && p.last_ir_scan==12345);
@@ -117,10 +129,16 @@ int main(void)
 
     WP_Init(&p);i=input();
     i.ir.ema10_adc[IR_WALL_L0]=12U;
-    assert(!WP_Start(&p,&i)); /* no wall */
+    assert(WP_Start(&p,&i)); /* no arbitrary start ADC gate */
+    WP_Init(&p);i=input();
+    i.ir.ema10_adc[IR_WALL_L0]=0U;
+    i.ir.ema10_adc[IR_WALL_R0]=3500U;
+    assert(WP_Start(&p,&i));
+    tick(&p,&i);
+    assert(p.state==WP_RUNNING);
     i=input();i.ir.status=IR_WALL_WARMUP;
     assert(!WP_Start(&p,&i));
-    puts("WALL_PID_4CELL_NATIVE_PASS");
+    puts("WALL_PID_4CELL_NO_ADC_THRESHOLD_NATIVE_PASS");
     return 0;
 }
 """
