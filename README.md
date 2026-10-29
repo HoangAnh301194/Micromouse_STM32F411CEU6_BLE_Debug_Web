@@ -1,3 +1,16 @@
+> **Active debug workflow — 29/10/2026:** Web BLE UI is **temporarily frozen** (preserved, not deleted). Use the existing **Python Classic SPP** tools through the Windows **Outgoing** `Nezumi_Chan_SPP` COM port. The desktop dashboard is **receive-only**; do not assume bidirectional commands work. `src/bt_debug.c` / JDY-33 USART2 remain in use. See [Classic SPP setup](docs/classic_spp/README.md) and [working-policy handoff](AGENTS.md).
+>
+> Quickstart on an already-running STM32 firmware that transmits text telemetry (replace `COM16` with the actual Windows Outgoing COM):
+>
+> ```powershell
+> python -m pip install pyserial
+> python tools/classic_spp_link_diag.py --list
+> python tools/classic_spp_link_diag.py --port COM16 --seconds 40
+> python tools/classic_spp_dashboard.py --port COM16
+> ```
+>
+> Close the link diagnostic before opening Dashboard (only one process may own the COM port). `classic_spp_rate_diag_96m` emits a **binary throughput test**, and must use `tools/classic_spp_rate_pipeline.py` instead of the text dashboard. **Do not rebuild/flash current source until the unresolved merge markers in `src/main.c` have been reconciled and the firmware build passes.** The Python viewer can still be used with an already working board firmware.
+
 
 > **Mới — kiểm thử giới hạn Bluetooth Classic SPP khi TIM11/IMU/IR chạy 1 kHz:** [Hướng dẫn benchmark 64 mức tải, tới 156% giới hạn UART, firmware motor-locked và Python report](docs/system_debug/CLASSIC_SPP_REALTIME_RATE_20261028.md). Profile `classic_spp_rate_diag_96m`; tool `tools/classic_spp_rate_pipeline.py`. Đây là bài kiểm tra motor-OFF, chưa nghiệm thu debug khi robot chạy thực tế.
 
