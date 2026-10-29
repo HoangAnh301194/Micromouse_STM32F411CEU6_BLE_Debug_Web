@@ -4,6 +4,14 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Quyết định phát triển — 29/10/2026: Đóng băng Web BLE UI, ưu tiên Python Classic SPP
+
+- **Web BLE UI FROZEN (development only):** Giữ nguyên `web/ble_debug_console.html`, `web/README.md` và `tests/web/`; không mở rộng/tái cấu trúc/xóa Web BLE khi chưa có yêu cầu mở lại. **Không** vô hiệu hóa JDY-33, USART2 PA2/PA3 hay driver `src/bt_debug.c` dùng chung.
+- **Host debug ưu tiên:** `tools/classic_spp_dashboard.py` qua COM Bluetooth **Outgoing** trên Windows, 115200 baud; `tools/classic_spp_link_diag.py` để xác định COM, đo tính khả dụng; `tools/classic_spp_protocol.py` phân tích dòng telemetry và map. Firmware đang gửi văn bản có thể dùng ngay mà không cần flash lại.
+- **Giới hạn đã biết:** Dashboard hiện **RX-only**, không gửi lệnh điều khiển/PID/Flash; thành công chiều STM32 → Python qua SPP không xác minh chiều Python → STM32. Binary benchmark `classic_spp_rate_diag_96m` cần `tools/classic_spp_rate_pipeline.py`, không đọc bằng dashboard text. Không đưa Bluetooth vào vòng PID 1 kHz.
+- **Bằng chứng hiện có:** Test SPP Outgoing COM16 ngày 28/10 nhận 1.955 byte/40 s, không SerialException (xem `docs/classic_spp/README.md`); **chưa có kiểm thử mới** cho quyết định đổi workflow ngày 29/10.
+- **Blocker mã nguồn:** Tại thời điểm kiểm tra, `src/main.c` trên nhánh `giomuadongbac` chứa marker Git merge conflict chưa xử lý. Chưa được phép kết luận build/flash mới PASS; xử lý xung đột và kiểm thử build trước bất kỳ nạp firmware nào. Không thay đổi firmware trong đợt đóng băng Web BLE này.
+
 ## Cập nhật OLED — 27/10/2026
 
 - Thêm profile opt-in `production_oled_status_96m`: ứng dụng BLE/motion production có màn hình trạng thái chỉ đọc, khởi tạo và gửi splash trước khi MPU bắt đầu lấy mẫu; các lần cập nhật sau dùng `OLED_SharedService()` ngoài TIM11. Profile `genericSTM32F411CE` mặc định vẫn giữ OLED tắt.
