@@ -23,6 +23,70 @@
 #define OLED_FRAME_PERIOD_MS 200U
 #define IR_STALE_PERIOD_MS   500U
 
+/* I2C_Status values are declared in i2c.h. Probe both common SSD1306
+ * addresses at 400kHz, then retry at 100kHz if neither address ACKs. */
+static const char *IR_OLED_I2CStatusName(I2C_Status status)
+{
+    switch (status) {
+    case I2C_OK:      return "OK";
+    case I2C_ERROR:   return "ERROR";
+    case I2C_BUSY:    return "BUSY";
+    case I2C_TIMEOUT: return "TIMEOUT";
+    case I2C_NACK:    return "NACK";
+    default:          return "IDLE/UNKNOWN";
+    }
+}
+
+static const char *IR_OLED_StatusName(SSD1306_Status_t status)
+{
+    switch (status) {
+    case SSD1306_OK:        return "OK";
+    case SSD1306_ERROR:     return "ERROR";
+    case SSD1306_NOT_FOUND: return "NOT_FOUND";
+    default:                return "UNKNOWN";
+    }
+}
+
+static void IR_OLED_ProbeAddresses(I2C_Status *status_3c,
+                                   I2C_Status *status_3d,
+                                   uint8_t *selected_address)
+{
+    *status_3c = I2C_IsDeviceReady(I2C_1, 0x3CU);
+    *status_3d = I2C_IsDeviceReady(I2C_1, 0x3DU);
+    *selected_address = 0U;
+
+    if (*status_3c == I2C_OK) {
+        *selected_address = 0x3CU;
+    } else if (*status_3d == I2C_OK) {
+        *selected_address = 0x3DU;
+    }
+}
+
+static void IR_OLED_DrawBootScreen(uint8_t address, uint32_t scl_hz)
+{
+    char line[24];
+
+    SSD1306_Fill(SSD1306_BLACK);
+    SSD1306_SetCursor(0U, 0U);
+    (void)SSD1306_WriteString("OLED LINK OK", &Font_7x10,
+                              SSD1306_WHITE);
+
+    (void)snprintf(line, sizeof(line), "I2C:0x%02X",
+                   (unsigned)address);
+    SSD1306_SetCursor(0U, 16U);
+    (void)SSD1306_WriteString(line, &Font_7x10, SSD1306_WHITE);
+
+    (void)snprintf(line, sizeof(line), "SCL:%lukHz",
+                   (unsigned long)(scl_hz / 1000UL));
+    SSD1306_SetCursor(0U, 32U);
+    (void)SSD1306_WriteString(line, &Font_7x10, SSD1306_WHITE);
+
+    SSD1306_SetCursor(0U, 48U);
+    (void)SSD1306_WriteString("IR TEST START", &Font_7x10,
+                              SSD1306_WHITE);
+    SSD1306_UpdateScreen();
+}
+
 static void IR_OLED_DrawRow(uint16_t y, const char *prefix,
                             uint16_t left, uint16_t right)
 {
@@ -68,6 +132,15 @@ int IR_OLED_TestMain(void)
     uint32_t last_uart_ms = 0U;
     uint8_t have_sample = 0U;
     uint8_t oled_ready = 0U;
+    uint8_t selected_address = 0U;
+    uint8_t tried_100khz = 0U;
+    uint32_t oled_scl_hz = 0U;
+    uint8_t pb8_level, pb9_level;
+    I2C_Status probe_400_3c = I2C_NACK;
+    I2C_Status probe_400_3d = I2C_NACK;
+    I2C_Status probe_100_3c = I2C_NACK;
+    I2C_Status probe_100_3d = I2C_NACK;
+    SSD1306_Status_t oled_status;
 
     Board_Init();
     SystemTimer_Init();
@@ -87,15 +160,54 @@ int IR_OLED_TestMain(void)
 
     /* MPU6050_Init() must NOT run here: it owns I2C1 in production.
        The OLED is the only I2C1 client in this isolated test image. */
-    I2C_Init(I2C_1, 1U);
+    I2C_Init(I2C_1, 1U); /* First probe at nominal 400kHz. */
     IR_Init();
-    oled_ready = (SSD1306_Init() == SSD1306_OK) ? 1U : 0U;
 
+    IR_OLED_ProbeAddresses(&probe_400_3c, &probe_400_3d,
+                           &selected_address);
+    UART_Printf("OLED_PROBE,400K,3C=%s,3D=%s\r\n",
+                IR_OLED_I2CStatusName(probe_400_3c),
+                IR_OLED_I2CStatusName(probe_400_3d));
+
+    /* A module with weak pull-ups/large bus capacitance may ACK at 100kHz
+     * but fail at 400kHz. Retry only when neither address ACKed initially. */
+    if (selected_address == 0U) {
+        tried_100khz = 1U;
+        I2C_Init(I2C_1, 0U);
+        IR_OLED_ProbeAddresses(&probe_100_3c, &probe_100_3d,
+                               &selected_address);
+        UART_Printf("OLED_PROBE,100K,3C=%s,3D=%s\r\n",
+                    IR_OLED_I2CStatusName(probe_100_3c),
+                    IR_OLED_I2CStatusName(probe_100_3d));
+    }
+
+    if (selected_address == 0U) {
+        /* Keep the driver's documented default so Init reports NOT_FOUND. */
+        selected_address = SSD1306_I2C_ADDR;
+    }
+    (void)SSD1306_SetI2CAddress(selected_address);
+    oled_status = SSD1306_Init();
+    oled_ready = (oled_status == SSD1306_OK) ? 1U : 0U;
+    oled_scl_hz = I2C_GetConfiguredSclHz();
+    pb8_level = (GPIOB->IDR & (1UL << 8)) ? 1U : 0U;
+    pb9_level = (GPIOB->IDR & (1UL << 9)) ? 1U : 0U;
+
+    UART_Printf("OLED_BOOT,status=%s,code=%u,ready=%u,addr=0x%02X,"
+                "scl_hz=%lu,retry_100k=%u,pb8=%u,pb9=%u\r\n",
+                IR_OLED_StatusName(oled_status), (unsigned)oled_status,
+                (unsigned)oled_ready, (unsigned)selected_address,
+                (unsigned long)oled_scl_hz, (unsigned)tried_100khz,
+                (unsigned)pb8_level, (unsigned)pb9_level);
     UART_Printf("IR_OLED,BOOT,motor_locked=%u,oled=%u\r\n",
                 (unsigned)Motor_OutputsLocked(), (unsigned)oled_ready);
+
+    if (oled_ready) {
+        IR_OLED_DrawBootScreen(selected_address, oled_scl_hz);
+    }
+
     IR_StartScan();
     last_scan_ms = millis();
-    last_screen_ms = millis() - OLED_FRAME_PERIOD_MS;
+    last_screen_ms = millis();
 
     while (1) {
         uint32_t now = millis();
