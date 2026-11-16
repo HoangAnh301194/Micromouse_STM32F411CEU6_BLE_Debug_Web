@@ -37,7 +37,6 @@ int main(void) { return FlashMapDiag_Main(); }
 int Main_Runtime(void);
 int main(void) { return Main_Runtime(); }
 #endif
-<<<<<<< HEAD
 
 #include "control.h"
 #include "encoder.h"
@@ -821,5 +820,3 @@ int main(void)
 }
 
 #endif /* BLE_PROFILE_DIAG / FLASH_MAP_DIAG */
-=======
->>>>>>> e41c1a1f73c3c25492cf61c7dede937855026fcc
