@@ -58,6 +58,22 @@ static uint8_t ssd1306_inverted = 0;
 /* Boot-only I2C error latch: Init cannot claim success after dropped writes. */
 static uint8_t ssd1306_io_error = 0U;
 
+/* Defaults to the common 0x3C address; diagnostic firmware may select 0x3D
+ * after probing the bus. Set this before SSD1306_Init(). */
+static uint8_t ssd1306_i2c_address = SSD1306_I2C_ADDR;
+
+uint8_t SSD1306_SetI2CAddress(uint8_t address_7bit)
+{
+    if (address_7bit < 0x08U || address_7bit > 0x77U) return 0U;
+    ssd1306_i2c_address = address_7bit;
+    return 1U;
+}
+
+uint8_t SSD1306_GetI2CAddress(void)
+{
+    return ssd1306_i2c_address;
+}
+
 /* DMA state variables */
 static volatile uint8_t ssd1306_dma_enabled = 0;
 static volatile uint8_t ssd1306_dma_page = 0;
@@ -83,7 +99,7 @@ static void SSD1306_WriteCommand(uint8_t cmd) {
     uint8_t data[2];
     data[0] = 0x00;  /* Control byte: Co=0, D/C=0 (command) */
     data[1] = cmd;
-    if (I2C_Write(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR, data, 2) != I2C_OK)
+    if (I2C_Write(SSD1306_I2C_INSTANCE, ssd1306_i2c_address, data, 2) != I2C_OK)
         ssd1306_io_error = 1U;
 }
 
@@ -104,7 +120,7 @@ static void SSD1306_WriteData(uint8_t *data, uint16_t len) {
         }
         
         /* Send and check error */
-        if (I2C_Write(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR, buffer, chunk + 1) != I2C_OK) {
+        if (I2C_Write(SSD1306_I2C_INSTANCE, ssd1306_i2c_address, buffer, chunk + 1) != I2C_OK) {
             ssd1306_io_error = 1U;
             /* If error, short delay and continue */
             delay_us_blocking(50);
@@ -140,7 +156,7 @@ static void SSD1306_DMA_Callback(void) {
 SSD1306_Status_t SSD1306_Init(void) {
     ssd1306_io_error = 0U;
     /* Check if device is connected */
-    if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR) != I2C_OK) {
+    if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, ssd1306_i2c_address) != I2C_OK) {
         return SSD1306_NOT_FOUND;
     }
     
@@ -390,7 +406,7 @@ void SSD1306_Process_DMA(void) {
     }
     
     /* [FIX] Check return value and handle errors */
-    dma_result = I2C_Write_DMA(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR, 
+    dma_result = I2C_Write_DMA(SSD1306_I2C_INSTANCE, ssd1306_i2c_address, 
                                ssd1306_dma_chunk_buffer, 129);
     if (dma_result != I2C_OK) {
         /* DMA failed to start - skip this page, try next one.
@@ -896,7 +912,7 @@ void SSD1306_ToggleInvert(void) {
 }
 
 SSD1306_Status_t SSD1306_IsConnected(void) {
-    if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR) == I2C_OK) {
+    if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, ssd1306_i2c_address) == I2C_OK) {
         return SSD1306_OK;
     }
     return SSD1306_NOT_FOUND;
