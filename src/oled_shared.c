@@ -62,7 +62,7 @@ static uint8_t CanStart(const MPU6050_Handle_t *h,uint8_t len) {
 static uint8_t TrySend(const MPU6050_Handle_t *h,uint8_t len) {
     I2C_Status s;
     if(!CanStart(h,len)) { ++stats.admission_skips;return 0U; }
-    s=I2C_OledAsync_Start(SSD1306_I2C_ADDR,packet,len);
+    s=I2C_OledAsync_Start(SSD1306_GetI2CAddress(),packet,len);
     if(s==I2C_OK) return 1U;
     if(s==I2C_BUSY) ++stats.busy_skips;
     else ++stats.errors;
