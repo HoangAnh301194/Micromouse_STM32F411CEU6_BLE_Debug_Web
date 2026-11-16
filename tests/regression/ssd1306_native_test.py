@@ -100,6 +100,15 @@ int main(void)
         test_font_data[ch - 32U] = (uint16_t)(ch << 8);
     }
 
+    /* Runtime 7-bit address selection used by the OLED diagnostics. */
+    assert(SSD1306_GetI2CAddress() == SSD1306_I2C_ADDR);
+    assert(SSD1306_SetI2CAddress(0x3DU) == 1U);
+    assert(SSD1306_GetI2CAddress() == 0x3DU);
+    assert(SSD1306_SetI2CAddress(0x78U) == 0U);
+    assert(SSD1306_SetI2CAddress(0x07U) == 0U);
+    assert(SSD1306_GetI2CAddress() == 0x3DU);
+    assert(SSD1306_SetI2CAddress(SSD1306_I2C_ADDR) == 1U);
+
     reset_canvas();
     SSD1306_WriteInt(INT32_MIN, &test_font, SSD1306_WHITE);
     assert_text("-2147483648");
