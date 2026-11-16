@@ -30,6 +30,10 @@
 
 /* I2C Address (0x3C or 0x3D, 7-bit) */
 #define SSD1306_I2C_ADDR        0x3C
+/* Runtime 7-bit address selection. Call before SSD1306_Init().
+ * The shared-I2C renderer reads the same selected address. */
+uint8_t SSD1306_SetI2CAddress(uint8_t address_7bit);
+uint8_t SSD1306_GetI2CAddress(void);
 
 /* Screen Size */
 #define SSD1306_WIDTH           128
