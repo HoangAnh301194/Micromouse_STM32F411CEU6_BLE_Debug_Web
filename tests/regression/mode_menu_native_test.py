@@ -78,7 +78,7 @@ int main(void) {
     ModeMenu_Init(&m, 0, 0xFFFFFF00u);
     assert(at(&m, 0xFFFFFF10u, 1) == MODE_MENU_EVENT_NONE);
     assert(at(&m, 0xFFFFFF35u, 1) == MODE_MENU_EVENT_NONE);
-    assert(at(&m, 0x000000C5u, 1) == MODE_MENU_EVENT_NONE);
+    assert(at(&m, 0x000000B5u, 1) == MODE_MENU_EVENT_NONE);
     assert(at(&m, 0x000000E0u, 1) == MODE_MENU_EVENT_SELECT);
     assert(m.selected == 0);
 
