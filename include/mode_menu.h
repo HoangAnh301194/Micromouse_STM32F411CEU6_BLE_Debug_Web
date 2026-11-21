@@ -31,5 +31,6 @@ void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms);
 ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms);
 const char *ModeMenu_Label(uint8_t index);
 const char *ModeMenu_Code(uint8_t index);
+const char *ModeMenu_Name(uint8_t index);
 
 #endif
