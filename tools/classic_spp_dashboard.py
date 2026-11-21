@@ -19,6 +19,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from classic_spp_protocol import LineFramer, MazeState, numeric_fields
 from classic_spp_ports import classify_port
+from spp_session_log import SessionLog
 
 
 BAUD = 115200
@@ -86,6 +87,7 @@ class SPPReader:
                                write_timeout=0.5) as link:
                 connected_at = time.monotonic()
                 self._emit("state", "%s COM open; waiting for SPP RX bytes" % port)
+                link.write(b"?")
                 framer = LineFramer()
                 while not self.stop.is_set():
                     chunk = link.read(link.in_waiting or 1)
@@ -129,6 +131,7 @@ class Dashboard:
         self.total_lines = 0
         self.logging_file = None
         self.log_path = ""
+        self.auto_log = SessionLog(Path(__file__).resolve().parents[1] / "logs" / "spp_runs")
         self.maze_dirty = True
         self.plot_dirty = True
         self.last_plot = 0.0
@@ -298,6 +301,11 @@ class Dashboard:
                 "Try opening anyway? (COM37 is only a preference)"
             ):
                 return
+        try:
+            self.auto_log.open_session(port)
+        except OSError as exc:
+            messagebox.showerror("Auto log", str(exc))
+            return
         self.reader.start(port, baud)
         self.status.set("Opening " + port + " ...")
 
@@ -321,6 +329,7 @@ class Dashboard:
         ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
+        self.auto_log.add_line(line)
         if self.logging_file:
             self.logging_file.write("%s %s\n" % (datetime.now().isoformat(timespec="milliseconds"), line))
             self.logging_file.flush()
@@ -358,6 +367,8 @@ class Dashboard:
                 self.handle_line(value)
             else:
                 self.status.set(value)
+                if kind == "closed":
+                    self.auto_log.close()
                 if kind == "warning":
                     self._append("WARNING: " + value, datetime.now().strftime("%H:%M:%S"))
         self.root.after(40, self.poll)
@@ -517,7 +528,7 @@ class Dashboard:
                     if len(text) > 24 and text[4:5] == "-" and text[10:11] == "T":
                         text = text.split(" ", 1)[-1]
                     if text:
-                        self.handle_line(text)
+                        self._append(text, datetime.now().strftime("%H:%M:%S.%f")[:-3])
                         count += 1
         except OSError as exc:
             messagebox.showerror("Replay", str(exc))
@@ -526,6 +537,7 @@ class Dashboard:
 
     def quit(self):
         self.reader.close()
+        self.auto_log.close()
         if self.logging_file:
             self.logging_file.close()
         self.root.destroy()

@@ -61,6 +61,7 @@ static void ServiceSensorTelemetry(uint32_t now)
     uint32_t age;
     char msg[170];
     int n;
+    if(!mpu.calibrated || mpu.calibrating || mpu.cal_state!=3U)return;
     if((uint32_t)(now-last_ms)<WT_SENSOR_PERIOD_MS)return;
     last_ms=now;
     valid=MPU6050_GetSnapshot(&mpu,&gyro)?1U:0U;
@@ -253,7 +254,7 @@ static void ServiceModeMenu(uint32_t now)
     while(BT_ReadByte(&rx)){
         if(rx=='?') BT_SendString("SPP CONNECTED\r\n");
     }
-    if(st.phase!=WT_IDLE)return;
+    if(st.phase!=WT_IDLE || !mpu.calibrated || mpu.cal_state!=3U)return;
     event=ModeMenu_Poll(&mode_menu,Board_ButtonPressed(),now);
     if(event==MODE_MENU_EVENT_FOCUS){
         BT_Printf("Mode %u: %s\r\n",
@@ -270,6 +271,7 @@ int WallPidTest_Main(void)
 {
     MPU6050_Status rc;
     uint8_t end_reported=0U;
+    uint8_t menu_announced=0U;
     Board_Init();
     SystemTimer_Init();
     BT_Init();
@@ -295,12 +297,16 @@ int WallPidTest_Main(void)
     st.phase=WT_IDLE;st.started_once=0U;st.trace_count=0U;
     ModeMenu_Init(&mode_menu,Board_ButtonPressed(),millis());
     Control_Start();
-    BT_SendString("W,MENU_READY,7_modes,no_action_on_select\n");
+    BT_SendString("W,WAIT_CAL,menu_locked_until_calib_ok\n");
     for(;;){
         uint32_t now=millis();
         MPU6050_Update(&mpu);
         ServiceModeMenu(now);
         ServiceCalibrationStatus(now);
+        if(!menu_announced && mpu.calibrated && mpu.cal_state==3U){
+            menu_announced=1U;
+            BT_SendString("W,MENU_READY,7_modes,no_action_on_select\n");
+        }
         ServiceSensorTelemetry(now);
         if(st.phase==WT_RESULT && !end_reported){
             end_reported=1U;
