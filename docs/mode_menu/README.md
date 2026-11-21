@@ -1,12 +1,13 @@
-# PA0 7-mode selection menu over Bluetooth Classic SPP
+# Event-only 7-mode selector over Bluetooth Classic SPP
 
-Branch: `giomuadongbacv2`. This feature ports **selection only** from `main`.
-No calibration, exploration, A*, Speedrun, map erase, or system-test action
-is dispatched. A selection is RAM-only until reboot.
+**Branch:** `giomuadongbacv2`  
+**Firmware profile:** `mode_menu_96m` (default in `platformio.ini`)
 
-## Firmware
+This ports **menu selection only** from the old `main` branch. Choosing
+a mode never starts calibration, exploration, A*, Speedrun, map deletion,
+or a motor test. The choice is RAM-only and disappears on reboot.
 
-The default PlatformIO environment is `mode_menu_96m`:
+## Build and flash
 
 ```powershell
 git switch giomuadongbacv2
@@ -15,87 +16,98 @@ pio run -e mode_menu_96m
 pio run -e mode_menu_96m -t upload
 ```
 
-This profile enables `MODE_MENU_ONLY` and the shared-I2C OLED renderer.
-It uses PA0 for input, SSD1306 on the existing MPU I2C bus, and JDY-33
-USART2 PA2/PA3 at 115200 baud. PWM outputs are **latched locked** at boot.
-Incoming Bluetooth F/L/R/Z motion commands are discarded; STOP over UART1
-remains harmless. Other profiles/diagnostics are not changed by the menu
-logic, and can still be built explicitly with `-e <environment>`.
+Do not flash `genericSTM32F411CE` if you want event-only menu logs:
+that profile is the **legacy motion-capable runtime**, with continuous telemetry.
+The menu profile locks motor outputs, drops incoming F/L/R/Z commands,
+and uses SSD1306 on shared MPU I2C through `OLED_SharedService`.
 
-## OLED and button behavior
+## How to use
 
-- At power-on, the cursor points to `1.Calibration`.
-- **Short press:** advances focus by one; after `7.System Test`, wraps
-  back to `1.Calibration`.
-- **Hold for at least 400 ms:** confirms focused mode. OLED displays
-  `MODE SELECTED`, the label, and `NO ACTION YET`.
-- After confirmation, a short press advances to the next item and returns
-  to the `SELECT MODE` list; further long presses can select again.
-- Software debounce: 30 ms; a key held while booting is ignored until
-  released. Menu polling is main-context only.
-- If OLED is absent, selection still logs over SPP; OLED rendering uses
-  existing `OLED_SharedService` and can be deferred until gyro
-  calibration finishes to protect the MPU I2C acquisition.
+1. Open the **outgoing** JDY-33 COM port in the desktop app.
+   The app sends exactly one safe `?` status probe at each COM connection.
+   The STM32 replies **`SPP CONNECTED`** once for that probe.
+   This is a verified round trip through the UART/SPP link, unlike
+   an unsolicited boot-only READY message that can be missed by a PC.
+2. The first physical **short press** on PA0 focuses **Mode 1: Calibration**.
+   Subsequent short presses focus Modes 2 through 7, wrapping to 1.
+3. Holding PA0 **at least 400 ms** confirms the focused mode and
+   prints a single `Selected mode ...` line. There is no mode action.
+4. Another short press browses the next mode; long press confirms it.
+   A long press before the very first short press does nothing.
 
-The seven labels match `main` exactly:
+The OLED uses the same seven labels as the old `main` branch,
+and displays `MODE SELECTED` / `NO ACTION YET` after confirmation.
+Software debounce is 30 ms. A key held across reboot is ignored until
+released.
 
-| ID | Code | OLED label |
-|---:|---|---|
-| 1 | CALIBRATION | 1.Calibration |
-| 2 | RUN_SLOW | 2.Run Slow |
-| 3 | RUN_FASTER | 3.Run Faster |
-| 4 | ASTAR_RUN | 4.A* Run |
-| 5 | SPEEDRUN | 5.Speedrun |
-| 6 | RESET_MAP | 6.Reset Map |
-| 7 | SYSTEM_TEST | 7.System Test |
+## Exact event-only SPP output
 
-## What SPP receives
-
-The payload is plain ASCII with CRLF, over the existing JDY-33 channel.
-Examples below illustrate the **format**, not measured hardware values.
+These are examples of the output format, **not physical test logs**.
 
 ```text
-MENU,READY,count=7,short=NEXT,long=SELECT,action=NONE,locked=1,oled=1
-MENU,FOCUS,id=1,code=CALIBRATION,label=1.Calibration
-MENU,FOCUS,id=2,code=RUN_SLOW,label=2.Run Slow
-MENU,SELECT,id=2,code=RUN_SLOW,label=2.Run Slow,action=NONE,locked=1
-MENU,STATUS,focus=2,selected=2,code=RUN_SLOW,locked=1
+SPP CONNECTED
+Mode 1: Calibration
+Mode 2: Run Slow
+Mode 3: Run Faster
+Selected mode 3: Run Faster
 ```
 
-`FOCUS` is emitted on each short press, and `SELECT` on each long press.
-`STATUS` repeats every 2 seconds so a PC connecting late can recover
-the selected mode. A zero `selected` means that no mode has been confirmed.
-`action=NONE` means **no function ran** and no Flash was modified.
-The existing `t=... state=... encL=...` telemetry continues at 10 Hz.
+- **`SPP CONNECTED`**: one reply per desktop connection's `?` probe.
+- **`Mode N: Name`**: one line per valid short press.
+- **`Selected mode N: Name`**: one line per long press.
+- Nothing is transmitted when the button is idle.
+- `MENU,STATUS` every 2 seconds and `t=... state=...` every 100 ms
+  have been **disabled in the menu profile**.
+- The same periodic telemetry still exists in other explicitly selected
+  build profiles, which are not modified by this menu setting.
 
-Use the **outgoing** Windows Bluetooth COM port (not incoming):
+| N | OLED name |
+|---:|---|
+| 1 | Calibration |
+| 2 | Run Slow |
+| 3 | Run Faster |
+| 4 | A* Run |
+| 5 | Speedrun |
+| 6 | Reset Map |
+| 7 | System Test |
+
+The firmware **cannot infer SPP connection from UART initialization alone**:
+USART2 is electrically active whether or not a Bluetooth PC is connected.
+The one-byte request-and-reply handshake confirms actual host-to-device
+and device-to-host delivery, without motor/Flash commands.
+
+## Desktop app
 
 ```powershell
 py tools/classic_spp_link_diag.py --list
-py tools/classic_spp_dashboard.py --port COM8
+py tools/classic_spp_dashboard.py --port COM16
 ```
 
-Replace `COM8` with the real outgoing port. The desktop dashboard is
-receive-only; pressing the robot's physical PA0 button is required.
+Substitute the real **outgoing** COM port. Do not leave another SPP
+terminal open on the same port. The dashboard transmits only a one-byte
+status probe `?` on each connection; it never sends motor, Flash, or
+mode-selection commands. Mode selection is strictly PA0.
 
-## Development checks
+## Tests
 
 ```powershell
 py tests/regression/mode_menu_native_test.py
 ```
 
-This native test requires `gcc` on PATH; it compiles the isolated menu
-state machine and tests debounce, short/long press, wraparound, power-on
-held button and the `millis()` rollover. It does **not** validate the
-STM32 image. Build and test the real board to confirm OLED, MPU scheduling,
-button electrical behavior and Bluetooth radio delivery.
+Requires a C compiler named `gcc` on PATH (or set environment variable
+`CC`). Covers first short press, 7-item wraparound, long press,
+debounce, boot-held button, long press before focus, and `millis()`
+rollover.
 
-## Scope and safety
+The native test does not validate compiled STM32 firmware or the
+physical JDY-33/SPI/I2C/PA0 hardware. Confirm the SPP handshake,
+one-time events, OLED rendering, and motor lock on the real robot,
+with wheels raised and an independent VM cutoff.
 
-- This change only adds selection UI/protocol and repairs a pre-existing
-  conflict-corrupted `src/main.c`, restoring its 39-line main dispatcher.
-- It does not copy `main`'s control algorithms; mode execution is deliberately
-  deferred.
-- Do not attach motor power solely based on code review. Verify
-  `MENU,READY ... locked=1` and test motor lock with wheels raised
-  before connecting the robot to a maze.
+## Known behavior
+
+The legacy diagnostic telemetry previously displayed blank `yaw=`,
+`gz=`, `d=`, and `e=` due to a likely embedded floating-point
+formatting configuration issue. Those diagnostic lines are suppressed
+by this menu-only profile; the underlying sensor quality must be
+evaluated separately in a suitable diagnostic firmware.
