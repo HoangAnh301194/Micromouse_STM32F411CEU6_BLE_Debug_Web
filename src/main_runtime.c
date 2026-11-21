@@ -40,7 +40,9 @@
 #include "speed_pid_diag.h"
 #endif
 
+#if !defined(MODE_MENU_ONLY)
 #define DEBUG_PERIOD_MS 100UL
+#endif
 
 static MPU6050_Handle_t mpu;
 
@@ -69,6 +71,15 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     SSD1306_SetCursor(10U, 0U);
     SSD1306_WriteString("SELECT MODE", &Font_7x10, SSD1306_WHITE);
     SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
+    if (menu->focus == MODE_MENU_NO_SELECTION) {
+        SSD1306_SetCursor(0U, 25U);
+        SSD1306_WriteString("Press PA0 to browse",
+                            &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U, 43U);
+        SSD1306_WriteString("Hold: select mode",
+                            &Font_7x10, SSD1306_WHITE);
+        return;
+    }
     first = menu->focus >= 3U ? (uint8_t)(menu->focus - 3U) : 0U;
     for (row = 0U; row < 4U; ++row) {
         i = (uint8_t)(first + row);
@@ -85,14 +96,15 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
 static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
 {
     if (event == MODE_MENU_EVENT_FOCUS) {
-        BT_Printf("MENU,FOCUS,id=%u,code=%s,label=%s\r\n",
+        /* Exactly one human-readable line per debounced short press. */
+        BT_Printf("Mode %u: %s\r\n",
                   (unsigned)(menu->focus + 1U),
-                  ModeMenu_Code(menu->focus), ModeMenu_Label(menu->focus));
+                  ModeMenu_Name(menu->focus));
     } else if (event == MODE_MENU_EVENT_SELECT) {
-        BT_Printf("MENU,SELECT,id=%u,code=%s,label=%s,action=NONE,locked=%u\r\n",
+        /* A selection is a value only: no mode handler or motor action. */
+        BT_Printf("Selected mode %u: %s\r\n",
                   (unsigned)(menu->selected + 1U),
-                  ModeMenu_Code(menu->selected), ModeMenu_Label(menu->selected),
-                  (unsigned)Motor_OutputsLocked());
+                  ModeMenu_Name(menu->selected));
     }
 }
 #endif
@@ -192,10 +204,10 @@ static void Encoder_LogShadowInstant(uint32_t now,
 
 int Main_Runtime(void)
 {
+#if !defined(MODE_MENU_ONLY)
     uint32_t last_debug_ms = 0;
-#if defined(MODE_MENU_ONLY)
+#else
     ModeMenu mode_menu;
-    uint32_t last_menu_status_ms = 0U;
 #endif
 #if defined(INTEGRATION_DIAG)
     uint32_t last_system_diag_ms = 0U;
@@ -281,10 +293,9 @@ int Main_Runtime(void)
          * No redundant full-screen resend is needed after gyro calibration. */
         OLED_SharedInit(oled_found);
         OLED_SharedEnable(oled_found);
-        BT_Printf("MENU,READY,count=7,short=NEXT,long=SELECT,action=NONE,locked=%u,oled=%u\r\n",
-                  (unsigned)Motor_OutputsLocked(), (unsigned)oled_found);
-        BT_Printf("MENU,FOCUS,id=1,code=%s,label=%s\r\n",
-                  ModeMenu_Code(mode_menu.focus), ModeMenu_Label(mode_menu.focus));
+        /* No boot-time SPP output: Windows can open the outgoing COM
+         * long after STM32 boot. Reply to the GUI's one-byte '?' handshake
+         * instead, after the Bluetooth link is genuinely usable. */
     }
 #endif
     if (mpu_status == MPU6050_OK) {
@@ -302,7 +313,11 @@ int Main_Runtime(void)
     if (mpu_status != MPU6050_OK) {
         Motor_Stop();
         Board_StatusLed(1);
+#if defined(MODE_MENU_ONLY)
+        BT_SendString("ERROR: MPU6050 initialization failed\r\n");
+#else
         BT_SendString("[BOOT] MPU6050 init/calibration failed\r\n");
+#endif
 #if defined(INTEGRATION_DIAG)
         UART_Printf("MPU_BOOT_FAIL,status=%u,step=%u,reg=%u,i2c=%u,got=%u\r\n",
                     (unsigned)mpu_status, (unsigned)mpu.init_step,
@@ -323,13 +338,11 @@ int Main_Runtime(void)
     Control_Init(&mpu);
     Control_Start();
 
+#if !defined(MODE_MENU_ONLY)
     BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
-    UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
-#if defined(MODE_MENU_ONLY)
-    BT_SendString("MENU: PA0 short=next, hold>=400ms=select; NO MOTOR ACTIONS\r\n");
-#else
     BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw\r\n");
 #endif
+    UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
     UART_SendString("INTEGRATION_DIAG,MOTOR_OFF_SHADOW,OUTPUTS_LOCKED\r\n");
 #elif defined(INTEGRATION_DIAG_MOTOR_ON)
@@ -346,8 +359,12 @@ int Main_Runtime(void)
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* Read and discard legacy F/L/R/Z commands; menu is PA0-only. */
-            (void)BT_ReceiveChar();
+            /* '?' is the only permitted request and has no motor/Flash
+             * effects. One GUI handshake on each COM connection produces
+             * one connection-confirmation line. F/L/R/Z remain ignored. */
+            if (BT_ReceiveChar() == '?') {
+                BT_SendString("SPP CONNECTED\r\n");
+            }
 #else
             HandleBleCommand(BT_ReceiveChar());
 #endif
@@ -361,16 +378,7 @@ int Main_Runtime(void)
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
             OLED_SharedService(&mpu);
-            if ((uint32_t)(now - last_menu_status_ms) >= 2000U) {
-                last_menu_status_ms = now;
-                BT_Printf("MENU,STATUS,focus=%u,selected=%u,code=%s,locked=%u\r\n",
-                          (unsigned)(mode_menu.focus + 1U),
-                          mode_menu.selected == MODE_MENU_NO_SELECTION ? 0U :
-                            (unsigned)(mode_menu.selected + 1U),
-                          mode_menu.selected == MODE_MENU_NO_SELECTION ? "NONE" :
-                            ModeMenu_Code(mode_menu.selected),
-                          (unsigned)Motor_OutputsLocked());
-            }
+            /* Event-only SPP output: no periodic MENU,STATUS heartbeat. */
         }
 #endif
 #if defined(INTEGRATION_DIAG)
@@ -778,6 +786,7 @@ int Main_Runtime(void)
 
 #endif
 
+#if !defined(MODE_MENU_ONLY)
         if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
             int32_t left_count;
             int32_t right_count;
@@ -821,6 +830,7 @@ int Main_Runtime(void)
                         (long)right_count,yaw,gyro,(unsigned long)UART_GetDroppedMessages());
 #endif
         }
+#endif /* !MODE_MENU_ONLY */
     }
 }
 
