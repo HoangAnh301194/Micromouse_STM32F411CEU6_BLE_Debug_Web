@@ -6,6 +6,11 @@ static const char *const menu_labels[MODE_MENU_ITEM_COUNT] = {
     "5.Speedrun", "6.Reset Map", "7.System Test"
 };
 
+static const char *const menu_names[MODE_MENU_ITEM_COUNT] = {
+    "Calibration", "Run Slow", "Run Faster", "A* Run",
+    "Speedrun", "Reset Map", "System Test"
+};
+
 static const char *const menu_codes[MODE_MENU_ITEM_COUNT] = {
     "CALIBRATION", "RUN_SLOW", "RUN_FASTER", "ASTAR_RUN",
     "SPEEDRUN", "RESET_MAP", "SYSTEM_TEST"
@@ -21,10 +26,16 @@ const char *ModeMenu_Code(uint8_t index)
     return index < MODE_MENU_ITEM_COUNT ? menu_codes[index] : "INVALID";
 }
 
+const char *ModeMenu_Name(uint8_t index)
+{
+    return index < MODE_MENU_ITEM_COUNT ? menu_names[index] : "INVALID";
+}
+
 void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms)
 {
     if (!menu) return;
-    menu->focus = 0U;
+    /* No mode is focused until the first PA0 short press. */
+    menu->focus = MODE_MENU_NO_SELECTION;
     menu->selected = MODE_MENU_NO_SELECTION;
     menu->raw_pressed = button_pressed ? 1U : 0U;
     menu->stable_pressed = menu->raw_pressed;
@@ -61,11 +72,15 @@ ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
             if (!menu->long_sent) {
                 if ((uint32_t)(now_ms - menu->pressed_at_ms) >=
                     MODE_MENU_LONG_PRESS_MS) {
-                    menu->selected = menu->focus;
                     menu->long_sent = 1U;
-                    return MODE_MENU_EVENT_SELECT;
+                    if (menu->focus != MODE_MENU_NO_SELECTION) {
+                        menu->selected = menu->focus;
+                        return MODE_MENU_EVENT_SELECT;
+                    }
+                    return MODE_MENU_EVENT_NONE;
                 }
-                menu->focus = (uint8_t)((menu->focus + 1U) % MODE_MENU_ITEM_COUNT);
+                menu->focus = menu->focus == MODE_MENU_NO_SELECTION ? 0U :
+                    (uint8_t)((menu->focus + 1U) % MODE_MENU_ITEM_COUNT);
                 return MODE_MENU_EVENT_FOCUS;
             }
         }
@@ -73,9 +88,12 @@ ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
 
     if (menu->armed && menu->stable_pressed && !menu->long_sent &&
         (uint32_t)(now_ms - menu->pressed_at_ms) >= MODE_MENU_LONG_PRESS_MS) {
-        menu->selected = menu->focus;
         menu->long_sent = 1U;
-        return MODE_MENU_EVENT_SELECT;
+        if (menu->focus != MODE_MENU_NO_SELECTION) {
+            menu->selected = menu->focus;
+            return MODE_MENU_EVENT_SELECT;
+        }
+        return MODE_MENU_EVENT_NONE;
     }
 
     return MODE_MENU_EVENT_NONE;
