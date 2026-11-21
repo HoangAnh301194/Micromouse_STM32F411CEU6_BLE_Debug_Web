@@ -39,3 +39,11 @@ Motor outputs remain locked. Existing gyro calibration during boot remains.
     pio run -e wall_pid_4cell_96m
     pio run -e wall_pid_4cell_96m -t upload
 Test physical PA0 and SPP with VM motor power disconnected.
+
+## KEY initialized after calibration
+
+The menu state machine now initializes only after `mpu.calibrated` is true
+and the driver reaches `cal_state==3`. Holding PA0 during calibration must
+not select a mode. The held key must be released before any new action.
+After `W,MENU_READY`, a short press advances one step, and holding the
+button >=400 ms confirms the focused mode only once. No mode action runs.

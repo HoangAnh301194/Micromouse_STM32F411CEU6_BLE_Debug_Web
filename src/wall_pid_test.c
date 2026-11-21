@@ -45,6 +45,7 @@ static struct {
 } st;
 static MPU6050_Handle_t mpu;
 static ModeMenu mode_menu;
+static uint8_t menu_announced;
 /* 1Hz Bluetooth-only monitor. No BLE transmissions from TIM11.
  * Unit of yaw_cd and gz_cd: 1/100 degree and 1/100 degree/s.
  * 200Hz SRAM samples are retained internally, never replayed over BLE.
@@ -254,7 +255,8 @@ static void ServiceModeMenu(uint32_t now)
     while(BT_ReadByte(&rx)){
         if(rx=='?') BT_SendString("SPP CONNECTED\r\n");
     }
-    if(st.phase!=WT_IDLE || !mpu.calibrated || mpu.cal_state!=3U)return;
+    if(st.phase!=WT_IDLE || !mpu.calibrated || mpu.cal_state!=3U ||
+       !menu_announced)return;
     event=ModeMenu_Poll(&mode_menu,Board_ButtonPressed(),now);
     if(event==MODE_MENU_EVENT_FOCUS){
         BT_Printf("Mode %u: %s\r\n",
@@ -271,7 +273,6 @@ int WallPidTest_Main(void)
 {
     MPU6050_Status rc;
     uint8_t end_reported=0U;
-    uint8_t menu_announced=0U;
     Board_Init();
     SystemTimer_Init();
     BT_Init();
@@ -295,7 +296,8 @@ int WallPidTest_Main(void)
     Motion_Init();IR_StartScan();
     Control_Init(&mpu);
     st.phase=WT_IDLE;st.started_once=0U;st.trace_count=0U;
-    ModeMenu_Init(&mode_menu,Board_ButtonPressed(),millis());
+    /* Do not arm button gestures until calibration is actually complete. */
+    menu_announced=0U;
     Control_Start();
     BT_SendString("W,WAIT_CAL,menu_locked_until_calib_ok\n");
     for(;;){
@@ -304,6 +306,8 @@ int WallPidTest_Main(void)
         ServiceModeMenu(now);
         ServiceCalibrationStatus(now);
         if(!menu_announced && mpu.calibrated && mpu.cal_state==3U){
+            /* KEY held during calibration is ignored until released. */
+            ModeMenu_Init(&mode_menu,Board_ButtonPressed(),now);
             menu_announced=1U;
             BT_SendString("W,MENU_READY,7_modes,no_action_on_select\n");
         }
