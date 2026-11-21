@@ -73,10 +73,10 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
     if (menu->focus == MODE_MENU_NO_SELECTION) {
         SSD1306_SetCursor(0U, 25U);
-        SSD1306_WriteString("Press PA0 to browse",
+        SSD1306_WriteString("Press PA0: Next",
                             &Font_7x10, SSD1306_WHITE);
         SSD1306_SetCursor(0U, 43U);
-        SSD1306_WriteString("Hold: select mode",
+        SSD1306_WriteString("Hold: Select",
                             &Font_7x10, SSD1306_WHITE);
         return;
     }
