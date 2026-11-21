@@ -6,6 +6,7 @@
  * Motor outputs are locked at boot and latched at termination. */
 #if defined(WALL_PID_TEST_MODE)
 #include "wall_pid_test.h"
+#include "mode_menu.h"
 #include "wall_pid_trace.h"
 #include "board.h"
 #include "bt_debug.h"
@@ -43,6 +44,7 @@ static struct {
     WT_Trace trace[WT_TRACE_COUNT];
 } st;
 static MPU6050_Handle_t mpu;
+static ModeMenu mode_menu;
 /* Low-bandwidth Bluetooth-only monitor. No BLE transmissions from TIM11.
  * Unit of yaw_cd and gz_cd: 1/100 degree and 1/100 degree/s.
  * 200Hz SRAM samples are retained internally, never replayed over BLE.
@@ -240,37 +242,39 @@ static void StartPhysical(void)
                   (unsigned)in.ir.ema10_adc[IR_WALL_R0]);
     } else BT_SendString("W,REJECT,WALL_ADC_OR_MOTOR\n");
 }
-static void PollButton(uint32_t now)
+/* Exact v2 PA0 event semantics. No selection triggers a motor action.
+ * Once Wall PID runs are explicitly mapped in the future, the 1kHz
+ * control-tick emergency PA0 check remains independent from the menu.
+ */
+static void ServiceModeMenu(uint32_t now)
 {
-    static uint8_t init=0U,pressed_old=0U,press_ready=0U,boot_down=0U;
-    static uint32_t down_at=0U;
-    uint8_t pressed=Board_ButtonPressed();
-    if(!init){
-        init=1U;pressed_old=pressed;boot_down=pressed;down_at=now;
-        return;
+    ModeMenuEvent event;
+    uint8_t rx;
+    while(BT_ReadByte(&rx)){
+        if(rx=='?') BT_SendString("SPP CONNECTED\r\n");
     }
-    if(pressed==pressed_old)return;
-    pressed_old=pressed;
-    if(pressed){
-        down_at=now;
-        press_ready=ReadyForStart();
-        return;
+    if(st.phase!=WT_IDLE)return;
+    event=ModeMenu_Poll(&mode_menu,Board_ButtonPressed(),now);
+    if(event==MODE_MENU_EVENT_FOCUS){
+        BT_Printf("Mode %u: %s\r\n",
+                  (unsigned)(mode_menu.focus+1U),
+                  ModeMenu_Name(mode_menu.focus));
+    }else if(event==MODE_MENU_EVENT_SELECT){
+        BT_Printf("Selected mode %u: %s\r\n",
+                  (unsigned)(mode_menu.selected+1U),
+                  ModeMenu_Name(mode_menu.selected));
     }
-    if(boot_down){boot_down=0U;return;}
-    if(st.stop_consumed){st.stop_consumed=0U;return;}
-    if((uint32_t)(now-down_at)<40U)return;
-    if(press_ready && st.phase==WT_IDLE)StartPhysical();
 }
+
 int WallPidTest_Main(void)
 {
     MPU6050_Status rc;
-    uint32_t last_status=0U;
     uint8_t end_reported=0U;
     Board_Init();
     SystemTimer_Init();
     BT_Init();
     Motor_Init();Motor_LockOutputs();
-    BT_SendString("W,HELLO,mode=DUAL_WALL_4CELL,transport=BLE_TX,pa0=start_stop\n");
+    BT_SendString("W,HELLO,mode=MENU_7,pa0=short_next_long_select,motor_locked=1\n");
     if(Board_GetClockFault()){
         BT_SendString("W,FATAL,CLOCK\n");for(;;)__WFI();
     }
@@ -289,12 +293,13 @@ int WallPidTest_Main(void)
     Motion_Init();IR_StartScan();
     Control_Init(&mpu);
     st.phase=WT_IDLE;st.started_once=0U;st.trace_count=0U;
+    ModeMenu_Init(&mode_menu,Board_ButtonPressed(),millis());
     Control_Start();
-    BT_SendString("W,WAIT_CAL,place robot centred between 2 walls, PA0 physical only\n");
+    BT_SendString("W,MENU_READY,7_modes,no_action_on_select\n");
     for(;;){
         uint32_t now=millis();
         MPU6050_Update(&mpu);
-        PollButton(now);
+        ServiceModeMenu(now);
         ServiceCalibrationStatus(now);
         ServiceSensorTelemetry(now);
         if(st.phase==WT_RESULT && !end_reported){
@@ -302,20 +307,11 @@ int WallPidTest_Main(void)
             BT_Printf("W,END,%s,locked=%u\n",
                 Why((WP_Reason)st.reason),(unsigned)Motor_OutputsLocked());
         }
-        if(st.phase==WT_IDLE && (uint32_t)(now-last_status)>=1500U){
-            IR_WallSnapshot ir;
-            last_status=now;
-            if(Control_GetWallIRSnapshot(&ir)==IR_WALL_VALID && mpu.calibrated){
-                BT_Printf("W,READY,l=%u,r=%u,PA0=PRESS_RELEASE\n",
-                    (unsigned)ir.ema10_adc[IR_WALL_L0],
-                    (unsigned)ir.ema10_adc[IR_WALL_R0]);
-            }
-        }
         /* LED PC13 active LOW. Fast flash RUN, solid after finished.
          * Slow 1Hz blink READY. No external PC controls movement. */
         if(st.phase==WT_RUN)Board_StatusLed((uint8_t)((now/120U)%2U));
         else if(st.phase==WT_RESULT)Board_StatusLed(1U);
-        else Board_StatusLed((uint8_t)(ReadyForStart()&&(now/500U)%2U));
+        else Board_StatusLed((uint8_t)((now/500U)%2U));
         if(!MPU6050_NeedsImmediatePoll(&mpu))__WFI();
     }
 }
