@@ -28,6 +28,14 @@
 #endif
 
 #include "stm32f4xx.h"
+#if defined(MODE_MENU_ONLY)
+#if !defined(OLED_SHARED_I2C) || defined(INTEGRATION_DIAG) || defined(OLED_PRODUCTION_STATUS)
+#error "MODE_MENU_ONLY requires shared-I2C OLED and cannot combine with motion diagnostics"
+#endif
+#include "mode_menu.h"
+#include "oled_shared.h"
+#include "ssd1306.h"
+#endif
 #if defined(ENCODER_SPEED_PID_DIAG)
 #include "speed_pid_diag.h"
 #endif
@@ -36,6 +44,60 @@
 
 static MPU6050_Handle_t mpu;
 
+#if defined(MODE_MENU_ONLY)
+/* Main-context framebuffer edits only. I2C transfers are owned by the
+ * admission-controlled OLED_SharedService, never by TIM11 or USART2 IRQ. */
+static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
+{
+    uint8_t first, row, i;
+    if (!menu || !OLED_SharedReady()) return;
+
+    SSD1306_Fill(SSD1306_BLACK);
+    if (confirmed && menu->selected != MODE_MENU_NO_SELECTION) {
+        SSD1306_SetCursor(0U, 0U);
+        SSD1306_WriteString("MODE SELECTED", &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U, 20U);
+        SSD1306_WriteString((char *)ModeMenu_Label(menu->selected),
+                            &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U, 39U);
+        SSD1306_WriteString("NO ACTION YET", &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U, 52U);
+        SSD1306_WriteString("Short: next", &Font_7x10, SSD1306_WHITE);
+        return;
+    }
+
+    SSD1306_SetCursor(10U, 0U);
+    SSD1306_WriteString("SELECT MODE", &Font_7x10, SSD1306_WHITE);
+    SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
+    first = menu->focus >= 3U ? (uint8_t)(menu->focus - 3U) : 0U;
+    for (row = 0U; row < 4U; ++row) {
+        i = (uint8_t)(first + row);
+        if (i >= MODE_MENU_ITEM_COUNT) break;
+        SSD1306_SetCursor(0U, (uint8_t)(15U + row * 11U));
+        SSD1306_WriteString((i == menu->focus) ? ">" : " ",
+                            &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(10U, (uint8_t)(15U + row * 11U));
+        SSD1306_WriteString((char *)ModeMenu_Label(i),
+                            &Font_7x10, SSD1306_WHITE);
+    }
+}
+
+static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
+{
+    if (event == MODE_MENU_EVENT_FOCUS) {
+        BT_Printf("MENU,FOCUS,id=%u,code=%s,label=%s\r\n",
+                  (unsigned)(menu->focus + 1U),
+                  ModeMenu_Code(menu->focus), ModeMenu_Label(menu->focus));
+    } else if (event == MODE_MENU_EVENT_SELECT) {
+        BT_Printf("MENU,SELECT,id=%u,code=%s,label=%s,action=NONE,locked=%u\r\n",
+                  (unsigned)(menu->selected + 1U),
+                  ModeMenu_Code(menu->selected), ModeMenu_Label(menu->selected),
+                  (unsigned)Motor_OutputsLocked());
+    }
+}
+#endif
+
+#if !defined(MODE_MENU_ONLY)
 static void HandleBleCommand(char c)
 {
 #if defined(INTEGRATION_DIAG)
@@ -78,6 +140,7 @@ static void HandleBleCommand(char c)
         break;
     }
 }
+#endif /* !MODE_MENU_ONLY */
 
 #if defined(ENCODER_ALPHA_AB_DIAG)
 /* Only called in main, never from TIM11. Six short metrics frames per stage,
@@ -130,6 +193,10 @@ static void Encoder_LogShadowInstant(uint32_t now,
 int Main_Runtime(void)
 {
     uint32_t last_debug_ms = 0;
+#if defined(MODE_MENU_ONLY)
+    ModeMenu mode_menu;
+    uint32_t last_menu_status_ms = 0U;
+#endif
 #if defined(INTEGRATION_DIAG)
     uint32_t last_system_diag_ms = 0U;
 #if defined(ENCODER_PROFILE_DIAG)
@@ -185,6 +252,11 @@ int Main_Runtime(void)
                 (unsigned long)Board_GetAPB2TimerClockHz());
 
     Motor_Init();
+#if defined(MODE_MENU_ONLY)
+    /* This firmware deliberately has NO motion-mode implementation.
+     * Lock the power stage for the entire boot session. */
+    Motor_LockOutputs();
+#endif
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
     /* Hard latch for motor-OFF sensor/clock smoke test: no rearm until reset. */
     Motor_LockOutputs();
@@ -196,6 +268,25 @@ int Main_Runtime(void)
     IR_Init();
 
     mpu_status = MPU6050_Init(&mpu);
+#if defined(MODE_MENU_ONLY)
+    ModeMenu_Init(&mode_menu, Board_ButtonPressed(), millis());
+    {
+        uint8_t oled_found = (SSD1306_Init() == SSD1306_OK) ? 1U : 0U;
+        if (oled_found) {
+            /* Boot-only blocking render before the 1-kHz sensor loop starts. */
+            OLED_SharedInit(1U);
+            ModeMenu_Draw(&mode_menu, 0U);
+            SSD1306_UpdateScreen();
+            OLED_SharedEnable(1U);
+        } else {
+            OLED_SharedInit(0U);
+        }
+        BT_Printf("MENU,READY,count=7,short=NEXT,long=SELECT,action=NONE,locked=%u,oled=%u\r\n",
+                  (unsigned)Motor_OutputsLocked(), (unsigned)oled_found);
+        BT_Printf("MENU,FOCUS,id=1,code=%s,label=%s\r\n",
+                  ModeMenu_Code(mode_menu.focus), ModeMenu_Label(mode_menu.focus));
+    }
+#endif
     if (mpu_status == MPU6050_OK) {
         mpu_status = MPU6050_Calibrate(&mpu); /* Starts async calibration. */
     }
@@ -234,7 +325,11 @@ int Main_Runtime(void)
 
     BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
     UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
+#if defined(MODE_MENU_ONLY)
+    BT_SendString("MENU: PA0 short=next, hold>=400ms=select; NO MOTOR ACTIONS\r\n");
+#else
     BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw\r\n");
+#endif
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
     UART_SendString("INTEGRATION_DIAG,MOTOR_OFF_SHADOW,OUTPUTS_LOCKED\r\n");
 #elif defined(INTEGRATION_DIAG_MOTOR_ON)
@@ -250,8 +345,34 @@ int Main_Runtime(void)
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
 
         if (BT_Available()) {
+#if defined(MODE_MENU_ONLY)
+            /* Read and discard legacy F/L/R/Z commands; menu is PA0-only. */
+            (void)BT_ReceiveChar();
+#else
             HandleBleCommand(BT_ReceiveChar());
+#endif
         }
+#if defined(MODE_MENU_ONLY)
+        {
+            ModeMenuEvent event = ModeMenu_Poll(&mode_menu,
+                                                Board_ButtonPressed(), now);
+            if (event != MODE_MENU_EVENT_NONE) {
+                ModeMenu_Report(&mode_menu, event);
+                ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
+            }
+            OLED_SharedService(&mpu);
+            if ((uint32_t)(now - last_menu_status_ms) >= 2000U) {
+                last_menu_status_ms = now;
+                BT_Printf("MENU,STATUS,focus=%u,selected=%u,code=%s,locked=%u\r\n",
+                          (unsigned)(mode_menu.focus + 1U),
+                          mode_menu.selected == MODE_MENU_NO_SELECTION ? 0U :
+                            (unsigned)(mode_menu.selected + 1U),
+                          mode_menu.selected == MODE_MENU_NO_SELECTION ? "NONE" :
+                            ModeMenu_Code(mode_menu.selected),
+                          (unsigned)Motor_OutputsLocked());
+            }
+        }
+#endif
 #if defined(INTEGRATION_DIAG)
         /* RX IRQ only queues bytes; command parsing is budgeted in main. */
         IntegrationSerial_Poll(&mpu, now);
