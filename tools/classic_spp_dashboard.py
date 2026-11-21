@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""JDY-33 Bluetooth Classic SPP desktop dashboard (receive-only by design).
+"""JDY-33 Bluetooth Classic SPP dashboard (read-only + safe '?' link probe).
 
+The only TX byte is a single '?' on COM open; no motor/Flash commands.
 Same physical JDY-33 on STM32 USART2 PA2/PA3; Web BLE remains untouched.
 Run: python tools/classic_spp_dashboard.py --port COM37
 """
@@ -85,7 +86,11 @@ class SPPReader:
             with serial.Serial(port=port, baudrate=baud, timeout=0.15,
                                write_timeout=0.5) as link:
                 connected_at = time.monotonic()
-                self._emit("state", "%s COM open; waiting for SPP RX bytes" % port)
+                self._emit("state", "%s COM open; verifying SPP link" % port)
+                # Exactly one harmless status probe per connection; menu-only
+                # firmware replies 'SPP CONNECTED'. No motor/Flash commands.
+                link.write(b"?")
+                link.flush()
                 framer = LineFramer()
                 while not self.stop.is_set():
                     chunk = link.read(link.in_waiting or 1)
@@ -156,8 +161,8 @@ class Dashboard:
         outer.pack(fill="both", expand=True)
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · receive-only. "
-                  "No firmware modification, no motor or Flash commands.",
+        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · one '?' link probe only. "
+                  "No motor or Flash commands.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
         bar.pack(fill="x", pady=(0, 8))
@@ -356,6 +361,8 @@ class Dashboard:
                 break
             if kind == "line":
                 self.handle_line(value)
+                if value.strip() == "SPP CONNECTED":
+                    self.status.set("SPP CONNECTED: " + self.port_value.get().strip())
             else:
                 self.status.set(value)
                 if kind == "warning":
