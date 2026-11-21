@@ -45,11 +45,11 @@ static struct {
 } st;
 static MPU6050_Handle_t mpu;
 static ModeMenu mode_menu;
-/* Low-bandwidth Bluetooth-only monitor. No BLE transmissions from TIM11.
+/* 1Hz Bluetooth-only monitor. No BLE transmissions from TIM11.
  * Unit of yaw_cd and gz_cd: 1/100 degree and 1/100 degree/s.
  * 200Hz SRAM samples are retained internally, never replayed over BLE.
  */
-#define WT_SENSOR_PERIOD_MS 200U
+#define WT_SENSOR_PERIOD_MS 1000U
 #define WT_CAL_PERIOD_MS 1000U
 
 static void ServiceSensorTelemetry(uint32_t now)
