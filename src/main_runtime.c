@@ -50,7 +50,7 @@ static MPU6050_Handle_t mpu;
 static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
 {
     uint8_t first, row, i;
-    if (!menu || !OLED_SharedReady()) return;
+    if (!menu) return;
 
     SSD1306_Fill(SSD1306_BLACK);
     if (confirmed && menu->selected != MODE_MENU_NO_SELECTION) {
@@ -274,13 +274,13 @@ int Main_Runtime(void)
         uint8_t oled_found = (SSD1306_Init() == SSD1306_OK) ? 1U : 0U;
         if (oled_found) {
             /* Boot-only blocking render before the 1-kHz sensor loop starts. */
-            OLED_SharedInit(1U);
             ModeMenu_Draw(&mode_menu, 0U);
             SSD1306_UpdateScreen();
-            OLED_SharedEnable(1U);
-        } else {
-            OLED_SharedInit(0U);
         }
+        /* Mirror the actual rendered framebuffer before enabling I2C DMA.
+         * No redundant full-screen resend is needed after gyro calibration. */
+        OLED_SharedInit(oled_found);
+        OLED_SharedEnable(oled_found);
         BT_Printf("MENU,READY,count=7,short=NEXT,long=SELECT,action=NONE,locked=%u,oled=%u\r\n",
                   (unsigned)Motor_OutputsLocked(), (unsigned)oled_found);
         BT_Printf("MENU,FOCUS,id=1,code=%s,label=%s\r\n",
