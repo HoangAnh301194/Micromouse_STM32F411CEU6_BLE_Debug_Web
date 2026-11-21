@@ -49,6 +49,73 @@ static uint32_t tx_last_ms;
 static char tx_line[110];
 static uint16_t tx_line_len;
 
+/* Main-context only: 1Hz live sensor/status frames over JDY-33.
+ * Preserve the 1kHz TIM11 controller and 200Hz SRAM MW trace.
+ * yawcd/gzcd = 0.01 degree(/s); PWM = permille; speed = mm/s.
+ * Frames are nonblocking best-effort, and are disabled at WT_RESULT.
+ */
+#define WT_LIVE_PERIOD_MS 1000U
+static void ServiceLiveTelemetry(uint32_t now)
+{
+    static uint32_t last_ms = 0U;
+    MPU6050_Snapshot_t gyro;
+    IR_WallSnapshot ir;
+    uint8_t imu_valid, phase, calibrated;
+    int32_t enc_l, enc_r, speed, target, error_1000;
+    int32_t yaw_cd = 0, gz_cd = 0;
+    int16_t pwm_l, pwm_r;
+    uint32_t irq;
+    char line[210];
+    int n;
+
+    if ((uint32_t)(now - last_ms) < WT_LIVE_PERIOD_MS ||
+        st.phase == WT_RESULT) return;
+    last_ms = now;
+    imu_valid = MPU6050_GetSnapshot(&mpu, &gyro) ? 1U : 0U;
+    if (imu_valid) {
+        yaw_cd = (int32_t)(gyro.yaw_deg * 100.0f);
+        gz_cd = (int32_t)(gyro.gyro_z_dps * 100.0f);
+    }
+    (void)Control_GetWallIRSnapshot(&ir);
+
+    /* Atomic snapshot of the controller fields changed by TIM11. */
+    irq = __get_PRIMASK();
+    __disable_irq();
+    phase = st.phase;
+    calibrated = mpu.calibrated;
+    enc_l = Encoder_GetLeftCount();
+    enc_r = Encoder_GetRightCount();
+    speed = (int32_t)st.ctl.speed_mm_s;
+    target = (int32_t)st.ctl.target_speed_mm_s;
+    error_1000 = (int32_t)(st.ctl.error_norm * 1000.0f);
+    pwm_l = st.ctl.pwm_l;
+    pwm_r = st.ctl.pwm_r;
+    if (!irq) __enable_irq();
+    if (phase == WT_RESULT) return;
+
+    n = snprintf(line, sizeof(line),
+        "WS,ms=%lu,phase=%u,cal=%u,imu=%u,yawcd=%ld,gzcd=%ld,encL=%ld,encR=%ld,spd=%ld,target=%ld,pwmL=%d,pwmR=%d,err1000=%ld\n",
+        (unsigned long)now, (unsigned)phase, (unsigned)calibrated,
+        (unsigned)imu_valid, (long)yaw_cd, (long)gz_cd,
+        (long)enc_l, (long)enc_r, (long)speed, (long)target,
+        (int)pwm_l, (int)pwm_r, (long)error_1000);
+    if (n > 0 && (size_t)n < sizeof(line))
+        (void)BT_TrySendData((const uint8_t *)line, (uint16_t)n);
+
+    n = snprintf(line, sizeof(line),
+        "WI,ms=%lu,valid=%u,age_us=%lu,scan=%lu,L90=%u,L45=%u,L0=%u,R0=%u,R45=%u,R90=%u\n",
+        (unsigned long)now, (unsigned)(ir.status == IR_WALL_VALID),
+        (unsigned long)ir.age_us, (unsigned long)ir.scan_count,
+        (unsigned)ir.ema10_adc[IR_WALL_L90],
+        (unsigned)ir.ema10_adc[IR_WALL_L45],
+        (unsigned)ir.ema10_adc[IR_WALL_L0],
+        (unsigned)ir.ema10_adc[IR_WALL_R0],
+        (unsigned)ir.ema10_adc[IR_WALL_R45],
+        (unsigned)ir.ema10_adc[IR_WALL_R90]);
+    if (n > 0 && (size_t)n < sizeof(line))
+        (void)BT_TrySendData((const uint8_t *)line, (uint16_t)n);
+}
+
 static const char *Why(WP_Reason w)
 {
     switch(w){
@@ -288,6 +355,7 @@ int WallPidTest_Main(void)
         uint32_t now=millis();
         MPU6050_Update(&mpu);
         PollButton(now);
+        ServiceLiveTelemetry(now);
         if(mpu.calibrated && !last_cal){
             last_cal=1U;BT_SendString("W,CAL_OK\n");
         }
