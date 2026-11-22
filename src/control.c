@@ -24,10 +24,6 @@ static volatile uint8_t control_running = 0;
 static volatile IR_Data_t ir_latest;
 /* Updated by TIM11 only; read from main with a short IRQ-safe copy. */
 static IR_WallSignal wall_ir_ema10;
-#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
-static volatile Control_DebugStats_t di_stats;
-static volatile uint32_t di_prev_irq_us;
-static volatile uint8_t di_seen_valid;
 void Control_GetIRSnapshot(IR_Data_t *out)
 {
     uint32_t primask;
@@ -39,6 +35,10 @@ void Control_GetIRSnapshot(IR_Data_t *out)
     out->completed_us=ir_latest.completed_us;
     if (!primask) __enable_irq();
 }
+#if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
+static volatile Control_DebugStats_t di_stats;
+static volatile uint32_t di_prev_irq_us;
+static volatile uint8_t di_seen_valid;
 void Control_GetDebugStats(Control_DebugStats_t *out)
 {
     uint32_t primask;
