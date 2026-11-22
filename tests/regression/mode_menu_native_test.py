@@ -96,6 +96,35 @@ int main(void) {
     assert(at(&m, 0x000000E0u, 1) == MODE_MENU_EVENT_SELECT);
     assert(m.selected == 0);
 
+    /* PC SPP and PA0 use the same menu actions; streaming is passive. */
+    ModeMenu_Init(&m, 0, 0);
+    for (i = 0; i < 7; ++i)
+        assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_FOCUS);
+    assert(m.focus == 6);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_ENTER);
+    assert(m.page == MODE_MENU_PAGE_TEST && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_NONE);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
+    assert(m.test_focus == 0);
+    assert(!strcmp(ModeMenu_TestName(0), "IR Test"));
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
+    assert(m.active_test == 0);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
+    assert(m.test_focus == 1 && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
+    assert(m.active_test == 1);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
+    assert(m.test_focus == 2 && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
+    assert(m.active_test == 2);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
+    assert(m.test_focus == MODE_MENU_TEST_BACK && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_EXIT);
+    assert(m.page == MODE_MENU_PAGE_MAIN && m.selected == 6);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_FOCUS);
+    assert(m.focus == 0);
+    assert(!strcmp(ModeMenu_TestName(4), "INVALID"));
+
     puts("Mode menu native tests: PASS");
     return 0;
 }
