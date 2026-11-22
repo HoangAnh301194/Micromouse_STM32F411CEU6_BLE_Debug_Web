@@ -12,12 +12,16 @@ def main():
         assert classify_spp_line(line) == "data", line
     for line in ("SPP CONNECTED", "Mode 7: System Test",
                  "Selected mode 7: System Test", "W,MENU_READY", "W,END,DONE",
-                 "STATUS,TEST START", "UNKNOWN"):
+                 "System Test 2: Encoder Test", "Selected test 2: Encoder Test",
+                 "System Test: back to main menu", "STATUS,TEST START", "UNKNOWN"):
         assert classify_spp_line(line) == "status", line
     row = data_to_csv_row("MPU,ms=1000,valid=1,yaw_cd=250,gz_cd=-40")
     assert row["yaw_cd"] == "250" and row["L0"] == ""
     row = data_to_csv_row("IR,ms=1000,L0=12,L45=20,L90=0,R0=13,R45=1,R90=0")
     assert row["L45"] == "20" and row["R0"] == "13"
+    row = data_to_csv_row("ENC,ms=1200,dt_ms=50,left=12,right=-13,delta_l=4,delta_r=-5,pps_l=80,pps_r=-100,window_l=80,window_r=-100")
+    assert row["delta_l"] == "4" and row["delta_r"] == "-5"
+    assert row["window_l"] == "80" and row["dt_ms"] == "50"
     row = data_to_csv_row("ENC_CSV,1100,12,13,120,125")
     assert row["left"] == "12" and row["pps_r"] == "125"
     with TemporaryDirectory() as temp:
