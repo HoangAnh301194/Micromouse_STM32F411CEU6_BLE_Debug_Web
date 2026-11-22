@@ -394,6 +394,22 @@
             color: var(--cyan);
         }
 
+        /* Map config selects — same look as send-bar input */
+        .cfg-select {
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-base);
+            color: var(--text-pri);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color .2s;
+        }
+        .cfg-select:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(88,166,255,.15); }
+        .cfg-select option { background: var(--bg-panel); color: var(--text-pri); }
+
         /* Responsive */
         @media (max-width: 768px) {
             .workspace { flex-direction: column; }
@@ -416,7 +432,7 @@
         </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-        <span class="maze-size-badge">16×16</span>
+        <span class="maze-size-badge" id="mazeSizeBadge">16×16</span>
         <div class="status-badge disconnected" id="statusBadge">
             <div class="status-dot"></div>
             <span id="statusText">Disconnected</span>
@@ -453,7 +469,7 @@
             <span><span class="mib-lbl">Robot </span><span class="mib-val" id="mibPos">(0,0)</span></span>
             <span><span class="mib-lbl">Dir </span><span class="mib-val" id="mibDir">N</span></span>
             <span><span class="mib-lbl">Flood </span><span class="mib-val" id="mibDist">—</span></span>
-            <span><span class="mib-lbl">Visited </span><span class="mib-val" id="mibVisit">0</span><span class="mib-lbl">/256</span></span>
+            <span><span class="mib-lbl">Visited </span><span class="mib-val" id="mibVisit">0</span><span class="mib-lbl" id="mibTotal">/256</span></span>
             <span><span class="mib-lbl">Steps </span><span class="mib-val" id="mibSteps">0</span></span>
             <span id="mibPhase" style="color:var(--purple);font-size:10px;"></span>
         </div>
@@ -481,6 +497,27 @@
                     <button class="toggle-btn" onclick="setFilter('warn',this)" data-f="warn">WRN</button>
                     <button class="toggle-btn" onclick="setFilter('err',this)" data-f="err">ERR</button>
                 </div>
+            </div>
+            <!-- Map / Goal config row -->
+            <div class="controls-row">
+                <span class="controls-label">MAP</span>
+                <select class="cfg-select" id="cfgMapSize" onchange="applyMapConfig(true)">
+                    <option value="4">4 × 4</option>
+                    <option value="5">5 × 5</option>
+                    <option value="6">6 × 6</option>
+                    <option value="8">8 × 8</option>
+                    <option value="10">10 × 10</option>
+                    <option value="12">12 × 12</option>
+                    <option value="16" selected>16 × 16</option>
+                    <option value="20">20 × 20</option>
+                    <option value="32">32 × 32</option>
+                </select>
+                <span class="controls-label" style="min-width:28px;">GOAL</span>
+                <select class="cfg-select" id="cfgGoalSize" onchange="applyMapConfig(true)">
+                    <option value="1">1 × 1</option>
+                    <option value="2" selected>2 × 2</option>
+                </select>
+                <span id="cfgInfo" style="font-size:10px;color:var(--text-sec);margin-left:6px;"></span>
             </div>
         </div>
 
@@ -514,7 +551,7 @@
                 <div class="stat-card">
                     <div class="sc-label">CELLS VISITED</div>
                     <div class="sc-value" id="st-visited">0</div>
-                    <div class="sc-sub">of 256 total</div>
+                    <div class="sc-sub" id="stTotalCells">of 256 total</div>
                 </div>
                 <div class="stat-card">
                     <div class="sc-label">WALLS FOUND</div>
@@ -559,9 +596,11 @@
 /* ═══════════════════════════════════════════════
    CONSTANTS
 ═══════════════════════════════════════════════ */
-const MAZE_SIZE    = 16;
+// --- Map Config: single source of truth ---
+const mapConfig = { size: 16, goalSize: 2 };
+let MAZE_SIZE  = 16;              // updated by applyMapConfig()
 const WALL_N = 0x1, WALL_E = 0x2, WALL_S = 0x4, WALL_W = 0x8;
-const GOAL_CELLS   = [[7,7],[8,7],[7,8],[8,8]]; // [x,y]
+let GOAL_CELLS = [[7,7],[8,7],[7,8],[8,8]]; // updated by applyMapConfig()
 const DIR_LABELS   = ['N','E','S','W'];
 const DIR_DX       = [0, 1, 0, -1];
 const DIR_DY       = [1, 0,-1,  0];
@@ -570,6 +609,80 @@ const DIR_OPP_WALL = [WALL_S, WALL_W, WALL_N, WALL_E];
 const DIR_OPP      = [2, 3, 0, 1];
 
 
+
+/* ═══════════════════════════════════════════════
+   MAP CONFIG
+═══════════════════════════════════════════════ */
+
+/**
+ * Compute goal cell coordinates from mapSize and goalSize.
+ * Goal is always centred:
+ *   goalSize=1 → floor(size/2)        e.g. 5→2, 16→8, 8→4
+ *   goalSize=2 → floor((size-2)/2)+1  e.g. 16→7-8, 8→3-4, 5→1-2
+ */
+function computeGoalCells(size, goalSize) {
+    const cells = [];
+    if (goalSize === 1) {
+        const c = Math.floor(size / 2);
+        cells.push([c, c]);
+    } else {
+        // 2×2: top-left corner at floor((size-2)/2)
+        const c = Math.floor((size - 2) / 2);
+        cells.push([c, c], [c+1, c], [c, c+1], [c+1, c+1]);
+    }
+    return cells;
+}
+
+/**
+ * Apply selected map/goal configuration.
+ * @param {boolean} isUserAction - when true, logs the change to BLE console.
+ */
+function applyMapConfig(isUserAction) {
+    const selSize = document.getElementById('cfgMapSize');
+    const selGoal = document.getElementById('cfgGoalSize');
+    const cfgInfo = document.getElementById('cfgInfo');
+    if (!selSize || !selGoal) return;   // DOM not ready yet
+
+    const newSize     = parseInt(selSize.value, 10);
+    const newGoalSize = parseInt(selGoal.value, 10);
+
+    // Validation: map must be at least 2× goal size in each dimension
+    if (newSize < newGoalSize * 2) {
+        if (cfgInfo) {
+            cfgInfo.textContent = '⚠ Map too small for goal';
+            cfgInfo.style.color = 'var(--red)';
+        }
+        return;
+    }
+    if (cfgInfo) { cfgInfo.textContent = ''; cfgInfo.style.color = ''; }
+
+    // --- Update source of truth ---
+    mapConfig.size     = newSize;
+    mapConfig.goalSize = newGoalSize;
+
+    // --- Update derived globals ---
+    MAZE_SIZE  = newSize;
+    GOAL_CELLS = computeGoalCells(newSize, newGoalSize);
+
+    // --- Sync static UI labels ---
+    const badge = document.getElementById('mazeSizeBadge');
+    if (badge) badge.textContent = `${newSize}×${newSize}`;
+
+    const total = MAZE_SIZE * MAZE_SIZE;
+    const mibTotal = document.getElementById('mibTotal');
+    if (mibTotal) mibTotal.textContent = `/${total}`;
+
+    const stTotal = document.getElementById('stTotalCells');
+    if (stTotal) stTotal.textContent = `of ${total} total`;
+
+    // --- Reset maze state with new dimensions ---
+    initMazeDisplay();
+
+    if (isUserAction) {
+        const goalStr = GOAL_CELLS.map(([x,y])=>`(${x},${y})`).join(' ');
+        addBLEEntry(`⚙ Map: ${newSize}×${newSize}  Goal: ${newGoalSize}×${newGoalSize}  Cells: ${goalStr}`, 'sys');
+    }
+}
 
 /* ═══════════════════════════════════════════════
    FLOOD FILL
@@ -922,7 +1035,7 @@ let bleLogEntries = [];
 ═══════════════════════════════════════════════ */
 window.addEventListener('load', () => {
     sizeCanvas();
-    initMazeDisplay();
+    applyMapConfig();   // initialises MAZE_SIZE, GOAL_CELLS, then calls initMazeDisplay()
     document.getElementById('mazeOverlay').style.display = 'none';
 });
 
@@ -1211,10 +1324,11 @@ function parseMZChunk(line) {
 function applyMZData(hasFlood) {
     mzTimeout = null;
 
-    /* Assemble walls from chunks 0-3 (64 hex chars each = 4 rows of 16) */
+    /* Assemble walls from chunks 0-3 (chunk size scales with MAZE_SIZE) */
+    const wallChunkLen = Math.ceil(MAZE_SIZE * MAZE_SIZE / 4);
     let wallsHex = '';
-    for (let i = 0; i < 4; i++) wallsHex += (mzChunks[i] || '0'.repeat(64));
-    if (wallsHex.length >= 256) {
+    for (let i = 0; i < 4; i++) wallsHex += (mzChunks[i] || '0'.repeat(wallChunkLen));
+    if (wallsHex.length >= MAZE_SIZE * MAZE_SIZE) {
         mazeWalls = Array.from({length:MAZE_SIZE}, (_,y) =>
             Array.from({length:MAZE_SIZE}, (_,x) => parseInt(wallsHex[y*MAZE_SIZE+x],16))
         );
@@ -1223,7 +1337,7 @@ function applyMZData(hasFlood) {
     if (hasFlood) {
         /* Assemble flood from chunks 4-7 */
         const floodHex = mzChunks[4] + mzChunks[5] + mzChunks[6] + mzChunks[7];
-        if (floodHex.length >= 512) {
+        if (floodHex.length >= MAZE_SIZE * MAZE_SIZE * 2) {
             mazeFlood = Array.from({length:MAZE_SIZE}, (_,y) =>
                 Array.from({length:MAZE_SIZE}, (_,x) =>
                     parseInt(floodHex.substring((y*MAZE_SIZE+x)*2, (y*MAZE_SIZE+x)*2+2), 16))
@@ -1254,12 +1368,12 @@ function parseMazeData(line) {
     robotPos = { x: parseInt(rp[0]), y: parseInt(rp[1]), dir: parseInt(rp[2]) };
 
     const wh = parts[2];
-    if (wh.length < 256) return;
+    if (wh.length < MAZE_SIZE * MAZE_SIZE) return;
     mazeWalls = Array.from({length:MAZE_SIZE}, (_,y) =>
         Array.from({length:MAZE_SIZE}, (_,x) => parseInt(wh[y*MAZE_SIZE+x],16))
     );
 
-    if (parts.length >= 4 && parts[3].length >= 512) {
+    if (parts.length >= 4 && parts[3].length >= MAZE_SIZE * MAZE_SIZE * 2) {
         const fh = parts[3];
         mazeFlood = Array.from({length:MAZE_SIZE}, (_,y) =>
             Array.from({length:MAZE_SIZE}, (_,x) => parseInt(fh.substring((y*MAZE_SIZE+x)*2, (y*MAZE_SIZE+x)*2+2), 16))
