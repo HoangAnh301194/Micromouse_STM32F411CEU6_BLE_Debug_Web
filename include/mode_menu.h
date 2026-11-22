@@ -9,16 +9,27 @@
 #define MODE_MENU_LONG_PRESS_MS 400U
 #define MODE_MENU_DEBOUNCE_MS 30U
 #define MODE_MENU_NO_SELECTION 0xFFU
+#define MODE_MENU_TEST_COUNT 4U
+#define MODE_MENU_TEST_BACK 3U
+#define MODE_MENU_PAGE_MAIN 0U
+#define MODE_MENU_PAGE_TEST 1U
 
 typedef enum {
     MODE_MENU_EVENT_NONE = 0,
     MODE_MENU_EVENT_FOCUS = 1,
-    MODE_MENU_EVENT_SELECT = 2
+    MODE_MENU_EVENT_SELECT = 2,
+    MODE_MENU_EVENT_TEST_ENTER = 3,
+    MODE_MENU_EVENT_TEST_FOCUS = 4,
+    MODE_MENU_EVENT_TEST_SELECT = 5,
+    MODE_MENU_EVENT_TEST_EXIT = 6
 } ModeMenuEvent;
 
 typedef struct {
     uint8_t focus;
     uint8_t selected;
+    uint8_t page;
+    uint8_t test_focus;
+    uint8_t active_test;
     uint8_t raw_pressed;
     uint8_t stable_pressed;
     uint8_t armed;
@@ -29,6 +40,10 @@ typedef struct {
 
 void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms);
 ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms);
+/* Shared pure menu events: physical KEY and safe one-byte SPP commands. */
+ModeMenuEvent ModeMenu_Next(ModeMenu *menu);
+ModeMenuEvent ModeMenu_Select(ModeMenu *menu);
+const char *ModeMenu_TestName(uint8_t index);
 const char *ModeMenu_Label(uint8_t index);
 const char *ModeMenu_Code(uint8_t index);
 const char *ModeMenu_Name(uint8_t index);
