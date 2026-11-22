@@ -20,6 +20,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from classic_spp_protocol import LineFramer, MazeState, numeric_fields
 from classic_spp_ports import classify_port
+from spp_dual_log import DualSessionLog, classify_spp_line
 
 
 BAUD = 115200
@@ -134,10 +135,12 @@ class Dashboard:
         self.total_lines = 0
         self.logging_file = None
         self.log_path = ""
+        self.dual_log = DualSessionLog(Path(__file__).resolve().parents[1] / "logs" / "spp_runs")
         self.maze_dirty = True
         self.plot_dirty = True
         self.last_plot = 0.0
         self.filter_text = tk.StringVar(value="")
+        self.data_filter = tk.StringVar(value="All")
         self.status = tk.StringVar(value="Disconnected · BLE web remains independent")
         self.port_value = tk.StringVar(value=default_port)
         self.baud_value = tk.StringVar(value=str(BAUD))
@@ -199,29 +202,49 @@ class Dashboard:
         self._telemetry_widgets()
 
     def _terminal_widgets(self):
-        bar = ttk.Frame(self.terminal_tab)
-        bar.pack(fill="x", pady=(0, 5))
-        ttk.Label(bar, text="Filter:").pack(side="left")
-        ttk.Entry(bar, textvariable=self.filter_text, width=32).pack(side="left", padx=5)
-        ttk.Button(bar, text="Clear view", command=self.clear_view).pack(side="left")
-        ttk.Label(bar, text="All unfiltered RX lines are retained in the file log",
-                  style="Muted.TLabel").pack(side="right")
-        frame = ttk.Frame(self.terminal_tab)
+        panes = ttk.PanedWindow(self.terminal_tab, orient="horizontal")
+        panes.pack(fill="both", expand=True)
+        left = ttk.LabelFrame(panes, text="Continuous data - MPU / IR / Encoder", padding=5)
+        right = ttk.LabelFrame(panes, text="Micromouse status - modes / events", padding=5)
+        panes.add(left, weight=3)
+        panes.add(right, weight=2)
+
+        data_bar = ttk.Frame(left)
+        data_bar.pack(fill="x", pady=(0, 5))
+        ttk.Label(data_bar, text="Stream:").pack(side="left")
+        ttk.Combobox(data_bar, textvariable=self.data_filter, width=12,
+                     values=("All", "MPU", "IR", "ENC", "ENC_CSV", "CSV", "DATA"),
+                     state="readonly").pack(side="left", padx=5)
+        ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
+        self.data_text = self._make_log_text(left, "none")
+
+        status_bar = ttk.Frame(right)
+        status_bar.pack(fill="x", pady=(0, 5))
+        ttk.Label(status_bar, text="Filter:").pack(side="left")
+        ttk.Entry(status_bar, textvariable=self.filter_text, width=15).pack(side="left", padx=5)
+        ttk.Button(status_bar, text="Clear status", command=self.clear_status).pack(side="right")
+        self.status_text = self._make_log_text(right, "word")
+
+    @staticmethod
+    def _make_log_text(parent, wrap):
+        frame = ttk.Frame(parent)
         frame.pack(fill="both", expand=True)
-        self.terminal = tk.Text(frame, wrap="none", state="disabled",
-                                bg="#101923", fg="#d5e2ef", insertbackground="white",
-                                font=("Consolas", 10), relief="flat")
-        v = ttk.Scrollbar(frame, orient="vertical", command=self.terminal.yview)
-        h = ttk.Scrollbar(frame, orient="horizontal", command=self.terminal.xview)
-        self.terminal.configure(yscrollcommand=v.set, xscrollcommand=h.set)
-        self.terminal.grid(row=0, column=0, sticky="nsew")
-        v.grid(row=0, column=1, sticky="ns")
-        h.grid(row=1, column=0, sticky="ew")
+        text = tk.Text(frame, wrap=wrap, state="disabled", bg="#101923",
+                       fg="#d5e2ef", font=("Consolas", 10), relief="flat")
+        scroll = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=scroll.set)
+        text.grid(row=0, column=0, sticky="nsew")
+        scroll.grid(row=0, column=1, sticky="ns")
+        if wrap == "none":
+            horizontal = ttk.Scrollbar(frame, orient="horizontal", command=text.xview)
+            text.configure(xscrollcommand=horizontal.set)
+            horizontal.grid(row=1, column=0, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        self.terminal.tag_configure("error", foreground="#ff8686")
-        self.terminal.tag_configure("map", foreground="#51d0be")
-        self.terminal.tag_configure("normal", foreground="#d5e2ef")
+        text.tag_configure("normal", foreground="#d5e2ef")
+        text.tag_configure("error", foreground="#ff8686")
+        text.tag_configure("map", foreground="#51d0be")
+        return text
 
     def _maze_widgets(self):
         row = ttk.Frame(self.maze_tab)
@@ -303,24 +326,40 @@ class Dashboard:
                 "Try opening anyway? (COM37 is only a preference)"
             ):
                 return
-        self.reader.start(port, baud)
+        try:
+            self.dual_log.open_session(port)
+        except OSError as exc:
+            messagebox.showerror("SPP log files", str(exc))
+            return
+        try:
+            self.reader.start(port, baud)
+        except Exception:
+            self.dual_log.close()
+            raise
         self.status.set("Opening " + port + " ...")
 
     def disconnect(self):
         self.reader.close()
         self.status.set("Disconnect requested")
 
-    def _append(self, line, ts):
-        key = "error" if "FAIL" in line or "ERROR" in line else (
-            "map" if line.startswith(("MAP", "MZ", "MAZE:", "CELL:")) else "normal")
-        if self.filter_text.get().lower() not in line.lower():
-            return
-        self.terminal.configure(state="normal")
-        self.terminal.insert("end", "[%s] %s\n" % (ts, line), key)
-        if int(self.terminal.index("end-1c").split(".")[0]) > MAX_TERMINAL_LINES:
-            self.terminal.delete("1.0", "251.0")
-        self.terminal.see("end")
-        self.terminal.configure(state="disabled")
+    def _append(self, line, ts, category=None):
+        category = category or classify_spp_line(line)
+        if category == "data":
+            selected = self.data_filter.get()
+            if selected != "All" and not line.startswith(selected + ","):
+                return
+            widget = self.data_text
+        else:
+            if self.filter_text.get().lower() not in line.lower():
+                return
+            widget = self.status_text
+        tag = "error" if "FAIL" in line or "ERROR" in line else "normal"
+        widget.configure(state="normal")
+        widget.insert("end", "[%s] %s\n" % (ts, line), tag)
+        if int(widget.index("end-1c").split(".")[0]) > MAX_TERMINAL_LINES:
+            widget.delete("1.0", "251.0")
+        widget.see("end")
+        widget.configure(state="disabled")
 
     def handle_line(self, line: str):
         ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
@@ -329,7 +368,9 @@ class Dashboard:
         if self.logging_file:
             self.logging_file.write("%s %s\n" % (datetime.now().isoformat(timespec="milliseconds"), line))
             self.logging_file.flush()
-        self._append(line, ts)
+        category = classify_spp_line(line)
+        self.dual_log.write(line, category)
+        self._append(line, ts, category)
         changed = self.maze.apply(line)
         if changed:
             self.map_status.set(changed)
@@ -365,8 +406,10 @@ class Dashboard:
                     self.status.set("SPP CONNECTED: " + self.port_value.get().strip())
             else:
                 self.status.set(value)
+                if kind == "closed":
+                    self.dual_log.close()
                 if kind == "warning":
-                    self._append("WARNING: " + value, datetime.now().strftime("%H:%M:%S"))
+                    self._append("WARNING: " + value, datetime.now().strftime("%H:%M:%S"), "status")
         self.root.after(40, self.poll)
 
     def redraw(self):
@@ -481,10 +524,21 @@ class Dashboard:
         for name in sorted(self.metrics):
             self.metric_table.insert("", "end", values=(name, "%.5g" % self.metrics[name]))
 
+    @staticmethod
+    def _clear_log(widget):
+        widget.configure(state="normal")
+        widget.delete("1.0", "end")
+        widget.configure(state="disabled")
+
+    def clear_data(self):
+        self._clear_log(self.data_text)
+
+    def clear_status(self):
+        self._clear_log(self.status_text)
+
     def clear_view(self):
-        self.terminal.configure(state="normal")
-        self.terminal.delete("1.0", "end")
-        self.terminal.configure(state="disabled")
+        self.clear_data()
+        self.clear_status()
 
     def toggle_log(self):
         if self.logging_file:
@@ -524,7 +578,8 @@ class Dashboard:
                     if len(text) > 24 and text[4:5] == "-" and text[10:11] == "T":
                         text = text.split(" ", 1)[-1]
                     if text:
-                        self.handle_line(text)
+                        # Replay changes the GUI only, not the live session log files.
+                        self._append(text, datetime.now().strftime("%H:%M:%S.%f")[:-3])
                         count += 1
         except OSError as exc:
             messagebox.showerror("Replay", str(exc))
@@ -533,6 +588,7 @@ class Dashboard:
 
     def quit(self):
         self.reader.close()
+        self.dual_log.close()
         if self.logging_file:
             self.logging_file.close()
         self.root.destroy()
