@@ -11,6 +11,15 @@ static const char *const menu_names[MODE_MENU_ITEM_COUNT] = {
     "Speedrun", "Reset Map", "System Test"
 };
 
+static const char *const test_names[MODE_MENU_TEST_COUNT] = {
+    "IR Test", "Encoder Test", "MPU Test", "Back"
+};
+
+const char *ModeMenu_TestName(uint8_t index)
+{
+    return index < MODE_MENU_TEST_COUNT ? test_names[index] : "INVALID";
+}
+
 static const char *const menu_codes[MODE_MENU_ITEM_COUNT] = {
     "CALIBRATION", "RUN_SLOW", "RUN_FASTER", "ASTAR_RUN",
     "SPEEDRUN", "RESET_MAP", "SYSTEM_TEST"
@@ -37,6 +46,9 @@ void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms)
     /* No mode is focused until the first PA0 short press. */
     menu->focus = MODE_MENU_NO_SELECTION;
     menu->selected = MODE_MENU_NO_SELECTION;
+    menu->page = MODE_MENU_PAGE_MAIN;
+    menu->test_focus = MODE_MENU_NO_SELECTION;
+    menu->active_test = MODE_MENU_NO_SELECTION;
     menu->raw_pressed = button_pressed ? 1U : 0U;
     menu->stable_pressed = menu->raw_pressed;
     /* A key already held at boot must be released before a new action. */
@@ -44,6 +56,47 @@ void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms)
     menu->long_sent = 0U;
     menu->raw_changed_ms = now_ms;
     menu->pressed_at_ms = now_ms;
+}
+
+ModeMenuEvent ModeMenu_Next(ModeMenu *menu)
+{
+    if (!menu) return MODE_MENU_EVENT_NONE;
+    if (menu->page == MODE_MENU_PAGE_TEST) {
+        /* Browsing intentionally stops the previous passive stream. */
+        menu->active_test = MODE_MENU_NO_SELECTION;
+        menu->test_focus = menu->test_focus == MODE_MENU_NO_SELECTION ? 0U :
+            (uint8_t)((menu->test_focus + 1U) % MODE_MENU_TEST_COUNT);
+        return MODE_MENU_EVENT_TEST_FOCUS;
+    }
+    menu->focus = menu->focus == MODE_MENU_NO_SELECTION ? 0U :
+        (uint8_t)((menu->focus + 1U) % MODE_MENU_ITEM_COUNT);
+    return MODE_MENU_EVENT_FOCUS;
+}
+
+ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
+{
+    if (!menu) return MODE_MENU_EVENT_NONE;
+    if (menu->page == MODE_MENU_PAGE_TEST) {
+        if (menu->test_focus == MODE_MENU_NO_SELECTION)
+            return MODE_MENU_EVENT_NONE;
+        if (menu->test_focus == MODE_MENU_TEST_BACK) {
+            menu->page = MODE_MENU_PAGE_MAIN;
+            menu->active_test = MODE_MENU_NO_SELECTION;
+            menu->test_focus = MODE_MENU_NO_SELECTION;
+            return MODE_MENU_EVENT_TEST_EXIT;
+        }
+        menu->active_test = menu->test_focus;
+        return MODE_MENU_EVENT_TEST_SELECT;
+    }
+    if (menu->focus == MODE_MENU_NO_SELECTION) return MODE_MENU_EVENT_NONE;
+    menu->selected = menu->focus;
+    if (menu->selected == 6U) {
+        menu->page = MODE_MENU_PAGE_TEST;
+        menu->test_focus = MODE_MENU_NO_SELECTION;
+        menu->active_test = MODE_MENU_NO_SELECTION;
+        return MODE_MENU_EVENT_TEST_ENTER;
+    }
+    return MODE_MENU_EVENT_SELECT;
 }
 
 ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
@@ -73,15 +126,9 @@ ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
                 if ((uint32_t)(now_ms - menu->pressed_at_ms) >=
                     MODE_MENU_LONG_PRESS_MS) {
                     menu->long_sent = 1U;
-                    if (menu->focus != MODE_MENU_NO_SELECTION) {
-                        menu->selected = menu->focus;
-                        return MODE_MENU_EVENT_SELECT;
-                    }
-                    return MODE_MENU_EVENT_NONE;
+                    return ModeMenu_Select(menu);
                 }
-                menu->focus = menu->focus == MODE_MENU_NO_SELECTION ? 0U :
-                    (uint8_t)((menu->focus + 1U) % MODE_MENU_ITEM_COUNT);
-                return MODE_MENU_EVENT_FOCUS;
+                return ModeMenu_Next(menu);
             }
         }
     }
@@ -89,11 +136,7 @@ ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
     if (menu->armed && menu->stable_pressed && !menu->long_sent &&
         (uint32_t)(now_ms - menu->pressed_at_ms) >= MODE_MENU_LONG_PRESS_MS) {
         menu->long_sent = 1U;
-        if (menu->focus != MODE_MENU_NO_SELECTION) {
-            menu->selected = menu->focus;
-            return MODE_MENU_EVENT_SELECT;
-        }
-        return MODE_MENU_EVENT_NONE;
+        return ModeMenu_Select(menu);
     }
 
     return MODE_MENU_EVENT_NONE;
