@@ -4,6 +4,15 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Cập nhật riêng nhánh giomuadongbacv2 — 22/11/2026
+
+- **SPP menu remote:** GUI Tkinter có hai nút `Chuyển` (`N`) và `Chọn` (`K`). Hai nút chỉ được bật sau khi nhận `SPP CONNECTED` từ handshake `?`, lệnh được đưa vào queue của worker serial; không hỗ trợ lệnh motor/Flash/PID.
+- **Menu vật lý + remote:** cùng `ModeMenu_Next/Select`; PA0 giữ debounce 30 ms và giữ ít nhất 400 ms để chọn. Mode 1–6 vẫn là lựa chọn không có hành động. Mode 7 mở menu con IR / Encoder / MPU / Back; chọn test bắt đầu log 20 Hz, chuyển focus sẽ tắt luồng cũ.
+- **Data path:** IR đọc snapshot đã hoàn thành từ TIM11, không lấy mất mẫu ADC; Encoder xuất count tích lũy, delta 50 ms, tốc độ theo cửa sổ và EMA 1 kHz alpha=0.10; MPU xuất yaw/gz theo 0.01°/0.01°/s và freshness. Giữ tách status.log và data.csv, bổ sung cột chẩn đoán encoder.
+- **An toàn:** `mode_menu_96m` luôn `Motor_LockOutputs()`. Không cho phép thực hiện motor, erase Flash hay PID tuning qua menu. Không thay đổi lớp encoder ISR / α / sign / CPR khi chưa có phép đo đối chiếu thực địa.
+- **Kiểm thử:** GitHub Actions `giomuadongbacv2 safe menu + System Test` run [45006004187](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/actions/runs/45006004187) **PASS**: native menu/CSV, Python `py_compile`, và PlatformIO `mode_menu_96m` đều PASS. **Chưa flash hoặc xác minh thực địa** KEY/OLED/JDY-33/encoder. Xem [runbook](docs/mode_menu/README.md).
+- **Tồn đọng encoder:** xác minh `ENCODER_PPR=1430`, sign, số xung mỗi vòng, nhiễu/mất xung, sai khác L/R bằng dữ liệu CSV và mốc quay thực tế trước khi thay đổi bộ lọc hoặc hệ số chuyển đổi mm.
+
 ## Quyết định phát triển — 29/10/2026: Đóng băng Web BLE UI, ưu tiên Python Classic SPP
 
 - **Web BLE UI FROZEN (development only):** Giữ nguyên `web/ble_debug_console.html`, `web/README.md` và `tests/web/`; không mở rộng/tái cấu trúc/xóa Web BLE khi chưa có yêu cầu mở lại. **Không** vô hiệu hóa JDY-33, USART2 PA2/PA3 hay driver `src/bt_debug.c` dùng chung.
