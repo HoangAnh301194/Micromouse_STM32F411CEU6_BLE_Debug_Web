@@ -25,6 +25,38 @@ def classify_spp_line(line):
                 pass
     return "status"
 
+
+CSV_COLUMNS = (
+    "host_time", "type", "ms", "valid", "age_us", "yaw_cd", "gz_cd",
+    "L0", "L45", "L90", "R0", "R45", "R90",
+    "left", "right", "pps_l", "pps_r", "raw",
+)
+
+def data_to_csv_row(line, host_time=None):
+    """Normalize telemetry to fixed columns; preserve unrecognized data in raw."""
+    row = {col: "" for col in CSV_COLUMNS}
+    row["host_time"] = host_time or datetime.now().isoformat(timespec="milliseconds")
+    parts = line.strip().split(",")
+    row["type"] = parts[0] if parts else ""
+    row["raw"] = line.strip()
+    for part in parts[1:]:
+        key, sep, value = part.partition("=")
+        if sep and key in row and key not in ("type", "raw", "host_time"):
+            row[key] = value
+    if row["type"] == "ENC_CSV" and len(parts) >= 6:
+        for key, value in zip(("ms", "left", "right", "pps_l", "pps_r"), parts[1:6]):
+            if "=" not in value:
+                row[key] = value
+    return row
+
+def csv_row_text(row):
+    import csv
+    import io
+    output = io.StringIO(newline="")
+    writer = csv.writer(output, lineterminator="")
+    writer.writerow([row.get(key, "") for key in CSV_COLUMNS])
+    return output.getvalue()
+
 class DualSessionLog:
     def __init__(self, root):
         self.root = Path(root)
@@ -39,7 +71,8 @@ class DualSessionLog:
         safe = re.sub(r"[^A-Za-z0-9_-]", "_", port)[:40] or "COM"
         for i in range(100):
             stem = f"{now}_{safe}_{i:02d}"
-            paths = {kind: root / f"{stem}_{kind}.log" for kind in ("data", "status")}
+            paths = {"status": root / f"{stem}_status.log",
+                     "data": root / f"{stem}_data.csv"}
             try:
                 one = paths["status"].open("x", encoding="utf-8", buffering=1)
             except FileExistsError:
@@ -52,13 +85,16 @@ class DualSessionLog:
                 raise
             self.files = {"status": one, "data": two}
             self.paths = paths
+            self.files["data"].write(",".join(CSV_COLUMNS) + "\n")
             return
         raise FileExistsError("Cannot create unique dual SPP log files")
 
     def write(self, line, category=None):
         stream = category or classify_spp_line(line)
-        if stream in self.files:
-            self.files[stream].write(
+        if stream == "data" and "data" in self.files:
+            self.files["data"].write(csv_row_text(data_to_csv_row(line)) + "\n")
+        elif stream == "status" and "status" in self.files:
+            self.files["status"].write(
                 f"{datetime.now().isoformat(timespec='milliseconds')} {line}\n")
 
     def close(self):

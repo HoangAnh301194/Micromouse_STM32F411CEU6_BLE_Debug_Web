@@ -20,7 +20,8 @@ from tkinter import filedialog, messagebox, ttk
 
 from classic_spp_protocol import LineFramer, MazeState, numeric_fields
 from classic_spp_ports import classify_port
-from spp_dual_log import DualSessionLog, classify_spp_line
+from spp_dual_log import (DualSessionLog, classify_spp_line,
+                          data_to_csv_row, csv_row_text, CSV_COLUMNS)
 
 
 BAUD = 115200
@@ -217,6 +218,7 @@ class Dashboard:
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_text = self._make_log_text(left, "none")
+        self._data_header()
 
         status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
@@ -224,6 +226,11 @@ class Dashboard:
         ttk.Entry(status_bar, textvariable=self.filter_text, width=15).pack(side="left", padx=5)
         ttk.Button(status_bar, text="Clear status", command=self.clear_status).pack(side="right")
         self.status_text = self._make_log_text(right, "word")
+
+    def _data_header(self):
+        self.data_text.configure(state="normal")
+        self.data_text.insert("end", ",".join(CSV_COLUMNS) + "\n")
+        self.data_text.configure(state="disabled")
 
     @staticmethod
     def _make_log_text(parent, wrap):
@@ -355,7 +362,9 @@ class Dashboard:
             widget = self.status_text
         tag = "error" if "FAIL" in line or "ERROR" in line else "normal"
         widget.configure(state="normal")
-        widget.insert("end", "[%s] %s\n" % (ts, line), tag)
+        display = (csv_row_text(data_to_csv_row(line)) if category == "data"
+                   else "[%s] %s" % (ts, line))
+        widget.insert("end", display + "\n", tag)
         if int(widget.index("end-1c").split(".")[0]) > MAX_TERMINAL_LINES:
             widget.delete("1.0", "251.0")
         widget.see("end")
@@ -532,6 +541,7 @@ class Dashboard:
 
     def clear_data(self):
         self._clear_log(self.data_text)
+        self._data_header()
 
     def clear_status(self):
         self._clear_log(self.status_text)

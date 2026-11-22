@@ -3,7 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
-from spp_dual_log import DualSessionLog, classify_spp_line
+from spp_dual_log import DualSessionLog, classify_spp_line, data_to_csv_row
+import csv
 
 def main():
     for line in ("MPU,ms=1", "IR,ms=1", "ENC,ms=1,l=2", "ENC_CSV,1,2,3",
@@ -13,6 +14,12 @@ def main():
                  "Selected mode 7: System Test", "W,MENU_READY", "W,END,DONE",
                  "STATUS,TEST START", "UNKNOWN"):
         assert classify_spp_line(line) == "status", line
+    row = data_to_csv_row("MPU,ms=1000,valid=1,yaw_cd=250,gz_cd=-40")
+    assert row["yaw_cd"] == "250" and row["L0"] == ""
+    row = data_to_csv_row("IR,ms=1000,L0=12,L45=20,L90=0,R0=13,R45=1,R90=0")
+    assert row["L45"] == "20" and row["R0"] == "13"
+    row = data_to_csv_row("ENC_CSV,1100,12,13,120,125")
+    assert row["left"] == "12" and row["pps_r"] == "125"
     with TemporaryDirectory() as temp:
         log = DualSessionLog(Path(temp))
         log.open_session("COM16")
@@ -22,7 +29,10 @@ def main():
         log.close()
         assert "Mode 7" in paths["status"].read_text(encoding="utf-8")
         assert "ENC_CSV" not in paths["status"].read_text(encoding="utf-8")
-        assert "ENC_CSV" in paths["data"].read_text(encoding="utf-8")
+        with paths["data"].open(newline="", encoding="utf-8") as f:
+            records = list(csv.DictReader(f))
+        assert len(records) == 1 and records[0]["type"] == "ENC_CSV"
+        assert records[0]["raw"] == "ENC_CSV,1,2,3"
         log.open_session("COM16")
         assert log.paths["status"] != paths["status"]
         log.close()
