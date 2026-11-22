@@ -29,7 +29,8 @@ def classify_spp_line(line):
 CSV_COLUMNS = (
     "host_time", "type", "ms", "valid", "age_us", "yaw_cd", "gz_cd",
     "L0", "L45", "L90", "R0", "R45", "R90",
-    "left", "right", "pps_l", "pps_r", "raw",
+    "left", "right", "pps_l", "pps_r",
+    "dt_ms", "delta_l", "delta_r", "window_l", "window_r", "scan", "raw",
 )
 
 def data_to_csv_row(line, host_time=None):
