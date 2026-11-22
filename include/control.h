@@ -17,6 +17,8 @@ void Control_Stop(void);
  * Existing Control_GetIRSnapshot is unaffected (RAW ON-OFF). */
 IR_WallStatus Control_GetWallIRSnapshot(IR_WallSnapshot *out);
 uint8_t Control_IsRunning(void);
+/* Atomic copy of last TIM11 IR scan; does not consume ADC state. */
+void Control_GetIRSnapshot(IR_Data_t *out);
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
 typedef struct {
     uint32_t ticks;
@@ -36,8 +38,6 @@ typedef struct {
     uint32_t ir_max_age_us;
 } Control_DebugStats_t;
 void Control_GetDebugStats(Control_DebugStats_t *out);
-/* Read latest already-acquired IR data; never initiate an ADC scan. */
-void Control_GetIRSnapshot(IR_Data_t *out);
 #endif
 
 #endif
