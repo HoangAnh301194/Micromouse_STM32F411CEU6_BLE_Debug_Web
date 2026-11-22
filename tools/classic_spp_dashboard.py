@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""JDY-33 Bluetooth Classic SPP dashboard (read-only + safe '?' link probe).
+"""JDY-33 Classic SPP dashboard with safe menu Next/Select commands.
 
-The only TX byte is a single '?' on COM open; no motor/Flash commands.
-Same physical JDY-33 on STM32 USART2 PA2/PA3; Web BLE remains untouched.
+Only '?' link probe and 'N'/'K' menu navigation can be sent.
+No motor/PID/Flash commands. Web BLE remains untouched.
 Run: python tools/classic_spp_dashboard.py --port COM37
 """
 from __future__ import annotations
@@ -59,6 +59,7 @@ class SPPReader:
     def __init__(self, events: queue.Queue):
         self.events = events
         self.stop = threading.Event()
+        self.commands: queue.Queue[bytes] = queue.Queue(maxsize=32)
         self.thread: threading.Thread | None = None
 
     def _emit(self, kind: str, value):
@@ -72,12 +73,26 @@ class SPPReader:
         if self.thread and self.thread.is_alive():
             raise RuntimeError("SPP reader already running")
         self.stop.clear()
+        while not self.commands.empty():
+            try:
+                self.commands.get_nowait()
+            except queue.Empty:
+                break
         self.thread = threading.Thread(target=self._run, args=(port, baud),
                                        daemon=True, name="jdy33-spp-reader")
         self.thread.start()
 
     def close(self):
         self.stop.set()
+
+    def send_menu(self, command: bytes) -> bool:
+        if command not in (b"N", b"K") or not self.thread or not self.thread.is_alive():
+            return False
+        try:
+            self.commands.put_nowait(command)
+            return True
+        except queue.Full:
+            return False
 
     def _run(self, port: str, baud: int):
         connected_at = None
@@ -89,12 +104,18 @@ class SPPReader:
                                write_timeout=0.5) as link:
                 connected_at = time.monotonic()
                 self._emit("state", "%s COM open; verifying SPP link" % port)
-                # Exactly one harmless status probe per connection; menu-only
-                # firmware replies 'SPP CONNECTED'. No motor/Flash commands.
+                # Exactly one round-trip probe per COM connection.
                 link.write(b"?")
                 link.flush()
                 framer = LineFramer()
                 while not self.stop.is_set():
+                    # All serial operations remain in this worker, never Tkinter.
+                    for _ in range(4):
+                        try:
+                            command = self.commands.get_nowait()
+                        except queue.Empty:
+                            break
+                        link.write(command)
                     chunk = link.read(link.in_waiting or 1)
                     if not chunk:
                         continue
@@ -147,6 +168,7 @@ class Dashboard:
         self.baud_value = tk.StringVar(value=str(BAUD))
         self.map_status = tk.StringVar(value=self.maze.status)
         self.rx_count = tk.StringVar(value="0 lines")
+        self.menu_ready = False
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
 
@@ -165,7 +187,7 @@ class Dashboard:
         outer.pack(fill="both", expand=True)
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · one '?' link probe only. "
+        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select. "
                   "No motor or Flash commands.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
@@ -220,6 +242,14 @@ class Dashboard:
         self.data_text = self._make_log_text(left, "none")
         self._data_header()
 
+        controls = ttk.Frame(right)
+        controls.pack(fill="x", pady=(0, 6))
+        self.next_btn = ttk.Button(controls, text="Chuyển (KEY ngắn)",
+                                   command=lambda: self.send_menu(b"N"), state="disabled")
+        self.next_btn.pack(side="left", padx=(0, 6))
+        self.select_btn = ttk.Button(controls, text="Chọn (KEY giữ)",
+                                     command=lambda: self.send_menu(b"K"), state="disabled")
+        self.select_btn.pack(side="left")
         status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(status_bar, text="Filter:").pack(side="left")
@@ -303,9 +333,20 @@ class Dashboard:
                 self.port_value.set(match)
         # Never connect to or claim the availability of an unlisted COM.
 
+    def _set_menu_ready(self, ready: bool):
+        self.menu_ready = ready
+        state = "normal" if ready else "disabled"
+        self.next_btn.configure(state=state)
+        self.select_btn.configure(state=state)
+
+    def send_menu(self, command: bytes):
+        if not self.menu_ready or not self.reader.send_menu(command):
+            self.status.set("SPP menu unavailable: wait for SPP CONNECTED")
+
     def connect(self):
         if self.reader.thread and self.reader.thread.is_alive():
             return
+        self._set_menu_ready(False)
         port = self.port_value.get().strip()
         if not port:
             messagebox.showerror("COM port", "Select the Windows SPP outgoing COM port.")
@@ -346,6 +387,7 @@ class Dashboard:
         self.status.set("Opening " + port + " ...")
 
     def disconnect(self):
+        self._set_menu_ready(False)
         self.reader.close()
         self.status.set("Disconnect requested")
 
@@ -412,10 +454,12 @@ class Dashboard:
             if kind == "line":
                 self.handle_line(value)
                 if value.strip() == "SPP CONNECTED":
+                    self._set_menu_ready(True)
                     self.status.set("SPP CONNECTED: " + self.port_value.get().strip())
             else:
                 self.status.set(value)
                 if kind == "closed":
+                    self._set_menu_ready(False)
                     self.dual_log.close()
                 if kind == "warning":
                     self._append("WARNING: " + value, datetime.now().strftime("%H:%M:%S"), "status")
