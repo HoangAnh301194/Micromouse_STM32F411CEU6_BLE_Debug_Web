@@ -1,0 +1,36 @@
+name: giomuadongbacv2 safe menu + System Test
+on:
+  push:
+    branches: [giomuadongbacv2]
+    paths:
+      - 'src/mode_menu.c'
+      - 'include/mode_menu.h'
+      - 'src/main_runtime.c'
+      - 'src/control.c'
+      - 'include/control.h'
+      - 'tools/classic_spp_dashboard.py'
+      - 'tools/spp_dual_log.py'
+      - 'tests/regression/mode_menu_native_test.py'
+      - 'tests/regression/spp_dual_log_test.py'
+      - '.github/workflows/giomuadongbacv2-menu-test.yml'
+  workflow_dispatch:
+jobs:
+  menu-native-and-build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Native menu state machine and CSV tests
+        run: |
+          python tests/regression/mode_menu_native_test.py
+          python tests/regression/spp_dual_log_test.py
+      - name: Python syntax for SPP dashboard
+        run: |
+          python -m py_compile tools/classic_spp_dashboard.py tools/spp_dual_log.py
+      - name: Install PlatformIO
+        run: python -m pip install --disable-pip-version-check platformio
+      - name: Compile motor-locked menu firmware
+        run: python -m platformio run -e mode_menu_96m
