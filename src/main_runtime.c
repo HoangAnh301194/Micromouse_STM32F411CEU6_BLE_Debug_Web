@@ -55,6 +55,38 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     if (!menu) return;
 
     SSD1306_Fill(SSD1306_BLACK);
+    if (menu->page == MODE_MENU_PAGE_TEST) {
+        SSD1306_SetCursor(0U, 0U);
+        SSD1306_WriteString("7.SYSTEM TEST", &Font_7x10, SSD1306_WHITE);
+        SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
+        if (menu->active_test != MODE_MENU_NO_SELECTION) {
+            SSD1306_SetCursor(0U, 20U);
+            SSD1306_WriteString((char *)ModeMenu_TestName(menu->active_test),
+                                &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 36U);
+            SSD1306_WriteString("STREAM ACTIVE", &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 52U);
+            SSD1306_WriteString("Next: stop", &Font_7x10, SSD1306_WHITE);
+            return;
+        }
+        if (menu->test_focus == MODE_MENU_NO_SELECTION) {
+            SSD1306_SetCursor(0U, 23U);
+            SSD1306_WriteString("Next: choose test", &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 40U);
+            SSD1306_WriteString("Hold: select", &Font_7x10, SSD1306_WHITE);
+            return;
+        }
+        for (row = 0U; row < MODE_MENU_TEST_COUNT; ++row) {
+            SSD1306_SetCursor(0U, (uint8_t)(16U + row * 11U));
+            SSD1306_WriteString((row == menu->test_focus) ? ">" : " ",
+                                &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(10U, (uint8_t)(16U + row * 11U));
+            SSD1306_WriteString((char *)ModeMenu_TestName(row),
+                                &Font_7x10, SSD1306_WHITE);
+        }
+        return;
+    }
+
     if (confirmed && menu->selected != MODE_MENU_NO_SELECTION) {
         SSD1306_SetCursor(0U, 0U);
         SSD1306_WriteString("MODE SELECTED", &Font_7x10, SSD1306_WHITE);
@@ -67,17 +99,14 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
         SSD1306_WriteString("Short: next", &Font_7x10, SSD1306_WHITE);
         return;
     }
-
     SSD1306_SetCursor(10U, 0U);
     SSD1306_WriteString("SELECT MODE", &Font_7x10, SSD1306_WHITE);
     SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
     if (menu->focus == MODE_MENU_NO_SELECTION) {
         SSD1306_SetCursor(0U, 25U);
-        SSD1306_WriteString("Press PA0: Next",
-                            &Font_7x10, SSD1306_WHITE);
+        SSD1306_WriteString("Press PA0: Next", &Font_7x10, SSD1306_WHITE);
         SSD1306_SetCursor(0U, 43U);
-        SSD1306_WriteString("Hold: Select",
-                            &Font_7x10, SSD1306_WHITE);
+        SSD1306_WriteString("Hold: Select", &Font_7x10, SSD1306_WHITE);
         return;
     }
     first = menu->focus >= 3U ? (uint8_t)(menu->focus - 3U) : 0U;
@@ -95,18 +124,38 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
 
 static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
 {
-    if (event == MODE_MENU_EVENT_FOCUS) {
-        /* Exactly one human-readable line per debounced short press. */
-        BT_Printf("Mode %u: %s\r\n",
-                  (unsigned)(menu->focus + 1U),
+    switch (event) {
+    case MODE_MENU_EVENT_FOCUS:
+        BT_Printf("Mode %u: %s\r\n", (unsigned)(menu->focus + 1U),
                   ModeMenu_Name(menu->focus));
-    } else if (event == MODE_MENU_EVENT_SELECT) {
-        /* A selection is a value only: no mode handler or motor action. */
+        break;
+    case MODE_MENU_EVENT_SELECT:
         BT_Printf("Selected mode %u: %s\r\n",
                   (unsigned)(menu->selected + 1U),
                   ModeMenu_Name(menu->selected));
+        break;
+    case MODE_MENU_EVENT_TEST_ENTER:
+        BT_SendString("Selected mode 7: System Test\r\n");
+        BT_SendString("System Test: choose IR / Encoder / MPU / Back\r\n");
+        break;
+    case MODE_MENU_EVENT_TEST_FOCUS:
+        BT_Printf("System Test %u: %s\r\n",
+                  (unsigned)(menu->test_focus + 1U),
+                  ModeMenu_TestName(menu->test_focus));
+        break;
+    case MODE_MENU_EVENT_TEST_SELECT:
+        BT_Printf("Selected test %u: %s\r\n",
+                  (unsigned)(menu->active_test + 1U),
+                  ModeMenu_TestName(menu->active_test));
+        break;
+    case MODE_MENU_EVENT_TEST_EXIT:
+        BT_SendString("System Test: back to main menu\r\n");
+        break;
+    default:
+        break;
     }
 }
+
 #endif
 
 #if !defined(MODE_MENU_ONLY)
@@ -208,6 +257,10 @@ int Main_Runtime(void)
     uint32_t last_debug_ms = 0;
 #else
     ModeMenu mode_menu;
+    uint8_t active_test_previous = MODE_MENU_NO_SELECTION;
+    uint32_t last_test_ms = 0U;
+    uint32_t last_encoder_ms = 0U;
+    int32_t last_encoder_left = 0, last_encoder_right = 0;
 #endif
 #if defined(INTEGRATION_DIAG)
     uint32_t last_system_diag_ms = 0U;
@@ -359,11 +412,20 @@ int Main_Runtime(void)
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* '?' is the only permitted request and has no motor/Flash
-             * effects. One GUI handshake on each COM connection produces
-             * one connection-confirmation line. F/L/R/Z remain ignored. */
-            if (BT_ReceiveChar() == '?') {
+            /* One-byte safe menu commands: N=Next, K=Select.
+             * No SPP command can unlock motors in MODE_MENU_ONLY. */
+            char command = BT_ReceiveChar();
+            ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
+            if (command == '?') {
                 BT_SendString("SPP CONNECTED\r\n");
+            } else if (command == 'N') {
+                remote = ModeMenu_Next(&mode_menu);
+            } else if (command == 'K') {
+                remote = ModeMenu_Select(&mode_menu);
+            }
+            if (remote != MODE_MENU_EVENT_NONE) {
+                ModeMenu_Report(&mode_menu, remote);
+                ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
 #else
             HandleBleCommand(BT_ReceiveChar());
@@ -377,8 +439,65 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
+            /* Main-context passive telemetry only, no motor movement.
+             * Window estimator is independent of 1-kHz encoder EMA. */
+            if (active_test_previous != mode_menu.active_test) {
+                active_test_previous = mode_menu.active_test;
+                last_test_ms = now;
+                last_encoder_ms = now;
+                last_encoder_left = Encoder_GetLeftCount();
+                last_encoder_right = Encoder_GetRightCount();
+            }
+            if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
+                (uint32_t)(now - last_test_ms) >= 50U) {
+                last_test_ms = now;
+                if (mode_menu.active_test == 0U) {
+                    IR_Data_t ir;
+                    uint32_t age_us;
+                    Control_GetIRSnapshot(&ir);
+                    age_us = ir.scan_count ? (uint32_t)(micros() - ir.completed_us) : 0U;
+                    BT_Printf("IR,ms=%lu,valid=%u,age_us=%lu,scan=%lu,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u\r\n",
+                              (unsigned long)now,
+                              (unsigned)(ir.scan_count != 0U && age_us <= 5000U),
+                              (unsigned long)age_us, (unsigned long)ir.scan_count,
+                              (unsigned)ir.value[IR_L0], (unsigned)ir.value[IR_L45],
+                              (unsigned)ir.value[IR_L90], (unsigned)ir.value[IR_R0],
+                              (unsigned)ir.value[IR_R45], (unsigned)ir.value[IR_R90]);
+                } else if (mode_menu.active_test == 1U) {
+                    int32_t left = Encoder_GetLeftCount();
+                    int32_t right = Encoder_GetRightCount();
+                    int32_t dl = left - last_encoder_left;
+                    int32_t dr = right - last_encoder_right;
+                    uint32_t dt = (uint32_t)(now - last_encoder_ms);
+                    int32_t window_l = dt ? (int32_t)((int64_t)dl * 1000 / dt) : 0;
+                    int32_t window_r = dt ? (int32_t)((int64_t)dr * 1000 / dt) : 0;
+                    BT_Printf("ENC,ms=%lu,dt_ms=%lu,left=%ld,right=%ld,delta_l=%ld,delta_r=%ld,pps_l=%ld,pps_r=%ld,window_l=%ld,window_r=%ld\r\n",
+                              (unsigned long)now, (unsigned long)dt,
+                              (long)left, (long)right, (long)dl, (long)dr,
+                              (long)Encoder_GetLeftSpeedPPS(),
+                              (long)Encoder_GetRightSpeedPPS(),
+                              (long)window_l, (long)window_r);
+                    last_encoder_ms = now;
+                    last_encoder_left = left;
+                    last_encoder_right = right;
+                } else if (mode_menu.active_test == 2U) {
+                    MPU6050_Snapshot_t gyro;
+                    uint8_t valid = MPU6050_GetSnapshot(&mpu, &gyro);
+                    uint32_t age_us = valid ?
+                                      (uint32_t)(micros() - gyro.completed_us) : 0U;
+                    if (valid && gyro.valid && age_us <= 3000U) {
+                        BT_Printf("MPU,ms=%lu,valid=1,age_us=%lu,yaw_cd=%ld,gz_cd=%ld\r\n",
+                                  (unsigned long)now, (unsigned long)age_us,
+                                  (long)(gyro.yaw_deg * 100.0f),
+                                  (long)(gyro.gyro_z_dps * 100.0f));
+                    } else {
+                        BT_Printf("MPU,ms=%lu,valid=0,age_us=%lu\r\n",
+                                  (unsigned long)now, (unsigned long)age_us);
+                    }
+                }
+            }
             OLED_SharedService(&mpu);
-            /* Event-only SPP output: no periodic MENU,STATUS heartbeat. */
+            /* Idle menu: no periodic status; active test: 20 Hz CSV data. */
         }
 #endif
 #if defined(INTEGRATION_DIAG)
