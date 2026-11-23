@@ -19,6 +19,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from classic_spp_protocol import LineFramer, MazeState, numeric_fields
+from classic_spp_handshake import SPPHandshake
 from classic_spp_ports import classify_port
 from spp_dual_log import (DualSessionLog, classify_spp_line,
                           data_to_csv_row, csv_row_text, CSV_COLUMNS)
@@ -103,12 +104,23 @@ class SPPReader:
             with serial.Serial(port=port, baudrate=baud, timeout=0.15,
                                write_timeout=0.5) as link:
                 connected_at = time.monotonic()
-                self._emit("state", "%s COM open; verifying SPP link" % port)
-                # Exactly one round-trip probe per COM connection.
-                link.write(b"?")
-                link.flush()
+                self._emit("state", "%s COM open; verifying SPP firmware" % port)
                 framer = LineFramer()
+                handshake = SPPHandshake()
                 while not self.stop.is_set():
+                    # The first probe may be lost while Windows/RFCOMM or the
+                    # MCU is becoming ready. Retry safely and rate-limit probes.
+                    now = time.monotonic()
+                    if handshake.should_probe(now):
+                        link.write(b"?")
+                        handshake.record_probe(now)
+                        if handshake.attempts == handshake.fast_attempts:
+                            self._emit("warning", (
+                                "COM opened, but no SPP CONNECTED response "
+                                "after %d probes. Verify the OUTGOING COM and "
+                                "mode_menu_96m firmware; retrying at a slower rate."
+                                % handshake.attempts
+                            ))
                     # All serial operations remain in this worker, never Tkinter.
                     for _ in range(4):
                         try:
@@ -121,8 +133,9 @@ class SPPReader:
                         continue
                     total_bytes += len(chunk)
                     if total_bytes == len(chunk):
-                        self._emit("state", "SPP RX CONFIRMED: %s (%d bytes)" % (port, len(chunk)))
+                        self._emit("state", "SPP RX data seen; waiting for firmware handshake")
                     for line in framer.feed(chunk):
+                        handshake.observe_line(line)
                         self._emit("line", line)
                     if framer.discarded:
                         self._emit("warning", "Line buffer overflow: %d" % framer.discarded)
@@ -345,6 +358,7 @@ class Dashboard:
 
     def connect(self):
         if self.reader.thread and self.reader.thread.is_alive():
+            self.status.set("SPP reader active. Disconnect, wait for it to close, then reconnect.")
             return
         self._set_menu_ready(False)
         port = self.port_value.get().strip()
