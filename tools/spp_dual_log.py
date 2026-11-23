@@ -1,4 +1,4 @@
-"""Status/data classification and automatic per-connection log files."""
+"""SPP line classification and auto-saved, per-test continuous CSV only."""
 from datetime import datetime
 from pathlib import Path
 import re
@@ -120,62 +120,151 @@ def csv_row_text(row):
     return output.getvalue()
 
 class DualSessionLog:
+    """Automatic DATA-ONLY logger with one directory per System Test run.
+
+    Kept under the historical class name for dashboard compatibility. COM
+    connects, SPP handshake replies, mode events and status diagnostics NEVER
+    create files. The first valid sample of an activated test creates:
+
+        logs/spp_runs/Mode 7 - Encoder Test - YYYYMMDD_HHMMSS_ffffff_COM16/
+            continuous_data.csv
+
+    A STOP/START pause preserves one CSV. Selecting any test again creates a
+    distinct run. The right-hand status terminal remains visible but is not
+    saved. Older flat logs are not modified.
+    """
+
+    SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test", "MPU": "MPU Test"}
+    TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
+    _SELECT_RE = re.compile(r"^Selected test [123]: (IR Test|Encoder Test|MPU Test)$")
+    _MODE_RE = re.compile(r"^Selected mode ([1-7]):")
+
     def __init__(self, root):
         self.root = Path(root)
         self.files = {}
         self.paths = {}
-        self._session_stem = None
+        self.runs = []
+        self.port = ""
+        self.active_sensor = None
+        self.active_folder = None
+        self._active_file = None
+        self._has_menu_context = False
+        self._streaming = True
 
     def open_session(self, port):
+        """Reset on connect WITHOUT creating any empty file/folder."""
         self.close()
-        root = self.root / "connections"
-        root.mkdir(parents=True, exist_ok=True)
-        now = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        safe = re.sub(r"[^A-Za-z0-9_-]", "_", port)[:40] or "COM"
-        for i in range(100):
-            stem = f"{now}_{safe}_{i:02d}"
-            paths = {"status": root / f"{stem}_status.log",
-                     "data": root / f"{stem}_data.csv"}
+        self.port = re.sub(r"[^A-Za-z0-9_-]", "_", port)[:40] or "COM"
+        self.paths = {}
+        self.runs = []
+
+    def _close_active(self):
+        if self._active_file:
+            self._active_file.close()
+        self._active_file = None
+        self.files = {}
+        self.active_folder = None
+
+    def _deactivate(self):
+        self._close_active()
+        self.active_sensor = None
+        self._streaming = False
+
+    def _observe_status(self, line):
+        """Status is used ONLY as in-memory routing metadata, never logged."""
+        selected = self._SELECT_RE.fullmatch(line)
+        if selected:
+            self._has_menu_context = True
+            self._close_active()
+            self.active_sensor = self.TEST_NAME_TO_SENSOR[selected.group(1)]
+            self._streaming = True
+            return
+
+        if line.startswith("System Test ") or line.startswith("System Test:"):
+            # Browsing to another submenu item or Back invalidates the stream.
+            self._has_menu_context = True
+            self._deactivate()
+            return
+
+        mode = self._MODE_RE.match(line)
+        if mode:
+            self._has_menu_context = True
+            self._deactivate()
+            return
+
+        if line.startswith("TEST STREAM STOPPED: "):
+            if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
+                self._streaming = False
+        elif line.startswith("TEST STREAM STARTED: "):
+            if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
+                self._streaming = True
+
+    def _open_run(self, sensor, headers, host_time):
+        """Create a directory only on the FIRST valid sample of a test run."""
+        try:
+            first_sample = datetime.fromisoformat(host_time) if host_time else datetime.now()
+        except ValueError:
+            first_sample = datetime.now()
+        stamp = first_sample.strftime("%Y%m%d_%H%M%S_%f")
+        test = self.SENSOR_TEST_NAMES[sensor]
+        label = f"Mode 7 - {test} - {stamp}_{self.port or 'COM'}"
+        for attempt in range(100):
+            name = label if attempt == 0 else f"{label}_{attempt:02d}"
+            folder = self.root / name
             try:
-                one = paths["status"].open("x", encoding="utf-8", buffering=1)
+                folder.mkdir(parents=True, exist_ok=False)
+                break
             except FileExistsError:
                 continue
-            try:
-                two = paths["data"].open("x", encoding="utf-8", buffering=1)
-            except OSError:
-                one.close()
-                paths["status"].unlink(missing_ok=True)
-                raise
-            self.files = {"status": one, "data": two}
-            self.paths = paths
-            self._session_stem = root / stem
-            self.files["data"].write(",".join(CSV_COLUMNS) + "\n")
-            return
-        raise FileExistsError("Cannot create unique dual SPP log files")
+        else:
+            raise FileExistsError("Cannot allocate unique test log directory")
+        path = folder / "continuous_data.csv"
+        try:
+            handle = path.open("x", encoding="utf-8", newline="", buffering=1)
+            handle.write(",".join(headers) + "\n")
+        except OSError:
+            # Never leave an empty run directory if CSV creation failed.
+            folder.rmdir()
+            raise
+        self._active_file = handle
+        self.active_folder = folder
+        self.files = {sensor: handle}
+        self.paths[sensor] = path
+        self.runs.append(path)
 
     def write(self, line, category=None, host_time=None):
+        """Only valid continuous sensor measurements are persisted."""
         stream = category or classify_spp_line(line)
-        if stream == "data" and "data" in self.files:
-            sensor_record = sensor_test_csv(line, host_time=host_time)
-            if sensor_record is not None:
-                sensor, columns, values = sensor_record
-                suffix = TEST_FILE_SUFFIX[sensor]
-                if suffix not in self.files:
-                    path = Path(str(self._session_stem) + "_" + suffix + ".csv")
-                    handle = path.open("x", encoding="utf-8", buffering=1)
-                    self.files[suffix] = handle
-                    self.paths[suffix] = path
-                    handle.write(",".join(columns) + "\n")
-                self.files[suffix].write(",".join(values) + "\n")
-            else:
-                # Legacy mixed telemetry remains compatible with old data.csv.
-                self.files["data"].write(csv_row_text(data_to_csv_row(line)) + "\n")
-        elif stream == "status" and "status" in self.files:
-            self.files["status"].write(
-                f"{datetime.now().isoformat(timespec='milliseconds')} {line}\n")
+        if stream == "status":
+            self._observe_status(line.strip())
+            return None
+        if stream != "data":
+            return None
+
+        record = sensor_test_csv(line, host_time=host_time)
+        if record is None:
+            # Reject non-System-Test telemetry instead of producing mixed CSV.
+            return None
+        sensor, headers, values = record
+        if self.active_sensor is None:
+            if self._has_menu_context:
+                # A test is not selected yet (or user is browsing/Back).
+                return None
+            # A reconnect mid-test may resume streaming before the dashboard
+            # receives the original 'Selected test' event. Infer from data.
+            self.active_sensor = sensor
+            self._streaming = True
+        if sensor != self.active_sensor or not self._streaming:
+            return None
+
+        if self._active_file is None:
+            self._open_run(sensor, headers, host_time)
+        self._active_file.write(",".join(values) + "\n")
+        return self.paths[sensor]
 
     def close(self):
-        for file in self.files.values():
-            file.close()
-        self.files = {}
-        self._session_stem = None
+        self._close_active()
+        self.active_sensor = None
+        self._has_menu_context = False
+        self._streaming = True
+        self.port = ""
