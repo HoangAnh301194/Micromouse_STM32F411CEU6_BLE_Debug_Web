@@ -101,7 +101,7 @@ def main():
         assert log.write("ENC,9,9", host_time=t0) is None
         assert len(list(root.iterdir())) == 4
         assert not list(root.rglob("*_status.log"))
-        assert not list(root.rglob("*_data.csv"))
+        assert all(p.name == "continuous_data.csv" for p in root.rglob("*.csv"))
         assert not list(root.rglob("connections"))
         log.close()
 
