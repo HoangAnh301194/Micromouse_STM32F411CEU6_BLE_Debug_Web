@@ -112,6 +112,79 @@ Mỗi phiên COM tự lưu trong `logs/spp_runs/connections/`:
 
 Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Các file cảm biến sẽ chỉ xuất hiện khi có mẫu hợp lệ theo định dạng của từng test. Muốn Stop/Start **ngừng phát từ MCU** cần nạp firmware `mode_menu_96m` mới; cập nhật mỗi Python chỉ đủ để chuẩn hóa CSV cũ.
 
+## SPP boot recovery and sensor reset controls (23/11/2026)
+
+### What changed for the recurring COM-open / 0-lines fault
+
+Previous `mode_menu_96m` returned from `MPU6050_Init` on failure and
+entered an infinite loop **before** the main-context SPP handshake reader.
+Consequently Windows could open its Bluetooth COM while Python never got
+`SPP CONNECTED`. This is an identified code-level failure mode, not proof
+that MPU failure caused every observed COM16 outage.
+
+The motor-locked menu firmware now continues into its passive diagnostic
+loop when MPU initialization/calibration startup fails:
+- `?` always responds with `SPP CONNECTED`, then `BOOT,READY,MPU=OK`
+  or `BOOT,DEGRADED,MPU_STATUS=...,STEP=...,I2C=...`.
+- The Encoder/IR test scheduler remains operational without a valid MPU;
+  MPU Test reports `valid=0` and yaw reset is refused.
+- The gyro main-context I2C update is skipped when the MPU did not
+  initialize. Motion outputs stay latched locked; the passive TIM11
+  sensor ISR **does not call motion-update/fault handlers** in this profile.
+- OLED boot-time I2C probing is **off by default** in `mode_menu_96m`.
+  This is intentional because that optional peripheral has not been
+  validated on the robot and must not interfere with the SPP/gyro path.
+  An explicitly opted-in build with `MODE_MENU_ENABLE_OLED` restores
+  the OLED path once hardware/bus reliability has been established.
+- Python restores `link.flush()` on handshake probes, shows **RX bytes**
+  separately from parsed lines, and provides **Reconnect COM** to reopen
+  the SPP COM without restarting the dashboard. This is a user-triggered
+  recovery; repeated automatic COM reopen is deliberately avoided.
+- **Limit:** a board clock fault occurring before `BT_Init()`, a stuck
+  I2C call that never returns, broken USART wiring, or an incorrect
+  Windows COM cannot be repaired by this protocol. Confirm with hardware
+  status and the new RX-byte counter.
+
+### Sensor reset buttons
+
+The following commands are one-byte ASCII on USART2; they do not
+control motors and are accepted only for the currently selected test:
+
+| Button | Byte | Guard | Effect | Status acknowledgment |
+|---|---|---|---|---|
+| **Reset Encoder** | `E` | Encoder Test selected | Atomic `Encoder_Reset()`, zero cumulative left/right counts and speed EMA; quadrature counting continues | `ENCODER RESET OK` |
+| **Zero MPU yaw** | `Y` | MPU Test selected **and MPU boot OK** | Existing `MPU6050_ResetYaw()` zeros integrated yaw only, not gyro offset/calibration | `MPU YAW RESET OK` |
+| **Restart IR scan** | `I` | IR Test selected | `IR_Stop()` and `IR_StartScan()`; restart scan state, **not an IR calibration** | `IR SCAN RESTARTED` |
+
+The previous **Start test** (`G`) and **Stop test** (`P`) still
+control **sensor telemetry streaming only**, not motor motion. When a
+test is selected, streaming begins automatically. Stopping does not
+zero the sensor values or stop the encoder timers. All control buttons
+are disabled until SPP receives `SPP CONNECTED`; reset controls are
+disabled if their matching sensor test is not active.
+
+### Hardware acceptance
+
+1. Pull and flash **both** firmware and Python from `giomuadongbacv2`:
+   `pio run -e mode_menu_96m -t upload`.
+2. Select the Windows Bluetooth SPP **Outgoing** COM; open the dashboard.
+   Confirm `SPP CONNECTED`, `BOOT,READY` and an RX-byte count above 0.
+3. In Encoder Test, turn one wheel by hand while motor power is isolated.
+   Confirm `timestamp,ENC_L,ENC_R` in `*_encoder.csv`. Press Reset Encoder,
+   verify subsequent counts restart near zero, and test Stop/Start.
+4. In MPU Test, rotate the chassis manually, stop it, press Zero MPU yaw
+   and verify yaw returns near zero before drifting/integrating again.
+5. In IR Test, press Restart IR scan, then verify subsequent fresh IR
+   samples. Observe that the IR reset does **not** create a zero baseline.
+6. If COM opens but there are no responses, compare **RX 0 bytes** with
+   **RX nonzero bytes but 0 lines**. Check LED, outgoing port and loaded
+   firmware; try **Reconnect COM** once. If a `BOOT,DEGRADED` message
+   appears, investigate the reported MPU boot step/I2C status; encoder
+   and IR can continue but MPU measurements are not valid.
+
+Older firmware does not implement the `E/Y/I` commands or degraded
+startup, so **updating Python alone will not resolve the MCU boot path**.
+
 ## Build / flash / test
 
 ```powershell
