@@ -34,7 +34,7 @@ TEST_CSV_COLUMNS = {
     "MPU": ("valid", "yaw_cd", "gz_cd"),
 }
 TEST_FILE_SUFFIX = {"ENC": "encoder", "IR": "ir", "MPU": "mpu"}
-_DECIMAL = re.compile(r"[+-]?\\d+\\Z")
+_DECIMAL = re.compile(r"[+-]?\d+\Z")
 
 
 def sensor_test_csv(line):
