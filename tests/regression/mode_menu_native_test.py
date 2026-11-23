@@ -35,6 +35,11 @@ int main(void) {
     ModeMenu_Init(&m, 0, 0);
     assert(m.focus == MODE_MENU_NO_SELECTION);
     assert(m.selected == MODE_MENU_NO_SELECTION);
+    assert(m.stream_running == 0);
+    assert(!ModeMenu_PauseTest(&m));
+    assert(!ModeMenu_ResumeTest(&m));
+    assert(!ModeMenu_PauseTest(NULL));
+    assert(!ModeMenu_ResumeTest(NULL));
     assert(!strcmp(ModeMenu_Label(0), "1.Calibration"));
     assert(!strcmp(ModeMenu_Code(6), "SYSTEM_TEST"));
     assert(!strcmp(ModeMenu_Name(0), "Calibration"));
@@ -103,16 +108,29 @@ int main(void) {
     assert(m.focus == 6);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_ENTER);
     assert(m.page == MODE_MENU_PAGE_TEST && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(!m.stream_running);
+    assert(!ModeMenu_ResumeTest(&m)); /* must select a sensor first */
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_NONE);
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 0);
     assert(!strcmp(ModeMenu_TestName(0), "IR Test"));
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
-    assert(m.active_test == 0);
+    assert(m.active_test == 0 && m.stream_running);
+    assert(ModeMenu_PauseTest(&m));
+    assert(!m.stream_running);
+    assert(!ModeMenu_PauseTest(&m)); /* stop twice is a no-op */
+    assert(ModeMenu_ResumeTest(&m));
+    assert(m.stream_running);
+    assert(!ModeMenu_ResumeTest(&m)); /* start twice is a no-op */
+    assert(ModeMenu_PauseTest(&m));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 1 && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(!m.stream_running && !ModeMenu_ResumeTest(&m));
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
-    assert(m.active_test == 1);
+    assert(m.active_test == 1 && m.stream_running);
+    assert(ModeMenu_PauseTest(&m));
+    assert(!m.stream_running);
+    assert(ModeMenu_ResumeTest(&m));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 2 && m.active_test == MODE_MENU_NO_SELECTION);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
@@ -121,6 +139,7 @@ int main(void) {
     assert(m.test_focus == MODE_MENU_TEST_BACK && m.active_test == MODE_MENU_NO_SELECTION);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_EXIT);
     assert(m.page == MODE_MENU_PAGE_MAIN && m.selected == 6);
+    assert(!m.stream_running && !ModeMenu_ResumeTest(&m));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_FOCUS);
     assert(m.focus == 0);
     assert(!strcmp(ModeMenu_TestName(4), "INVALID"));
