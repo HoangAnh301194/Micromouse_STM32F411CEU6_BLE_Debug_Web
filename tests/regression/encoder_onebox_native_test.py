@@ -1,0 +1,95 @@
+"""Native host C regression: one-cell count controller and independent safety cutoffs."""
+from pathlib import Path
+import os
+import shutil
+import subprocess
+import tempfile
+
+ROOT = Path(__file__).resolve().parents[2]
+CC = os.environ.get("CC", "gcc")
+HARNESS = r'''
+#include <assert.h>
+#include <stdio.h>
+#include "encoder_onebox_core.h"
+
+static void CheckTargets(void) {
+    OneBoxCore s;
+    OneBoxOutput o;
+    int i;
+    OneBoxCore_Start(&s, 123, 456);
+    assert(s.running && !s.ticks);
+    for (i=0; i<100; ++i) {
+        if (i%40==0) OneBoxCore_HostPing(&s);
+        o=OneBoxCore_Step(&s,123 + i*24,456+i*24);
+        assert(o.reason == ONEBOX_REASON_NONE);
+        assert(o.pwm_l>=0 && o.pwm_l<=ONEBOX_MAX_PWM);
+        assert(o.pwm_r>=0 && o.pwm_r<=ONEBOX_MAX_PWM);
+    }
+    o=OneBoxCore_Step(&s,123+ONEBOX_TARGET_L,
+                       456+ONEBOX_TARGET_R);
+    assert(o.reason==ONEBOX_REASON_DONE);
+    assert(!s.running);
+    assert(s.delta_l==ONEBOX_TARGET_L && s.delta_r==ONEBOX_TARGET_R);
+    assert(o.pwm_l==0 && o.pwm_r==0);
+}
+static void CheckHostLoss(void) {
+    OneBoxCore s; OneBoxOutput o={0,0,0}; int i;
+    OneBoxCore_Start(&s,0,0);
+    for (i=0;i<ONEBOX_LEASE_TICKS;i++) {
+        o=OneBoxCore_Step(&s,i/2,i/2);
+    }
+    assert(o.reason==ONEBOX_REASON_HOST_LOST);
+    assert(!s.running);
+}
+static void CheckReverse(void) {
+    OneBoxCore s; OneBoxOutput o;
+    OneBoxCore_Start(&s,200,300);
+    OneBoxCore_HostPing(&s);
+    o=OneBoxCore_Step(&s,150,301);
+    assert(o.reason==ONEBOX_REASON_ENCODER);
+}
+static void CheckDivergence(void) {
+    OneBoxCore s; OneBoxOutput o;
+    OneBoxCore_Start(&s,0,0);
+    o=OneBoxCore_Step(&s,800,400);
+    assert(o.reason==ONEBOX_REASON_ENCODER);
+}
+static void CheckStall(void) {
+    OneBoxCore s; OneBoxOutput o={0,0,0}; int i;
+    OneBoxCore_Start(&s,0,0);
+    for (i=0;i<ONEBOX_STALL_TICKS;i++) {
+        if (i%80==0) OneBoxCore_HostPing(&s);
+        o=OneBoxCore_Step(&s,0,0);
+    }
+    assert(o.reason==ONEBOX_REASON_STALL);
+}
+static void CheckExternalStop(void) {
+    OneBoxCore s;
+    OneBoxCore_Start(&s,0,0);
+    OneBoxCore_Stop(&s,ONEBOX_REASON_USER_STOP);
+    assert(!s.running && s.reason==ONEBOX_REASON_USER_STOP);
+}
+int main(void) {
+    assert(ONEBOX_TARGET_L==2400L && ONEBOX_TARGET_R==2390L);
+    CheckTargets();CheckHostLoss();CheckReverse();
+    CheckDivergence();CheckStall();CheckExternalStop();
+    puts("encoder_onebox_native_test: PASS");
+    return 0;
+}
+'''
+
+def main():
+    if not shutil.which(CC):
+        raise SystemExit(f"No native C compiler: {CC}")
+    with tempfile.TemporaryDirectory(prefix="onebox-core-") as d:
+        src = Path(d) / "test.c"
+        exe = Path(d) / ("test.exe" if os.name=="nt" else "test")
+        src.write_text(HARNESS,encoding="utf-8")
+        subprocess.run([CC, "-std=c99", "-Wall", "-Wextra", "-Werror",
+                        "-I", str(ROOT / "include"),
+                        str(ROOT / "src/encoder_onebox_core.c"),
+                        str(src), "-o", str(exe)], check=True)
+        subprocess.run([str(exe)], check=True)
+
+if __name__ == "__main__":
+    main()
