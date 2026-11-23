@@ -33,7 +33,7 @@ static void CheckTargets(void) {
     assert(o.pwm_l==0 && o.pwm_r==0);
 }
 static void CheckHostLoss(void) {
-    OneBoxCore s; OneBoxOutput o={0,0,0}; int i;
+    OneBoxCore s; OneBoxOutput o={0,0,0}; uint32_t i;
     OneBoxCore_Start(&s,0,0);
     for (i=0;i<ONEBOX_LEASE_TICKS;i++) {
         o=OneBoxCore_Step(&s,i/2,i/2);
@@ -55,7 +55,7 @@ static void CheckDivergence(void) {
     assert(o.reason==ONEBOX_REASON_ENCODER);
 }
 static void CheckStall(void) {
-    OneBoxCore s; OneBoxOutput o={0,0,0}; int i;
+    OneBoxCore s; OneBoxOutput o={0,0,0}; uint32_t i;
     OneBoxCore_Start(&s,0,0);
     for (i=0;i<ONEBOX_STALL_TICKS;i++) {
         if (i%80==0) OneBoxCore_HostPing(&s);
