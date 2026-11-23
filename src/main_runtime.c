@@ -64,7 +64,9 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
             SSD1306_WriteString((char *)ModeMenu_TestName(menu->active_test),
                                 &Font_7x10, SSD1306_WHITE);
             SSD1306_SetCursor(0U, 36U);
-            SSD1306_WriteString("STREAM ACTIVE", &Font_7x10, SSD1306_WHITE);
+            SSD1306_WriteString(menu->stream_running ?
+                                "STREAM ACTIVE" : "STREAM PAUSED",
+                                &Font_7x10, SSD1306_WHITE);
             SSD1306_SetCursor(0U, 52U);
             SSD1306_WriteString("Next: stop", &Font_7x10, SSD1306_WHITE);
             return;
@@ -258,7 +260,6 @@ int Main_Runtime(void)
 #else
     ModeMenu mode_menu;
     uint8_t active_test_previous = MODE_MENU_NO_SELECTION;
-    uint8_t test_stream_enabled = 0U;
     uint32_t last_test_ms = 0U;
 #endif
 #if defined(INTEGRATION_DIAG)
@@ -422,30 +423,22 @@ int Main_Runtime(void)
             } else if (command == 'K') {
                 remote = ModeMenu_Select(&mode_menu);
             } else if (command == 'P') {
-                if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
-                    test_stream_enabled) {
-                    test_stream_enabled = 0U;
+                if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
+                    ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
-                if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
-                    !test_stream_enabled) {
-                    test_stream_enabled = 1U;
+                if (ModeMenu_ResumeTest(&mode_menu)) {
                     last_test_ms = now; /* next measurement in ~50 ms */
                     BT_Printf("TEST STREAM STARTED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
+                    ModeMenu_Draw(&mode_menu, 0U);
                 }
             }
             if (remote != MODE_MENU_EVENT_NONE) {
-                if (remote == MODE_MENU_EVENT_TEST_SELECT) {
-                    test_stream_enabled = 1U;
+                if (remote == MODE_MENU_EVENT_TEST_SELECT)
                     last_test_ms = now;
-                } else if (remote == MODE_MENU_EVENT_TEST_FOCUS ||
-                           remote == MODE_MENU_EVENT_TEST_ENTER ||
-                           remote == MODE_MENU_EVENT_TEST_EXIT) {
-                    test_stream_enabled = 0U;
-                }
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
@@ -458,14 +451,8 @@ int Main_Runtime(void)
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu,
                                                 Board_ButtonPressed(), now);
             if (event != MODE_MENU_EVENT_NONE) {
-                if (event == MODE_MENU_EVENT_TEST_SELECT) {
-                    test_stream_enabled = 1U;
+                if (event == MODE_MENU_EVENT_TEST_SELECT)
                     last_test_ms = now;
-                } else if (event == MODE_MENU_EVENT_TEST_FOCUS ||
-                           event == MODE_MENU_EVENT_TEST_ENTER ||
-                           event == MODE_MENU_EVENT_TEST_EXIT) {
-                    test_stream_enabled = 0U;
-                }
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
@@ -476,7 +463,7 @@ int Main_Runtime(void)
                 last_test_ms = now;
             }
             if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
-                test_stream_enabled &&
+                mode_menu.stream_running &&
                 (uint32_t)(now - last_test_ms) >= 50U) {
                 last_test_ms = now;
                 if (mode_menu.active_test == 0U) {
@@ -494,7 +481,7 @@ int Main_Runtime(void)
                 } else if (mode_menu.active_test == 1U) {
                     /* On-wire CSV: sensor tag, ENC_L, ENC_R.
                      * Only the two signed cumulative quadrature counts.
-                     * The dashboard strips the tag and writes 2-column CSV. */
+                     * The dashboard adds host timestamp and strips the tag. */
                     int32_t left = Encoder_GetLeftCount();
                     int32_t right = Encoder_GetRightCount();
                     BT_Printf("ENC,%ld,%ld\r\n", (long)left, (long)right);
