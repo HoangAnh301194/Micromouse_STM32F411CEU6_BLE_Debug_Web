@@ -13,6 +13,9 @@
 #include "wall_pid_test.h"
 #endif
 #include "motor.h"
+#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
+#include "encoder_onebox.h"
+#endif
 #include "stm32f4xx.h"
 #include "system_timer.h"
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
@@ -212,6 +215,11 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * The fresh Motion_SetPair on valid feedback renews the 300-tick lease.
      * Do NOT use Motor_KeepAlive here; a stalled Motion must time out. */
     Motor_Update1ms();
+#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
+    /* Dedicated one-shot stop/encoder/lease watchdog at TIM11 1kHz.
+     * No I2C, USART, or sensor calibration in this ISR. */
+    EncoderOneBox_ControlTick();
+#endif
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - section_cycles;
