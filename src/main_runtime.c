@@ -388,8 +388,9 @@ int Main_Runtime(void)
 
     Motor_Init();
 #if defined(MODE_MENU_ONLY)
-    /* This firmware deliberately has NO motion-mode implementation.
-     * Lock the power stage for the entire boot session. */
+    /* Always boot locked. Only encoder_1box_96m has a guarded unlock,
+     * and only one explicit Start from the 1 Box Forward submenu may use it.
+     * mode_menu_96m remains permanently locked for the whole session. */
     Motor_LockOutputs();
 #endif
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
@@ -586,8 +587,11 @@ int Main_Runtime(void)
         }
 #if defined(MODE_MENU_ONLY)
         {
-            ModeMenuEvent event = ModeMenu_Poll(&mode_menu,
-                                                Board_ButtonPressed(), now);
+            uint8_t menu_key = Board_ButtonPressed();
+#if defined(ENCODER_1BOX_TEST_MODE)
+            if (EncoderOneBox_SuppressMenuButton()) menu_key = 0U;
+#endif
+            ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
             if (event != MODE_MENU_EVENT_NONE) {
 #if defined(ENCODER_1BOX_TEST_MODE)
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
