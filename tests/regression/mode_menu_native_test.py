@@ -146,14 +146,22 @@ int main(void) {
     assert(!strcmp(ModeMenu_EncoderName(0), "Log Receive"));
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_SELECT);
     assert(m.active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE);
-    assert(m.active_test == 1 && m.stream_running);
+    /* Selection is IDLE: absolutely no Encoder telemetry before START. */
+    assert(m.active_test == 1 && !m.stream_running);
     assert(ModeMenu_CanResetSensor(&m, 1));
     assert(!ModeMenu_CanResetSensor(&m, 0));
     assert(!ModeMenu_CanResetSensor(&m, 2));
-    assert(ModeMenu_PauseTest(&m));
-    assert(!m.stream_running);
-    assert(ModeMenu_ResumeTest(&m));
+    assert(!ModeMenu_PauseTest(&m));  /* Stop before Start is a no-op. */
+    assert(ModeMenu_ResumeTest(&m));  /* Explicit Start. */
     assert(m.stream_running);
+    assert(!ModeMenu_ResumeTest(&m));
+    assert(ModeMenu_PauseTest(&m));   /* Explicit Stop. */
+    assert(!m.stream_running);
+    assert(!ModeMenu_PauseTest(&m));
+    assert(ModeMenu_ResumeTest(&m));  /* New Start, new CSV on desktop. */
+    assert(m.stream_running);
+    assert(ModeMenu_PauseTest(&m));   /* New Stop; close second CSV. */
+    assert(!m.stream_running);
 
     /* All six motion-labelled options are inert placeholders: no stream. */
     for (i = 1; i < MODE_MENU_ENCODER_BACK; ++i) {
