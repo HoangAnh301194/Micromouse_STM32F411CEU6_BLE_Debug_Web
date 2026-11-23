@@ -47,6 +47,8 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu);
 /* Return 1 only on a real state change with a selected System Test. */
 uint8_t ModeMenu_PauseTest(ModeMenu *menu);
 uint8_t ModeMenu_ResumeTest(ModeMenu *menu);
+/* Only the selected IR/Encoder/MPU test may accept its reset command. */
+uint8_t ModeMenu_CanResetSensor(const ModeMenu *menu, uint8_t test_index);
 const char *ModeMenu_TestName(uint8_t index);
 const char *ModeMenu_Label(uint8_t index);
 const char *ModeMenu_Code(uint8_t index);
