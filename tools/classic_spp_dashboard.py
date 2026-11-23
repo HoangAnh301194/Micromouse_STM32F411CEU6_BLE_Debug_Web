@@ -76,6 +76,8 @@ class SPPReader:
     def __init__(self, events: queue.Queue):
         self.events = events
         self.stop = threading.Event()
+        # Lease for opt-in 1 Box Forward only: MCU aborts if H stops for 350ms.
+        self.motion_lease = threading.Event()
         self.commands: queue.Queue[bytes] = queue.Queue(maxsize=32)
         self.thread: threading.Thread | None = None
 
@@ -90,6 +92,7 @@ class SPPReader:
         if self.thread and self.thread.is_alive():
             raise RuntimeError("SPP reader already running")
         self.stop.clear()
+        self.motion_lease.clear()
         while not self.commands.empty():
             try:
                 self.commands.get_nowait()
@@ -100,6 +103,7 @@ class SPPReader:
         self.thread.start()
 
     def close(self):
+        self.motion_lease.clear()
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
@@ -123,6 +127,7 @@ class SPPReader:
                 self._emit("state", "%s COM open; verifying SPP firmware" % port)
                 framer = LineFramer()
                 handshake = SPPHandshake()
+                last_motion_ping = 0.0
                 while not self.stop.is_set():
                     # The first probe may be lost while Windows/RFCOMM or the
                     # MCU is becoming ready. Retry safely and rate-limit probes.
@@ -145,6 +150,10 @@ class SPPReader:
                         except queue.Empty:
                             break
                         link.write(command)
+                    if self.motion_lease.is_set() and (
+                            time.monotonic() - last_motion_ping >= 0.1):
+                        link.write(b"H")
+                        last_motion_ping = time.monotonic()
                     chunk = link.read(link.in_waiting or 1)
                     if not chunk:
                         continue
@@ -422,10 +431,13 @@ class Dashboard:
         if not ready:
             self.active_test_name = None
             self.test_stream_running = False
+            self.reader.motion_lease.clear()
             self.mpu_boot_ok = True
         self._update_test_controls()
 
     def send_menu(self, command: bytes):
+        if command in (b"N", b"K"):
+            self.reader.motion_lease.clear()
         if not self.menu_ready or not self.reader.send_menu(command):
             self.status.set("SPP menu unavailable: wait for SPP CONNECTED")
 
@@ -435,7 +447,13 @@ class Dashboard:
         if not self.menu_ready or not self.active_test_name:
             self.status.set("Select IR, Encoder or MPU Test before Start/Stop.")
             return
+        if self.active_test_name == "1 Box Forward":
+            if command == b"G":
+                self.reader.motion_lease.set()
+            elif command == b"P":
+                self.reader.motion_lease.clear()
         if not self.reader.send_menu(command):
+            self.reader.motion_lease.clear()
             self.status.set("Could not send test Start/Stop; check the SPP connection.")
 
     def send_sensor_reset(self, command: bytes, expected_test: str):
@@ -585,14 +603,16 @@ class Dashboard:
                 self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
         # Encoder parent is navigation only; never turn on logging here.
         is_encoder_log = line == "Selected encoder option 1: Log Receive"
+        is_onebox = line.startswith("Selected encoder option 2: 1 Box Forward")
         is_ir_or_mpu = (line.startswith("Selected test ") and
                          line.split(": ", 1)[-1].strip() in ("IR Test", "MPU Test"))
-        if is_encoder_log or is_ir_or_mpu:
+        if is_encoder_log or is_onebox or is_ir_or_mpu:
             self.active_test_name = ("Encoder Test" if is_encoder_log else
+                                     "1 Box Forward" if is_onebox else
                                      line.split(": ", 1)[-1].strip())
-            # Encoder Log Receive is ARMED and IDLE until the STM32 receives
-            # Start ('G') and acknowledges TEST STREAM STARTED.
-            self.test_stream_running = not is_encoder_log
+            # Log Receive and 1 Box Forward arm IDLE: no data/motion yet.
+            self.test_stream_running = not (is_encoder_log or is_onebox)
+            self.reader.motion_lease.clear()
             self.data_filter.set("All")
             self._clear_log(self.data_text)
             self.active_data_stream = None
@@ -610,11 +630,24 @@ class Dashboard:
             # send any motor commands or create a CSV.
             self.active_test_name = None
             self.test_stream_running = False
+            self.reader.motion_lease.clear()
             self._update_test_controls()
             self.clear_data()
             self.metrics.clear()
             self.series.clear()
             self.plot_dirty = True
+        elif line.startswith("ONEBOX,START,"):
+            if self.active_test_name == "1 Box Forward":
+                self.test_stream_running = True
+                self.reader.motion_lease.set()
+                self._update_test_controls()
+                self.status.set("1 Box Forward running (one-shot, max 26% PWM).")
+        elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
+            self.reader.motion_lease.clear()
+            if self.active_test_name == "1 Box Forward":
+                self.test_stream_running = False
+                self._update_test_controls()
+            self.status.set(line)
         elif line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = False
