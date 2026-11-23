@@ -258,6 +258,7 @@ int Main_Runtime(void)
 #else
     ModeMenu mode_menu;
     uint8_t active_test_previous = MODE_MENU_NO_SELECTION;
+    uint8_t test_stream_enabled = 0U;
     uint32_t last_test_ms = 0U;
 #endif
 #if defined(INTEGRATION_DIAG)
@@ -410,7 +411,7 @@ int Main_Runtime(void)
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* One-byte safe menu commands: N=Next, K=Select.
+            /* Menu commands N/K and test-only P=Pause, G=Go.
              * No SPP command can unlock motors in MODE_MENU_ONLY. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
@@ -420,8 +421,31 @@ int Main_Runtime(void)
                 remote = ModeMenu_Next(&mode_menu);
             } else if (command == 'K') {
                 remote = ModeMenu_Select(&mode_menu);
+            } else if (command == 'P') {
+                if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
+                    test_stream_enabled) {
+                    test_stream_enabled = 0U;
+                    BT_Printf("TEST STREAM STOPPED: %s\r\n",
+                              ModeMenu_TestName(mode_menu.active_test));
+                }
+            } else if (command == 'G') {
+                if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
+                    !test_stream_enabled) {
+                    test_stream_enabled = 1U;
+                    last_test_ms = now; /* next measurement in ~50 ms */
+                    BT_Printf("TEST STREAM STARTED: %s\r\n",
+                              ModeMenu_TestName(mode_menu.active_test));
+                }
             }
             if (remote != MODE_MENU_EVENT_NONE) {
+                if (remote == MODE_MENU_EVENT_TEST_SELECT) {
+                    test_stream_enabled = 1U;
+                    last_test_ms = now;
+                } else if (remote == MODE_MENU_EVENT_TEST_FOCUS ||
+                           remote == MODE_MENU_EVENT_TEST_ENTER ||
+                           remote == MODE_MENU_EVENT_TEST_EXIT) {
+                    test_stream_enabled = 0U;
+                }
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
@@ -434,6 +458,14 @@ int Main_Runtime(void)
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu,
                                                 Board_ButtonPressed(), now);
             if (event != MODE_MENU_EVENT_NONE) {
+                if (event == MODE_MENU_EVENT_TEST_SELECT) {
+                    test_stream_enabled = 1U;
+                    last_test_ms = now;
+                } else if (event == MODE_MENU_EVENT_TEST_FOCUS ||
+                           event == MODE_MENU_EVENT_TEST_ENTER ||
+                           event == MODE_MENU_EVENT_TEST_EXIT) {
+                    test_stream_enabled = 0U;
+                }
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
@@ -444,6 +476,7 @@ int Main_Runtime(void)
                 last_test_ms = now;
             }
             if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
+                test_stream_enabled &&
                 (uint32_t)(now - last_test_ms) >= 50U) {
                 last_test_ms = now;
                 if (mode_menu.active_test == 0U) {
