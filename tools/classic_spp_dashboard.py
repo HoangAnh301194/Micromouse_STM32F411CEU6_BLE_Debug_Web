@@ -101,7 +101,7 @@ class SPPReader:
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
-        if command not in (b"N", b"K", b"P", b"G") or not self.thread or not self.thread.is_alive():
+        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I") or not self.thread or not self.thread.is_alive():
             return False
         try:
             self.commands.put_nowait(command)
@@ -127,13 +127,14 @@ class SPPReader:
                     now = time.monotonic()
                     if handshake.should_probe(now):
                         link.write(b"?")
+                        link.flush()  # Match the previously working two-pane SPP.
                         handshake.record_probe(now)
                         if handshake.attempts == handshake.fast_attempts:
                             self._emit("warning", (
-                                "COM opened, but no SPP CONNECTED response "
-                                "after %d probes. Verify the OUTGOING COM and "
-                                "mode_menu_96m firmware; retrying at a slower rate."
-                                % handshake.attempts
+                                "COM open, no SPP CONNECTED after %d probes; "
+                                "%d RX bytes. Check firmware/MPU boot status "
+                                "and COM Outgoing; use Reconnect COM if needed."
+                                % (handshake.attempts, total_bytes)
                             ))
                     # All serial operations remain in this worker, never Tkinter.
                     for _ in range(4):
@@ -148,6 +149,8 @@ class SPPReader:
                     total_bytes += len(chunk)
                     if total_bytes == len(chunk):
                         self._emit("state", "SPP RX data seen; waiting for firmware handshake")
+                    if total_bytes <= len(chunk) or total_bytes % 512 < len(chunk):
+                        self._emit("rx_bytes", total_bytes)
                     for line in framer.feed(chunk):
                         handshake.observe_line(line)
                         self._emit("line", line)
@@ -196,6 +199,9 @@ class Dashboard:
         self.map_status = tk.StringVar(value=self.maze.status)
         self.rx_count = tk.StringVar(value="0 lines")
         self.menu_ready = False
+        self.mpu_boot_ok = True
+        self.rx_byte_count = tk.StringVar(value="RX 0 bytes")
+        self._reconnect_attempts = 0
         self.active_test_name = None
         self.test_stream_running = False
         self.active_data_stream = None
@@ -233,6 +239,7 @@ class Dashboard:
         self.connect_btn = ttk.Button(bar, text="Connect", command=self.connect)
         self.connect_btn.pack(side="left", padx=(10, 4))
         ttk.Button(bar, text="Disconnect", command=self.disconnect).pack(side="left")
+        ttk.Button(bar, text="Reconnect COM", command=self.reconnect).pack(side="left", padx=(4, 0))
         ttk.Button(bar, text="Replay log", command=self.open_log).pack(side="right")
         self.log_btn = ttk.Button(bar, text="Start log", command=self.toggle_log)
         self.log_btn.pack(side="right", padx=(4, 4))
@@ -241,6 +248,7 @@ class Dashboard:
         info.pack(fill="x", pady=(0, 7))
         ttk.Label(info, textvariable=self.status).pack(side="left")
         ttk.Label(info, textvariable=self.rx_count).pack(side="right")
+        ttk.Label(info, textvariable=self.rx_byte_count).pack(side="right", padx=(0, 12))
 
         self.tabs = ttk.Notebook(outer)
         self.tabs.pack(fill="both", expand=True)
@@ -292,6 +300,20 @@ class Dashboard:
         self.stop_test_btn.pack(side="left")
         ttk.Label(stream_bar, text="Pause/resume selected sensor only",
                   style="Muted.TLabel").pack(side="left", padx=(8, 0))
+        reset_bar = ttk.Frame(right)
+        reset_bar.pack(fill="x", pady=(0, 6))
+        self.reset_enc_btn = ttk.Button(reset_bar, text="Reset Encoder",
+                                        command=lambda: self.send_sensor_reset(b"E", "Encoder Test"),
+                                        state="disabled")
+        self.reset_enc_btn.pack(side="left", padx=(0, 6))
+        self.reset_yaw_btn = ttk.Button(reset_bar, text="Zero MPU yaw",
+                                        command=lambda: self.send_sensor_reset(b"Y", "MPU Test"),
+                                        state="disabled")
+        self.reset_yaw_btn.pack(side="left", padx=(0, 6))
+        self.restart_ir_btn = ttk.Button(reset_bar, text="Restart IR scan",
+                                         command=lambda: self.send_sensor_reset(b"I", "IR Test"),
+                                         state="disabled")
+        self.restart_ir_btn.pack(side="left")
         status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(status_bar, text="Filter:").pack(side="left")
@@ -381,6 +403,13 @@ class Dashboard:
             state="normal" if can_control and not self.test_stream_running else "disabled")
         self.stop_test_btn.configure(
             state="normal" if can_control and self.test_stream_running else "disabled")
+        self.reset_enc_btn.configure(
+            state="normal" if can_control and self.active_test_name == "Encoder Test" else "disabled")
+        self.reset_yaw_btn.configure(
+            state="normal" if can_control and self.active_test_name == "MPU Test"
+                  and self.mpu_boot_ok else "disabled")
+        self.restart_ir_btn.configure(
+            state="normal" if can_control and self.active_test_name == "IR Test" else "disabled")
 
     def _set_menu_ready(self, ready: bool):
         self.menu_ready = ready
@@ -390,6 +419,7 @@ class Dashboard:
         if not ready:
             self.active_test_name = None
             self.test_stream_running = False
+            self.mpu_boot_ok = True
         self._update_test_controls()
 
     def send_menu(self, command: bytes):
@@ -405,11 +435,47 @@ class Dashboard:
         if not self.reader.send_menu(command):
             self.status.set("Could not send test Start/Stop; check the SPP connection.")
 
+    def send_sensor_reset(self, command: bytes, expected_test: str):
+        if not self.menu_ready or self.active_test_name != expected_test:
+            self.status.set("Reset requires the corresponding active sensor test.")
+            return
+        if command == b"Y" and not self.mpu_boot_ok:
+            self.status.set("MPU failed boot: yaw reset is unavailable.")
+            return
+        if not self.reader.send_menu(command):
+            self.status.set("Could not send sensor reset over SPP.")
+
+    def reconnect(self):
+        # User-initiated RF/COM cycling. Do not flap COM automatically when
+        # MCU is faulted or multiple devices share Windows Bluetooth.
+        self.reader.close()
+        self._set_menu_ready(False)
+        self._reconnect_attempts = 0
+        self.status.set("Reopening Outgoing SPP COM...")
+        self.root.after(200, self._reconnect_when_closed)
+
+    def _reconnect_when_closed(self):
+        if self.reader.thread and self.reader.thread.is_alive():
+            self._reconnect_attempts += 1
+            if self._reconnect_attempts >= 25:
+                self.status.set("COM did not close; disconnect manually and retry.")
+                return
+            self.root.after(150, self._reconnect_when_closed)
+            return
+        # Process the closed event before creating a new log session, so an
+        # old session close cannot close the new recording.
+        self.poll_pending_events()
+        self.connect()
+
+    def poll_pending_events(self):
+        self._drain_events()
+
     def connect(self):
         if self.reader.thread and self.reader.thread.is_alive():
             self.status.set("SPP reader active. Disconnect, wait for it to close, then reconnect.")
             return
         self._set_menu_ready(False)
+        self.rx_byte_count.set("RX 0 bytes")
         port = self.port_value.get().strip()
         if not port:
             messagebox.showerror("COM port", "Select the Windows SPP outgoing COM port.")
@@ -529,6 +595,17 @@ class Dashboard:
                 self.test_stream_running = True
                 self._update_test_controls()
                 self.status.set("Test resumed: " + self.active_test_name)
+        elif line.startswith("BOOT,DEGRADED,"):
+            self.mpu_boot_ok = False
+            self._update_test_controls()
+            self.status.set("SPP OK; STM32 MPU boot degraded. Encoder/IR tests remain available.")
+        elif line.startswith("BOOT,READY,"):
+            self.mpu_boot_ok = True
+            self._update_test_controls()
+        elif (line.startswith("ENCODER RESET OK") or
+              line.startswith("MPU YAW RESET") or
+              line.startswith("IR SCAN RESTARTED")):
+            self.status.set(line)
         self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
         if changed:
@@ -557,7 +634,7 @@ class Dashboard:
             self.samples += 1
             self.plot_dirty = True
 
-    def poll(self):
+    def _drain_events(self):
         for _ in range(160):
             try:
                 kind, value = self.events.get_nowait()
@@ -569,12 +646,18 @@ class Dashboard:
                     self._set_menu_ready(True)
                     self.status.set("SPP CONNECTED: " + self.port_value.get().strip())
             else:
+                if kind == "rx_bytes":
+                    self.rx_byte_count.set("RX %d bytes" % value)
+                    continue
                 self.status.set(value)
                 if kind == "closed":
                     self._set_menu_ready(False)
                     self.dual_log.close()
                 if kind == "warning":
                     self._append("WARNING: " + value, datetime.now().strftime("%H:%M:%S"), "status")
+
+    def poll(self):
+        self._drain_events()
         self.root.after(40, self.poll)
 
     def redraw(self):
