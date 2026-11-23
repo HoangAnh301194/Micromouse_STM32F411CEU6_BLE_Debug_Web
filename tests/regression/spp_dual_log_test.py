@@ -91,7 +91,7 @@ def main():
         assert len(legacy_rows) == 1
         assert legacy_rows[0]["type"] == "ENC_CSV"
         assert legacy_rows[0]["raw"] == "ENC_CSV,1,2,3"
-        assert "IR" not in ",".join(read_csv(encoder))
+        assert "IR" not in ",".join(",".join(row) for row in read_csv(encoder))
 
         log.open_session("COM16")
         assert log.paths["status"] != base["status"]
