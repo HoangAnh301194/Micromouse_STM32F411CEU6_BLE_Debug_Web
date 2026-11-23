@@ -126,7 +126,10 @@ py tools/classic_spp_link_diag.py --list
 ```
 
 Trong **More Bluetooth settings > COM Ports**, xác nhận đúng thiết bị JDY-33,
-cột **Direction = Outgoing**. Không mở dashboard đồng thời với terminal hoặc script
+cột **Direction = Outgoing**. Dashboard **không còn mặc định COM37**: nó
+chỉ tự điền COM khi chỉ có một thiết bị JDY-33 xác định rõ hoặc duy nhất
+một cổng Bluetooth Outgoing. Nếu có nhiều thiết bị, tự chọn COM sau khi
+xem `--list`. Lệnh `--port COM8` vẫn được ưu tiên khi nhập tường minh. Không mở dashboard đồng thời với terminal hoặc script
 chẩn đoán trên cùng cổng.
 
 Nếu cần kiểm tra riêng tầng Windows/Bluetooth, **đóng dashboard trước** rồi chạy:
