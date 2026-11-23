@@ -29,7 +29,7 @@ def classify_spp_line(line):
 # Each System Test has its own CSV schema. ENC is exactly two counts;
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
-    "ENC": ("ENC_L", "ENC_R"),
+    "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "MPU": ("valid", "yaw_cd", "gz_cd"),
 }
@@ -37,12 +37,14 @@ TEST_FILE_SUFFIX = {"ENC": "encoder", "IR": "ir", "MPU": "mpu"}
 _DECIMAL = re.compile(r"[+-]?\d+\Z")
 
 
-def sensor_test_csv(line):
-    """Return (sensor, header, row) for a complete System Test measurement.
+def sensor_test_csv(line, host_time=None):
+    """Return (sensor, header, row) for one complete sensor-only CSV record.
 
-    On-wire encoder framing is 'ENC,<left>,<right>'. The leading tag is
-    protocol routing, not a measured column. Historical key=value frames
-    can be replayed without bringing other sensors into their CSV files.
+    Encoder frames are either 'ENC,<left>,<right>' or legacy
+    'ENC,ms=...,left=...,right=...,delta_l=...'. Both produce the same
+    minimal timestamp,ENC_L,ENC_R table. The timestamp is host receive
+    time in ISO 8601 local time; it is not MCU millis or a synchronization
+    guarantee. No speed/IR/MPU fields leak into an encoder CSV row.
     """
     parts = line.strip().split(",")
     if not parts or parts[0] not in TEST_CSV_COLUMNS:
@@ -77,6 +79,8 @@ def sensor_test_csv(line):
             if not all(_DECIMAL.fullmatch(fields.get(k, "")) for k in ("yaw_cd", "gz_cd")):
                 return None
             values = ("1", fields["yaw_cd"], fields["gz_cd"])
+    if sensor == "ENC":
+        values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values
 
 
@@ -149,10 +153,10 @@ class DualSessionLog:
             return
         raise FileExistsError("Cannot create unique dual SPP log files")
 
-    def write(self, line, category=None):
+    def write(self, line, category=None, host_time=None):
         stream = category or classify_spp_line(line)
         if stream == "data" and "data" in self.files:
-            sensor_record = sensor_test_csv(line)
+            sensor_record = sensor_test_csv(line, host_time=host_time)
             if sensor_record is not None:
                 sensor, columns, values = sensor_record
                 suffix = TEST_FILE_SUFFIX[sensor]
