@@ -219,11 +219,15 @@ class DualSessionLog:
         else:
             raise FileExistsError("Cannot allocate unique test log directory")
         path = folder / "continuous_data.csv"
+        handle = None
         try:
             handle = path.open("x", encoding="utf-8", newline="", buffering=1)
             handle.write(",".join(headers) + "\n")
         except OSError:
-            # Never leave an empty run directory if CSV creation failed.
+            # Roll back a partial first-write without obscuring the failure.
+            if handle is not None:
+                handle.close()
+            path.unlink(missing_ok=True)
             folder.rmdir()
             raise
         self._active_file = handle
