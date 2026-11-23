@@ -453,17 +453,17 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
-            } else if (command == 'E' && mode_menu.active_test == 1U) {
+            } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
                 Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
                 BT_SendString("ENCODER RESET OK\r\n");
-            } else if (command == 'Y' && mode_menu.active_test == 2U) {
+            } else if (command == 'Y' && ModeMenu_CanResetSensor(&mode_menu, 2U)) {
                 if (mpu_status == MPU6050_OK) {
                     MPU6050_ResetYaw(&mpu);
                     BT_SendString("MPU YAW RESET OK\r\n");
                 } else {
                     BT_SendString("MPU YAW RESET REJECTED: NOT READY\r\n");
                 }
-            } else if (command == 'I' && mode_menu.active_test == 0U) {
+            } else if (command == 'I' && ModeMenu_CanResetSensor(&mode_menu, 0U)) {
                 /* Restart a live IR acquisition; this is NOT a calibration.
                  * Keep motor outputs locked and sampling independent of SPP. */
                 IR_Stop();
