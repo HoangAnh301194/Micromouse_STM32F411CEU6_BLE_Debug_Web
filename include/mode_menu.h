@@ -30,6 +30,7 @@ typedef struct {
     uint8_t page;
     uint8_t test_focus;
     uint8_t active_test;
+    uint8_t stream_running; /* test-only telemetry, never motor motion */
     uint8_t raw_pressed;
     uint8_t stable_pressed;
     uint8_t armed;
@@ -43,6 +44,9 @@ ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed, uint32_t now
 /* Shared pure menu events: physical KEY and safe one-byte SPP commands. */
 ModeMenuEvent ModeMenu_Next(ModeMenu *menu);
 ModeMenuEvent ModeMenu_Select(ModeMenu *menu);
+/* Return 1 only on a real state change with a selected System Test. */
+uint8_t ModeMenu_PauseTest(ModeMenu *menu);
+uint8_t ModeMenu_ResumeTest(ModeMenu *menu);
 const char *ModeMenu_TestName(uint8_t index);
 const char *ModeMenu_Label(uint8_t index);
 const char *ModeMenu_Code(uint8_t index);
