@@ -154,6 +154,93 @@ Nút **Open logs folder** mở thư mục lưu; **Replay CSV/log** đọc file �
 
 Lần này sửa cả `src/mode_menu.c`, nên **cần flash lại `mode_menu_96m`** cùng với cập nhật Python. Không dùng `spp_smoke_96m` khi kiểm tra menu vì đó chỉ là firmware chẩn đoán UART.
 
+## 1 Box Forward: opt-in closed-loop 165 mm trial (23/11/2026)
+
+### Encoder evidence and target count
+
+Nine new `Mode 7 / Encoder Test / Log Receive` CSV files were uploaded
+in commit `7420d12`. The last file contains a mid-capture encoder reset;
+its final `0,0` is **not** a valid one-cell displacement. The other
+eight captures, described by the user as manual center-to-center (165 mm)
+traversals, yield:
+
+| Measurement | Left | Right |
+|---|---:|---:|
+| Mean count, 8 runs | 2400.375 | 2389.625 |
+| Median count | 2398 | 2394.5 |
+| Sample SD | 29.7 | 33.7 |
+| Empirical mm/count | 0.068739 | 0.069048 |
+
+Target counts for the initial one-shot controller:
+`ONEBOX_TARGET_L=2400`, `ONEBOX_TARGET_R=2390`
+(`include/encoder_onebox_core.h`). They reflect **manual roll data**,
+not proof of physically accurate autonomous stopping. Verify on the
+actual floor and adjust for wheel slip, braking and mechanical backlash.
+
+### Important distinction between two firmware images
+
+- `mode_menu_96m` is **still motor-locked for its entire session**,
+  as in all previous revisions. It does not drive 1 Box Forward.
+- `encoder_1box_96m` is a deliberately **opt-in supervised trial**
+  compiled with `ENCODER_1BOX_TEST_MODE`; at boot motors are still
+  locked. Only pressing **Start test** while **Mode 7 → Encoder Test →
+  1 Box Forward** is selected can pass the guarded unlock.
+- Six other forward/turn menu placeholders have no motor handlers.
+
+### Start/Stop and safeguards
+
+1. Enter `1 Box Forward`. Status says `ARMED; press Start`.
+   **No motor command is issued by selection.**
+2. After a successful MPU6050 startup calibration, press GUI
+   **Start test**. SPP sends `G` once; the MCU verifies the calibrated,
+   fresh gyro, running TIM11 control, no PA0 button press, and healthy
+   motor watchdog.
+3. STM32 emits `ONEBOX,START,target_l=2400,target_r=2390,pwm_max=260`
+   and performs one encoder feedback-controlled forward trial.
+   Motor PWM is capped at **260/1000 = 26%**, with tapered PWM and
+   a wheel-count imbalance correction (not full heading PID).
+4. GUI sends one-byte `H` heartbeats at about 100ms intervals only
+   while onebox motion is requested. **350 ms without the lease**, a
+   physical PA0 press, GUI Stop (`P`), wrong-sign encoder feedback,
+   wheel divergence, stale MPU or yaw deviation >12 degrees, no
+   progress for 900ms, or a run lasting >6.5 s forces a motor stop.
+   A severe fault locks the driver until MCU reset.
+5. At the encoder target, the MCU brakes for 100ms then coasts.
+   Result is a status-only event, e.g.
+   `ONEBOX,RESULT,reason=DONE,L=2400,R=2390,ms=...,locked=0`.
+   This event is **not** written into the Log Receive CSV.
+6. Stop test interrupts motion immediately; if the USB/Bluetooth link
+   fails, the lease timeout is an independent fallback. When the MCU
+   itself fails completely, the motor watchdog may also fail: keep a
+   **physical power cutoff** available.
+
+**Acceptance sequence:** start with the wheels physically raised and a
+safe 2S/VM cutoff, and verify forward sign, wheel directions, a STOP
+command, PA0 emergency stop and HOST_LOST fallback. Then test on an
+unobstructed floor at low risk; measure the actual stopping distance
+and final position relative to the cell center. Only after that can
+the count target and PWM/braking profile be refined. No autonomous
+accuracy or obstacle avoidance is claimed from the software build.
+
+```powershell
+git fetch origin
+git switch giomuadongbacv2
+git pull --ff-only origin giomuadongbacv2
+
+# Opt-in active motion (NOT the default safe menu image):
+pio run -e encoder_1box_96m
+pio run -e encoder_1box_96m -t upload
+py tools/classic_spp_dashboard.py --port COM16
+
+# Restore permanently locked menu after test:
+pio run -e mode_menu_96m -t upload
+```
+
+Test coverage: `tests/regression/encoder_onebox_native_test.py`
+checks done/timeout, reverse counts, wheel imbalance, no-progress and
+host-lease expiry in pure C. CI also builds `encoder_1box_96m`.
+Physical safety/accuracy still requires a supervised bench test.
+
 ## SPP boot recovery and sensor reset controls (23/11/2026)
 
 ### What changed for the recurring COM-open / 0-lines fault
