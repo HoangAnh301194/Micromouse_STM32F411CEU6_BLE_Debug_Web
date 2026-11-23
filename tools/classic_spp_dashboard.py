@@ -8,6 +8,8 @@ Run: python tools/classic_spp_dashboard.py --port COM37
 from __future__ import annotations
 
 import argparse
+import csv
+import os
 from collections import defaultdict, deque
 from datetime import datetime
 from pathlib import Path
@@ -185,8 +187,8 @@ class Dashboard:
         self.series = defaultdict(lambda: deque(maxlen=400))
         self.samples = 0
         self.total_lines = 0
-        self.logging_file = None
-        self.log_path = ""
+        self._replaying = False
+        self._last_auto_log = None
         self.dual_log = DualSessionLog(Path(__file__).resolve().parents[1] / "logs" / "spp_runs")
         self.maze_dirty = True
         self.plot_dirty = True
@@ -240,9 +242,9 @@ class Dashboard:
         self.connect_btn.pack(side="left", padx=(10, 4))
         ttk.Button(bar, text="Disconnect", command=self.disconnect).pack(side="left")
         ttk.Button(bar, text="Reconnect COM", command=self.reconnect).pack(side="left", padx=(4, 0))
-        ttk.Button(bar, text="Replay log", command=self.open_log).pack(side="right")
-        self.log_btn = ttk.Button(bar, text="Start log", command=self.toggle_log)
-        self.log_btn.pack(side="right", padx=(4, 4))
+        ttk.Button(bar, text="Replay CSV/log", command=self.open_log).pack(side="right")
+        ttk.Button(bar, text="Open logs folder", command=self.open_logs_folder).pack(
+            side="right", padx=(4, 4))
 
         info = ttk.Frame(outer)
         info.pack(fill="x", pady=(0, 7))
@@ -476,6 +478,7 @@ class Dashboard:
             return
         self._set_menu_ready(False)
         self.rx_byte_count.set("RX 0 bytes")
+        self._last_auto_log = None
         port = self.port_value.get().strip()
         if not port:
             messagebox.showerror("COM port", "Select the Windows SPP outgoing COM port.")
@@ -560,11 +563,13 @@ class Dashboard:
         ts = host_time[11:]
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
-        if self.logging_file:
-            self.logging_file.write("%s %s\n" % (host_time, line))
-            self.logging_file.flush()
         category = classify_spp_line(line)
-        self.dual_log.write(line, category, host_time=host_time)
+        if not self._replaying:
+            data_path = self.dual_log.write(line, category, host_time=host_time)
+            if data_path is not None and data_path != self._last_auto_log:
+                self._last_auto_log = data_path
+                # UI-only status: the status terminal is NOT saved to disk.
+                self.status.set("Auto-saving Continuous data: " + str(data_path.parent))
         if line.startswith("Selected test "):
             # Both physical KEY and GUI selection activate one selected test.
             # Drop the previous sensor display/plot fields on every selection.
@@ -789,28 +794,17 @@ class Dashboard:
         self.clear_data()
         self.clear_status()
 
-    def toggle_log(self):
-        if self.logging_file:
-            self.logging_file.close()
-            self.logging_file = None
-            self.log_btn.configure(text="Start log")
-            self.status.set("Log saved: " + self.log_path)
-            return
-        default = "jdy33_spp_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".log"
-        path = filedialog.asksaveasfilename(title="Record raw SPP telemetry",
-                                            defaultextension=".log",
-                                            initialfile=default,
-                                            filetypes=[("Text log", "*.log"),
-                                                       ("All files", "*.*")])
-        if path:
-            try:
-                self.logging_file = open(path, "a", encoding="utf-8", buffering=1)
-            except OSError as exc:
-                messagebox.showerror("Log file", str(exc))
-                return
-            self.log_path = path
-            self.log_btn.configure(text="Stop log")
-            self.status.set("Recording to " + path)
+    def open_logs_folder(self):
+        """Show the per-test auto-save directory (no duplicate raw log)."""
+        root = self.dual_log.root
+        root.mkdir(parents=True, exist_ok=True)
+        try:
+            if hasattr(os, "startfile"):
+                os.startfile(str(root))
+            else:
+                self.status.set("Log directory: " + str(root))
+        except OSError as exc:
+            self.status.set("Cannot open log directory: " + str(exc))
 
     def open_log(self):
         path = filedialog.askopenfilename(title="Replay line-oriented BLE/SPP log",
@@ -838,8 +832,6 @@ class Dashboard:
     def quit(self):
         self.reader.close()
         self.dual_log.close()
-        if self.logging_file:
-            self.logging_file.close()
         self.root.destroy()
 
 
