@@ -217,16 +217,18 @@ class DualSessionLog:
         if line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
                 self._streaming = False
-                # Stop = finish/save the current take; no append on next Start.
-                self._close_active()
+                if self.active_sensor == "ENC":
+                    # Encoder Stop = finalize CSV. IR/MPU retain their old
+                    # pause/resume semantics and keep the same open file.
+                    self._close_active()
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
-                # The STM32 ACK is authoritative. Create the encoder file at
-                # START, so even a zero-sample take has a closed CSV on STOP.
-                self._close_active()
-                self._streaming = True
+                # Only Encoder creates a new file on each acknowledged START.
+                # IR/MPU resume the original file, unchanged.
                 if self.active_sensor == "ENC":
+                    self._close_active()
                     self._open_run("ENC", TEST_CSV_COLUMNS["ENC"], host_time)
+                self._streaming = True
 
     def _open_run(self, sensor, headers, host_time):
         """Open a fresh file; Encoder uses a stable folder and timestamp file."""
