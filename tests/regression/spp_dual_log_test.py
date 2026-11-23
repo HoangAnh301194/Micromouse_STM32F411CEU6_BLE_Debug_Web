@@ -44,12 +44,19 @@ def main():
         log.write("System Test 2: Encoder Test")  # browsing only
         assert log.write("ENC,33,44", host_time=t0) is None
         assert not root.exists()
-        log.write("Selected test 2: Encoder Test")
+        log.write("Encoder Test: choose Log Receive / motion tests / Back")
+        log.write("Selected test 2: Encoder Test")  # legacy parent event is inert
+        assert log.write("ENC,9,9", host_time=t0) is None
+        log.write("Encoder Test option 2: 1 Box Forward")
+        log.write("Selected encoder option 2: 1 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)")
+        assert log.write("ENC,9,9", host_time=t0) is None
         assert not root.exists()
 
+        log.write("Encoder Test option 1: Log Receive")
+        log.write("Selected encoder option 1: Log Receive")
         e1 = log.write("ENC,0,-5", host_time=t0)
         assert e1 and e1.name == "continuous_data.csv"
-        assert e1.parent.name.startswith("Mode 7 - Encoder Test - 20261123_153340_852000_COM16")
+        assert e1.parent.name.startswith("Mode 7 - Encoder Test - Log Receive - 20261123_153340_852000_COM16")
         assert len(list(root.iterdir())) == 1
         assert log.write("IR,valid=1,L0=0,L45=1,L90=2,R0=3,R45=4,R90=5") is None
         assert log.write("MPU,valid=1,yaw_cd=5,gz_cd=6") is None
@@ -66,7 +73,11 @@ def main():
         ]
         assert list(e1.parent.iterdir()) == [e1]  # no status log, no empty data.csv
 
-        # Next focus closes the encoder run. Different test gets new folder.
+        # Browsing encoder options ends the run; no data in motion modes.
+        log.write("Encoder Test option 3: 5 Box Forward")
+        log.write("Selected encoder option 3: 5 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)")
+        assert log.write("ENC,8,8", host_time=t1) is None
+        log.write("Encoder Test: back to System Test")
         log.write("System Test 3: MPU Test")
         assert log.write("ENC,111,222", host_time=t1) is None
         log.write("Selected test 3: MPU Test")
@@ -91,7 +102,9 @@ def main():
         # Reselect the same Encoder Test: it is a distinct experiment/run,
         # even when first-sample time would collide with a previous folder.
         log.write("System Test 2: Encoder Test")
-        log.write("Selected test 2: Encoder Test")
+        log.write("Encoder Test: choose Log Receive / motion tests / Back")
+        log.write("Encoder Test option 1: Log Receive")
+        log.write("Selected encoder option 1: Log Receive")
         e2 = log.write("ENC,1,2", host_time=t0)
         assert e2 != e1
         assert e2.parent != e1.parent
@@ -105,13 +118,16 @@ def main():
         assert not list(root.rglob("connections"))
         log.close()
 
-        # A new COM session without a 'Selected test' event may be an
-        # existing active MCU stream: detect the sensor from its data tag.
+        # Reconnection must NOT infer the Encoder mode from unsolicited ENC.
+        # Explicit Log Receive selection is required for a new capture.
         log.open_session("COM16")
         assert len(list(root.iterdir())) == 4
-        inferred = log.write("ENC,100,-100", host_time=t0)
-        assert inferred.parent.name.startswith("Mode 7 - Encoder Test - ")
-        assert inferred != e1 and inferred != e2
+        assert log.write("ENC,100,-100", host_time=t0) is None
+        assert len(list(root.iterdir())) == 4
+        log.write("Selected encoder option 1: Log Receive")
+        selected = log.write("ENC,100,-100", host_time=t0)
+        assert selected.parent.name.startswith("Mode 7 - Encoder Test - Log Receive - ")
+        assert selected != e1 and selected != e2
         log.close()
         assert len(list(root.iterdir())) == 5
 
@@ -121,7 +137,7 @@ def main():
         log.write("BOOT,DEGRADED,MPU_STATUS=2,STEP=1,I2C=1")
         log.close()
         assert len(list(root.iterdir())) == 5
-    print("spp_dual_log: PASS")
+    print("spp_dual_log: PASS — only Encoder/Log Receive records CSV")
 
 
 if __name__ == "__main__":
