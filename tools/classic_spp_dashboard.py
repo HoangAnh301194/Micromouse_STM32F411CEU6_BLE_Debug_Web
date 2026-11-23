@@ -566,6 +566,11 @@ class Dashboard:
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
         category = classify_spp_line(line)
+        # An Encoder frame is displayable only while Log Receive was
+        # explicitly selected. Ignore any queued frames from old tests.
+        if category == "data" and line.startswith("ENC,") and (
+                self.active_test_name != "Encoder Test"):
+            return
         if not self._replaying and not self._logging_disabled:
             try:
                 data_path = self.dual_log.write(line, category, host_time=host_time)
@@ -577,26 +582,36 @@ class Dashboard:
                 # Disk permissions/full disk must never break SPP event processing.
                 self._logging_disabled = True
                 self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
-        if line.startswith("Selected test "):
-            # Both physical KEY and GUI selection activate one selected test.
-            # Drop the previous sensor display/plot fields on every selection.
-            test_name = line.split(": ", 1)[-1].strip()
-            if test_name in ("IR Test", "Encoder Test", "MPU Test"):
-                self.active_test_name = test_name
-                self.test_stream_running = True
-                self.data_filter.set("All")
-                self._clear_log(self.data_text)
-                self.active_data_stream = None
-                self.metrics.clear()
-                self.series.clear()
-                self.plot_dirty = True
-                self._update_test_controls()
-        elif (line.startswith("System Test ") or
+        # Encoder parent is navigation only; never turn on logging here.
+        is_encoder_log = line == "Selected encoder option 1: Log Receive"
+        is_ir_or_mpu = (line.startswith("Selected test ") and
+                         line.split(": ", 1)[-1].strip() in ("IR Test", "MPU Test"))
+        if is_encoder_log or is_ir_or_mpu:
+            self.active_test_name = ("Encoder Test" if is_encoder_log else
+                                     line.split(": ", 1)[-1].strip())
+            self.test_stream_running = True
+            self.data_filter.set("All")
+            self._clear_log(self.data_text)
+            self.active_data_stream = None
+            self.metrics.clear()
+            self.series.clear()
+            self.plot_dirty = True
+            self._update_test_controls()
+        elif (line.startswith("Encoder Test") or
+              line.startswith("Selected encoder option ") or
+              line.startswith("Selected test 2: Encoder Test") or
+              line.startswith("System Test ") or
               line.startswith("Selected mode 7: System Test")):
-            # Browsing/Back invalidates the previously selected test.
+            # Browsing or selecting a movement placeholder stops Encoder
+            # streaming. Neither status messages nor motion placeholders
+            # send any motor commands or create a CSV.
             self.active_test_name = None
             self.test_stream_running = False
             self._update_test_controls()
+            self.clear_data()
+            self.metrics.clear()
+            self.series.clear()
+            self.plot_dirty = True
         elif line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = False
