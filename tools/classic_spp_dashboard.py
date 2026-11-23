@@ -569,7 +569,8 @@ class Dashboard:
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
         if category == "data" and line.startswith("ENC,") and (
-                self.active_test_name != "Encoder Test"):
+                self.active_test_name != "Encoder Test" or
+                not self.test_stream_running):
             return
         if not self._replaying and not self._logging_disabled:
             try:
@@ -589,7 +590,9 @@ class Dashboard:
         if is_encoder_log or is_ir_or_mpu:
             self.active_test_name = ("Encoder Test" if is_encoder_log else
                                      line.split(": ", 1)[-1].strip())
-            self.test_stream_running = True
+            # Encoder Log Receive is ARMED and IDLE until the STM32 receives
+            # Start ('G') and acknowledges TEST STREAM STARTED.
+            self.test_stream_running = not is_encoder_log
             self.data_filter.set("All")
             self._clear_log(self.data_text)
             self.active_data_stream = None
@@ -616,12 +619,25 @@ class Dashboard:
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = False
                 self._update_test_controls()
-                self.status.set("Test paused: " + self.active_test_name)
+                if self.active_test_name == "Encoder Test":
+                    saved = self.dual_log.last_saved_path
+                    self.status.set("Encoder log saved: " + str(saved) if saved else
+                                    "Encoder log stopped (no file opened).")
+                else:
+                    self.status.set("Test paused: " + self.active_test_name)
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = True
                 self._update_test_controls()
-                self.status.set("Test resumed: " + self.active_test_name)
+                if self.active_test_name == "Encoder Test":
+                    # A Start creates a new take, never appends to the last CSV.
+                    self.clear_data()
+                    self.metrics.clear()
+                    self.series.clear()
+                    self.plot_dirty = True
+                    self.status.set("Encoder logging started: new timestamped CSV.")
+                else:
+                    self.status.set("Test resumed: " + self.active_test_name)
         elif line.startswith("BOOT,DEGRADED,"):
             self.mpu_boot_ok = False
             self._update_test_controls()
