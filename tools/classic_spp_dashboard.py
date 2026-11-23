@@ -439,6 +439,10 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def handle_line(self, line: str):
+        # Retried '?' probes can produce multiple acknowledgements if the
+        # firmware was briefly busy. Keep only the first status log entry.
+        if line.strip() == "SPP CONNECTED" and self.menu_ready:
+            return
         ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
