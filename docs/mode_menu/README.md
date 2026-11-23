@@ -22,7 +22,14 @@ Main menu:
 5. Speedrun
 6. Reset Map
 7. System Test   --> 1. IR Test
-                     2. Encoder Test
+                     2. Encoder Test --> 1. Log Receive        [CSV ON]
+                                         2. 1 Box Forward       [NO MOTION]
+                                         3. 5 Box Forward       [NO MOTION]
+                                         4. Pivot 90 Left       [NO MOTION]
+                                         5. Pivot 90 Right      [NO MOTION]
+                                         6. Pivot 180 Left      [NO MOTION]
+                                         7. Pivot 180 Right     [NO MOTION]
+                                         8. Back
                      3. MPU Test
                      4. Back
 ```
@@ -30,7 +37,9 @@ Main menu:
 Ở menu chính, chọn các mode 1–6 **chỉ phát trạng thái**, không thực hiện hành động nào.
 Chọn Mode 7 để vào menu con (ban đầu chưa focus mục nào).
 Nhấn Chuyển lần đầu focus IR, lần lượt Encoder, MPU, Back và quay vòng.
-Nhấn Chọn để kích hoạt và bắt đầu truyền luồng đo thụ động; nhấn Chuyển sẽ **dừng luồng trước** đồng thời chuyển focus sang mục tiếp theo. Chọn Back để trở lại menu chính.
+Nhấn Chọn để kích hoạt IR/MPU và bắt đầu truyền luồng đo thụ động. **Encoder Test bây giờ chỉ mở thêm một cấp menu**, không phát `ENC` và không tạo file CSV ngay khi chọn. Trong Encoder Test, nhấn Chuyển để duyệt `Log Receive`, sáu bài thử di chuyển và `Back`; nhấn Chọn tại `Log Receive` mới phát encoder 20 Hz và tự lưu CSV. Duyệt sang mục khác sẽ ngừng truyền. `Back` của Encoder Test trở lại System Test; `Back` của System Test trở lại menu chính.
+
+**Quan trọng:** sáu lựa chọn `1/5 Box Forward` và `Pivot 90/180 Left/Right` hiện là **placeholder** chỉ ghi sự kiện lên status terminal; **không cho xe chạy, không kích hoạt Motion, không phát log encoder**. Tất cả motor vẫn khóa trong `mode_menu_96m`. Trước khi lập trình di chuyển cần đặc tả quãng đường thực tế, tham số điều khiển, trạng thái an toàn và điều kiện dừng.
 Trong lúc bài test đang chạy, **Stop test** chỉ tạm dừng truyền bản tin đo; encoder và các timer phần cứng vẫn tiếp tục đếm/cập nhật. **Start test** sẽ tiếp tục đọc cùng bộ đếm tích lũy, không reset về 0. Cả IR, Encoder và MPU đều dùng chung hai nút này. Khung đo còn trong hàng đợi Bluetooth có thể đến muộn sau khi nhận thao tác Stop.
 
 OLED và SPP báo cùng trạng thái. Status log bên phải chỉ nhận mỗi sự kiện một lần, không lặp heartbeat.
@@ -48,9 +57,14 @@ Selected mode 7: System Test
 System Test: choose IR / Encoder / MPU / Back
 System Test 1: IR Test
 System Test 2: Encoder Test
-Selected test 2: Encoder Test
+Encoder Test: choose Log Receive / motion tests / Back
+Encoder Test option 1: Log Receive
+Selected encoder option 1: Log Receive
 TEST STREAM STOPPED: Encoder Test
 TEST STREAM STARTED: Encoder Test
+Encoder Test option 2: 1 Box Forward
+Selected encoder option 2: 1 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)
+Encoder Test: back to System Test
 System Test 3: MPU Test
 System Test 4: Back
 System Test: back to main menu
@@ -58,7 +72,7 @@ System Test: back to main menu
 
 Data log bên trái phát **20 mẫu/giây (50 ms/mẫu)** **chỉ cho bài test đang được chọn**. Mỗi lần chọn bài test mới, dashboard tự xóa bảng dữ liệu cũ và đổi tiêu đề CSV cho đúng loại cảm biến.
 
-**Encoder Test — đúng ba cột CSV (`timestamp,ENC_L,ENC_R`):**
+**Encoder Test → Log Receive — đúng ba cột CSV (`timestamp,ENC_L,ENC_R`):**
 
 Firmware gửi trên UART/SPP (có tiền tố `ENC` để phân loại bản tin):
 ```text
@@ -110,7 +124,7 @@ Ví dụ cấu trúc thư mục dưới `logs/spp_runs/`:
 
 ```text
 logs/spp_runs/
-├── Mode 7 - Encoder Test - 20261123_153340_852000_COM16/
+├── Mode 7 - Encoder Test - Log Receive - 20261123_153340_852000_COM16/
 │   └── continuous_data.csv
 ├── Mode 7 - IR Test - 20261123_154010_123000_COM16/
 │   └── continuous_data.csv
@@ -118,11 +132,11 @@ logs/spp_runs/
     └── continuous_data.csv
 ```
 
-- **Encoder Test**: file có đúng các cột `timestamp,ENC_L,ENC_R`, giữ cả count âm và các mẫu count không đổi. Encoder khung mới hoặc khung `left=...` cũ đều được chuyển thành CSV sạch.
+- **Encoder Test → Log Receive**: file có đúng các cột `timestamp,ENC_L,ENC_R`, giữ cả count âm và các mẫu count không đổi. Encoder khung mới hoặc khung `left=...` cũ đều được chuyển thành CSV sạch. Chỉ khung `ENC` sau sự kiện `Selected encoder option 1: Log Receive` được lưu. Khi kết nối lại, cần chọn Log Receive một lần nữa để tạo phiên thu mới; không suy ra từ `ENC` đơn lẻ.
 - **IR Test**: file có đúng `valid,L0,L45,L90,R0,R45,R90`.
 - **MPU Test**: file có đúng `valid,yaw_cd,gz_cd`.
 - **Start/Stop test**: tạm ngừng/tiếp tục bổ sung dữ liệu **trong cùng một file**, không nhân bản thư mục hoặc reset encoder.
-- **Chuyển/Back/chọn test mới**: đóng phiên ghi cũ; test mới sẽ tạo thư mục mới khi có mẫu đầu tiên. Chọn lại cùng test cũng bắt đầu một phiên đo mới.
+- **Chuyển/Back/chọn test mới**: đóng phiên ghi cũ; test mới sẽ tạo thư mục mới khi có mẫu đầu tiên. Chọn lại cùng Log Receive cũng bắt đầu một phiên đo mới. Sáu mục chuyển động placeholder không tạo file.
 - **Mở COM mà không có dữ liệu**: không tạo bất kỳ `status.log`, `data.csv` hoặc thư mục rỗng nào.
 - **Kết nối lại khi MCU vẫn đang gửi mà chưa kịp gửi sự kiện chọn test**: tự suy ra Encoder/IR/MPU theo tiền tố `ENC`/`IR`/`MPU` để không mất mẫu đầu. Sau khi đã thấy thao tác menu, chỉ ghi dữ liệu của bài test thực sự được chọn.
 - Các bản tin chưa nhận diện được thành mẫu IR/Encoder/MPU hợp lệ bị bỏ qua, tránh file CSV hỗn tạp.
