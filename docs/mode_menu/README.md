@@ -7,6 +7,7 @@
 
 - KEY PA0 vật lý: nhấn ngắn để chuyển, giữ ít nhất 400 ms để chọn; debounce 30 ms.
 - Hai nút SPP **Chuyển (KEY ngắn)** và **Chọn (KEY giữ)** gửi một byte ASCII `N` hoặc `K` đến STM32. Mỗi cú nhấn gửi một sự kiện logic, không giữ phím điện tử 400 ms.
+- **Stop test** gửi `P` để tạm dừng truyền mẫu của bài test đang chọn; **Start test** gửi `G` để tiếp tục. Cả hai lệnh không tác động motor và chỉ được firmware chấp nhận khi đang chọn IR/Encoder/MPU Test. Dashboard chỉ cập nhật trạng thái nút khi nhận ACK từ STM32.
 - Sau khi chọn cổng COM Bluetooth **Outgoing**, dashboard gửi byte `?` để kiểm tra hai chiều. Nếu không thấy `SPP CONNECTED`, desktop tự gửi lại mỗi 0,8 giây trong sáu lần đầu rồi giảm xuống mỗi 3 giây. Chỉ khi nhận **đúng** bản tin này, hai nút mới được bật. Mở được COM không có nghĩa là MCU đã sẵn sàng nhận lệnh.
 - Mọi thao tác đọc/ghi serial được thực hiện trong cùng worker thread; Tkinter chỉ gửi lệnh vào queue.
 
@@ -29,7 +30,8 @@ Main menu:
 Ở menu chính, chọn các mode 1–6 **chỉ phát trạng thái**, không thực hiện hành động nào.
 Chọn Mode 7 để vào menu con (ban đầu chưa focus mục nào).
 Nhấn Chuyển lần đầu focus IR, lần lượt Encoder, MPU, Back và quay vòng.
-Nhấn Chọn để kích hoạt luồng đo thụ động; nhấn Chuyển sẽ **dừng luồng trước** đồng thời chuyển focus sang mục tiếp theo. Chọn Back để trở lại menu chính.
+Nhấn Chọn để kích hoạt và bắt đầu truyền luồng đo thụ động; nhấn Chuyển sẽ **dừng luồng trước** đồng thời chuyển focus sang mục tiếp theo. Chọn Back để trở lại menu chính.
+Trong lúc bài test đang chạy, **Stop test** chỉ tạm dừng truyền bản tin đo; encoder và các timer phần cứng vẫn tiếp tục đếm/cập nhật. **Start test** sẽ tiếp tục đọc cùng bộ đếm tích lũy, không reset về 0. Cả IR, Encoder và MPU đều dùng chung hai nút này. Khung đo còn trong hàng đợi Bluetooth có thể đến muộn sau khi nhận thao tác Stop.
 
 OLED và SPP báo cùng trạng thái. Status log bên phải chỉ nhận mỗi sự kiện một lần, không lặp heartbeat.
 
@@ -47,6 +49,8 @@ System Test: choose IR / Encoder / MPU / Back
 System Test 1: IR Test
 System Test 2: Encoder Test
 Selected test 2: Encoder Test
+TEST STREAM STOPPED: Encoder Test
+TEST STREAM STARTED: Encoder Test
 System Test 3: MPU Test
 System Test 4: Back
 System Test: back to main menu
@@ -54,7 +58,7 @@ System Test: back to main menu
 
 Data log bên trái phát **20 mẫu/giây (50 ms/mẫu)** **chỉ cho bài test đang được chọn**. Mỗi lần chọn bài test mới, dashboard tự xóa bảng dữ liệu cũ và đổi tiêu đề CSV cho đúng loại cảm biến.
 
-**Encoder Test — đúng hai cột:**
+**Encoder Test — đúng ba cột CSV (`timestamp,ENC_L,ENC_R`):**
 
 Firmware gửi trên UART/SPP (có tiền tố `ENC` để phân loại bản tin):
 ```text
@@ -63,13 +67,15 @@ ENC,27,-22
 ENC,32,-26
 ```
 
-Dashboard **hiển thị và xuất file CSV** (bỏ tiền tố định tuyến `ENC`):
+Dashboard **hiển thị và xuất file CSV** (bỏ tiền tố định tuyến `ENC` và tự thêm timestamp từ đồng hồ Windows tại thời điểm Python nhận bản tin):
 ```csv
-ENC_L,ENC_R
-21,-19
-27,-22
-32,-26
+timestamp,ENC_L,ENC_R
+2026-11-23T14:56:41.241,21,-19
+2026-11-23T14:56:41.291,27,-22
+2026-11-23T14:56:41.341,32,-26
 ```
+
+Đây là **thời gian nhận trên máy tính (ISO 8601, giờ địa phương)**, không phải thời điểm MCU chốt xung. Bản tin firmware mới chỉ gửi `ENC,<left>,<right>`; timestamp được Python gắn vào để phục vụ phân tích log.
 
 - `ENC_L`: số xung quadrature có dấu tích lũy của encoder bánh trái TIM4, PB6/PB7.
 - `ENC_R`: số xung quadrature có dấu tích lũy của encoder bánh phải TIM3, PB4/PB5.
@@ -99,12 +105,12 @@ valid,yaw_cd,gz_cd
 Mỗi phiên COM tự lưu trong `logs/spp_runs/connections/`:
 
 - `*_status.log`: sự kiện mode, SPP và cảnh báo.
-- `*_encoder.csv`: **chỉ `ENC_L,ENC_R`**, tự tạo khi bắt đầu nhận Encoder Test.
+- `*_encoder.csv`: **chỉ `timestamp,ENC_L,ENC_R`**, tự tạo khi nhận Encoder Test. Cả bản tin encoder cũ (`ENC,ms=...,left=...,right=...,delta_l=...,...`) và khung mới (`ENC,2620,4230`) đều được chuẩn hóa thành đúng ba cột, không mang theo `pps`, `delta` hoặc `raw`.
 - `*_ir.csv`: chỉ các cột IR và `valid`.
 - `*_mpu.csv`: chỉ các cột MPU và `valid`.
-- `*_data.csv`: tương thích dữ liệu SPP cũ không thuộc ba khung System Test mới; không trộn ba bài test này vào file chung.
+- `*_data.csv`: file tương thích với những dòng telemetry khác và giao thức cũ ngoài ba bài test. **Khi phân tích Encoder Test, mở `*_encoder.csv`, không mở `*_data.csv`**. File CSV cũ đã tạo trước khi cập nhật sẽ không tự thay đổi.
 
-Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Các file cảm biến sẽ chỉ xuất hiện khi có mẫu hợp lệ theo định dạng của từng test.
+Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Các file cảm biến sẽ chỉ xuất hiện khi có mẫu hợp lệ theo định dạng của từng test. Muốn Stop/Start **ngừng phát từ MCU** cần nạp firmware `mode_menu_96m` mới; cập nhật mỗi Python chỉ đủ để chuẩn hóa CSV cũ.
 
 ## Build / flash / test
 
