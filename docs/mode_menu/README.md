@@ -52,37 +52,59 @@ System Test 4: Back
 System Test: back to main menu
 ```
 
-Data log bên trái phát một bản tin mỗi **50 ms (20 Hz)** cho bài test đang chạy:
+Data log bên trái phát **20 mẫu/giây (50 ms/mẫu)** **chỉ cho bài test đang được chọn**. Mỗi lần chọn bài test mới, dashboard tự xóa bảng dữ liệu cũ và đổi tiêu đề CSV cho đúng loại cảm biến.
 
-```csv
-IR,ms=1050,valid=1,age_us=530,scan=1200,L0=8,L45=9,L90=10,R0=11,R45=12,R90=13
-ENC,ms=1100,dt_ms=50,left=21,right=-19,delta_l=5,delta_r=-3,pps_l=101,pps_r=-58,window_l=100,window_r=-60
-MPU,ms=1150,valid=1,age_us=280,yaw_cd=120,gz_cd=-35
+**Encoder Test — đúng hai cột:**
+
+Firmware gửi trên UART/SPP (có tiền tố `ENC` để phân loại bản tin):
+```text
+ENC,21,-19
+ENC,27,-22
+ENC,32,-26
 ```
 
-### Encoder
+Dashboard **hiển thị và xuất file CSV** (bỏ tiền tố định tuyến `ENC`):
+```csv
+ENC_L,ENC_R
+21,-19
+27,-22
+32,-26
+```
 
-Encoder dùng TIM4 (bánh trái, PB6/PB7) và TIM3 (bánh phải, PB4/PB5) ở chế độ quadrature.
-`Encoder_Update()` xử lý bộ đếm mỗi 1 ms trong TIM11. Hai hằng hướng đang bằng `-1` để chuẩn hóa chiều tiến dương.
+- `ENC_L`: số xung quadrature có dấu tích lũy của encoder bánh trái TIM4, PB6/PB7.
+- `ENC_R`: số xung quadrature có dấu tích lũy của encoder bánh phải TIM3, PB4/PB5.
+- `Encoder_Update()` vẫn được gọi mỗi 1 ms trong TIM11; không đổi cấu hình encoder, PPR, bộ lọc hay hướng.
+- **Không gửi** `ms`, `dt_ms`, `delta_l`, `delta_r`, `pps_l`, `pps_r`, `window_l`, `window_r`, IR hoặc MPU trong khung Encoder Test.
+- Đây là **count tích lũy**, không phải xung/giây. Nếu cần đo tốc độ sau này, kết hợp thời gian lấy mẫu hoặc dùng công cụ đo riêng. `ENCODER_PPR=1430` trong `pinout.h` vẫn cần kiểm chứng trên thực tế.
 
-| Trường | Định nghĩa |
-|---|---|
-| `left`, `right` | Tích lũy xung quadrature có dấu kể từ khởi động / reset encoder |
-| `delta_l`, `delta_r` | Chênh lệch đếm từ bản tin trước |
-| `dt_ms` | Thời gian thực tế giữa hai bản tin encoder |
-| `window_l`, `window_r` | Tốc độ trung bình trên cửa sổ, xung/giây: `delta * 1000 / dt_ms` |
-| `pps_l`, `pps_r` | Tốc độ qua EMA alpha=0.10 đang có ở TIM11, xung/giây |
+**IR Test — chỉ bảng IR**, không có cột encoder hay MPU:
 
-Đây là công cụ **đo và so sánh** hai cách tính tốc độ, **chưa đổi alpha hay PPR** vì cần dữ liệu thử bánh thật.
-Giá trị `ENCODER_PPR=1430` trong `pinout.h` vẫn chỉ là giả định cấu hình cần đối chiếu quãng đường thực tế.
+```csv
+valid,L0,L45,L90,R0,R45,R90
+1,8,9,10,11,12,13
+```
 
-### IR và MPU
+Firmware vẫn lấy snapshot sáu cảm biến IR, `valid=0` khi chưa có scan hoặc mẫu cũ hơn 5000 µs.
 
-- IR gửi đúng thứ tự vật lý L0/L45/L90/R0/R45/R90, dữ liệu raw sau trừ ánh sáng nền, không phải khoảng cách mm; đọc snapshot được bảo vệ ngắt của TIM11. `valid=0` khi chưa có dữ liệu hoặc tuổi mẫu lớn hơn 5000 µs.
-- MPU dùng snapshot đã hiệu chuẩn của MPU6050: `yaw_cd` = 100 × góc yaw (độ), `gz_cd` = 100 × vận tốc góc quanh Z (độ/s). `valid=0` khi dữ liệu không sẵn sàng hoặc tuổi lớn hơn 3000 µs.
-- Các giá trị `ms` là uptime STM32; file CSV tự bổ sung `host_time`. File `raw` giữ nguyên bản tin gốc.
+**MPU Test — chỉ bảng MPU**, không có cột encoder hay IR:
 
-Log lưu tự động trong `logs/spp_runs/connections/` với hai file: `*_status.log` và `*_data.csv`.
+```csv
+valid,yaw_cd,gz_cd
+1,120,-35
+0,,
+```
+
+`yaw_cd` = góc yaw × 100 (đơn vị 0,01 độ), `gz_cd` = vận tốc quay trục Z × 100 (đơn vị 0,01 độ/s); `valid=0` thì các ô đo để trống.
+
+Mỗi phiên COM tự lưu trong `logs/spp_runs/connections/`:
+
+- `*_status.log`: sự kiện mode, SPP và cảnh báo.
+- `*_encoder.csv`: **chỉ `ENC_L,ENC_R`**, tự tạo khi bắt đầu nhận Encoder Test.
+- `*_ir.csv`: chỉ các cột IR và `valid`.
+- `*_mpu.csv`: chỉ các cột MPU và `valid`.
+- `*_data.csv`: tương thích dữ liệu SPP cũ không thuộc ba khung System Test mới; không trộn ba bài test này vào file chung.
+
+Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Các file cảm biến sẽ chỉ xuất hiện khi có mẫu hợp lệ theo định dạng của từng test.
 
 ## Build / flash / test
 
@@ -101,6 +123,7 @@ Hồi quy offline:
 ```powershell
 py tests/regression/mode_menu_native_test.py
 py tests/regression/spp_dual_log_test.py
+py tests/regression/spp_handshake_test.py
 ```
 
 Cấu hình `mode_menu_96m` **luôn gọi `Motor_LockOutputs()`** trước khi khởi tạo menu. Không có lệnh motor/PID/Flash ở Mode 7 hoặc trên hai nút từ xa. Khi thử encoder, tách VM 2S và quay bánh bằng tay, cố định thân xe; sau đó kiểm tra dấu tiến dương, số xung/vòng và tương quan tốc độ giữa hai phía. Kết quả kiểm thử native hoặc build không thay cho phép đo trên phần cứng thật.
