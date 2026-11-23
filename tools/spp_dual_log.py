@@ -120,18 +120,17 @@ def csv_row_text(row):
     return output.getvalue()
 
 class DualSessionLog:
-    """Automatic DATA-ONLY logger with one directory per System Test run.
+    """Automatic DATA-ONLY logger with explicit Encoder Start/Stop sessions.
 
-    Kept under the historical class name for dashboard compatibility. COM
-    connects, SPP handshake replies, mode events and status diagnostics NEVER
-    create files. The first valid sample of an activated test creates:
+    Encoder -> Log Receive is armed but idle until STM32 acknowledges Start.
+    Each Start creates a new timestamp-named CSV in the SAME stable folder:
 
-        logs/spp_runs/Mode 7 - Encoder Test - YYYYMMDD_HHMMSS_ffffff_COM16/
-            continuous_data.csv
+        logs/spp_runs/mode 7 - encoder test - log receiver/
+            YYYYMMDD_HHMMSS_ffffff_COM16.csv
 
-    A STOP/START pause preserves one CSV. Selecting any test again creates a
-    distinct run. The right-hand status terminal remains visible but is not
-    saved. Older flat logs are not modified.
+    Every acknowledged Stop flushes/closes that file. The next Start always
+    opens another; files are never appended across separate runs. IR/MPU keep
+    their existing per-test folder behavior. Status remains in memory only.
     """
 
     SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test", "MPU": "MPU Test"}
@@ -149,6 +148,7 @@ class DualSessionLog:
         self.active_sensor = None
         self.active_folder = None
         self._active_file = None
+        self.last_saved_path = None
         self._has_menu_context = False
         self._streaming = True
 
@@ -158,10 +158,15 @@ class DualSessionLog:
         self.port = re.sub(r"[^A-Za-z0-9_-]", "_", port)[:40] or "COM"
         self.paths = {}
         self.runs = []
+        self.last_saved_path = None
 
     def _close_active(self):
         if self._active_file:
+            # Line-buffered CSV, explicit flush and close on Stop/Back/COM end.
+            self._active_file.flush()
             self._active_file.close()
+            if self.active_sensor in self.paths:
+                self.last_saved_path = self.paths[self.active_sensor]
         self._active_file = None
         self.files = {}
         self.active_folder = None
@@ -174,11 +179,12 @@ class DualSessionLog:
     def _observe_status(self, line):
         """Status is used ONLY as in-memory routing metadata, never logged."""
         if line == self._ENC_LOG_SELECT:
-            # The Encoder Test parent itself never enables measurements.
+            # Selecting Log Receive only ARMS the mode. Neither the firmware
+            # nor the host should create an encoder CSV before Start.
             self._has_menu_context = True
             self._close_active()
             self.active_sensor = "ENC"
-            self._streaming = True
+            self._streaming = False
             return
 
         if (line.startswith("Encoder Test") or
@@ -211,43 +217,66 @@ class DualSessionLog:
         if line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
                 self._streaming = False
+                # Stop = finish/save the current take; no append on next Start.
+                self._close_active()
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
+                # The STM32 ACK is authoritative. Create the encoder file at
+                # START, so even a zero-sample take has a closed CSV on STOP.
+                self._close_active()
                 self._streaming = True
+                if self.active_sensor == "ENC":
+                    self._open_run("ENC", TEST_CSV_COLUMNS["ENC"], None)
 
     def _open_run(self, sensor, headers, host_time):
-        """Create a directory only on the FIRST valid sample of a test run."""
+        """Open a fresh file; Encoder uses a stable folder and timestamp file."""
         try:
-            first_sample = datetime.fromisoformat(host_time) if host_time else datetime.now()
+            sample = datetime.fromisoformat(host_time) if host_time else datetime.now()
         except ValueError:
-            first_sample = datetime.now()
-        stamp = first_sample.strftime("%Y%m%d_%H%M%S_%f")
-        test = self.SENSOR_TEST_NAMES[sensor]
+            sample = datetime.now()
+        stamp = sample.strftime("%Y%m%d_%H%M%S_%f")
+
         if sensor == "ENC":
-            test += " - Log Receive"
-        label = f"Mode 7 - {test} - {stamp}_{self.port or 'COM'}"
-        for attempt in range(100):
-            name = label if attempt == 0 else f"{label}_{attempt:02d}"
-            folder = self.root / name
-            try:
-                folder.mkdir(parents=True, exist_ok=False)
-                break
-            except FileExistsError:
-                continue
+            folder = self.root / "mode 7 - encoder test - log receiver"
+            folder.mkdir(parents=True, exist_ok=True)
+            # Keep timestamp-first filenames readable and sortable. The COM
+            # suffix distinguishes devices; an index handles clock collision.
+            basename = f"{stamp}_{self.port or 'COM'}"
+            for attempt in range(100):
+                filename = basename if attempt == 0 else f"{basename}_{attempt:02d}"
+                path = folder / (filename + ".csv")
+                try:
+                    handle = path.open("x", encoding="utf-8", newline="", buffering=1)
+                    break
+                except FileExistsError:
+                    continue
+            else:
+                raise FileExistsError("Cannot allocate unique Encoder CSV filename")
         else:
-            raise FileExistsError("Cannot allocate unique test log directory")
-        path = folder / "continuous_data.csv"
-        handle = None
-        try:
+            test = self.SENSOR_TEST_NAMES[sensor]
+            label = f"Mode 7 - {test} - {stamp}_{self.port or 'COM'}"
+            for attempt in range(100):
+                name = label if attempt == 0 else f"{label}_{attempt:02d}"
+                folder = self.root / name
+                try:
+                    folder.mkdir(parents=True, exist_ok=False)
+                    break
+                except FileExistsError:
+                    continue
+            else:
+                raise FileExistsError("Cannot allocate unique test log directory")
+            path = folder / "continuous_data.csv"
             handle = path.open("x", encoding="utf-8", newline="", buffering=1)
+
+        try:
             handle.write(",".join(headers) + "\n")
         except OSError:
-            # Roll back a partial first-write without obscuring the failure.
-            if handle is not None:
-                handle.close()
+            handle.close()
             path.unlink(missing_ok=True)
-            folder.rmdir()
+            if sensor != "ENC":
+                folder.rmdir()
             raise
+
         self._active_file = handle
         self.active_folder = folder
         self.files = {sensor: handle}
