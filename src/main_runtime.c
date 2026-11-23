@@ -259,8 +259,6 @@ int Main_Runtime(void)
     ModeMenu mode_menu;
     uint8_t active_test_previous = MODE_MENU_NO_SELECTION;
     uint32_t last_test_ms = 0U;
-    uint32_t last_encoder_ms = 0U;
-    int32_t last_encoder_left = 0, last_encoder_right = 0;
 #endif
 #if defined(INTEGRATION_DIAG)
     uint32_t last_system_diag_ms = 0U;
@@ -439,14 +437,11 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
-            /* Main-context passive telemetry only, no motor movement.
-             * Window estimator is independent of 1-kHz encoder EMA. */
+            /* Only the selected System Test sends measurements.
+             * All motor outputs remain locked in MODE_MENU_ONLY. */
             if (active_test_previous != mode_menu.active_test) {
                 active_test_previous = mode_menu.active_test;
                 last_test_ms = now;
-                last_encoder_ms = now;
-                last_encoder_left = Encoder_GetLeftCount();
-                last_encoder_right = Encoder_GetRightCount();
             }
             if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
                 (uint32_t)(now - last_test_ms) >= 50U) {
@@ -464,22 +459,12 @@ int Main_Runtime(void)
                               (unsigned)ir.value[IR_L90], (unsigned)ir.value[IR_R0],
                               (unsigned)ir.value[IR_R45], (unsigned)ir.value[IR_R90]);
                 } else if (mode_menu.active_test == 1U) {
+                    /* On-wire CSV: sensor tag, ENC_L, ENC_R.
+                     * Only the two signed cumulative quadrature counts.
+                     * The dashboard strips the tag and writes 2-column CSV. */
                     int32_t left = Encoder_GetLeftCount();
                     int32_t right = Encoder_GetRightCount();
-                    int32_t dl = left - last_encoder_left;
-                    int32_t dr = right - last_encoder_right;
-                    uint32_t dt = (uint32_t)(now - last_encoder_ms);
-                    int32_t window_l = dt ? (int32_t)((int64_t)dl * 1000 / dt) : 0;
-                    int32_t window_r = dt ? (int32_t)((int64_t)dr * 1000 / dt) : 0;
-                    BT_Printf("ENC,ms=%lu,dt_ms=%lu,left=%ld,right=%ld,delta_l=%ld,delta_r=%ld,pps_l=%ld,pps_r=%ld,window_l=%ld,window_r=%ld\r\n",
-                              (unsigned long)now, (unsigned long)dt,
-                              (long)left, (long)right, (long)dl, (long)dr,
-                              (long)Encoder_GetLeftSpeedPPS(),
-                              (long)Encoder_GetRightSpeedPPS(),
-                              (long)window_l, (long)window_r);
-                    last_encoder_ms = now;
-                    last_encoder_left = left;
-                    last_encoder_right = right;
+                    BT_Printf("ENC,%ld,%ld\r\n", (long)left, (long)right);
                 } else if (mode_menu.active_test == 2U) {
                     MPU6050_Snapshot_t gyro;
                     uint8_t valid = MPU6050_GetSnapshot(&mpu, &gyro);
