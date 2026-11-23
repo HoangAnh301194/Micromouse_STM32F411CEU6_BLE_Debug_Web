@@ -13,6 +13,11 @@
 #define MODE_MENU_TEST_BACK 3U
 #define MODE_MENU_PAGE_MAIN 0U
 #define MODE_MENU_PAGE_TEST 1U
+#define MODE_MENU_PAGE_ENCODER 2U
+/* Seven encoder submenu items plus Back; only Log Receive streams data. */
+#define MODE_MENU_ENCODER_COUNT 8U
+#define MODE_MENU_ENCODER_LOG_RECEIVE 0U
+#define MODE_MENU_ENCODER_BACK 7U
 
 typedef enum {
     MODE_MENU_EVENT_NONE = 0,
@@ -21,7 +26,11 @@ typedef enum {
     MODE_MENU_EVENT_TEST_ENTER = 3,
     MODE_MENU_EVENT_TEST_FOCUS = 4,
     MODE_MENU_EVENT_TEST_SELECT = 5,
-    MODE_MENU_EVENT_TEST_EXIT = 6
+    MODE_MENU_EVENT_TEST_EXIT = 6,
+    MODE_MENU_EVENT_ENCODER_ENTER = 7,
+    MODE_MENU_EVENT_ENCODER_FOCUS = 8,
+    MODE_MENU_EVENT_ENCODER_SELECT = 9,
+    MODE_MENU_EVENT_ENCODER_EXIT = 10
 } ModeMenuEvent;
 
 typedef struct {
@@ -30,6 +39,8 @@ typedef struct {
     uint8_t page;
     uint8_t test_focus;
     uint8_t active_test;
+    uint8_t encoder_focus;
+    uint8_t active_encoder_option;
     uint8_t stream_running; /* test-only telemetry, never motor motion */
     uint8_t raw_pressed;
     uint8_t stable_pressed;
@@ -50,6 +61,7 @@ uint8_t ModeMenu_ResumeTest(ModeMenu *menu);
 /* Only the selected IR/Encoder/MPU test may accept its reset command. */
 uint8_t ModeMenu_CanResetSensor(const ModeMenu *menu, uint8_t test_index);
 const char *ModeMenu_TestName(uint8_t index);
+const char *ModeMenu_EncoderName(uint8_t index);
 const char *ModeMenu_Label(uint8_t index);
 const char *ModeMenu_Code(uint8_t index);
 const char *ModeMenu_Name(uint8_t index);
