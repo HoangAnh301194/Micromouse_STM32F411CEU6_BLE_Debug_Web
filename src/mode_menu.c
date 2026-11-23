@@ -116,8 +116,11 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
         }
         menu->active_encoder_option = menu->encoder_focus;
         if (menu->encoder_focus == MODE_MENU_ENCODER_LOG_RECEIVE) {
+            /* Entering Log Receive only ARMS telemetry. A separate 'G'
+             * Start command is mandatory before the first ENC frame.
+             * Every 'P' Stop returns to this armed, non-streaming state. */
             menu->active_test = 1U;
-            menu->stream_running = 1U;
+            menu->stream_running = 0U;
         }
         /* All six motion-labelled options only report selection.
          * No encoder sampling, no motor commands, no movement. */
