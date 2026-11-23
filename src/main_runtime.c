@@ -336,19 +336,23 @@ int Main_Runtime(void)
 #if defined(MODE_MENU_ONLY)
     ModeMenu_Init(&mode_menu, Board_ButtonPressed(), millis());
     {
-        uint8_t oled_found = (SSD1306_Init() == SSD1306_OK) ? 1U : 0U;
-        if (oled_found) {
-            /* Boot-only blocking render before the 1-kHz sensor loop starts. */
-            ModeMenu_Draw(&mode_menu, 0U);
-            SSD1306_UpdateScreen();
+        uint8_t oled_found = 0U;
+        /* SPP-first safety: OLED is optional and not yet validated on the
+         * robot. Never let OLED I2C probing block the menu/BT diagnostic.
+         * An opt-in build may restore it after I2C hardware validation. */
+#if defined(MODE_MENU_ENABLE_OLED)
+        if (mpu_status == MPU6050_OK) {
+            oled_found = (SSD1306_Init() == SSD1306_OK) ? 1U : 0U;
+            if (oled_found) {
+                ModeMenu_Draw(&mode_menu, 0U);
+                SSD1306_UpdateScreen();
+            }
         }
-        /* Mirror the actual rendered framebuffer before enabling I2C DMA.
-         * No redundant full-screen resend is needed after gyro calibration. */
+#endif
         OLED_SharedInit(oled_found);
         OLED_SharedEnable(oled_found);
-        /* No boot-time SPP output: Windows can open the outgoing COM
-         * long after STM32 boot. Reply to the GUI's one-byte '?' handshake
-         * instead, after the Bluetooth link is genuinely usable. */
+        /* Windows may connect long after power-up: respond to each '?' in
+         * main even when MPU6050 failed. No one-shot boot-only handshake. */
     }
 #endif
     if (mpu_status == MPU6050_OK) {
@@ -367,19 +371,22 @@ int Main_Runtime(void)
         Motor_Stop();
         Board_StatusLed(1);
 #if defined(MODE_MENU_ONLY)
-        BT_SendString("ERROR: MPU6050 initialization failed\r\n");
+        /* Degraded diagnostic profile: IR/encoder tests and SPP stay usable.
+         * MPU Test explicitly reports valid=0; no I2C or motor commands. */
+        BT_Printf("BOOT,DEGRADED,MPU_STATUS=%u,STEP=%u,I2C=%u\r\n",
+                  (unsigned)mpu_status, (unsigned)mpu.init_step,
+                  (unsigned)mpu.init_i2c_status);
 #else
         BT_SendString("[BOOT] MPU6050 init/calibration failed\r\n");
-#endif
 #if defined(INTEGRATION_DIAG)
         UART_Printf("MPU_BOOT_FAIL,status=%u,step=%u,reg=%u,i2c=%u,got=%u\r\n",
                     (unsigned)mpu_status, (unsigned)mpu.init_step,
                     (unsigned)mpu.init_register, (unsigned)mpu.init_i2c_status,
                     (unsigned)mpu.init_read_value);
 #endif
-
         while (1) {
         }
+#endif
     }
 
     /*
@@ -408,16 +415,27 @@ int Main_Runtime(void)
 
     while (1) {
         uint32_t now = millis();
+#if defined(MODE_MENU_ONLY)
+        if (mpu_status == MPU6050_OK)
+            MPU6050_Update(&mpu); /* I2C is not used if MPU boot failed. */
+#else
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
+#endif
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* Menu commands N/K and test-only P=Pause, G=Go.
-             * No SPP command can unlock motors in MODE_MENU_ONLY. */
+            /* Safe SPP commands: ?, N/K, P/G, E/Y/I for sensor diagnostics.
+             * Motors remain locked regardless of Bluetooth traffic. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
             if (command == '?') {
                 BT_SendString("SPP CONNECTED\r\n");
+                if (mpu_status == MPU6050_OK)
+                    BT_SendString("BOOT,READY,MPU=OK\r\n");
+                else
+                    BT_Printf("BOOT,DEGRADED,MPU_STATUS=%u,STEP=%u,I2C=%u\r\n",
+                              (unsigned)mpu_status, (unsigned)mpu.init_step,
+                              (unsigned)mpu.init_i2c_status);
             } else if (command == 'N') {
                 remote = ModeMenu_Next(&mode_menu);
             } else if (command == 'K') {
@@ -435,6 +453,22 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
+            } else if (command == 'E' && mode_menu.active_test == 1U) {
+                Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
+                BT_SendString("ENCODER RESET OK\r\n");
+            } else if (command == 'Y' && mode_menu.active_test == 2U) {
+                if (mpu_status == MPU6050_OK) {
+                    MPU6050_ResetYaw(&mpu);
+                    BT_SendString("MPU YAW RESET OK\r\n");
+                } else {
+                    BT_SendString("MPU YAW RESET REJECTED: NOT READY\r\n");
+                }
+            } else if (command == 'I' && mode_menu.active_test == 0U) {
+                /* Restart a live IR acquisition; this is NOT a calibration.
+                 * Keep motor outputs locked and sampling independent of SPP. */
+                IR_Stop();
+                IR_StartScan();
+                BT_SendString("IR SCAN RESTARTED\r\n");
             }
             if (remote != MODE_MENU_EVENT_NONE) {
                 if (remote == MODE_MENU_EVENT_TEST_SELECT)
@@ -487,7 +521,8 @@ int Main_Runtime(void)
                     BT_Printf("ENC,%ld,%ld\r\n", (long)left, (long)right);
                 } else if (mode_menu.active_test == 2U) {
                     MPU6050_Snapshot_t gyro;
-                    uint8_t valid = MPU6050_GetSnapshot(&mpu, &gyro);
+                    uint8_t valid = (mpu_status == MPU6050_OK) ?
+                                    MPU6050_GetSnapshot(&mpu, &gyro) : 0U;
                     uint32_t age_us = valid ?
                                       (uint32_t)(micros() - gyro.completed_us) : 0U;
                     if (valid && gyro.valid && age_us <= 3000U) {
