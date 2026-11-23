@@ -262,6 +262,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
      * successful snapshot that will never arrive after the failure. */
     IR_StartScan();
 
+#if !defined(MODE_MENU_ONLY)
+    /* In sensor-only mode, only encoder/IR/MPU acquisition runs in TIM11.
+     * Never dispatch motor motion or gyro-fault motion handlers. */
     {
         MPU6050_Snapshot_t gyro;
         if (MPU6050_GetSnapshot(control_mpu, &gyro) &&
@@ -306,6 +309,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #endif
         }
     }
+#endif /* !MODE_MENU_ONLY */
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     {
         uint32_t cycles = DWT->CYCCNT - start_cycles;
