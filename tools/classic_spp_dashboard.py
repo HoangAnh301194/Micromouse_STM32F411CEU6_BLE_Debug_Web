@@ -189,6 +189,7 @@ class Dashboard:
         self.total_lines = 0
         self._replaying = False
         self._last_auto_log = None
+        self._logging_disabled = False
         self.dual_log = DualSessionLog(Path(__file__).resolve().parents[1] / "logs" / "spp_runs")
         self.maze_dirty = True
         self.plot_dirty = True
@@ -479,6 +480,7 @@ class Dashboard:
         self._set_menu_ready(False)
         self.rx_byte_count.set("RX 0 bytes")
         self._last_auto_log = None
+        self._logging_disabled = False
         port = self.port_value.get().strip()
         if not port:
             messagebox.showerror("COM port", "Select the Windows SPP outgoing COM port.")
@@ -564,12 +566,17 @@ class Dashboard:
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
         category = classify_spp_line(line)
-        if not self._replaying:
-            data_path = self.dual_log.write(line, category, host_time=host_time)
-            if data_path is not None and data_path != self._last_auto_log:
-                self._last_auto_log = data_path
-                # UI-only status: the status terminal is NOT saved to disk.
-                self.status.set("Auto-saving Continuous data: " + str(data_path.parent))
+        if not self._replaying and not self._logging_disabled:
+            try:
+                data_path = self.dual_log.write(line, category, host_time=host_time)
+                if data_path is not None and data_path != self._last_auto_log:
+                    self._last_auto_log = data_path
+                    # UI-only status: the status terminal is NOT saved to disk.
+                    self.status.set("Auto-saving Continuous data: " + str(data_path.parent))
+            except OSError as exc:
+                # Disk permissions/full disk must never break SPP event processing.
+                self._logging_disabled = True
+                self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
         if line.startswith("Selected test "):
             # Both physical KEY and GUI selection activate one selected test.
             # Drop the previous sensor display/plot fields on every selection.
