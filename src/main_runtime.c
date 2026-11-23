@@ -512,6 +512,11 @@ int Main_Runtime(void)
                     BT_Printf("BOOT,DEGRADED,MPU_STATUS=%u,STEP=%u,I2C=%u\r\n",
                               (unsigned)mpu_status, (unsigned)mpu.init_step,
                               (unsigned)mpu.init_i2c_status);
+#if defined(ENCODER_1BOX_TEST_MODE)
+                BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
+#else
+                BT_SendString("ONEBOX,PROFILE,MOTOR_LOCKED\r\n");
+#endif
             } else if (command == 'N') {
 #if defined(ENCODER_1BOX_TEST_MODE)
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
