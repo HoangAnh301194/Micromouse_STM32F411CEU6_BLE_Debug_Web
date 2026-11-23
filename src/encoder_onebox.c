@@ -16,6 +16,7 @@ static MPU6050_Handle_t *imu_ref;
 static OneBoxCore core;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
+static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
 static uint16_t brake_ticks;
 static float yaw_zero;
 static EncoderOneBoxResult result;
@@ -41,6 +42,7 @@ static void Finish(uint8_t reason)
     result.count_r = core.delta_r;
     result.elapsed_ms = core.ticks;
     if (IsSevere(reason)) {
+        fault_latched = 1U;
         Motor_LockOutputs(); /* fault latch: reboot needed to re-arm */
         phase = 0U;
     } else {
@@ -57,6 +59,7 @@ void EncoderOneBox_Init(MPU6050_Handle_t *mpu)
     imu_ref = mpu;
     phase = 0U;
     result_pending = 0U;
+    fault_latched = 0U;
     brake_ticks = 0U;
     core.running = 0U;
     yaw_zero = 0.0f;
@@ -66,7 +69,7 @@ uint8_t EncoderOneBox_Start(void)
 {
     MPU6050_Snapshot_t snap;
     uint32_t irq;
-    if (!imu_ref || Board_GetClockFault() || !Control_IsRunning() ||
+    if (!imu_ref || fault_latched || Board_GetClockFault() || !Control_IsRunning() ||
         Board_ButtonPressed() || !imu_ref->calibrated ||
         !MPU6050_GetSnapshot(imu_ref, &snap) ||
         !snap.valid || (uint32_t)(micros() - snap.completed_us) > 5000U)
