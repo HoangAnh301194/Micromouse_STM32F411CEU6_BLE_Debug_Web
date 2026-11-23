@@ -45,6 +45,10 @@ typedef enum {
 
 void Motor_Init(void);
 void Motor_LockOutputs(void);
+#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
+/* Dedicated, one-box-only guarded unlock. No other menu item may actuate. */
+uint8_t Motor_OneBoxUnlockOutputs(void);
+#endif
 #if defined(SYSTEM_TEST_MODE)
 uint8_t Motor_SystemTestUnlockOutputs(void);
 #endif
