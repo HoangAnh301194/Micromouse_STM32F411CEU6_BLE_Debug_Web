@@ -26,7 +26,8 @@ from spp_dual_log import (DualSessionLog, classify_spp_line,
 
 
 BAUD = 115200
-PREFERRED_PORT = "COM37"
+# Never assume a persistent Windows COM number; auto-pick only if unambiguous.
+PREFERRED_PORT = ""
 MAX_EVENTS = 4096
 MAX_TERMINAL_LINES = 2500
 PLOT_COLORS = ("#19b7a6", "#ffb65c")
@@ -41,17 +42,29 @@ def available_ports():
 
 
 def suggested_port(ports):
-    """Prefer a clearly identified JDY/SPP COM port; never infer USB-TTL."""
+    """Pick a known JDY-33 port, or the sole outgoing Bluetooth COM.
+
+    A Windows Bluetooth Incoming COM can appear in the same device list;
+    never infer pairing/MCU readiness from a COM number alone.
+    """
+    named = []
+    outgoing = []
     for port in ports:
-        descriptor = " ".join((port.description or "", port.manufacturer or "")).lower()
+        descriptor = " ".join(
+            (port.description or "", port.manufacturer or "")
+        ).lower()
+        direction, _ = classify_port(port.hwid or "")
+        if direction == "incoming":
+            continue
         if "jdy-33" in descriptor or "nezumi_chan_spp" in descriptor:
-            return port.device
-    # Multiple "Standard Serial over Bluetooth" ports often include INCOMING
-    # virtual ports, which cannot initiate a connection to the robot.
-    # Never silently pick the first generic Bluetooth COM.
-    if any(p.device.upper() == PREFERRED_PORT for p in ports):
-        return PREFERRED_PORT
-    return None
+            named.append(port.device)
+        if direction == "outgoing":
+            outgoing.append(port.device)
+    if len(named) == 1:
+        return named[0]
+    if len(named) > 1:
+        return None
+    return outgoing[0] if len(outgoing) == 1 else None
 
 
 class SPPReader:
@@ -338,13 +351,12 @@ class Dashboard:
         choices = [p.device for p in ports]
         self.ports_box.configure(values=choices)
         current = self.port_value.get().upper().strip()
-        if current in ("", PREFERRED_PORT) and current not in (
-            p.device.upper() for p in ports
-        ):
+        if not current:
             match = suggested_port(ports)
             if match:
                 self.port_value.set(match)
-        # Never connect to or claim the availability of an unlisted COM.
+        # Keep manually entered ports; never silently choose among multiple
+        # outgoing Bluetooth devices or assume a hard-coded COM number.
 
     def _set_menu_ready(self, ready: bool):
         self.menu_ready = ready
@@ -665,7 +677,7 @@ class Dashboard:
 def main():
     arg = argparse.ArgumentParser(description=__doc__)
     arg.add_argument("--port", default=PREFERRED_PORT,
-                     help="Windows outgoing SPP serial port, default COM37 preference")
+                     help="Windows outgoing SPP COM; auto-select only when unambiguous")
     args = arg.parse_args()
     root = tk.Tk()
     Dashboard(root, args.port)
