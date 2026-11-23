@@ -185,6 +185,70 @@ disabled if their matching sensor test is not active.
 Older firmware does not implement the `E/Y/I` commands or degraded
 startup, so **updating Python alone will not resolve the MCU boot path**.
 
+## Triaging COM open / RX 0 bytes: isolated SPP smoke image
+
+**Why this test exists:** even after the firmware was modified to tolerate a
+returned MPU startup error, the Windows dashboard still reported exactly
+`RX 0 bytes`. That result is not enough to distinguish the physical UART link,
+Windows Outgoing COM, MCU clock/boot or a sensor startup stall. Source review
+also found a few unbounded DMA-disable waits in `src/i2c.c`; the degraded
+error handler cannot run if an earlier I2C wait never returns. Neither
+observation proves the actual cause on this user's hardware.
+
+**Isolation image `spp_smoke_96m`:**
+
+- Explicit opt-in firmware on the **same branch** and same 96 MHz clock,
+  same `BT_Init()`, PA2/PA3 USART2 and 115200 baud as `mode_menu_96m`.
+- Calls `Motor_Init()` and `Motor_LockOutputs()`; motor is locked until reset.
+- Does **not** initialize MPU6050, I2C, OLED, six IR channels, encoder or TIM11.
+- Toggles PC13 status LED every second and emits
+  `SPP_SMOKE,HB,ms=...,rx=...,fe=...,ne=...,ore=...,drop=...`
+  **once per second**, whether or not the PC transmits anything.
+- Replies to each ASCII `?` with `SPP CONNECTED` and
+  `SPP_SMOKE,PONG,ms=...,rx=...,fe=...,ne=...,ore=...,drop=...`.
+  Hardware counters identify UART framing/noise/overrun, not RF quality.
+- It contains **no** mode, motor, Flash, reset-sensor or movement commands.
+
+To run it, first **disconnect VM/motor power, support the chassis**, close
+the dashboard and any serial terminal, connect ST-Link:
+
+```powershell
+git fetch origin
+git switch giomuadongbacv2
+git pull --ff-only origin giomuadongbacv2
+pio run -e spp_smoke_96m
+pio run -e spp_smoke_96m -t upload
+py tools/classic_spp_smoke_probe.py --port COM16 --seconds 20
+```
+
+COM16 must be the **actual Outgoing** port; verify Windows
+Bluetooth settings or `py tools/classic_spp_link_diag.py --list`.
+Close Web BLE during Classic SPP isolation. The probe transmits only `?`.
+In addition to printed bytes/lines/heartbeat/PONG counts, visually observe
+whether PC13 blinks once per second.
+
+| Probe observation | Interpretation / next step |
+|---|---|
+| Heartbeats **and** PONG | Both UART directions and COM transport pass in isolation. If normal firmware still has `RX 0`, suspect a startup stall, sensor/I2C interaction or code specific to normal runtime. |
+| Heartbeats but **no** PONG | STM32 TX -> PC works. Investigate STM32 PA3 RX, JDY TXD and `fe/ne/ore` counter trends. |
+| PC13 blinks, `RX 0 bytes` | Firmware executes; investigate STM32 PA2 TX -> JDY RXD, shared ground, JDY UART baud, Windows Outgoing COM and concurrent BLE. |
+| PC13 stays still, `RX 0 bytes` | Investigate ST-Link flashing, MCU boot/clock and independent power. This is not proof of Windows Bluetooth fault. |
+| Partial/corrupt RX | Check baud/framing/clock and JDY/STM32 UART wiring. |
+| Cannot open COM | Confirm COM Outgoing and that no other process has it open. |
+
+After the diagnosis, **restore the normal menu image** and only then use
+the dashboard Encoder/IR/MPU menus:
+
+```powershell
+pio run -e mode_menu_96m -t upload
+py tools/classic_spp_dashboard.py --port COM16
+```
+
+The smoke test is a **hardware-isolation aid, not a proven fix**. Preserve
+the printed results, especially heartbeat count, PONG count and PC13
+status before making any further firmware or baud changes. Do not
+change the JDY-33 AT baudrate as an unverified workaround.
+
 ## Build / flash / test
 
 ```powershell
