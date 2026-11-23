@@ -4,6 +4,13 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Cập nhật SPP handshake — 23/11/2026, chỉ nhánh giomuadongbacv2
+
+- **Nguyên nhân UI disabled:** Chuyển/Chọn được khóa cho đến khi GUI nhận chính xác `SPP CONNECTED`; COM open hoặc bất kỳ RX byte nào chưa đủ. Đường host trước đây gửi `?` đúng một lần ngay sau `Serial.open()`, có thể mất trong giai đoạn link chưa ổn định.
+- **Sửa:** bổ sung `tools/classic_spp_handshake.py`, chính sách gửi lại `?` 0,8 giây/lần trong sáu lần đầu rồi mỗi 3 giây, ngừng ngay khi nhận ACK, cảnh báo riêng khi COM mở nhưng firmware không phản hồi; giữ khóa hai nút cho tới khi ACK; thông báo nếu đang cố Connect khi worker cũ chưa đóng.
+- **Không thay đổi:** firmware, `src/bt_debug.c`, code encoder, điều khiển motor, chọn mode và Web BLE. Nếu MCU đi vào fault loop do MPU khởi tạo lỗi hoặc nạp sai profile, retry không tự khắc phục.
+- **Cách nghiệm thu:** test `tests/regression/spp_handshake_test.py`, workflow `giomuadongbacv2-menu-test.yml`, kiểm tra SPP trên JDY-33 thật với COM Outgoing và nhận `SPP CONNECTED`. Chưa có bằng chứng bench về chất lượng radio Windows/MCU cho bản sửa này.
+
 ## Cập nhật riêng nhánh giomuadongbacv2 — 22/11/2026
 
 - **SPP menu remote:** GUI Tkinter có hai nút `Chuyển` (`N`) và `Chọn` (`K`). Hai nút chỉ được bật sau khi nhận `SPP CONNECTED` từ handshake `?`, lệnh được đưa vào queue của worker serial; không hỗ trợ lệnh motor/Flash/PID.
