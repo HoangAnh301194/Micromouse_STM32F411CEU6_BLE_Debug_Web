@@ -134,7 +134,18 @@ int main(void) {
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 1 && m.active_test == MODE_MENU_NO_SELECTION);
     assert(!m.stream_running && !ModeMenu_ResumeTest(&m));
-    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
+    /* Encoder Test is a submenu, NOT an immediately active stream. */
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_ENTER);
+    assert(m.page == MODE_MENU_PAGE_ENCODER);
+    assert(m.active_test == MODE_MENU_NO_SELECTION && !m.stream_running);
+    assert(!ModeMenu_CanResetSensor(&m, 1));
+    assert(!ModeMenu_ResumeTest(&m));
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_NONE);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_ENCODER_FOCUS);
+    assert(m.encoder_focus == MODE_MENU_ENCODER_LOG_RECEIVE);
+    assert(!strcmp(ModeMenu_EncoderName(0), "Log Receive"));
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_SELECT);
+    assert(m.active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE);
     assert(m.active_test == 1 && m.stream_running);
     assert(ModeMenu_CanResetSensor(&m, 1));
     assert(!ModeMenu_CanResetSensor(&m, 0));
@@ -142,6 +153,32 @@ int main(void) {
     assert(ModeMenu_PauseTest(&m));
     assert(!m.stream_running);
     assert(ModeMenu_ResumeTest(&m));
+    assert(m.stream_running);
+
+    /* All six motion-labelled options are inert placeholders: no stream. */
+    for (i = 1; i < MODE_MENU_ENCODER_BACK; ++i) {
+        assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_ENCODER_FOCUS);
+        assert(m.encoder_focus == i);
+        assert(!m.stream_running);
+        assert(m.active_test == MODE_MENU_NO_SELECTION);
+        assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_SELECT);
+        assert(m.active_encoder_option == i);
+        assert(m.active_test == MODE_MENU_NO_SELECTION);
+        assert(!m.stream_running && !ModeMenu_ResumeTest(&m));
+        assert(!ModeMenu_CanResetSensor(&m, 1));
+    }
+    assert(!strcmp(ModeMenu_EncoderName(1), "1 Box Forward"));
+    assert(!strcmp(ModeMenu_EncoderName(2), "5 Box Forward"));
+    assert(!strcmp(ModeMenu_EncoderName(3), "Pivot 90 Left"));
+    assert(!strcmp(ModeMenu_EncoderName(4), "Pivot 90 Right"));
+    assert(!strcmp(ModeMenu_EncoderName(5), "Pivot 180 Left"));
+    assert(!strcmp(ModeMenu_EncoderName(6), "Pivot 180 Right"));
+    assert(!strcmp(ModeMenu_EncoderName(8), "INVALID"));
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_ENCODER_FOCUS);
+    assert(m.encoder_focus == MODE_MENU_ENCODER_BACK);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_EXIT);
+    assert(m.page == MODE_MENU_PAGE_TEST);
+    assert(m.active_test == MODE_MENU_NO_SELECTION && !m.stream_running);
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 2 && m.active_test == MODE_MENU_NO_SELECTION);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
