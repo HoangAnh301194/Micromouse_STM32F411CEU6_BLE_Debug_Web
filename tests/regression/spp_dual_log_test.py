@@ -22,7 +22,9 @@ def main():
     for line in ("SPP CONNECTED", "Mode 7: System Test",
                  "Selected mode 7: System Test", "W,MENU_READY", "W,END,DONE",
                  "System Test 2: Encoder Test", "Selected test 2: Encoder Test",
-                 "System Test: back to main menu", "STATUS,TEST START", "UNKNOWN"):
+                 "System Test: back to main menu", "STATUS,TEST START", "UNKNOWN",
+                 "TEST STREAM STOPPED: Encoder Test",
+                 "TEST STREAM STARTED: Encoder Test"):
         assert classify_spp_line(line) == "status", line
 
     legacy = data_to_csv_row("MPU,ms=1000,valid=1,yaw_cd=250,gz_cd=-40")
@@ -36,16 +38,28 @@ def main():
     assert legacy["left"] == "12" and legacy["pps_r"] == "125"
 
     # New compact encoder frames contain only the signed quadrature counters.
-    record = sensor_test_csv("ENC,123,-45")
-    assert record == ("ENC", ("ENC_L", "ENC_R"), ("123", "-45"))
+    sample_time = "2026-11-23T14:56:41.241"
+    record = sensor_test_csv("ENC,123,-45", host_time=sample_time)
+    assert record == ("ENC", ("timestamp", "ENC_L", "ENC_R"),
+                      (sample_time, "123", "-45"))
     assert data_to_csv_row("ENC,123,-45")["left"] == "123"
     assert data_to_csv_row("ENC,123,-45")["right"] == "-45"
-    assert sensor_test_csv("ENC,-2147483648,2147483647")[2] == (
-        "-2147483648", "2147483647")
+    assert sensor_test_csv("ENC,-2147483648,2147483647", host_time=sample_time)[2] == (
+        sample_time, "-2147483648", "2147483647")
     assert sensor_test_csv("ENC,abc,10") is None
     assert sensor_test_csv("ENC,12,13,14") is None
     assert sensor_test_csv("ENC,12") is None
-    assert sensor_test_csv("ENC,ms=1200,left=123,right=-45,pps_l=999")[2] == ("123", "-45")
+    assert sensor_test_csv("ENC,ms=1200,left=123,right=-45,pps_l=999",
+                           host_time=sample_time)[2] == (sample_time, "123", "-45")
+    # Exact previously observed old-firmware frame: remove dt/pps/raw fields.
+    old_frame = (
+        "ENC,ms=128650,dt_ms=50,left=2620,right=4230,delta_l=0,"
+        "delta_r=0,pps_l=0,pps_r=0,window_l=0,window_r=0"
+    )
+    assert sensor_test_csv(old_frame, host_time=sample_time) == (
+        "ENC", ("timestamp", "ENC_L", "ENC_R"),
+        ("2026-11-23T14:56:41.241", "2620", "4230")
+    )
 
     # The sensor-specific test tables cannot contain columns from other tests.
     ir = sensor_test_csv("IR,ms=1,valid=1,age_us=20,scan=3,L0=1,L45=2,L90=3,R0=4,R45=5,R90=6")
@@ -56,7 +70,7 @@ def main():
     assert invalid_mpu[2] == ("0", "", "")
     assert sensor_test_csv("MPU,valid=1") is None
     assert sensor_test_csv("W,1,2,3,4,5,6,7,8,9") is None
-    assert TEST_CSV_COLUMNS["ENC"] == ("ENC_L", "ENC_R")
+    assert TEST_CSV_COLUMNS["ENC"] == ("timestamp", "ENC_L", "ENC_R")
     assert not any("IR" in c or "MPU" in c for c in TEST_CSV_COLUMNS["ENC"])
 
     with TemporaryDirectory() as temp:
@@ -64,8 +78,9 @@ def main():
         log.open_session("COM16")
         base = dict(log.paths)
         log.write("Selected test 2: Encoder Test")
-        log.write("ENC,11,-12")
-        log.write("ENC,13,-15")
+        log.write("ENC,11,-12", host_time="2026-11-23T14:56:41.241")
+        log.write(old_frame, host_time="2026-11-23T14:56:41.288")
+        log.write("ENC,13,-15", host_time="2026-11-23T14:56:41.337")
         log.write("System Test 3: MPU Test")
         log.write("Selected test 3: MPU Test")
         log.write("MPU,ms=50,valid=1,age_us=25,yaw_cd=12,gz_cd=-2")
@@ -80,7 +95,10 @@ def main():
         assert "Selected test 2" in base["status"].read_text(encoding="utf-8")
         assert "ENC,11" not in base["status"].read_text(encoding="utf-8")
         assert read_csv(encoder) == [
-            ["ENC_L", "ENC_R"], ["11", "-12"], ["13", "-15"]]
+            ["timestamp", "ENC_L", "ENC_R"],
+            ["2026-11-23T14:56:41.241", "11", "-12"],
+            ["2026-11-23T14:56:41.288", "2620", "4230"],
+            ["2026-11-23T14:56:41.337", "13", "-15"]]
         assert read_csv(ir_path) == [
             ["valid", "L0", "L45", "L90", "R0", "R45", "R90"],
             ["1", "10", "11", "12", "13", "14", "15"]]
