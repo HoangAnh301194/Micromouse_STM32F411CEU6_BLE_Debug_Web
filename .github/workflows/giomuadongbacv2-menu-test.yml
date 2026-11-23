@@ -9,9 +9,11 @@ on:
       - 'src/control.c'
       - 'include/control.h'
       - 'tools/classic_spp_dashboard.py'
+      - 'tools/classic_spp_handshake.py'
       - 'tools/spp_dual_log.py'
       - 'tests/regression/mode_menu_native_test.py'
       - 'tests/regression/spp_dual_log_test.py'
+      - 'tests/regression/spp_handshake_test.py'
       - '.github/workflows/giomuadongbacv2-menu-test.yml'
   workflow_dispatch:
 jobs:
@@ -27,9 +29,10 @@ jobs:
         run: |
           python tests/regression/mode_menu_native_test.py
           python tests/regression/spp_dual_log_test.py
+          python tests/regression/spp_handshake_test.py
       - name: Python syntax for SPP dashboard
         run: |
-          python -m py_compile tools/classic_spp_dashboard.py tools/spp_dual_log.py
+          python -m py_compile tools/classic_spp_dashboard.py tools/classic_spp_handshake.py tools/spp_dual_log.py
       - name: Install PlatformIO
         run: python -m pip install --disable-pip-version-check platformio
       - name: Compile motor-locked menu firmware
