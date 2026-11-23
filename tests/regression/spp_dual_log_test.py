@@ -1,4 +1,4 @@
-"""Regression for per-run Mode 7 DATA-only CSV storage."""
+"""Regression for explicit Encoder Log Receive Start/Stop and DATA-only CSV."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
@@ -16,13 +16,16 @@ def read_csv(path):
 
 
 def main():
+    t0 = "2026-11-23T15:33:40.852"
+    t1 = "2026-11-23T15:33:56.848"
+    t2 = "2026-11-23T15:34:05.123"
+    t3 = "2026-11-23T15:34:20.123"
     old_frame = (
         "ENC,ms=128650,dt_ms=50,left=2620,right=4230,delta_l=0,"
         "delta_r=0,pps_l=0,pps_r=0,window_l=0,window_r=0"
     )
-    t0 = "2026-11-23T15:33:40.852"
-    t1 = "2026-11-23T15:33:56.848"
-    assert classify_spp_line("Selected test 2: Encoder Test") == "status"
+    assert classify_spp_line("Selected encoder option 1: Log Receive") == "status"
+    assert classify_spp_line("TEST STREAM STARTED: Encoder Test") == "status"
     assert classify_spp_line("ENC,0,-5") == "data"
     assert sensor_test_csv(old_frame, host_time=t0) == (
         "ENC", ("timestamp", "ENC_L", "ENC_R"), (t0, "2620", "4230"))
@@ -34,110 +37,117 @@ def main():
         root = Path(temp) / "logs" / "spp_runs"
         log = DualSessionLog(root)
         log.open_session("COM16")
-        # CONNECT without a test must create NO files.
-        log.write("SPP CONNECTED")
-        log.write("BOOT,READY,MPU=OK")
-        log.write("Selected mode 7: System Test")
-        log.write("System Test: choose IR / Encoder / MPU / Back")
-        assert not root.exists()
-
-        log.write("System Test 2: Encoder Test")  # browsing only
-        assert log.write("ENC,33,44", host_time=t0) is None
-        assert not root.exists()
-        log.write("Encoder Test: choose Log Receive / motion tests / Back")
-        log.write("Selected test 2: Encoder Test")  # legacy parent event is inert
+        for msg in (
+            "SPP CONNECTED",
+            "BOOT,READY,MPU=OK",
+            "Selected mode 7: System Test",
+            "System Test: choose IR / Encoder / MPU / Back",
+            "System Test 2: Encoder Test",
+            "Encoder Test: choose Log Receive / motion tests / Back",
+            "Selected test 2: Encoder Test",
+            "Encoder Test option 2: 1 Box Forward",
+            "Selected encoder option 2: 1 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)",
+        ):
+            log.write(msg, host_time=t0)
         assert log.write("ENC,9,9", host_time=t0) is None
-        log.write("Encoder Test option 2: 1 Box Forward")
-        log.write("Selected encoder option 2: 1 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)")
-        assert log.write("ENC,9,9", host_time=t0) is None
-        assert not root.exists()
+        assert not root.exists()  # No status files, no accidental CSV.
 
         log.write("Encoder Test option 1: Log Receive")
         log.write("Selected encoder option 1: Log Receive")
-        e1 = log.write("ENC,0,-5", host_time=t0)
-        assert e1 and e1.name == "continuous_data.csv"
-        assert e1.parent.name.startswith("Mode 7 - Encoder Test - Log Receive - 20261123_153340_852000_COM16")
-        assert len(list(root.iterdir())) == 1
-        assert log.write("IR,valid=1,L0=0,L45=1,L90=2,R0=3,R45=4,R90=5") is None
-        assert log.write("MPU,valid=1,yaw_cd=5,gz_cd=6") is None
-        assert log.write("STATUS,anything") is None
+        assert log.write("ENC,10,11", host_time=t0) is None
+        assert not root.exists()  # Select = ARMED, not RECORDING.
+
+        # Start #1 immediately creates a fresh timestamp-named CSV.
+        log.write("TEST STREAM STARTED: Encoder Test", host_time=t0)
+        folder = root / "mode 7 - encoder test - log receiver"
+        e1 = folder / "20261123_153340_852000_COM16.csv"
+        assert e1.is_file()
+        assert read_csv(e1) == [["timestamp", "ENC_L", "ENC_R"]]
+        assert log.write("ENC,0,-5", host_time=t0) == e1
+        assert log.write("ENC,12,13", host_time=t1) == e1
+        assert log.write("IR,ms=1,valid=1,L0=1,L45=2,L90=3,R0=4,R45=5,R90=6") is None
+        assert log.write("MPU,valid=1,yaw_cd=10,gz_cd=20") is None
         assert log.write("ENC,bad,10") is None
-        log.write("TEST STREAM STOPPED: Encoder Test")
-        assert log.write("ENC,777,888", host_time=t0) is None
-        log.write("TEST STREAM STARTED: Encoder Test")
-        assert log.write(old_frame, host_time=t1) == e1
+
+        # Stop closes and saves the first take. Repeating Stop is inert.
+        log.write("TEST STREAM STOPPED: Encoder Test", host_time=t1)
+        assert log.last_saved_path == e1
+        assert log._active_file is None
+        assert log.write("ENC,777,888", host_time=t1) is None
+        log.write("TEST STREAM STOPPED: Encoder Test", host_time=t1)
+        assert list(folder.glob("*.csv")) == [e1]
         assert read_csv(e1) == [
             ["timestamp", "ENC_L", "ENC_R"],
             [t0, "0", "-5"],
-            [t1, "2620", "4230"],
+            [t1, "12", "13"],
         ]
-        assert list(e1.parent.iterdir()) == [e1]  # no status log, no empty data.csv
 
-        # Browsing encoder options ends the run; no data in motion modes.
+        # Start #2 produces another FILE inside the SAME static folder.
+        log.write("TEST STREAM STARTED: Encoder Test", host_time=t2)
+        e2 = folder / "20261123_153405_123000_COM16.csv"
+        assert e2.is_file() and e2 != e1
+        assert log.write(old_frame, host_time=t2) == e2
+        log.write("TEST STREAM STOPPED: Encoder Test", host_time=t3)
+        assert log.last_saved_path == e2
+        assert read_csv(e2) == [
+            ["timestamp", "ENC_L", "ENC_R"],
+            [t2, "2620", "4230"],
+        ]
+        assert len(list(folder.glob("*.csv"))) == 2
+        assert read_csv(e1)[-1] == [t1, "12", "13"]  # Must not append.
+
+        # Quick Start->Stop with zero samples still saves a header-only CSV.
+        log.write("TEST STREAM STARTED: Encoder Test", host_time=t2)
+        e3 = folder / "20261123_153405_123000_COM16_01.csv"
+        assert e3.is_file()
+        log.write("TEST STREAM STOPPED: Encoder Test", host_time=t2)
+        assert read_csv(e3) == [["timestamp", "ENC_L", "ENC_R"]]
+        assert len(list(folder.glob("*.csv"))) == 3
+
+        # Leaving Log Receive closes the current take and blocks stray ENC.
         log.write("Encoder Test option 3: 5 Box Forward")
         log.write("Selected encoder option 3: 5 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)")
-        assert log.write("ENC,8,8", host_time=t1) is None
+        assert log.write("ENC,100,100", host_time=t2) is None
+        assert len(list(folder.glob("*.csv"))) == 3
         log.write("Encoder Test: back to System Test")
+
+        # IR/MPU retained their original, isolated per-test folder behavior.
         log.write("System Test 3: MPU Test")
-        assert log.write("ENC,111,222", host_time=t1) is None
         log.write("Selected test 3: MPU Test")
-        m1 = log.write(
-            "MPU,ms=50,valid=1,age_us=25,yaw_cd=12,gz_cd=-2", host_time=t1)
+        m1 = log.write("MPU,ms=50,valid=1,age_us=25,yaw_cd=12,gz_cd=-2", host_time=t2)
         assert m1.parent.name.startswith("Mode 7 - MPU Test - ")
-        assert read_csv(m1) == [
-            ["valid", "yaw_cd", "gz_cd"], ["1", "12", "-2"]]
+        assert read_csv(m1) == [["valid", "yaw_cd", "gz_cd"], ["1", "12", "-2"]]
         log.write("MPU,ms=100,valid=0,age_us=10000")
         assert read_csv(m1)[-1] == ["0", "", ""]
-
         log.write("System Test 1: IR Test")
         log.write("Selected test 1: IR Test")
         i1 = log.write(
             "IR,ms=150,valid=1,age_us=25,scan=11,"
-            "L0=10,L45=11,L90=12,R0=13,R45=14,R90=15", host_time=t1)
+            "L0=10,L45=11,L90=12,R0=13,R45=14,R90=15", host_time=t2)
         assert i1.parent.name.startswith("Mode 7 - IR Test - ")
         assert read_csv(i1) == [
             ["valid", "L0", "L45", "L90", "R0", "R45", "R90"],
-            ["1", "10", "11", "12", "13", "14", "15"]]
+            ["1", "10", "11", "12", "13", "14", "15"],
+        ]
 
-        # Reselect the same Encoder Test: it is a distinct experiment/run,
-        # even when first-sample time would collide with a previous folder.
-        log.write("System Test 2: Encoder Test")
-        log.write("Encoder Test: choose Log Receive / motion tests / Back")
-        log.write("Encoder Test option 1: Log Receive")
-        log.write("Selected encoder option 1: Log Receive")
-        e2 = log.write("ENC,1,2", host_time=t0)
-        assert e2 != e1
-        assert e2.parent != e1.parent
-        assert read_csv(e2) == [
-            ["timestamp", "ENC_L", "ENC_R"], [t0, "1", "2"]]
-        log.write("System Test: back to main menu")
-        assert log.write("ENC,9,9", host_time=t0) is None
-        assert len(list(root.iterdir())) == 4
         assert not list(root.rglob("*_status.log"))
-        assert all(p.name == "continuous_data.csv" for p in root.rglob("*.csv"))
         assert not list(root.rglob("connections"))
         log.close()
 
-        # Reconnection must NOT infer the Encoder mode from unsolicited ENC.
-        # Explicit Log Receive selection is required for a new capture.
+        # New COM session cannot resume an encoder log until Log Receive
+        # and a brand-new Start have been acknowledged.
         log.open_session("COM16")
-        assert len(list(root.iterdir())) == 4
         assert log.write("ENC,100,-100", host_time=t0) is None
-        assert len(list(root.iterdir())) == 4
         log.write("Selected encoder option 1: Log Receive")
-        selected = log.write("ENC,100,-100", host_time=t0)
-        assert selected.parent.name.startswith("Mode 7 - Encoder Test - Log Receive - ")
-        assert selected != e1 and selected != e2
+        assert log.write("ENC,100,-100", host_time=t0) is None
+        log.write("TEST STREAM STARTED: Encoder Test", host_time=t3)
+        e4 = log.write("ENC,100,-100", host_time=t3)
+        assert e4.parent == folder and e4 != e1 and e4 != e2 and e4 != e3
+        log.write("TEST STREAM STOPPED: Encoder Test")
         log.close()
-        assert len(list(root.iterdir())) == 5
+        assert len(list(folder.glob("*.csv"))) == 4
 
-        # An idle connection must leave the directory count unchanged.
-        log.open_session("COM16")
-        log.write("SPP CONNECTED")
-        log.write("BOOT,DEGRADED,MPU_STATUS=2,STEP=1,I2C=1")
-        log.close()
-        assert len(list(root.iterdir())) == 5
-    print("spp_dual_log: PASS — only Encoder/Log Receive records CSV")
+    print("spp_dual_log: PASS — Encoder Start/Stop creates independent timestamped CSV files")
 
 
 if __name__ == "__main__":
