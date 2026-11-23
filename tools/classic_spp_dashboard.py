@@ -673,10 +673,17 @@ class Dashboard:
         elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
+            # Driver is fail-locked on severe faults until STM32 reset.
+            if line.startswith("ONEBOX,RESULT,") and not (
+                    "reason=DONE" in line or "reason=STOP" in line):
+                self.onebox_capable = False
             if self.active_test_name == "1 Box Forward":
                 self.test_stream_running = False
                 self._update_test_controls()
-            self.status.set(line)
+            self.status.set(
+                line + (" — reset STM32 before another motor test"
+                        if line.startswith("ONEBOX,RESULT,") and
+                        not self.onebox_capable else ""))
         elif line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = False
