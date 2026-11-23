@@ -33,6 +33,9 @@
 #error "MODE_MENU_ONLY requires shared-I2C OLED and cannot combine with motion diagnostics"
 #endif
 #include "mode_menu.h"
+#if defined(ENCODER_1BOX_TEST_MODE)
+#include "encoder_onebox.h"
+#endif
 #include "oled_shared.h"
 #include "ssd1306.h"
 #endif
@@ -456,6 +459,11 @@ int Main_Runtime(void)
      */
     IR_StartScan();
     Control_Init(&mpu);
+#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
+    /* Safe default locked since Motor_Init; only a verified one-shot START
+     * can invoke the opt-in unlock. Initialize before enabling TIM11. */
+    EncoderOneBox_Init(&mpu);
+#endif
     Control_Start();
 
 #if !defined(MODE_MENU_ONLY)
@@ -497,17 +505,44 @@ int Main_Runtime(void)
                               (unsigned)mpu_status, (unsigned)mpu.init_step,
                               (unsigned)mpu.init_i2c_status);
             } else if (command == 'N') {
+#if defined(ENCODER_1BOX_TEST_MODE)
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+#endif
                 remote = ModeMenu_Next(&mode_menu);
             } else if (command == 'K') {
+#if defined(ENCODER_1BOX_TEST_MODE)
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+#endif
                 remote = ModeMenu_Select(&mode_menu);
+            } else if (command == 'H') {
+#if defined(ENCODER_1BOX_TEST_MODE)
+                EncoderOneBox_HostPing(); /* lease only, never a motor command */
+#endif
             } else if (command == 'P') {
+#if defined(ENCODER_1BOX_TEST_MODE)
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                else
+#endif
                 if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
-                if (ModeMenu_ResumeTest(&mode_menu)) {
+                if (mode_menu.page == MODE_MENU_PAGE_ENCODER &&
+                    mode_menu.active_encoder_option == 1U) {
+#if defined(ENCODER_1BOX_TEST_MODE)
+                    if (mpu_status == MPU6050_OK && EncoderOneBox_Start()) {
+                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d\r\n",
+                                  (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
+                                  (int)ONEBOX_MAX_PWM);
+                    } else {
+                        BT_SendString("ONEBOX,REJECT,reason=IMU_OR_MOTOR_NOT_READY\r\n");
+                    }
+#else
+                    BT_SendString("ONEBOX,REJECT,reason=USE_ENCODER_1BOX_96M_PROFILE\r\n");
+#endif
+                } else if (ModeMenu_ResumeTest(&mode_menu)) {
                     last_test_ms = now; /* next measurement in ~50 ms */
                     BT_Printf("TEST STREAM STARTED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
@@ -547,6 +582,9 @@ int Main_Runtime(void)
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu,
                                                 Board_ButtonPressed(), now);
             if (event != MODE_MENU_EVENT_NONE) {
+#if defined(ENCODER_1BOX_TEST_MODE)
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+#endif
                 if (event == MODE_MENU_EVENT_TEST_SELECT ||
                     (event == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == 1U))
@@ -600,6 +638,18 @@ int Main_Runtime(void)
                     }
                 }
             }
+#if defined(ENCODER_1BOX_TEST_MODE)
+            {
+                EncoderOneBoxResult result;
+                if (EncoderOneBox_PopResult(&result)) {
+                    BT_Printf("ONEBOX,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
+                              EncoderOneBox_Reason(result.reason),
+                              (long)result.count_l, (long)result.count_r,
+                              (unsigned long)result.elapsed_ms,
+                              (unsigned)result.motor_locked);
+                }
+            }
+#endif
             OLED_SharedService(&mpu);
             /* Idle menu: no periodic status; active test: 20 Hz CSV data. */
         }
