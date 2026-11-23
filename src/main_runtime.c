@@ -55,6 +55,46 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     if (!menu) return;
 
     SSD1306_Fill(SSD1306_BLACK);
+    if (menu->page == MODE_MENU_PAGE_ENCODER) {
+        /* Scroll four visible options for 128x64 OLED; OLED remains
+         * optional/off by default in the motor-locked SPP profile. */
+        SSD1306_SetCursor(0U, 0U);
+        SSD1306_WriteString("ENCODER TEST", &Font_7x10, SSD1306_WHITE);
+        SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
+        if (menu->active_encoder_option != MODE_MENU_NO_SELECTION) {
+            SSD1306_SetCursor(0U, 20U);
+            SSD1306_WriteString((char *)ModeMenu_EncoderName(menu->active_encoder_option),
+                                &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 38U);
+            SSD1306_WriteString(menu->active_encoder_option ==
+                                MODE_MENU_ENCODER_LOG_RECEIVE ?
+                                (menu->stream_running ? "LOG ACTIVE" : "LOG PAUSED") :
+                                "NO MOTION YET", &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 52U);
+            SSD1306_WriteString("Next: browse", &Font_7x10, SSD1306_WHITE);
+            return;
+        }
+        if (menu->encoder_focus == MODE_MENU_NO_SELECTION) {
+            SSD1306_SetCursor(0U, 23U);
+            SSD1306_WriteString("Next: choose", &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(0U, 40U);
+            SSD1306_WriteString("Hold: select", &Font_7x10, SSD1306_WHITE);
+            return;
+        }
+        first = menu->encoder_focus >= 3U ?
+                (uint8_t)(menu->encoder_focus - 3U) : 0U;
+        for (row = 0U; row < 4U; ++row) {
+            i = (uint8_t)(first + row);
+            if (i >= MODE_MENU_ENCODER_COUNT) break;
+            SSD1306_SetCursor(0U, (uint8_t)(15U + row * 11U));
+            SSD1306_WriteString((i == menu->encoder_focus) ? ">" : " ",
+                                &Font_7x10, SSD1306_WHITE);
+            SSD1306_SetCursor(10U, (uint8_t)(15U + row * 11U));
+            SSD1306_WriteString((char *)ModeMenu_EncoderName(i),
+                                &Font_7x10, SSD1306_WHITE);
+        }
+        return;
+    }
     if (menu->page == MODE_MENU_PAGE_TEST) {
         SSD1306_SetCursor(0U, 0U);
         SSD1306_WriteString("7.SYSTEM TEST", &Font_7x10, SSD1306_WHITE);
@@ -152,6 +192,26 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
         break;
     case MODE_MENU_EVENT_TEST_EXIT:
         BT_SendString("System Test: back to main menu\r\n");
+        break;
+    case MODE_MENU_EVENT_ENCODER_ENTER:
+        BT_SendString("Encoder Test: choose Log Receive / motion tests / Back\r\n");
+        break;
+    case MODE_MENU_EVENT_ENCODER_FOCUS:
+        BT_Printf("Encoder Test option %u: %s\r\n",
+                  (unsigned)(menu->encoder_focus + 1U),
+                  ModeMenu_EncoderName(menu->encoder_focus));
+        break;
+    case MODE_MENU_EVENT_ENCODER_SELECT:
+        if (menu->active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE) {
+            BT_SendString("Selected encoder option 1: Log Receive\r\n");
+        } else {
+            BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
+                      (unsigned)(menu->active_encoder_option + 1U),
+                      ModeMenu_EncoderName(menu->active_encoder_option));
+        }
+        break;
+    case MODE_MENU_EVENT_ENCODER_EXIT:
+        BT_SendString("Encoder Test: back to System Test\r\n");
         break;
     default:
         break;
@@ -471,7 +531,9 @@ int Main_Runtime(void)
                 BT_SendString("IR SCAN RESTARTED\r\n");
             }
             if (remote != MODE_MENU_EVENT_NONE) {
-                if (remote == MODE_MENU_EVENT_TEST_SELECT)
+                if (remote == MODE_MENU_EVENT_TEST_SELECT ||
+                    (remote == MODE_MENU_EVENT_ENCODER_SELECT &&
+                     mode_menu.active_test == 1U))
                     last_test_ms = now;
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
@@ -485,13 +547,15 @@ int Main_Runtime(void)
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu,
                                                 Board_ButtonPressed(), now);
             if (event != MODE_MENU_EVENT_NONE) {
-                if (event == MODE_MENU_EVENT_TEST_SELECT)
+                if (event == MODE_MENU_EVENT_TEST_SELECT ||
+                    (event == MODE_MENU_EVENT_ENCODER_SELECT &&
+                     mode_menu.active_test == 1U))
                     last_test_ms = now;
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
-            /* Only the selected System Test sends measurements.
-             * All motor outputs remain locked in MODE_MENU_ONLY. */
+            /* Only IR/MPU selection or Encoder -> Log Receive emits data.
+             * Six encoder movement labels are inert; motor is always locked. */
             if (active_test_previous != mode_menu.active_test) {
                 active_test_previous = mode_menu.active_test;
                 last_test_ms = now;
