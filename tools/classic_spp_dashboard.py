@@ -216,6 +216,7 @@ class Dashboard:
         self._reconnect_attempts = 0
         self.active_test_name = None
         self.test_stream_running = False
+        self.onebox_start_pending = False
         self.active_data_stream = None
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
@@ -412,9 +413,11 @@ class Dashboard:
     def _update_test_controls(self):
         can_control = self.menu_ready and self.active_test_name is not None
         self.start_test_btn.configure(
-            state="normal" if can_control and not self.test_stream_running else "disabled")
+            state="normal" if can_control and not self.test_stream_running
+                  and not self.onebox_start_pending else "disabled")
         self.stop_test_btn.configure(
-            state="normal" if can_control and self.test_stream_running else "disabled")
+            state="normal" if can_control and (self.test_stream_running or
+                  self.onebox_start_pending) else "disabled")
         self.reset_enc_btn.configure(
             state="normal" if can_control and self.active_test_name == "Encoder Test" else "disabled")
         self.reset_yaw_btn.configure(
@@ -431,6 +434,7 @@ class Dashboard:
         if not ready:
             self.active_test_name = None
             self.test_stream_running = False
+            self.onebox_start_pending = False
             self.reader.motion_lease.clear()
             self.mpu_boot_ok = True
         self._update_test_controls()
@@ -442,8 +446,8 @@ class Dashboard:
             self.status.set("SPP menu unavailable: wait for SPP CONNECTED")
 
     def send_test_control(self, command: bytes):
-        # Keep the MCU authoritative: a pause/resume state is acknowledged by
-        # TEST STREAM STOPPED/STARTED, never assumed merely from button clicks.
+        # MCU acknowledgement is authoritative. For one-box, an in-flight
+        # Start disables repeat Start clicks and still permits Stop.
         if not self.menu_ready or not self.active_test_name:
             self.status.set("Select IR, Encoder or MPU Test before Start/Stop.")
             return
@@ -454,7 +458,11 @@ class Dashboard:
                 self.reader.motion_lease.clear()
         if not self.reader.send_menu(command):
             self.reader.motion_lease.clear()
+            self.onebox_start_pending = False
             self.status.set("Could not send test Start/Stop; check the SPP connection.")
+        elif self.active_test_name == "1 Box Forward":
+            self.onebox_start_pending = command == b"G"
+            self._update_test_controls()
 
     def send_sensor_reset(self, command: bytes, expected_test: str):
         if not self.menu_ready or self.active_test_name != expected_test:
@@ -612,6 +620,7 @@ class Dashboard:
                                      line.split(": ", 1)[-1].strip())
             # Log Receive and 1 Box Forward arm IDLE: no data/motion yet.
             self.test_stream_running = not (is_encoder_log or is_onebox)
+            self.onebox_start_pending = False
             self.reader.motion_lease.clear()
             self.data_filter.set("All")
             self._clear_log(self.data_text)
@@ -630,6 +639,7 @@ class Dashboard:
             # send any motor commands or create a CSV.
             self.active_test_name = None
             self.test_stream_running = False
+            self.onebox_start_pending = False
             self.reader.motion_lease.clear()
             self._update_test_controls()
             self.clear_data()
@@ -638,12 +648,14 @@ class Dashboard:
             self.plot_dirty = True
         elif line.startswith("ONEBOX,START,"):
             if self.active_test_name == "1 Box Forward":
+                self.onebox_start_pending = False
                 self.test_stream_running = True
                 self.reader.motion_lease.set()
                 self._update_test_controls()
                 self.status.set("1 Box Forward running (one-shot, max 26% PWM).")
         elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
             self.reader.motion_lease.clear()
+            self.onebox_start_pending = False
             if self.active_test_name == "1 Box Forward":
                 self.test_stream_running = False
                 self._update_test_controls()
