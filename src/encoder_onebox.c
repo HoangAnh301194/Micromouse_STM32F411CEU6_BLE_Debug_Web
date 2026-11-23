@@ -17,6 +17,7 @@ static OneBoxCore core;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
 static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
+static uint8_t physical_stop_latched; /* suppress PA0 key event after abort */
 static uint16_t brake_ticks;
 static float yaw_zero;
 static EncoderOneBoxResult result;
@@ -60,6 +61,7 @@ void EncoderOneBox_Init(MPU6050_Handle_t *mpu)
     phase = 0U;
     result_pending = 0U;
     fault_latched = 0U;
+    physical_stop_latched = 0U;
     brake_ticks = 0U;
     core.running = 0U;
     yaw_zero = 0.0f;
@@ -112,6 +114,7 @@ void EncoderOneBox_ControlTick(void)
     }
     if (phase != 1U) return;
     if (Board_ButtonPressed()) {
+        physical_stop_latched = 1U;
         Finish(ONEBOX_REASON_USER_STOP);
         return;
     }
@@ -145,6 +148,12 @@ void EncoderOneBox_ControlTick(void)
 uint8_t EncoderOneBox_IsRunning(void)
 {
     return phase == 1U;
+}
+uint8_t EncoderOneBox_SuppressMenuButton(void)
+{
+    if (!physical_stop_latched) return 0U;
+    if (!Board_ButtonPressed()) physical_stop_latched = 0U;
+    return 1U; /* suppress press plus final release event */
 }
 uint8_t EncoderOneBox_PopResult(EncoderOneBoxResult *out)
 {
