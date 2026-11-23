@@ -18,6 +18,9 @@ void EncoderOneBox_HostPing(void);  /* SPP 'H' <=100ms, 350ms safety lease */
 void EncoderOneBox_Abort(void);     /* SPP 'P' or menu navigation */
 void EncoderOneBox_ControlTick(void); /* called from 1kHz TIM11 */
 uint8_t EncoderOneBox_IsRunning(void);
+/* After physical PA0 emergency stop, consume the press/release instead
+ * of also treating it as a menu Next/Select event. */
+uint8_t EncoderOneBox_SuppressMenuButton(void);
 uint8_t EncoderOneBox_PopResult(EncoderOneBoxResult *out);
 const char *EncoderOneBox_Reason(uint8_t reason);
 #endif
