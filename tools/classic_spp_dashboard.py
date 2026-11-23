@@ -22,7 +22,8 @@ from classic_spp_protocol import LineFramer, MazeState, numeric_fields
 from classic_spp_handshake import SPPHandshake
 from classic_spp_ports import classify_port
 from spp_dual_log import (DualSessionLog, classify_spp_line,
-                          data_to_csv_row, csv_row_text, CSV_COLUMNS)
+                          data_to_csv_row, csv_row_text, CSV_COLUMNS,
+                          TEST_CSV_COLUMNS, sensor_test_csv)
 
 
 BAUD = 115200
@@ -195,6 +196,7 @@ class Dashboard:
         self.map_status = tk.StringVar(value=self.maze.status)
         self.rx_count = tk.StringVar(value="0 lines")
         self.menu_ready = False
+        self.active_data_stream = None
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
 
@@ -266,7 +268,7 @@ class Dashboard:
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_text = self._make_log_text(left, "none")
-        self._data_header()
+        # Header is selected when the first frame identifies ENC/IR/MPU.
 
         controls = ttk.Frame(right)
         controls.pack(fill="x", pady=(0, 6))
@@ -283,9 +285,10 @@ class Dashboard:
         ttk.Button(status_bar, text="Clear status", command=self.clear_status).pack(side="right")
         self.status_text = self._make_log_text(right, "word")
 
-    def _data_header(self):
+    def _data_header(self, stream=None):
+        columns = TEST_CSV_COLUMNS.get(stream, CSV_COLUMNS)
         self.data_text.configure(state="normal")
-        self.data_text.insert("end", ",".join(CSV_COLUMNS) + "\n")
+        self.data_text.insert("end", ",".join(columns) + "\n")
         self.data_text.configure(state="disabled")
 
     @staticmethod
@@ -419,18 +422,28 @@ class Dashboard:
 
     def _append(self, line, ts, category=None):
         category = category or classify_spp_line(line)
+        sensor_record = None
         if category == "data":
             selected = self.data_filter.get()
             if selected != "All" and not line.startswith(selected + ","):
                 return
             widget = self.data_text
+            sensor_record = sensor_test_csv(line)
+            stream = sensor_record[0] if sensor_record else "LEGACY"
+            if stream != self.active_data_stream:
+                # Each test starts a clean CSV table: never mix columns
+                # from another sensor into the active view.
+                self._clear_log(self.data_text)
+                self.active_data_stream = stream
+                self._data_header(stream)
         else:
             if self.filter_text.get().lower() not in line.lower():
                 return
             widget = self.status_text
         tag = "error" if "FAIL" in line or "ERROR" in line else "normal"
         widget.configure(state="normal")
-        display = (csv_row_text(data_to_csv_row(line)) if category == "data"
+        display = (",".join(sensor_record[2]) if sensor_record
+                   else csv_row_text(data_to_csv_row(line)) if category == "data"
                    else "[%s] %s" % (ts, line))
         widget.insert("end", display + "\n", tag)
         if int(widget.index("end-1c").split(".")[0]) > MAX_TERMINAL_LINES:
@@ -451,12 +464,22 @@ class Dashboard:
             self.logging_file.flush()
         category = classify_spp_line(line)
         self.dual_log.write(line, category)
+        if line.startswith("Selected test "):
+            # On every test selection, reset the visible table and filter.
+            # This guarantees that Encoder displays Encoder only, etc.
+            self.data_filter.set("All")
+            self._clear_log(self.data_text)
+            self.active_data_stream = None
         self._append(line, ts, category)
         changed = self.maze.apply(line)
         if changed:
             self.map_status.set(changed)
             self.maze_dirty = True
         values = numeric_fields(line)
+        sensor_record = sensor_test_csv(line)
+        if sensor_record and sensor_record[0] == "ENC":
+            values = {"ENC_L": float(sensor_record[2][0]),
+                      "ENC_R": float(sensor_record[2][1])}
         if line.startswith("W,"):
             items = line.split(",")
             if len(items) == 10:
@@ -615,7 +638,7 @@ class Dashboard:
 
     def clear_data(self):
         self._clear_log(self.data_text)
-        self._data_header()
+        self.active_data_stream = None
 
     def clear_status(self):
         self._clear_log(self.status_text)
