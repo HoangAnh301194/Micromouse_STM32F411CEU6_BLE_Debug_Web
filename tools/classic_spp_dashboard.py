@@ -211,6 +211,7 @@ class Dashboard:
         self.map_status = tk.StringVar(value=self.maze.status)
         self.rx_count = tk.StringVar(value="0 lines")
         self.menu_ready = False
+        self.onebox_capable = False
         self.mpu_boot_ok = True
         self.rx_byte_count = tk.StringVar(value="RX 0 bytes")
         self._reconnect_attempts = 0
@@ -412,6 +413,8 @@ class Dashboard:
 
     def _update_test_controls(self):
         can_control = self.menu_ready and self.active_test_name is not None
+        if self.active_test_name == "1 Box Forward":
+            can_control = can_control and self.onebox_capable and self.mpu_boot_ok
         self.start_test_btn.configure(
             state="normal" if can_control and not self.test_stream_running
                   and not self.onebox_start_pending else "disabled")
@@ -436,6 +439,7 @@ class Dashboard:
             self.test_stream_running = False
             self.onebox_start_pending = False
             self.reader.motion_lease.clear()
+            self.onebox_capable = False
             self.mpu_boot_ok = True
         self._update_test_controls()
 
@@ -449,7 +453,11 @@ class Dashboard:
         # MCU acknowledgement is authoritative. For one-box, an in-flight
         # Start disables repeat Start clicks and still permits Stop.
         if not self.menu_ready or not self.active_test_name:
-            self.status.set("Select IR, Encoder or MPU Test before Start/Stop.")
+            self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
+            return
+        if self.active_test_name == "1 Box Forward" and (
+                not self.onebox_capable or not self.mpu_boot_ok):
+            self.status.set("1 Box Forward needs encoder_1box_96m and ready MPU.")
             return
         if self.active_test_name == "1 Box Forward":
             if command == b"G":
@@ -646,6 +654,15 @@ class Dashboard:
             self.metrics.clear()
             self.series.clear()
             self.plot_dirty = True
+        elif line == "ONEBOX,PROFILE,ENABLED":
+            self.onebox_capable = True
+            self._update_test_controls()
+            self.status.set("1 Box Forward firmware enabled: supervised motion available.")
+        elif line == "ONEBOX,PROFILE,MOTOR_LOCKED":
+            self.onebox_capable = False
+            self.reader.motion_lease.clear()
+            self._update_test_controls()
+            self.status.set("Motor-locked menu firmware: flash encoder_1box_96m for 1 Box Forward.")
         elif line.startswith("ONEBOX,START,"):
             if self.active_test_name == "1 Box Forward":
                 self.onebox_start_pending = False
