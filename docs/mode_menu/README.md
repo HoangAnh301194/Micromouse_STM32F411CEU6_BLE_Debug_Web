@@ -102,15 +102,38 @@ valid,yaw_cd,gz_cd
 
 `yaw_cd` = góc yaw × 100 (đơn vị 0,01 độ), `gz_cd` = vận tốc quay trục Z × 100 (đơn vị 0,01 độ/s); `valid=0` thì các ô đo để trống.
 
-Mỗi phiên COM tự lưu trong `logs/spp_runs/connections/`:
+### Tổ chức log mới — chỉ Continuous data (23/11/2026)
 
-- `*_status.log`: sự kiện mode, SPP và cảnh báo.
-- `*_encoder.csv`: **chỉ `timestamp,ENC_L,ENC_R`**, tự tạo khi nhận Encoder Test. Cả bản tin encoder cũ (`ENC,ms=...,left=...,right=...,delta_l=...,...`) và khung mới (`ENC,2620,4230`) đều được chuẩn hóa thành đúng ba cột, không mang theo `pps`, `delta` hoặc `raw`.
-- `*_ir.csv`: chỉ các cột IR và `valid`.
-- `*_mpu.csv`: chỉ các cột MPU và `valid`.
-- `*_data.csv`: file tương thích với những dòng telemetry khác và giao thức cũ ngoài ba bài test. **Khi phân tích Encoder Test, mở `*_encoder.csv`, không mở `*_data.csv`**. File CSV cũ đã tạo trước khi cập nhật sẽ không tự thay đổi.
+Kể từ bản cập nhật này, **không tạo file khi kết nối COM**. Chỉ khi bài test thực sự phát mẫu đo hợp lệ, Python mới tạo **một thư mục riêng cho mỗi lần chọn test**. Chỉ lưu nội dung **Continuous data**, không lưu terminal trạng thái bên phải. Mọi bản tin sự kiện như `SPP CONNECTED`, `Selected test`, `TEST STREAM STOPPED` vẫn được hiển thị bên phải và dùng làm dấu mốc **trong bộ nhớ**, nhưng **không bao giờ ghi ra file**.
 
-Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Các file cảm biến sẽ chỉ xuất hiện khi có mẫu hợp lệ theo định dạng của từng test. Muốn Stop/Start **ngừng phát từ MCU** cần nạp firmware `mode_menu_96m` mới; cập nhật mỗi Python chỉ đủ để chuẩn hóa CSV cũ.
+Ví dụ cấu trúc thư mục dưới `logs/spp_runs/`:
+
+```text
+logs/spp_runs/
+├── Mode 7 - Encoder Test - 20261123_153340_852000_COM16/
+│   └── continuous_data.csv
+├── Mode 7 - IR Test - 20261123_154010_123000_COM16/
+│   └── continuous_data.csv
+└── Mode 7 - MPU Test - 20261123_154152_554000_COM16/
+    └── continuous_data.csv
+```
+
+- **Encoder Test**: file có đúng các cột `timestamp,ENC_L,ENC_R`, giữ cả count âm và các mẫu count không đổi. Encoder khung mới hoặc khung `left=...` cũ đều được chuyển thành CSV sạch.
+- **IR Test**: file có đúng `valid,L0,L45,L90,R0,R45,R90`.
+- **MPU Test**: file có đúng `valid,yaw_cd,gz_cd`.
+- **Start/Stop test**: tạm ngừng/tiếp tục bổ sung dữ liệu **trong cùng một file**, không nhân bản thư mục hoặc reset encoder.
+- **Chuyển/Back/chọn test mới**: đóng phiên ghi cũ; test mới sẽ tạo thư mục mới khi có mẫu đầu tiên. Chọn lại cùng test cũng bắt đầu một phiên đo mới.
+- **Mở COM mà không có dữ liệu**: không tạo bất kỳ `status.log`, `data.csv` hoặc thư mục rỗng nào.
+- **Kết nối lại khi MCU vẫn đang gửi mà chưa kịp gửi sự kiện chọn test**: tự suy ra Encoder/IR/MPU theo tiền tố `ENC`/`IR`/`MPU` để không mất mẫu đầu. Sau khi đã thấy thao tác menu, chỉ ghi dữ liệu của bài test thực sự được chọn.
+- Các bản tin chưa nhận diện được thành mẫu IR/Encoder/MPU hợp lệ bị bỏ qua, tránh file CSV hỗn tạp.
+
+Trong dashboard, nút **Open logs folder** mở thư mục tự lưu; nút **Replay CSV/log** cho phép xem lại `continuous_data.csv` hoặc các log thô cũ **mà không lưu thêm bản sao**. Không còn nút `Start log` tạo bản ghi status hỗn hợp.
+
+**Dữ liệu cũ trên GitHub vẫn được giữ nguyên:** commit `a96027a` đã có `logs/spp_runs/connections/20261123_153322_874087_COM16_00_encoder.csv` với 321 mẫu trong thời gian 15:33:40–15:33:56. Các file `*_status.log`, `*_data.csv` của phiên cũ không bị tự động xóa hay sửa. Cấu trúc mới áp dụng cho **những phiên thu tiếp theo** sau khi pull code Python mới; không cần flash lại STM32.
+
+Ví dụ bên trên là tên thư mục minh họa. Kết quả thực tế sử dụng timestamp trên máy tính tại mẫu đầu của phiên.
+
+Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Muốn Stop/Start **ngừng phát từ MCU** cần firmware `mode_menu_96m` đã hỗ trợ lệnh `P/G`.
 
 ## SPP boot recovery and sensor reset controls (23/11/2026)
 
