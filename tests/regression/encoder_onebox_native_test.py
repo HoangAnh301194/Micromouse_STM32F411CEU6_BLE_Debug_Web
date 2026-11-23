@@ -63,6 +63,17 @@ static void CheckStall(void) {
     }
     assert(o.reason==ONEBOX_REASON_STALL);
 }
+static void CheckTimeout(void) {
+    OneBoxCore s; OneBoxOutput o={0,0,0}; uint32_t i;
+    OneBoxCore_Start(&s,0,0);
+    for (i=0;i<ONEBOX_MAX_TICKS;i++) {
+        if (i%80U==0U) OneBoxCore_HostPing(&s);
+        /* Move slowly enough to remain below target, but no stall. */
+        o=OneBoxCore_Step(&s,(int32_t)(i/4U),(int32_t)(i/4U));
+    }
+    assert(o.reason==ONEBOX_REASON_TIMEOUT);
+    assert(!s.running);
+}
 static void CheckExternalStop(void) {
     OneBoxCore s;
     OneBoxCore_Start(&s,0,0);
@@ -72,7 +83,7 @@ static void CheckExternalStop(void) {
 int main(void) {
     assert(ONEBOX_TARGET_L==2400L && ONEBOX_TARGET_R==2390L);
     CheckTargets();CheckHostLoss();CheckReverse();
-    CheckDivergence();CheckStall();CheckExternalStop();
+    CheckDivergence();CheckStall();CheckTimeout();CheckExternalStop();
     puts("encoder_onebox_native_test: PASS");
     return 0;
 }
