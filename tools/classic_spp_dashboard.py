@@ -101,7 +101,7 @@ class SPPReader:
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
-        if command not in (b"N", b"K") or not self.thread or not self.thread.is_alive():
+        if command not in (b"N", b"K", b"P", b"G") or not self.thread or not self.thread.is_alive():
             return False
         try:
             self.commands.put_nowait(command)
@@ -196,6 +196,8 @@ class Dashboard:
         self.map_status = tk.StringVar(value=self.maze.status)
         self.rx_count = tk.StringVar(value="0 lines")
         self.menu_ready = False
+        self.active_test_name = None
+        self.test_stream_running = False
         self.active_data_stream = None
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
@@ -278,6 +280,18 @@ class Dashboard:
         self.select_btn = ttk.Button(controls, text="Chọn (KEY giữ)",
                                      command=lambda: self.send_menu(b"K"), state="disabled")
         self.select_btn.pack(side="left")
+        stream_bar = ttk.Frame(right)
+        stream_bar.pack(fill="x", pady=(0, 6))
+        self.start_test_btn = ttk.Button(stream_bar, text="Start test",
+                                         command=lambda: self.send_test_control(b"G"),
+                                         state="disabled")
+        self.start_test_btn.pack(side="left", padx=(0, 6))
+        self.stop_test_btn = ttk.Button(stream_bar, text="Stop test",
+                                        command=lambda: self.send_test_control(b"P"),
+                                        state="disabled")
+        self.stop_test_btn.pack(side="left")
+        ttk.Label(stream_bar, text="Pause/resume selected sensor only",
+                  style="Muted.TLabel").pack(side="left", padx=(8, 0))
         status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(status_bar, text="Filter:").pack(side="left")
@@ -361,15 +375,35 @@ class Dashboard:
         # Keep manually entered ports; never silently choose among multiple
         # outgoing Bluetooth devices or assume a hard-coded COM number.
 
+    def _update_test_controls(self):
+        can_control = self.menu_ready and self.active_test_name is not None
+        self.start_test_btn.configure(
+            state="normal" if can_control and not self.test_stream_running else "disabled")
+        self.stop_test_btn.configure(
+            state="normal" if can_control and self.test_stream_running else "disabled")
+
     def _set_menu_ready(self, ready: bool):
         self.menu_ready = ready
         state = "normal" if ready else "disabled"
         self.next_btn.configure(state=state)
         self.select_btn.configure(state=state)
+        if not ready:
+            self.active_test_name = None
+            self.test_stream_running = False
+        self._update_test_controls()
 
     def send_menu(self, command: bytes):
         if not self.menu_ready or not self.reader.send_menu(command):
             self.status.set("SPP menu unavailable: wait for SPP CONNECTED")
+
+    def send_test_control(self, command: bytes):
+        # Keep the MCU authoritative: a pause/resume state is acknowledged by
+        # TEST STREAM STOPPED/STARTED, never assumed merely from button clicks.
+        if not self.menu_ready or not self.active_test_name:
+            self.status.set("Select IR, Encoder or MPU Test before Start/Stop.")
+            return
+        if not self.reader.send_menu(command):
+            self.status.set("Could not send test Start/Stop; check the SPP connection.")
 
     def connect(self):
         if self.reader.thread and self.reader.thread.is_alive():
@@ -420,7 +454,7 @@ class Dashboard:
         self.reader.close()
         self.status.set("Disconnect requested")
 
-    def _append(self, line, ts, category=None):
+    def _append(self, line, ts, category=None, host_time=None):
         category = category or classify_spp_line(line)
         sensor_record = None
         if category == "data":
@@ -428,7 +462,7 @@ class Dashboard:
             if selected != "All" and not line.startswith(selected + ","):
                 return
             widget = self.data_text
-            sensor_record = sensor_test_csv(line)
+            sensor_record = sensor_test_csv(line, host_time=host_time)
             stream = sensor_record[0] if sensor_record else "LEGACY"
             if stream != self.active_data_stream:
                 # Each test starts a clean CSV table: never mix columns
@@ -456,30 +490,55 @@ class Dashboard:
         # firmware was briefly busy. Keep only the first status log entry.
         if line.strip() == "SPP CONNECTED" and self.menu_ready:
             return
-        ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        host_time = datetime.now().isoformat(timespec="milliseconds")
+        ts = host_time[11:]
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
         if self.logging_file:
-            self.logging_file.write("%s %s\n" % (datetime.now().isoformat(timespec="milliseconds"), line))
+            self.logging_file.write("%s %s\n" % (host_time, line))
             self.logging_file.flush()
         category = classify_spp_line(line)
-        self.dual_log.write(line, category)
+        self.dual_log.write(line, category, host_time=host_time)
         if line.startswith("Selected test "):
-            # On every test selection, reset the visible table and filter.
-            # This guarantees that Encoder displays Encoder only, etc.
-            self.data_filter.set("All")
-            self._clear_log(self.data_text)
-            self.active_data_stream = None
-        self._append(line, ts, category)
+            # Both physical KEY and GUI selection activate one selected test.
+            # Drop the previous sensor display/plot fields on every selection.
+            test_name = line.split(": ", 1)[-1].strip()
+            if test_name in ("IR Test", "Encoder Test", "MPU Test"):
+                self.active_test_name = test_name
+                self.test_stream_running = True
+                self.data_filter.set("All")
+                self._clear_log(self.data_text)
+                self.active_data_stream = None
+                self.metrics.clear()
+                self.series.clear()
+                self.plot_dirty = True
+                self._update_test_controls()
+        elif (line.startswith("System Test ") or
+              line.startswith("Selected mode 7: System Test")):
+            # Browsing/Back invalidates the previously selected test.
+            self.active_test_name = None
+            self.test_stream_running = False
+            self._update_test_controls()
+        elif line.startswith("TEST STREAM STOPPED: "):
+            if line.partition(": ")[2].strip() == self.active_test_name:
+                self.test_stream_running = False
+                self._update_test_controls()
+                self.status.set("Test paused: " + self.active_test_name)
+        elif line.startswith("TEST STREAM STARTED: "):
+            if line.partition(": ")[2].strip() == self.active_test_name:
+                self.test_stream_running = True
+                self._update_test_controls()
+                self.status.set("Test resumed: " + self.active_test_name)
+        self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
         if changed:
             self.map_status.set(changed)
             self.maze_dirty = True
         values = numeric_fields(line)
-        sensor_record = sensor_test_csv(line)
+        sensor_record = sensor_test_csv(line, host_time=host_time)
         if sensor_record and sensor_record[0] == "ENC":
-            values = {"ENC_L": float(sensor_record[2][0]),
-                      "ENC_R": float(sensor_record[2][1])}
+            values = {"ENC_L": float(sensor_record[2][1]),
+                      "ENC_R": float(sensor_record[2][2])}
         if line.startswith("W,"):
             items = line.split(",")
             if len(items) == 10:
