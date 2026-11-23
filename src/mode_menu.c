@@ -49,6 +49,7 @@ void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms)
     menu->page = MODE_MENU_PAGE_MAIN;
     menu->test_focus = MODE_MENU_NO_SELECTION;
     menu->active_test = MODE_MENU_NO_SELECTION;
+    menu->stream_running = 0U;
     menu->raw_pressed = button_pressed ? 1U : 0U;
     menu->stable_pressed = menu->raw_pressed;
     /* A key already held at boot must be released before a new action. */
@@ -64,6 +65,7 @@ ModeMenuEvent ModeMenu_Next(ModeMenu *menu)
     if (menu->page == MODE_MENU_PAGE_TEST) {
         /* Browsing intentionally stops the previous passive stream. */
         menu->active_test = MODE_MENU_NO_SELECTION;
+        menu->stream_running = 0U;
         menu->test_focus = menu->test_focus == MODE_MENU_NO_SELECTION ? 0U :
             (uint8_t)((menu->test_focus + 1U) % MODE_MENU_TEST_COUNT);
         return MODE_MENU_EVENT_TEST_FOCUS;
@@ -82,10 +84,12 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
         if (menu->test_focus == MODE_MENU_TEST_BACK) {
             menu->page = MODE_MENU_PAGE_MAIN;
             menu->active_test = MODE_MENU_NO_SELECTION;
+            menu->stream_running = 0U;
             menu->test_focus = MODE_MENU_NO_SELECTION;
             return MODE_MENU_EVENT_TEST_EXIT;
         }
         menu->active_test = menu->test_focus;
+        menu->stream_running = 1U; /* selecting a test starts that test */
         return MODE_MENU_EVENT_TEST_SELECT;
     }
     if (menu->focus == MODE_MENU_NO_SELECTION) return MODE_MENU_EVENT_NONE;
@@ -94,9 +98,28 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
         menu->page = MODE_MENU_PAGE_TEST;
         menu->test_focus = MODE_MENU_NO_SELECTION;
         menu->active_test = MODE_MENU_NO_SELECTION;
+        menu->stream_running = 0U;
         return MODE_MENU_EVENT_TEST_ENTER;
     }
     return MODE_MENU_EVENT_SELECT;
+}
+
+uint8_t ModeMenu_PauseTest(ModeMenu *menu)
+{
+    if (!menu || menu->page != MODE_MENU_PAGE_TEST ||
+        menu->active_test == MODE_MENU_NO_SELECTION || !menu->stream_running)
+        return 0U;
+    menu->stream_running = 0U;
+    return 1U;
+}
+
+uint8_t ModeMenu_ResumeTest(ModeMenu *menu)
+{
+    if (!menu || menu->page != MODE_MENU_PAGE_TEST ||
+        menu->active_test == MODE_MENU_NO_SELECTION || menu->stream_running)
+        return 0U;
+    menu->stream_running = 1U;
+    return 1U;
 }
 
 ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
