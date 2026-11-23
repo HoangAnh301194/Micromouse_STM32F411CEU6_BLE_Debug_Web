@@ -176,7 +176,7 @@ class DualSessionLog:
         self.active_sensor = None
         self._streaming = False
 
-    def _observe_status(self, line):
+    def _observe_status(self, line, host_time=None):
         """Status is used ONLY as in-memory routing metadata, never logged."""
         if line == self._ENC_LOG_SELECT:
             # Selecting Log Receive only ARMS the mode. Neither the firmware
@@ -226,7 +226,7 @@ class DualSessionLog:
                 self._close_active()
                 self._streaming = True
                 if self.active_sensor == "ENC":
-                    self._open_run("ENC", TEST_CSV_COLUMNS["ENC"], None)
+                    self._open_run("ENC", TEST_CSV_COLUMNS["ENC"], host_time)
 
     def _open_run(self, sensor, headers, host_time):
         """Open a fresh file; Encoder uses a stable folder and timestamp file."""
@@ -287,7 +287,7 @@ class DualSessionLog:
         """Only valid continuous sensor measurements are persisted."""
         stream = category or classify_spp_line(line)
         if stream == "status":
-            self._observe_status(line.strip())
+            self._observe_status(line.strip(), host_time=host_time)
             return None
         if stream != "data":
             return None
