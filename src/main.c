@@ -1,5 +1,9 @@
 /* Central entrypoint only. Real application loops and diagnostic modes
  * reside in their own source files. Keep every exclusive main isolated. */
+#if defined(SPP_SMOKE_DIAG)
+int SPP_Smoke_Main(void);
+int main(void) { return SPP_Smoke_Main(); }
+#else
 #if defined(MAZE_SENSOR_CAPTURE_MODE)
 int MazeSensorCapture_Main(void);
 int main(void) { return MazeSensorCapture_Main(); }
@@ -37,3 +41,5 @@ int main(void) { return FlashMapDiag_Main(); }
 int Main_Runtime(void);
 int main(void) { return Main_Runtime(); }
 #endif
+
+#endif /* !SPP_SMOKE_DIAG */
