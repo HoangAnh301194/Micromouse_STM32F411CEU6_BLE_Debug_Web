@@ -136,7 +136,8 @@ class DualSessionLog:
 
     SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test", "MPU": "MPU Test"}
     TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
-    _SELECT_RE = re.compile(r"^Selected test [123]: (IR Test|Encoder Test|MPU Test)$")
+    _SELECT_RE = re.compile(r"^Selected test [13]: (IR Test|MPU Test)$")
+    _ENC_LOG_SELECT = "Selected encoder option 1: Log Receive"
     _MODE_RE = re.compile(r"^Selected mode ([1-7]):")
 
     def __init__(self, root):
@@ -172,6 +173,21 @@ class DualSessionLog:
 
     def _observe_status(self, line):
         """Status is used ONLY as in-memory routing metadata, never logged."""
+        if line == self._ENC_LOG_SELECT:
+            # The Encoder Test parent itself never enables measurements.
+            self._has_menu_context = True
+            self._close_active()
+            self.active_sensor = "ENC"
+            self._streaming = True
+            return
+
+        if (line.startswith("Encoder Test") or
+                line.startswith("Selected encoder option ") or
+                line == "Selected test 2: Encoder Test"):
+            self._has_menu_context = True
+            self._deactivate()
+            return
+
         selected = self._SELECT_RE.fullmatch(line)
         if selected:
             self._has_menu_context = True
@@ -207,6 +223,8 @@ class DualSessionLog:
             first_sample = datetime.now()
         stamp = first_sample.strftime("%Y%m%d_%H%M%S_%f")
         test = self.SENSOR_TEST_NAMES[sensor]
+        if sensor == "ENC":
+            test += " - Log Receive"
         label = f"Mode 7 - {test} - {stamp}_{self.port or 'COM'}"
         for attempt in range(100):
             name = label if attempt == 0 else f"{label}_{attempt:02d}"
@@ -251,11 +269,12 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context:
-                # A test is not selected yet (or user is browsing/Back).
+            if self._has_menu_context or sensor == "ENC":
+                # Encoder log is STRICTLY opt-in via Log Receive even after
+                # reconnect; never infer it from an unsolicited ENC frame.
                 return None
-            # A reconnect mid-test may resume streaming before the dashboard
-            # receives the original 'Selected test' event. Infer from data.
+            # Preserve historical IR/MPU reconnect recovery if no menu
+            # events have been received on this COM session.
             self.active_sensor = sensor
             self._streaming = True
         if sensor != self.active_sensor or not self._streaming:
