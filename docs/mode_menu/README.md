@@ -22,7 +22,7 @@ Main menu:
 5. Speedrun
 6. Reset Map
 7. System Test   --> 1. IR Test
-                     2. Encoder Test --> 1. Log Receive        [CSV ON]
+                     2. Encoder Test --> 1. Log Receive        [IDLE until START]
                                          2. 1 Box Forward       [NO MOTION]
                                          3. 5 Box Forward       [NO MOTION]
                                          4. Pivot 90 Left       [NO MOTION]
@@ -37,10 +37,10 @@ Main menu:
 Ở menu chính, chọn các mode 1–6 **chỉ phát trạng thái**, không thực hiện hành động nào.
 Chọn Mode 7 để vào menu con (ban đầu chưa focus mục nào).
 Nhấn Chuyển lần đầu focus IR, lần lượt Encoder, MPU, Back và quay vòng.
-Nhấn Chọn để kích hoạt IR/MPU và bắt đầu truyền luồng đo thụ động. **Encoder Test bây giờ chỉ mở thêm một cấp menu**, không phát `ENC` và không tạo file CSV ngay khi chọn. Trong Encoder Test, nhấn Chuyển để duyệt `Log Receive`, sáu bài thử di chuyển và `Back`; nhấn Chọn tại `Log Receive` mới phát encoder 20 Hz và tự lưu CSV. Duyệt sang mục khác sẽ ngừng truyền. `Back` của Encoder Test trở lại System Test; `Back` của System Test trở lại menu chính.
+Nhấn Chọn để kích hoạt IR/MPU và bắt đầu truyền luồng đo thụ động. **Encoder Test bây giờ chỉ mở thêm một cấp menu**, không phát `ENC` và không tạo file CSV ngay khi chọn. Trong Encoder Test, nhấn Chuyển để duyệt `Log Receive`, sáu bài thử di chuyển và `Back`; nhấn Chọn tại `Log Receive` **chỉ vào trạng thái chờ**. Phải nhấn nút **Start test** trên giao diện SPP mới phát encoder 20 Hz và tạo một file CSV mới. Nhấn **Stop test** sẽ ngừng phát, flush và đóng file; Start lần kế tiếp tạo **file mới**. Duyệt sang mục khác sẽ ngừng truyền. `Back` của Encoder Test trở lại System Test; `Back` của System Test trở lại menu chính.
 
 **Quan trọng:** sáu lựa chọn `1/5 Box Forward` và `Pivot 90/180 Left/Right` hiện là **placeholder** chỉ ghi sự kiện lên status terminal; **không cho xe chạy, không kích hoạt Motion, không phát log encoder**. Tất cả motor vẫn khóa trong `mode_menu_96m`. Trước khi lập trình di chuyển cần đặc tả quãng đường thực tế, tham số điều khiển, trạng thái an toàn và điều kiện dừng.
-Trong lúc bài test đang chạy, **Stop test** chỉ tạm dừng truyền bản tin đo; encoder và các timer phần cứng vẫn tiếp tục đếm/cập nhật. **Start test** sẽ tiếp tục đọc cùng bộ đếm tích lũy, không reset về 0. Cả IR, Encoder và MPU đều dùng chung hai nút này. Khung đo còn trong hàng đợi Bluetooth có thể đến muộn sau khi nhận thao tác Stop.
+Trong **Encoder → Log Receive**, Stop đóng dứt điểm CSV hiện tại, Start lần sau tạo CSV khác. Stop/Start không đặt lại số đếm encoder: các timer phần cứng vẫn đếm bình thường. IR/MPU giữ cách Stop/Start trước đó (tạm dừng/tiếp tục cùng file). Khung đo còn trong hàng đợi Bluetooth có thể đến muộn trước ACK Stop; chỉ ACK `TEST STREAM STOPPED` xác nhận kết thúc ghi.
 
 OLED và SPP báo cùng trạng thái. Status log bên phải chỉ nhận mỗi sự kiện một lần, không lặp heartbeat.
 
@@ -60,8 +60,10 @@ System Test 2: Encoder Test
 Encoder Test: choose Log Receive / motion tests / Back
 Encoder Test option 1: Log Receive
 Selected encoder option 1: Log Receive
+TEST STREAM STARTED: Encoder Test
 TEST STREAM STOPPED: Encoder Test
 TEST STREAM STARTED: Encoder Test
+TEST STREAM STOPPED: Encoder Test
 Encoder Test option 2: 1 Box Forward
 Selected encoder option 2: 1 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)
 Encoder Test: back to System Test
@@ -116,38 +118,41 @@ valid,yaw_cd,gz_cd
 
 `yaw_cd` = góc yaw × 100 (đơn vị 0,01 độ), `gz_cd` = vận tốc quay trục Z × 100 (đơn vị 0,01 độ/s); `valid=0` thì các ô đo để trống.
 
-### Tổ chức log mới — chỉ Continuous data (23/11/2026)
+### Tổ chức log — một file cho mỗi lần Start/Stop (23/11/2026)
 
-Kể từ bản cập nhật này, **không tạo file khi kết nối COM**. Chỉ khi bài test thực sự phát mẫu đo hợp lệ, Python mới tạo **một thư mục riêng cho mỗi lần chọn test**. Chỉ lưu nội dung **Continuous data**, không lưu terminal trạng thái bên phải. Mọi bản tin sự kiện như `SPP CONNECTED`, `Selected test`, `TEST STREAM STOPPED` vẫn được hiển thị bên phải và dùng làm dấu mốc **trong bộ nhớ**, nhưng **không bao giờ ghi ra file**.
-
-Ví dụ cấu trúc thư mục dưới `logs/spp_runs/`:
+**Chỉ riêng Mode 7 → Encoder Test → Log Receive:** một thư mục cố định, mỗi lần nhấn **Start test** mở một file CSV **mới**, mỗi lần nhận ACK **Stop test** flush và đóng file. Tên file lấy từ timestamp tại thời điểm Start, không đặt timestamp vào tên thư mục:
 
 ```text
 logs/spp_runs/
-├── Mode 7 - Encoder Test - Log Receive - 20261123_153340_852000_COM16/
-│   └── continuous_data.csv
-├── Mode 7 - IR Test - 20261123_154010_123000_COM16/
-│   └── continuous_data.csv
-└── Mode 7 - MPU Test - 20261123_154152_554000_COM16/
-    └── continuous_data.csv
+└── mode 7 - encoder test - log receiver/
+    ├── 20261123_153340_852000_COM16.csv
+    ├── 20261123_153405_123000_COM16.csv
+    └── 20261123_153420_123000_COM16.csv
 ```
 
-- **Encoder Test → Log Receive**: file có đúng các cột `timestamp,ENC_L,ENC_R`, giữ cả count âm và các mẫu count không đổi. Encoder khung mới hoặc khung `left=...` cũ đều được chuyển thành CSV sạch. Chỉ khung `ENC` sau sự kiện `Selected encoder option 1: Log Receive` được lưu. Khi kết nối lại, cần chọn Log Receive một lần nữa để tạo phiên thu mới; không suy ra từ `ENC` đơn lẻ.
-- **IR Test**: file có đúng `valid,L0,L45,L90,R0,R45,R90`.
-- **MPU Test**: file có đúng `valid,yaw_cd,gz_cd`.
-- **Start/Stop test**: tạm ngừng/tiếp tục bổ sung dữ liệu **trong cùng một file**, không nhân bản thư mục hoặc reset encoder.
-- **Chuyển/Back/chọn test mới**: đóng phiên ghi cũ; test mới sẽ tạo thư mục mới khi có mẫu đầu tiên. Chọn lại cùng Log Receive cũng bắt đầu một phiên đo mới. Sáu mục chuyển động placeholder không tạo file.
-- **Mở COM mà không có dữ liệu**: không tạo bất kỳ `status.log`, `data.csv` hoặc thư mục rỗng nào.
-- **Kết nối lại khi MCU vẫn đang gửi mà chưa kịp gửi sự kiện chọn test**: tự suy ra Encoder/IR/MPU theo tiền tố `ENC`/`IR`/`MPU` để không mất mẫu đầu. Sau khi đã thấy thao tác menu, chỉ ghi dữ liệu của bài test thực sự được chọn.
-- Các bản tin chưa nhận diện được thành mẫu IR/Encoder/MPU hợp lệ bị bỏ qua, tránh file CSV hỗn tạp.
+Ví dụ số liệu chỉ minh họa. Các file có đúng:
 
-Trong dashboard, nút **Open logs folder** mở thư mục tự lưu; nút **Replay CSV/log** cho phép xem lại `continuous_data.csv` hoặc các log thô cũ **mà không lưu thêm bản sao**. Không còn nút `Start log` tạo bản ghi status hỗn hợp.
+```csv
+timestamp,ENC_L,ENC_R
+2026-11-23T15:33:40.852,0,-5
+2026-11-23T15:33:40.945,12,16
+```
 
-**Dữ liệu cũ trên GitHub vẫn được giữ nguyên:** commit `a96027a` đã có `logs/spp_runs/connections/20261123_153322_874087_COM16_00_encoder.csv` với 321 mẫu trong thời gian 15:33:40–15:33:56. Các file `*_status.log`, `*_data.csv` của phiên cũ không bị tự động xóa hay sửa. Cấu trúc mới áp dụng cho **những phiên thu tiếp theo** sau khi pull code Python mới; không cần flash lại STM32.
+Quy tắc ghi log:
 
-Ví dụ bên trên là tên thư mục minh họa. Kết quả thực tế sử dụng timestamp trên máy tính tại mẫu đầu của phiên.
+- **Chọn Log Receive:** chuyển sang trạng thái `IDLE/READY`. **Không có** khung `ENC`, không tạo CSV, Start test bật và Stop test tắt.
+- **Start test:** gửi `G`; sau ACK `TEST STREAM STARTED: Encoder Test`, phần mềm tạo một CSV mới có tiêu đề ngay cả khi chưa có mẫu nào. Mẫu tiếp theo ghi vào file này.
+- **Stop test:** gửi `P`; sau ACK `TEST STREAM STOPPED: Encoder Test`, file được flush, đóng và lưu. Dữ liệu ngoài phiên thu bị bỏ qua. Stop trước Start không tạo file.
+- **Start lần tiếp theo:** tạo file khác **trong cùng thư mục**, tuyệt đối không append vào file trước. Nếu timestamp trùng, thêm hậu tố `_01`, `_02`… để không ghi đè.
+- **Chuyển mode, Back hoặc Disconnect:** đóng file đang mở để giữ dữ liệu đã thu; lần chọn/Start mới cần mở phiên mới.
+- **Dữ liệu encoder:** chỉ các cột `timestamp,ENC_L,ENC_R`, giữ nguyên giá trị đếm tích lũy (không tự reset). Bản tin encoder cũ dạng `left=...` vẫn chuẩn hóa được.
+- **Status bên phải:** chỉ hiển thị trong GUI, không ghi file.
+- **IR/MPU Test:** vẫn theo logic tự phát khi chọn, lưu `continuous_data.csv` trong thư mục riêng có timestamp; Stop/Start chỉ pause/resume trong cùng file, không đổi cấu trúc của hai bài test này.
+- **Mở COM hoặc duyệt Forward/Pivot placeholder:** không tạo log. Khi reconnect, phải vào Log Receive và nhấn Start; không tự suy ra quyền thu từ khung `ENC` lẻ.
 
-Ví dụ là dữ liệu minh họa, **không phải kết quả thực nghiệm**. Muốn Stop/Start **ngừng phát từ MCU** cần firmware `mode_menu_96m` đã hỗ trợ lệnh `P/G`.
+Nút **Open logs folder** mở thư mục lưu; **Replay CSV/log** đọc file đã ghi mà không tạo phiên mới. Log lịch sử dưới `logs/spp_runs/connections/` hoặc thư mục kiểu cũ được giữ nguyên, không xóa và không tự di chuyển.
+
+Lần này sửa cả `src/mode_menu.c`, nên **cần flash lại `mode_menu_96m`** cùng với cập nhật Python. Không dùng `spp_smoke_96m` khi kiểm tra menu vì đó chỉ là firmware chẩn đoán UART.
 
 ## SPP boot recovery and sensor reset controls (23/11/2026)
 
@@ -207,8 +212,10 @@ disabled if their matching sensor test is not active.
 2. Select the Windows Bluetooth SPP **Outgoing** COM; open the dashboard.
    Confirm `SPP CONNECTED`, `BOOT,READY` and an RX-byte count above 0.
 3. In Encoder Test, turn one wheel by hand while motor power is isolated.
-   Confirm `timestamp,ENC_L,ENC_R` in `*_encoder.csv`. Press Reset Encoder,
-   verify subsequent counts restart near zero, and test Stop/Start.
+   Select **Log Receive** and verify it stays idle. Press **Start test**,
+   turn a wheel by hand, then **Stop test**. Confirm one timestamped CSV
+   in `mode 7 - encoder test - log receiver/`. Start/Stop again and verify
+   a second CSV without appending to the first. Reset Encoder if needed.
 4. In MPU Test, rotate the chassis manually, stop it, press Zero MPU yaw
    and verify yaw returns near zero before drifting/integrating again.
 5. In IR Test, press Restart IR scan, then verify subsequent fresh IR
