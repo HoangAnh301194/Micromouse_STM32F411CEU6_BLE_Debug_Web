@@ -208,9 +208,16 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
         if (menu->active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE) {
             BT_SendString("Selected encoder option 1: Log Receive\r\n");
         } else {
-            BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
-                      (unsigned)(menu->active_encoder_option + 1U),
-                      ModeMenu_EncoderName(menu->active_encoder_option));
+#if defined(ENCODER_1BOX_TEST_MODE)
+            if (menu->active_encoder_option == 1U) {
+                BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
+            } else
+#endif
+            {
+                BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
+                          (unsigned)(menu->active_encoder_option + 1U),
+                          ModeMenu_EncoderName(menu->active_encoder_option));
+            }
         }
         break;
     case MODE_MENU_EVENT_ENCODER_EXIT:
