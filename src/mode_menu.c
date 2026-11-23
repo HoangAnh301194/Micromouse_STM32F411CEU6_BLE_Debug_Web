@@ -122,6 +122,14 @@ uint8_t ModeMenu_ResumeTest(ModeMenu *menu)
     return 1U;
 }
 
+uint8_t ModeMenu_CanResetSensor(const ModeMenu *menu, uint8_t test_index)
+{
+    if (!menu || test_index >= MODE_MENU_TEST_BACK)
+        return 0U;
+    return (menu->page == MODE_MENU_PAGE_TEST &&
+            menu->active_test == test_index) ? 1U : 0U;
+}
+
 ModeMenuEvent ModeMenu_Poll(ModeMenu *menu, uint8_t button_pressed,
                             uint32_t now_ms)
 {
