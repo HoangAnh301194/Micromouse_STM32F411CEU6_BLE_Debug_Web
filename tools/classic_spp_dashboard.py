@@ -807,27 +807,66 @@ class Dashboard:
             self.status.set("Cannot open log directory: " + str(exc))
 
     def open_log(self):
-        path = filedialog.askopenfilename(title="Replay line-oriented BLE/SPP log",
-                                          filetypes=[("Logs", "*.log *.txt"),
-                                                     ("All files", "*.*")])
+        """Replay new sensor CSV or older line-oriented logs to the left view.
+
+        Playback never feeds the automatic logger and never duplicates files.
+        """
+        path = filedialog.askopenfilename(
+            title="Replay Continuous data CSV or historical SPP log",
+            filetypes=[("Sensor CSV", "*.csv"), ("Historical log", "*.log *.txt"),
+                       ("All files", "*.*")])
         if not path:
             return
         count = 0
         try:
-            with open(path, "r", encoding="utf-8", errors="replace") as file:
-                for raw in file:
-                    text = raw.strip()
-                    # Log saved by this app begins with ISO datetime.
-                    if len(text) > 24 and text[4:5] == "-" and text[10:11] == "T":
-                        text = text.split(" ", 1)[-1]
-                    if text:
-                        # Replay changes the GUI only, not the live session log files.
-                        self._append(text, datetime.now().strftime("%H:%M:%S.%f")[:-3])
-                        count += 1
+            if Path(path).suffix.lower() == ".csv":
+                with open(path, "r", encoding="utf-8-sig", newline="") as file:
+                    reader = csv.DictReader(file)
+                    columns = set(reader.fieldnames or [])
+                    if {"timestamp", "ENC_L", "ENC_R"} <= columns:
+                        mode = "ENC"
+                    elif {"valid", "L0", "L45", "L90", "R0", "R45", "R90"} <= columns:
+                        mode = "IR"
+                    elif {"valid", "yaw_cd", "gz_cd"} <= columns:
+                        mode = "MPU"
+                    else:
+                        messagebox.showerror(
+                            "Replay CSV", "Not a recognized System Test CSV.")
+                        return
+                    self.data_filter.set("All")
+                    self.clear_data()
+                    for row in reader:
+                        try:
+                            if mode == "ENC":
+                                line = f"ENC,{int(row['ENC_L'])},{int(row['ENC_R'])}"
+                            elif mode == "IR":
+                                keys = ("valid", "L0", "L45", "L90", "R0", "R45", "R90")
+                                line = "IR," + ",".join(f"{key}={int(row[key])}" for key in keys)
+                            else:
+                                line = f"MPU,valid={int(row['valid'])}"
+                                if row["valid"] == "1":
+                                    line += (f",yaw_cd={int(row['yaw_cd'])},"
+                                             f"gz_cd={int(row['gz_cd'])}")
+                            timestamp = row.get("timestamp") or datetime.now().isoformat(
+                                timespec="milliseconds")
+                            self._append(line, timestamp[11:23], "data", host_time=timestamp)
+                            count += 1
+                        except (ValueError, TypeError, KeyError):
+                            continue
+            else:
+                with open(path, "r", encoding="utf-8", errors="replace") as file:
+                    for raw in file:
+                        text = raw.strip()
+                        if len(text) > 24 and text[4:5] == "-" and text[10:11] == "T":
+                            text = text.split(" ", 1)[-1]
+                        if text:
+                            self._append(text, datetime.now().strftime("%H:%M:%S.%f")[:-3])
+                            count += 1
         except OSError as exc:
             messagebox.showerror("Replay", str(exc))
             return
-        self.status.set("Replayed %d lines from %s" % (count, Path(path).name))
+        self.status.set("Replayed %d rows from %s (not saved)" %
+                        (count, Path(path).name))
 
     def quit(self):
         self.reader.close()
