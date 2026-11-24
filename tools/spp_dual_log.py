@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-DATA_PREFIXES = ("MPU,", "IR,", "ENC,", "ALL,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
+DATA_PREFIXES = ("MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
 STATUS_PREFIXES = ("STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
@@ -30,13 +30,14 @@ def classify_spp_line(line):
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
+    "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "MPU": ("valid", "yaw_cd", "gz_cd"),
     "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
             "L0", "L45", "L90", "R0", "R45", "R90",
             "mpu_valid", "yaw_cd", "gz_cd"),
 }
-TEST_FILE_SUFFIX = {"ENC": "encoder", "IR": "ir", "MPU": "mpu", "ALL": "all"}
+TEST_FILE_SUFFIX = {"ENC": "encoder", "IR": "ir", "MPU": "mpu", "ALL": "all", "ONEBOX": "onebox"}
 _DECIMAL = re.compile(r"[+-]?\d+\Z")
 
 
@@ -50,9 +51,11 @@ def sensor_test_csv(line, host_time=None):
     guarantee. No speed/IR/MPU fields leak into an encoder CSV row.
     """
     parts = line.strip().split(",")
-    if not parts or parts[0] not in TEST_CSV_COLUMNS:
+    if not parts:
         return None
-    sensor = parts[0]
+    sensor = "ONEBOX" if parts[0] == "ONEBOX_CSV" else parts[0]
+    if sensor not in TEST_CSV_COLUMNS:
+        return None
     fields = {}
     for item in parts[1:]:
         key, sep, value = item.partition("=")
@@ -67,6 +70,13 @@ def sensor_test_csv(line, host_time=None):
             values = (fields["left"], fields["right"])
         else:
             return None
+    elif sensor == "ONEBOX":
+        # Absolute encoder totals from the same hardware reader as
+        # Log Receive, plus motor driver APPLIED permille PWM, not targets.
+        keys = ("ms", "left", "right", "pwm_l", "pwm_r")
+        if not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in keys):
+            return None
+        values = tuple(fields[key] for key in keys)
     elif sensor == "ALL":
         keys = ("enc_l", "enc_r", "ir_valid", "L0", "L45", "L90",
                 "R0", "R45", "R90", "mpu_valid", "yaw_cd", "gz_cd")
@@ -88,7 +98,7 @@ def sensor_test_csv(line, host_time=None):
             if not all(_DECIMAL.fullmatch(fields.get(k, "")) for k in ("yaw_cd", "gz_cd")):
                 return None
             values = ("1", fields["yaw_cd"], fields["gz_cd"])
-    if sensor in ("ENC", "ALL"):
+    if sensor in ("ENC", "ALL", "ONEBOX"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values
 
@@ -143,10 +153,12 @@ class DualSessionLog:
     """
 
     SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test",
-                         "MPU": "MPU Test", "ALL": "All Sensors Test"}
+                         "MPU": "MPU Test", "ALL": "All Sensors Test",
+                         "ONEBOX": "1 Box Forward"}
     TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
     _SELECT_RE = re.compile(r"^Selected test (?:1|3|4): (IR Test|MPU Test|All Sensors Test)$")
     _ENC_LOG_SELECT = "Selected encoder option 1: Log Receive"
+    _ONEBOX_SELECT = "Selected encoder option 2: 1 Box Forward"
     _MODE_RE = re.compile(r"^Selected mode ([1-7]):")
 
     def __init__(self, root):
@@ -195,6 +207,28 @@ class DualSessionLog:
             self._close_active()
             self.active_sensor = "ENC"
             self._streaming = False
+            return
+
+        if line.startswith(self._ONEBOX_SELECT):
+            # Selection only ARMS 1-box. Never open a motion CSV until the
+            # firmware acknowledges a successful ONEBOX,START.
+            self._has_menu_context = True
+            self._close_active()
+            self.active_sensor = "ONEBOX"
+            self._streaming = False
+            return
+
+        if line.startswith("ONEBOX,START,"):
+            if self.active_sensor == "ONEBOX":
+                self._close_active()
+                self._streaming = True
+                self._open_run("ONEBOX", TEST_CSV_COLUMNS["ONEBOX"], host_time)
+            return
+
+        if line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
+            if self.active_sensor == "ONEBOX":
+                self._streaming = False
+                self._close_active()  # Includes DONE, Stop and faults.
             return
 
         if (line.startswith("Encoder Test") or
@@ -248,8 +282,9 @@ class DualSessionLog:
             sample = datetime.now()
         stamp = sample.strftime("%Y%m%d_%H%M%S_%f")
 
-        if sensor == "ENC":
-            folder = self.root / "mode 7 - encoder test - log receiver"
+        if sensor in ("ENC", "ONEBOX"):
+            name = ("log receiver" if sensor == "ENC" else "1 box forward")
+            folder = self.root / ("mode 7 - encoder test - " + name)
             folder.mkdir(parents=True, exist_ok=True)
             # Keep timestamp-first filenames readable and sortable. The COM
             # suffix distinguishes devices; an index handles clock collision.
@@ -285,7 +320,7 @@ class DualSessionLog:
         except OSError:
             handle.close()
             path.unlink(missing_ok=True)
-            if sensor != "ENC":
+            if sensor not in ("ENC", "ONEBOX"):
                 folder.rmdir()
             raise
 
@@ -310,7 +345,7 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context or sensor == "ENC":
+            if self._has_menu_context or sensor in ("ENC", "ONEBOX"):
                 # Encoder log is STRICTLY opt-in via Log Receive even after
                 # reconnect; never infer it from an unsolicited ENC frame.
                 return None
