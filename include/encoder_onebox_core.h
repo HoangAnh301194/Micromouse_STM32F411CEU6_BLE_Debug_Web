@@ -10,8 +10,11 @@
  */
 #define ONEBOX_TARGET_L 2400L
 #define ONEBOX_TARGET_R 2390L
-#define ONEBOX_MAX_PWM 260
-#define ONEBOX_MIN_PWM 130
+/* First motor-on one-cell trial: deliberately limited to 20% duty.
+ * Duty is NOT wheel speed; a stall at low duty is detected and aborted.
+ * Do not raise PWM without a supervised lifted-wheel test. */
+#define ONEBOX_MAX_PWM 200
+#define ONEBOX_MIN_PWM 120
 #define ONEBOX_MAX_TICKS 6500U      /* hard 6.5 s one-shot limit */
 #define ONEBOX_STALL_TICKS 900U      /* no encoder movement */
 #define ONEBOX_LEASE_TICKS 350U      /* require host heartbeat <350ms */
