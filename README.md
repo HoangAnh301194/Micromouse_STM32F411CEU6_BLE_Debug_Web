@@ -1,4 +1,4 @@
-> **Active debug workflow — 29/10/2026:** Web BLE UI is **temporarily frozen** (preserved, not deleted). Use the existing **Python Classic SPP** tools through the Windows **Outgoing** `Nezumi_Chan_SPP` COM port. The desktop dashboard is **receive-only**; do not assume bidirectional commands work. `src/bt_debug.c` / JDY-33 USART2 remain in use. See [Classic SPP setup](docs/classic_spp/README.md) and [working-policy handoff](AGENTS.md).
+> **Active debug workflow — 29/10/2026:** Web BLE UI is **temporarily frozen** (preserved, not deleted). Use the existing **Python Classic SPP** tools through the Windows **Outgoing** `Nezumi_Chan_SPP` COM port. The desktop dashboard is **receive-only**; do not assume bidirectional commands work. `src/bt_debug.c` / JDY-33 USART2 remain in use. See [Classic SPP setup](docs/classic_spp/README.md) and [working-policy handoff](.agents/rules/AGENTS.md).
 >
 > Quickstart on an already-running STM32 firmware that transmits text telemetry (replace `COM16` with the actual Windows Outgoing COM):
 >
@@ -22,7 +22,7 @@
 > **Bàn giao OLED và dọn tools trùng lặp (24/10/2026):** Bộ 33 file lịch sử được khôi phục từ [nhánh archive](https://github.com/HoangAnh301194/Micromouse_STM32F411CEU6_BLE_Debug_Web/tree/archive/debug-tools-precleanup-20261024). Sau yêu cầu dọn của người dùng, loại 8 bản sao không cần thiết, còn **26 file trong `tools/`** (gồm `tools/README.md`); regression chuẩn ở `tests/`, WebBLE ở [`web/ble_debug_console.html`](web/ble_debug_console.html). **Toàn bộ log `results/`, pipeline nghiệm thu OLED và firmware gốc được giữ nguyên.**
 
 
-> **Tiến độ mới nhất và ngữ cảnh bàn giao đa agent:** [PROJECT_STATUS.md](PROJECT_STATUS.md). Agent/chat mới bắt đầu từ [AGENTS.md](AGENTS.md); kết quả nghiệm thu I2C–MPU6050 nằm tại [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md).
+> **Tiến độ mới nhất và ngữ cảnh bàn giao đa agent:** [PROJECT_STATUS.md](PROJECT_STATUS.md). Agent/chat mới bắt đầu từ [AGENTS.md](.agents/rules/AGENTS.md); kết quả nghiệm thu I2C–MPU6050 nằm tại [docs/mpu_i2c_rc2/README.md](docs/mpu_i2c_rc2/README.md).
 
 This branch (`giomuadongbac`) is the STM32F411CEU6 RC2 baseline with opt-in 96 MHz system integration and UART PA9/PA10 diagnostic profiles; the default production build does not run a stress benchmark.
 
