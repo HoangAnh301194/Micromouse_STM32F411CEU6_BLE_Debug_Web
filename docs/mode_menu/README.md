@@ -197,7 +197,7 @@ actual floor and adjust for wheel slip, braking and mechanical backlash.
    motor watchdog.
 3. STM32 emits `ONEBOX,START,target_l=2400,target_r=2390,pwm_max=260`
    and performs one encoder feedback-controlled forward trial.
-   Motor PWM is capped at **260/1000 = 26%**, with tapered PWM and
+   Motor PWM is capped at **200/1000 = 20%**, with tapered PWM and
    a wheel-count imbalance correction (not full heading PID).
 4. GUI sends one-byte `H` heartbeats at about 100ms intervals only
    while onebox motion is requested. **350 ms without the lease**, a
