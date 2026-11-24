@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-DATA_PREFIXES = ("MPU,", "IR,", "ENC,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
+DATA_PREFIXES = ("MPU,", "IR,", "ENC,", "ALL,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
 STATUS_PREFIXES = ("STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
@@ -32,8 +32,11 @@ TEST_CSV_COLUMNS = {
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "MPU": ("valid", "yaw_cd", "gz_cd"),
+    "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
+            "L0", "L45", "L90", "R0", "R45", "R90",
+            "mpu_valid", "yaw_cd", "gz_cd"),
 }
-TEST_FILE_SUFFIX = {"ENC": "encoder", "IR": "ir", "MPU": "mpu"}
+TEST_FILE_SUFFIX = {"ENC": "encoder", "IR": "ir", "MPU": "mpu", "ALL": "all"}
 _DECIMAL = re.compile(r"[+-]?\d+\Z")
 
 
@@ -64,6 +67,12 @@ def sensor_test_csv(line, host_time=None):
             values = (fields["left"], fields["right"])
         else:
             return None
+    elif sensor == "ALL":
+        keys = ("enc_l", "enc_r", "ir_valid", "L0", "L45", "L90",
+                "R0", "R45", "R90", "mpu_valid", "yaw_cd", "gz_cd")
+        if not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in keys):
+            return None
+        values = tuple(fields[key] for key in keys)
     elif sensor == "IR":
         keys = ("valid", "L0", "L45", "L90", "R0", "R45", "R90")
         if not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in keys):
@@ -79,7 +88,7 @@ def sensor_test_csv(line, host_time=None):
             if not all(_DECIMAL.fullmatch(fields.get(k, "")) for k in ("yaw_cd", "gz_cd")):
                 return None
             values = ("1", fields["yaw_cd"], fields["gz_cd"])
-    if sensor == "ENC":
+    if sensor in ("ENC", "ALL"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values
 
@@ -133,9 +142,10 @@ class DualSessionLog:
     their existing per-test folder behavior. Status remains in memory only.
     """
 
-    SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test", "MPU": "MPU Test"}
+    SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test",
+                         "MPU": "MPU Test", "ALL": "All Sensors Test"}
     TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
-    _SELECT_RE = re.compile(r"^Selected test [13]: (IR Test|MPU Test)$")
+    _SELECT_RE = re.compile(r"^Selected test (?:1|3|4): (IR Test|MPU Test|All Sensors Test)$")
     _ENC_LOG_SELECT = "Selected encoder option 1: Log Receive"
     _MODE_RE = re.compile(r"^Selected mode ([1-7]):")
 
