@@ -33,9 +33,8 @@
 #error "MODE_MENU_ONLY requires shared-I2C OLED and cannot combine with motion diagnostics"
 #endif
 #include "mode_menu.h"
-#if defined(ENCODER_1BOX_TEST_MODE)
+#include "mode_test_resources.h"
 #include "encoder_onebox.h"
-#endif
 #include "oled_shared.h"
 #include "ssd1306.h"
 #endif
@@ -207,17 +206,12 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
     case MODE_MENU_EVENT_ENCODER_SELECT:
         if (menu->active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE) {
             BT_SendString("Selected encoder option 1: Log Receive\r\n");
+        } else if (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX) {
+            BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
         } else {
-#if defined(ENCODER_1BOX_TEST_MODE)
-            if (menu->active_encoder_option == 1U) {
-                BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
-            } else
-#endif
-            {
-                BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
-                          (unsigned)(menu->active_encoder_option + 1U),
-                          ModeMenu_EncoderName(menu->active_encoder_option));
-            }
+            BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
+                      (unsigned)(menu->active_encoder_option + 1U),
+                      ModeMenu_EncoderName(menu->active_encoder_option));
         }
         break;
     case MODE_MENU_EVENT_ENCODER_EXIT:
@@ -360,6 +354,9 @@ int Main_Runtime(void)
     int32_t coast_start_l = 0, coast_start_r = 0;
 #endif
     MPU6050_Status mpu_status;
+#if defined(MODE_MENU_ONLY)
+    uint8_t test_resource_mask = 0U;
+#endif
 
     Board_Init();
     SystemTimer_Init();
@@ -388,9 +385,8 @@ int Main_Runtime(void)
 
     Motor_Init();
 #if defined(MODE_MENU_ONLY)
-    /* Always boot locked. Only encoder_1box_96m has a guarded unlock,
-     * and only one explicit Start from the 1 Box Forward submenu may use it.
-     * mode_menu_96m remains permanently locked for the whole session. */
+    /* Unified runtime: boot LOCKED; only Start in 1 Box Forward can
+     * unlock a single bounded encoder motion. Other modes never actuate. */
     Motor_LockOutputs();
 #endif
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
@@ -426,9 +422,8 @@ int Main_Runtime(void)
          * main even when MPU6050 failed. No one-shot boot-only handshake. */
     }
 #endif
-    if (mpu_status == MPU6050_OK) {
-        mpu_status = MPU6050_Calibrate(&mpu); /* Starts async calibration. */
-    }
+    /* MPU calibration is deferred until MPU Test or All Sensors Test.
+     * Encoder-only motion does not depend on or read the MPU. */
 
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
@@ -465,12 +460,12 @@ int Main_Runtime(void)
      * TIM11 belongs to control.c.
      * main.c only performs system orchestration.
      */
+#if !defined(MODE_MENU_ONLY)
     IR_StartScan();
+#endif
     Control_Init(&mpu);
-#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
-    /* Safe default locked since Motor_Init; only a verified one-shot START
-     * can invoke the opt-in unlock. Initialize before enabling TIM11. */
-    EncoderOneBox_Init(&mpu);
+#if defined(MODE_MENU_ONLY)
+    EncoderOneBox_Init(); /* motor remains locked until guarded Start */
 #endif
     Control_Start();
 
@@ -492,8 +487,9 @@ int Main_Runtime(void)
     while (1) {
         uint32_t now = millis();
 #if defined(MODE_MENU_ONLY)
-        if (mpu_status == MPU6050_OK)
-            MPU6050_Update(&mpu); /* I2C is not used if MPU boot failed. */
+        if (mpu_status == MPU6050_OK &&
+            (test_resource_mask & TEST_RES_MPU))
+            MPU6050_Update(&mpu); /* MPU Test / All only */
 #else
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
 #endif
@@ -512,11 +508,8 @@ int Main_Runtime(void)
                     BT_Printf("BOOT,DEGRADED,MPU_STATUS=%u,STEP=%u,I2C=%u\r\n",
                               (unsigned)mpu_status, (unsigned)mpu.init_step,
                               (unsigned)mpu.init_i2c_status);
-#if defined(ENCODER_1BOX_TEST_MODE)
                 BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
-#else
-                BT_SendString("ONEBOX,PROFILE,MOTOR_LOCKED\r\n");
-#endif
+                BT_SendString("TEST,PROFILE,UNIFIED,IR,MPU,ENC,MOTOR\r\n");
             } else if (command == 'N') {
 #if defined(ENCODER_1BOX_TEST_MODE)
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
