@@ -1,7 +1,7 @@
-name: giomuadongbacv2 safe menu + System Test
+name: safe menu + Mode 9 System Test
 on:
   push:
-    branches: [giomuadongbacv2]
+    branches: [giomuadongbacv2, giomuadongbacv5]
     paths:
       - 'src/mode_menu.c'
       - 'include/mode_menu.h'
