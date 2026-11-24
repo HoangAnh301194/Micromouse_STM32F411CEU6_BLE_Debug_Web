@@ -288,7 +288,7 @@ class Dashboard:
         data_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(data_bar, text="Stream:").pack(side="left")
         ttk.Combobox(data_bar, textvariable=self.data_filter, width=12,
-                     values=("All", "MPU", "IR", "ENC", "ALL", "ENC_CSV", "CSV", "DATA"),
+                     values=("All", "MPU", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_text = self._make_log_text(left, "none")
@@ -606,6 +606,10 @@ class Dashboard:
                 self.active_test_name != "Encoder Test" or
                 not self.test_stream_running):
             return
+        if category == "data" and line.startswith("ONEBOX_CSV,") and (
+                self.active_test_name != "1 Box Forward" or
+                not self.test_stream_running):
+            return
         if not self._replaying and not self._logging_disabled:
             try:
                 data_path = self.dual_log.write(line, category, host_time=host_time)
@@ -681,10 +685,15 @@ class Dashboard:
             if self.active_test_name == "1 Box Forward":
                 self.test_stream_running = False
                 self._update_test_controls()
+            saved = self.dual_log.last_saved_path
+            note = (" | CSV: " + str(saved)
+                    if line.startswith("ONEBOX,RESULT,") and saved and
+                    saved.parent.name == "mode 7 - encoder test - 1 box forward"
+                    else "")
             self.status.set(
-                line + (" — reset STM32 before another motor test"
-                        if line.startswith("ONEBOX,RESULT,") and
-                        not self.onebox_capable else ""))
+                line + note + (" — reset STM32 before another motor test"
+                               if line.startswith("ONEBOX,RESULT,") and
+                               not self.onebox_capable else ""))
         elif line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = False
@@ -931,7 +940,10 @@ class Dashboard:
                 with open(path, "r", encoding="utf-8-sig", newline="") as file:
                     reader = csv.DictReader(file)
                     columns = set(reader.fieldnames or [])
-                    if {"timestamp", "ENC_L", "ENC_R", "ir_valid",
+                    if {"timestamp", "t_ms", "ENC_L", "ENC_R",
+                            "PWM_L", "PWM_R"} <= columns:
+                        mode = "ONEBOX"
+                    elif {"timestamp", "ENC_L", "ENC_R", "ir_valid",
                             "mpu_valid", "L0", "R0"} <= columns:
                         mode = "ALL"
                     elif {"timestamp", "ENC_L", "ENC_R"} <= columns:
@@ -948,7 +960,13 @@ class Dashboard:
                     self.clear_data()
                     for row in reader:
                         try:
-                            if mode == "ALL":
+                            if mode == "ONEBOX":
+                                line = ("ONEBOX_CSV,ms=%d,left=%d,right=%d,"
+                                        "pwm_l=%d,pwm_r=%d" %
+                                        (int(row["t_ms"]), int(row["ENC_L"]),
+                                         int(row["ENC_R"]), int(row["PWM_L"]),
+                                         int(row["PWM_R"])))
+                            elif mode == "ALL":
                                 keys = ("ir_valid", "L0", "L45", "L90",
                                         "R0", "R45", "R90", "mpu_valid",
                                         "yaw_cd", "gz_cd")
