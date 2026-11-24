@@ -17,3 +17,7 @@ __pycache__/
 # Optional turn-debug bundles are redundant when raw CSV/JSON logs are in Git.
 # Existing tracked ZIP histories remain intact.
 results/turn_pid_*/turn_pid_bundle.zip
+
+# Local live sync board shared across agents/worktrees (not committed).
+.agents/AGENT_SYNC.md
+

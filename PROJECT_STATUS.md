@@ -4,6 +4,18 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Cập nhật Module PID vận tốc 2 bánh & Motion API mở rộng — 24/11/2026 (`giomuadongbac`)
+
+- **Module lõi (`include/wheel_speed_pid.h`, `src/wheel_speed_pid.c`):** Đã tách độc lập thuần C (không phụ thuộc phần cứng ngoài hằng số hình học `include/pinout.h` với `WHEEL_DIAMETER_MM = 34.0f`). Cài đặt Feedforward ($k_s, k_v, k_a$) + PI, *conditional anti-windup*, *steering-priority desaturation*, cấu hình độc lập trái/phải (`WheelSpeedPid_InitConfig`, `WheelSpeedPid_SetGains`/`GetGains` giữ nguyên tích phân khi đổi nóng), bù điện áp pin (`WheelSpeedPid_SetBatteryScale`), động học thuận/nghịch (`CmdVelToWheelPps` / `WheelPpsToCmdVel`) và feedforward gia tốc (`UpdateCmdVelWithAccel`).
+- **Bộ hệ số tầng trong đã chốt (1 kHz):** `kp = 0.090`, `ki = 0.250`, `ks = 80.0‰`, `kv = 0.098‰/PPS`, `ka = 0.0`, trần `1000‰` (100% PWM).
+- **Motion API mở rộng (`include/motion.h`, `src/motion.c`):** Giữ tương thích ngược 100% với `Motion_CommandStraight`, `Motion_CommandTurn`, `Motion_RequestPrimitive`; bổ sung `Motion_CommandStraightProfile` (cho phép cấu hình tốc độ/gia tốc và `end_speed_mm_s` để nối ô), `Motion_CommandTurnProfile` (cua khép kín kết hợp Gyro `gz` + `wheel_speed_pid`), `Motion_CommandVelocity` (stream `(v, ω)` liên tục cho bám tường/cua mượt), `Motion_SetSteeringBiasDps`, `Motion_SetWheelSpeedGains`/`GetWheelSpeedGains`, `Motion_SetHeadingPidGains`, `Motion_SetBatteryVoltage`, `Motion_GetRemainingDistanceMm`, `Motion_GetChassisVelocity`.
+- **Trạng thái xác minh tách bạch:**
+  - *Host C-native test:* `tests/regression/wheel_speed_pid_native_test.py` (`test_wheel_speed_pid_c`, `test_motion_extended_apis_c`) PASS dưới `gcc -std=c99 -Wall -Wextra -Werror`.
+  - *Biên dịch PlatformIO:* `genericSTM32F411CE`, `production_oled_status_96m`, `integration_diag_motor_off_96m`, `system_test_96m`, `turn_pid_diag_96m`, `wall_pid_4cell_96m` PASS.
+  - *Telemetry MCU (SPP COM16 @ 50 Hz):* đã nạp `genericSTM32F411CE` và đo thực tế bài test `Q` 6s (`500/420 mm/s`, cua gắt `±420°/s`, cua rộng `±300°/s`, xoay `±720°/s`) — không tải bám sai số `0.2–3.3%`, trên sa bàn có vật cản tự bù tải lên `880–1000‰`.
+  - *Chưa nghiệm thu:* chưa chạy thử thực tế `Motion_CommandTurnProfile`, `Motion_CommandVelocity` nối IR bám tường, chuỗi nối ô tốc độ cao không vật cản trên sa bàn thật, và chưa nối ADC đo `V_bat` vào `Motion_SetBatteryVoltage()`.
+- **Quy tắc phối hợp đa agent:** bổ sung `.agents/rules/multi-agent-sync.md` và ignore bảng tin cục bộ `.agents/AGENT_SYNC.md` trong `.gitignore`.
+
 ## Quyết định phát triển — 29/10/2026: Đóng băng Web BLE UI, ưu tiên Python Classic SPP
 
 - **Web BLE UI FROZEN (development only):** Giữ nguyên `web/ble_debug_console.html`, `web/README.md` và `tests/web/`; không mở rộng/tái cấu trúc/xóa Web BLE khi chưa có yêu cầu mở lại. **Không** vô hiệu hóa JDY-33, USART2 PA2/PA3 hay driver `src/bt_debug.c` dùng chung.

@@ -209,7 +209,7 @@ typedef enum {
 /* ROBOT PHYSICAL CONSTANTS                                                     */
 /* ============================================================================ */
 
-#define WHEEL_DIAMETER_MM       35.0f
+#define WHEEL_DIAMETER_MM       34.0f
 #define WHEEL_BASE_MM           84.0f
 #define ENCODER_PPR             1430
 

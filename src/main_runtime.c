@@ -36,7 +36,7 @@
 #include "speed_pid_diag.h"
 #endif
 
-#define DEBUG_PERIOD_MS 100UL
+#define DEBUG_PERIOD_MS 20UL
 
 static MPU6050_Handle_t mpu;
 
@@ -111,6 +111,16 @@ static void HandleBleCommand(char c)
     case 'f':
     case 'F':
         if (ready && Motion_IsDone()) Motion_CommandStraight(180.0f, yaw);
+        break;
+
+    case 't':
+    case 'T':
+        if (ready && Motion_IsDone()) Motion_CommandStraight(2500.0f, yaw);
+        break;
+
+    case 'q':
+    case 'Q':
+        if (ready && Motion_IsDone()) Motion_CommandQuickStepTest();
         break;
 
     case 'l':
@@ -319,7 +329,13 @@ int Main_Runtime(void)
 
     BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
     UART_SendString("[BOOT] USART1 PA9 DMA TX; MPU RC2 sampling enabled\r\n");
-    BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw\r\n");
+    BT_SendString("Commands: F=straight 180mm, L=left 90, R=right 90, S=stop, Z=zero yaw, Q=6s quick test, PA0=start/stop Q\r\n");
+#if !defined(INTEGRATION_DIAG)
+    uint8_t btn_boot_lock = Board_ButtonPressed();
+    uint8_t btn_prev = btn_boot_lock;
+    uint8_t btn_armed = 0U;
+    uint32_t btn_edge_ms = millis();
+#endif
 #if defined(INTEGRATION_DIAG_MOTOR_OFF)
     UART_SendString("INTEGRATION_DIAG,MOTOR_OFF_SHADOW,OUTPUTS_LOCKED\r\n");
 #elif defined(INTEGRATION_DIAG_MOTOR_ON)
@@ -341,6 +357,41 @@ int Main_Runtime(void)
         if (BT_Available()) {
             HandleBleCommand(BT_ReceiveChar());
         }
+#if !defined(INTEGRATION_DIAG)
+        {
+            uint8_t btn_now = Board_ButtonPressed();
+            if (btn_boot_lock) {
+                if (!btn_now) {
+                    btn_boot_lock = 0U;
+                    btn_prev = 0U;
+                }
+            } else {
+                if (btn_now != btn_prev) {
+                    btn_prev = btn_now;
+                    btn_edge_ms = now;
+                } else if ((uint32_t)(now - btn_edge_ms) >= 30U) {
+                    if (btn_now) {
+                        if (!Motion_IsDone()) {
+                            Motion_Stop();
+                            btn_armed = 0U;
+                            BT_SendString("BTN,STOP\r\n");
+                        } else {
+                            btn_armed = 1U;
+                        }
+                    } else if (btn_armed) {
+                        MPU6050_Snapshot_t snap;
+                        uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) &&
+                                        (uint32_t)(micros() - snap.completed_us) <= 3000U;
+                        btn_armed = 0U;
+                        if (ready && Motion_IsDone()) {
+                            BT_SendString("BTN,START_Q\r\n");
+                            Motion_CommandQuickStepTest();
+                        }
+                    }
+                }
+            }
+        }
+#endif
 #if defined(INTEGRATION_DIAG)
         /* RX IRQ only queues bytes; command parsing is budgeted in main. */
         IntegrationSerial_Poll(&mpu, now);
@@ -749,6 +800,9 @@ int Main_Runtime(void)
         if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
             int32_t left_count;
             int32_t right_count;
+            int32_t v_left_pps;
+            int32_t v_right_pps;
+            Motion_SpeedDebug_t speed_dbg;
             float yaw;
             float gyro;
             float distance;
@@ -764,6 +818,9 @@ int Main_Runtime(void)
 
             left_count = Encoder_GetLeftCount();
             right_count = Encoder_GetRightCount();
+            v_left_pps = (int32_t)Encoder_GetLeftSpeedPPS();
+            v_right_pps = (int32_t)Encoder_GetRightSpeedPPS();
+            Motion_GetSpeedDebug(&speed_dbg);
             yaw = MPU6050_GetYaw(&mpu);
             gyro = MPU6050_GetGyroZ(&mpu);
             distance = Motion_GetDistanceMm();
@@ -774,11 +831,17 @@ int Main_Runtime(void)
                 __enable_irq();
             }
 
-            BT_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
+            BT_Printf("t=%lu state=%u encL=%ld encR=%ld vL=%ld vR=%ld vRefL=%ld vRefR=%ld pL=%d pR=%d yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
                       (unsigned long)now,
                       (unsigned int)state,
                       (long)left_count,
                       (long)right_count,
+                      (long)v_left_pps,
+                      (long)v_right_pps,
+                      (long)speed_dbg.left_ref_pps,
+                      (long)speed_dbg.right_ref_pps,
+                      (int)speed_dbg.left_pm,
+                      (int)speed_dbg.right_pm,
                       yaw,
                       gyro,
                       distance,
