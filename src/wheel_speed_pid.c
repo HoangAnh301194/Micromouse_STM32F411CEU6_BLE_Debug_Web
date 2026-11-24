@@ -12,8 +12,9 @@
 #define WSP_MM_PER_PULSE     (WSP_CIRCUMFERENCE_MM / (float)ENCODER_PPR)
 #define WSP_ABS_MAX_PM       1000.0f
 #define WSP_REF_ZERO_EPS     1e-3f
-#define WSP_BAT_SCALE_MIN    0.75f
-#define WSP_BAT_SCALE_MAX    1.35f
+/* Battery compensation disabled: no measured battery voltage. */
+// #define WSP_BAT_SCALE_MIN    0.75f
+// #define WSP_BAT_SCALE_MAX    1.35f
 
 static float ClampF(float value, float min_val, float max_val)
 {
@@ -75,8 +76,7 @@ static float ComputeSingleWheel(WheelSpeedLoop_t *loop,
                                 float accel_pps2,
                                 float meas_pps,
                                 float dt_s,
-                                float max_pm,
-                                float bat_scale)
+                                float max_pm)
 {
     float error;
     float ff = 0.0f;
@@ -102,7 +102,8 @@ static float ComputeSingleWheel(WheelSpeedLoop_t *loop,
                          -loop->integral_limit,
                          loop->integral_limit);
 
-    u_unsat = (ff + p_term + loop->ki * i_candidate) * bat_scale;
+    // Battery compensation disabled: previously multiplied by bat_scale.
+    u_unsat = ff + p_term + loop->ki * i_candidate;
 
     /* Conditional integration anti-windup: freeze integral if saturated and
      * error pushes further into saturation. */
@@ -112,7 +113,7 @@ static float ComputeSingleWheel(WheelSpeedLoop_t *loop,
         loop->integral = i_candidate;
     }
 
-    u_final = (ff + p_term + loop->ki * loop->integral) * bat_scale;
+    u_final = ff + p_term + loop->ki * loop->integral;
     loop->last_ref_pps = ref_pps;
     loop->last_meas_pps = meas_pps;
     loop->last_output_pm = ClampF(u_final, -max_pm, max_pm);
@@ -196,7 +197,7 @@ void WheelSpeedPid_InitConfig(WheelSpeedController_t *ctrl,
                       ? ctrl->left.max_output_pm
                       : ctrl->right.max_output_pm;
     ctrl->max_output_pm = clamped_max;
-    ctrl->battery_scale = 1.0f;
+    // ctrl->battery_scale = 1.0f;  /* Battery compensation disabled. */
 }
 
 void WheelSpeedPid_SetGains(WheelSpeedController_t *ctrl,
@@ -249,6 +250,7 @@ void WheelSpeedPid_SetMaxOutput(WheelSpeedController_t *ctrl, float max_output_p
     ctrl->right.max_output_pm = clamped_max;
 }
 
+#if 0 /* Battery compensation disabled: no measured battery voltage. */
 void WheelSpeedPid_SetBatteryScale(WheelSpeedController_t *ctrl,
                                    float nominal_v,
                                    float measured_v)
@@ -263,6 +265,7 @@ void WheelSpeedPid_SetBatteryScale(WheelSpeedController_t *ctrl,
                                  WSP_BAT_SCALE_MIN,
                                  WSP_BAT_SCALE_MAX);
 }
+#endif
 
 void WheelSpeedPid_CmdVelToWheelPps(float v_ref_mm_s,
                                     float w_ref_dps,
@@ -318,7 +321,6 @@ void WheelSpeedPid_UpdateWheelPpsWithAccel(WheelSpeedController_t *ctrl,
                                            WheelSpeedOutput_t *out)
 {
     float raw_l, raw_r, out_l, out_r;
-    float bat_scale;
 
     if (!ctrl || !out) return;
     if (dt_s <= 0.0f || dt_s > 0.05f) {
@@ -331,14 +333,11 @@ void WheelSpeedPid_UpdateWheelPpsWithAccel(WheelSpeedController_t *ctrl,
         return;
     }
 
-    bat_scale = (isfinite(ctrl->battery_scale) && ctrl->battery_scale > 0.0f)
-                    ? ctrl->battery_scale
-                    : 1.0f;
-
+    // Battery compensation disabled; PWM is computed without voltage scaling.
     raw_l = ComputeSingleWheel(&ctrl->left, left_ref_pps, left_accel_pps2,
-                               left_meas_pps, dt_s, ctrl->max_output_pm, bat_scale);
+                               left_meas_pps, dt_s, ctrl->max_output_pm);
     raw_r = ComputeSingleWheel(&ctrl->right, right_ref_pps, right_accel_pps2,
-                               right_meas_pps, dt_s, ctrl->max_output_pm, bat_scale);
+                               right_meas_pps, dt_s, ctrl->max_output_pm);
 
     DesaturateSteeringPriority(raw_l, raw_r, ctrl->max_output_pm,
                                &out_l, &out_r);

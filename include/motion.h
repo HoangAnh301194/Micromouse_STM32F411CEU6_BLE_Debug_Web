@@ -69,13 +69,13 @@ void Motion_CommandVelocity(float v_ref_mm_s,
  * into MOTION_STRAIGHT and MOTION_VELOCITY. Reset to 0 on Stop/Finish. */
 void Motion_SetSteeringBiasDps(float bias_w_dps);
 
-/* Runtime gain & battery compensation hooks (ISR-safe). */
+/* Runtime gain hooks (ISR-safe). */
 void Motion_SetWheelSpeedGains(const WheelSpeedConfig_t *left_cfg,
                                const WheelSpeedConfig_t *right_cfg);
 void Motion_GetWheelSpeedGains(WheelSpeedConfig_t *left_cfg,
                                WheelSpeedConfig_t *right_cfg);
 void Motion_SetHeadingPidGains(float kp, float ki, float kd, float max_w_dps);
-void Motion_SetBatteryVoltage(float nominal_v, float measured_v);
+// void Motion_SetBatteryVoltage(float nominal_v, float measured_v);  /* Disabled. */
 
 /* Opt-in motion-primitive runtime. Existing CommandTurn legacy PID
  * and BLE L/R behavior remain unchanged until separately qualified.

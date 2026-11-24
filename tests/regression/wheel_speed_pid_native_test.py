@@ -119,24 +119,27 @@ int main(void) {
         }
     }
 
-    /* 8. Battery compensation & acceleration feedforward */
+    /* 8. Acceleration feedforward (battery compensation disabled) */
     {
         WheelSpeedConfig_t cfg;
-        WheelSpeedOutput_t out_nom, out_lowbat, out_acc;
+        WheelSpeedOutput_t out_nom, out_acc;
         WheelSpeedPid_GetDefaultConfig(&cfg);
         cfg.ka_permille_per_pps2 = 0.010f;
         WheelSpeedPid_InitConfig(&ctrl, &cfg, NULL);
         WheelSpeedPid_UpdateCmdVel(&ctrl, 200.0f, 0.0f, 2677.0f, 2677.0f, 0.001f, &out_nom);
 
+#if 0 /* Battery compensation disabled: no measured battery voltage. */
+        WheelSpeedOutput_t out_lowbat;
         WheelSpeedPid_Reset(&ctrl);
         WheelSpeedPid_SetBatteryScale(&ctrl, 7.4f, 6.8f);
         WheelSpeedPid_UpdateCmdVel(&ctrl, 200.0f, 0.0f, 2677.0f, 2677.0f, 0.001f, &out_lowbat);
         if (!(out_lowbat.left_pm > out_nom.left_pm)) {
             return fail("Low battery voltage should scale PWM upward");
         }
+#endif
 
         WheelSpeedPid_Reset(&ctrl);
-        WheelSpeedPid_SetBatteryScale(&ctrl, 7.4f, 7.4f);
+        // WheelSpeedPid_SetBatteryScale(&ctrl, 7.4f, 7.4f);
         WheelSpeedPid_UpdateCmdVelWithAccel(&ctrl, 200.0f, 0.0f, 500.0f, 0.0f,
                                             2677.0f, 2677.0f, 0.001f, &out_acc);
         if (!(out_acc.left_pm > out_nom.left_pm)) {

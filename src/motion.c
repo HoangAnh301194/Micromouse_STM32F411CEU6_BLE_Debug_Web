@@ -465,6 +465,7 @@ void Motion_SetHeadingPidGains(float kp, float ki, float kd, float max_w_dps)
     if (!primask) __enable_irq();
 }
 
+#if 0 /* Battery compensation disabled: no measured battery voltage. */
 void Motion_SetBatteryVoltage(float nominal_v, float measured_v)
 {
     uint32_t primask = __get_PRIMASK();
@@ -472,6 +473,7 @@ void Motion_SetBatteryVoltage(float nominal_v, float measured_v)
     WheelSpeedPid_SetBatteryScale(&motion.speed_ctrl, nominal_v, measured_v);
     if (!primask) __enable_irq();
 }
+#endif
 
 void Motion_CommandQuickStepTest(void)
 {

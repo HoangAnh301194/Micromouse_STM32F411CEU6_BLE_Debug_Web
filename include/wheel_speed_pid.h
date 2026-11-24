@@ -35,7 +35,7 @@ typedef struct {
     WheelSpeedLoop_t left;
     WheelSpeedLoop_t right;
     float max_output_pm;
-    float battery_scale;
+    // float battery_scale;  /* Disabled: no battery-voltage measurement. */
 } WheelSpeedController_t;
 
 typedef struct {
@@ -78,11 +78,13 @@ void WheelSpeedPid_Reset(WheelSpeedController_t *ctrl);
 
 void WheelSpeedPid_SetMaxOutput(WheelSpeedController_t *ctrl, float max_output_pm);
 
+#if 0 /* Battery compensation disabled: no measured battery voltage. */
 /* Battery voltage compensation hook: scales PWM command by nominal_v / measured_v
  * (clamped safely to [0.75, 1.35]). Pass invalid/<=0 values to reset scale to 1.0. */
 void WheelSpeedPid_SetBatteryScale(WheelSpeedController_t *ctrl,
                                    float nominal_v,
                                    float measured_v);
+#endif
 
 /* Forward kinematics: chassis (v_mm_s, w_dps) -> wheel speeds (PPS).
  * +w_ref_dps = left turn (right wheel faster than left wheel). */
