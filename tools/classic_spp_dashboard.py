@@ -288,7 +288,7 @@ class Dashboard:
         data_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(data_bar, text="Stream:").pack(side="left")
         ttk.Combobox(data_bar, textvariable=self.data_filter, width=12,
-                     values=("All", "MPU", "IR", "ENC", "ENC_CSV", "CSV", "DATA"),
+                     values=("All", "MPU", "IR", "ENC", "ALL", "ENC_CSV", "CSV", "DATA"),
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_text = self._make_log_text(left, "none")
@@ -455,9 +455,8 @@ class Dashboard:
         if not self.menu_ready or not self.active_test_name:
             self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
             return
-        if self.active_test_name == "1 Box Forward" and (
-                not self.onebox_capable or not self.mpu_boot_ok):
-            self.status.set("1 Box Forward needs encoder_1box_96m and ready MPU.")
+        if self.active_test_name == "1 Box Forward" and not self.onebox_capable:
+            self.status.set("1 Box Forward requires updated unified mode_menu_96m.")
             return
         if self.active_test_name == "1 Box Forward":
             if command == b"G":
@@ -621,7 +620,8 @@ class Dashboard:
         is_encoder_log = line == "Selected encoder option 1: Log Receive"
         is_onebox = line.startswith("Selected encoder option 2: 1 Box Forward")
         is_ir_or_mpu = (line.startswith("Selected test ") and
-                         line.split(": ", 1)[-1].strip() in ("IR Test", "MPU Test"))
+                         line.split(": ", 1)[-1].strip() in
+                         ("IR Test", "MPU Test", "All Sensors Test"))
         if is_encoder_log or is_onebox or is_ir_or_mpu:
             self.active_test_name = ("Encoder Test" if is_encoder_log else
                                      "1 Box Forward" if is_onebox else
@@ -662,7 +662,7 @@ class Dashboard:
             self.onebox_capable = False
             self.reader.motion_lease.clear()
             self._update_test_controls()
-            self.status.set("Motor-locked menu firmware: flash encoder_1box_96m for 1 Box Forward.")
+            self.status.set("Legacy motor-locked firmware detected; update unified mode_menu_96m.")
         elif line.startswith("ONEBOX,START,"):
             if self.active_test_name == "1 Box Forward":
                 self.onebox_start_pending = False
