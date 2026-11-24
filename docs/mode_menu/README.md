@@ -1,4 +1,4 @@
-# Safe 7-mode menu and passive System Test over Classic SPP
+# Safe menu with Mode 9 System Test over Classic SPP
 
 **Branch:** `giomuadongbacv2`  
 **Build:** `mode_menu_96m` (default in `platformio.ini`).
@@ -13,6 +13,8 @@
 
 ## Cấu trúc menu
 
+Mode 9 cũ đã được thay thế tại chính vị trí cũ bằng **Mode 9 – System Test**. Các mục 1–6 không đổi.
+
 ```text
 Main menu:
 1. Calibration
@@ -21,28 +23,60 @@ Main menu:
 4. A* Run
 5. Speedrun
 6. Reset Map
-7. System Test   --> 1. IR Test
-                     2. Encoder Test --> 1. Log Receive        [IDLE until START]
-                                         2. 1 Box Forward       [NO MOTION]
-                                         3. 5 Box Forward       [NO MOTION]
-                                         4. Pivot 90 Left       [NO MOTION]
-                                         5. Pivot 90 Right      [NO MOTION]
-                                         6. Pivot 180 Left      [NO MOTION]
-                                         7. Pivot 180 Right     [NO MOTION]
-                                         8. Back
-                     3. MPU Test
-                     4. Back
+9. System Test
+   1. IR Sensor Test
+      - IR Live Data
+      - IR Filter
+      - IR Burst Capture
+      - IR Calibration
+      - Back
+   2. Encoder Test
+      - Log Receive
+      - 1 Box Forward
+      - 5 Box Forward
+      - Pivot 90 Left / Right
+      - Pivot 180 Left / Right
+      - Encoder Speed
+      - Back
+   3. MPU Test
+      - Gyro Data
+      - Yaw Monitor
+      - MPU Calibration
+      - I2C Status
+      - Back
+   4. Motor Test
+      - Left Motor / Right Motor / Both Motors
+      - PWM Sweep
+      - Motor Driver
+      - Back
+   5. PID Test
+      - Speed PID
+      - Turn PID
+      - Wall PID
+      - Back
+   6. Bluetooth Test
+      - SPP Connection
+      - BLE RX
+      - Baudrate Test
+      - SPP Throughput
+      - Back
+   7. System Integration
+      - Clock Validation
+      - UART Benchmark
+      - Timer/DMA
+      - I2C Test
+      - Flash Map Test
+      - Back
+   8. Back
 ```
 
-Ở menu chính, chọn các mode 1–6 **chỉ phát trạng thái**, không thực hiện hành động nào.
-Chọn Mode 7 để vào menu con (ban đầu chưa focus mục nào).
-Nhấn Chuyển lần đầu focus IR, lần lượt Encoder, MPU, Back và quay vòng.
-Nhấn Chọn để kích hoạt IR/MPU và bắt đầu truyền luồng đo thụ động. **Encoder Test bây giờ chỉ mở thêm một cấp menu**, không phát `ENC` và không tạo file CSV ngay khi chọn. Trong Encoder Test, nhấn Chuyển để duyệt `Log Receive`, sáu bài thử di chuyển và `Back`; nhấn Chọn tại `Log Receive` **chỉ vào trạng thái chờ**. Phải nhấn nút **Start test** trên giao diện SPP mới phát encoder 20 Hz và tạo một file CSV mới. Nhấn **Stop test** sẽ ngừng phát, flush và đóng file; Start lần kế tiếp tạo **file mới**. Duyệt sang mục khác sẽ ngừng truyền. `Back` của Encoder Test trở lại System Test; `Back` của System Test trở lại menu chính.
+PA0: nhấn ngắn để duyệt, giữ ít nhất 400 ms để chọn; debounce 30 ms. Hai nút SPP dùng N (Next) và K (Select). Trong mỗi nhóm, mục cuối là Back; Back của nhóm trở về danh sách nhóm, Back của System Test trở về menu chính.
 
-**Quan trọng:** sáu lựa chọn `1/5 Box Forward` và `Pivot 90/180 Left/Right` hiện là **placeholder** chỉ ghi sự kiện lên status terminal; **không cho xe chạy, không kích hoạt Motion, không phát log encoder**. Tất cả motor vẫn khóa trong `mode_menu_96m`. Trước khi lập trình di chuyển cần đặc tả quãng đường thực tế, tham số điều khiển, trạng thái an toàn và điều kiện dừng.
-Trong **Encoder → Log Receive**, Stop đóng dứt điểm CSV hiện tại, Start lần sau tạo CSV khác. Stop/Start không đặt lại số đếm encoder: các timer phần cứng vẫn đếm bình thường. IR/MPU giữ cách Stop/Start trước đó (tạm dừng/tiếp tục cùng file). Khung đo còn trong hàng đợi Bluetooth có thể đến muộn trước ACK Stop; chỉ ACK `TEST STREAM STOPPED` xác nhận kết thúc ghi.
+**Phạm vi đã tích hợp:** IR Live Data, Encoder Log Receive và MPU Gyro Data/Yaw Monitor sử dụng các luồng telemetry thụ động đã có. Encoder Log Receive chỉ bắt đầu phát sau lệnh G; P dừng luồng. Lệnh reset I/E/Y chỉ được chấp nhận ở đúng bài test cảm biến tương ứng.
 
-OLED và SPP báo cùng trạng thái. Status log bên phải chỉ nhận mỗi sự kiện một lần, không lặp heartbeat.
+**Các mục còn lại hiện là mục điều hướng/placeholder:** chúng được hiển thị và chọn được, nhưng chưa gọi trực tiếp các diagnostic runner vốn đang được biên dịch thành những PlatformIO environment độc lập. Chọn chúng không tự khởi chạy motor, PID tuning, xóa Flash hoặc thay đổi cấu hình ngoại vi. Firmware mode_menu_96m vẫn khóa motor. Bài 1 Box Forward chỉ có thể được chạy trong profile opt-in encoder_1box_96m, với cơ chế giám sát riêng; không được hiểu menu an toàn mặc định là firmware chạy motor.
+
+mode_menu_96m vẫn là profile menu mặc định. Việc đổi nhãn và cây menu không tự động hợp nhất 19 PlatformIO environment thành một build environment.
 
 ## Dạng bản tin mẫu
 
@@ -52,8 +86,8 @@ Status log bên phải:
 
 ```text
 SPP CONNECTED
-Mode 7: System Test
-Selected mode 7: System Test
+Mode 9: System Test
+Selected mode 9: System Test
 System Test: choose IR / Encoder / MPU / Back
 System Test 1: IR Test
 System Test 2: Encoder Test
@@ -120,11 +154,11 @@ valid,yaw_cd,gz_cd
 
 ### Tổ chức log — một file cho mỗi lần Start/Stop (23/11/2026)
 
-**Chỉ riêng Mode 7 → Encoder Test → Log Receive:** một thư mục cố định, mỗi lần nhấn **Start test** mở một file CSV **mới**, mỗi lần nhận ACK **Stop test** flush và đóng file. Tên file lấy từ timestamp tại thời điểm Start, không đặt timestamp vào tên thư mục:
+**Chỉ riêng Mode 9 → Encoder Test → Log Receive:** một thư mục cố định, mỗi lần nhấn **Start test** mở một file CSV **mới**, mỗi lần nhận ACK **Stop test** flush và đóng file. Tên file lấy từ timestamp tại thời điểm Start, không đặt timestamp vào tên thư mục:
 
 ```text
 logs/spp_runs/
-└── mode 7 - encoder test - log receiver/
+└── mode 9 - encoder test - log receiver/
     ├── 20261123_153340_852000_COM16.csv
     ├── 20261123_153405_123000_COM16.csv
     └── 20261123_153420_123000_COM16.csv
@@ -158,7 +192,7 @@ Lần này sửa cả `src/mode_menu.c`, nên **cần flash lại `mode_menu_96m
 
 ### Encoder evidence and target count
 
-Nine new `Mode 7 / Encoder Test / Log Receive` CSV files were uploaded
+Nine new `Mode 9 / Encoder Test / Log Receive` CSV files were uploaded
 in commit `7420d12`. The last file contains a mid-capture encoder reset;
 its final `0,0` is **not** a valid one-cell displacement. The other
 eight captures, described by the user as manual center-to-center (165 mm)
@@ -183,7 +217,7 @@ actual floor and adjust for wheel slip, braking and mechanical backlash.
   as in all previous revisions. It does not drive 1 Box Forward.
 - `encoder_1box_96m` is a deliberately **opt-in supervised trial**
   compiled with `ENCODER_1BOX_TEST_MODE`; at boot motors are still
-  locked. Only pressing **Start test** while **Mode 7 → Encoder Test →
+  locked. Only pressing **Start test** while **Mode 9 → Encoder Test →
   1 Box Forward** is selected can pass the guarded unlock.
 - Six other forward/turn menu placeholders have no motor handlers.
 
@@ -301,7 +335,7 @@ disabled if their matching sensor test is not active.
 3. In Encoder Test, turn one wheel by hand while motor power is isolated.
    Select **Log Receive** and verify it stays idle. Press **Start test**,
    turn a wheel by hand, then **Stop test**. Confirm one timestamped CSV
-   in `mode 7 - encoder test - log receiver/`. Start/Stop again and verify
+   in `mode 9 - encoder test - log receiver/`. Start/Stop again and verify
    a second CSV without appending to the first. Reset Encoder if needed.
 4. In MPU Test, rotate the chassis manually, stop it, press Zero MPU yaw
    and verify yaw returns near zero before drifting/integrating again.
@@ -400,7 +434,7 @@ py tests/regression/spp_dual_log_test.py
 py tests/regression/spp_handshake_test.py
 ```
 
-Cấu hình `mode_menu_96m` **luôn gọi `Motor_LockOutputs()`** trước khi khởi tạo menu. Không có lệnh motor/PID/Flash ở Mode 7 hoặc trên hai nút từ xa. Khi thử encoder, tách VM 2S và quay bánh bằng tay, cố định thân xe; sau đó kiểm tra dấu tiến dương, số xung/vòng và tương quan tốc độ giữa hai phía. Kết quả kiểm thử native hoặc build không thay cho phép đo trên phần cứng thật.
+Cấu hình `mode_menu_96m` **luôn gọi `Motor_LockOutputs()`** trước khi khởi tạo menu. Không có lệnh motor/PID/Flash ở Mode 9 hoặc trên hai nút từ xa. Khi thử encoder, tách VM 2S và quay bánh bằng tay, cố định thân xe; sau đó kiểm tra dấu tiến dương, số xung/vòng và tương quan tốc độ giữa hai phía. Kết quả kiểm thử native hoặc build không thay cho phép đo trên phần cứng thật.
 
 **Lưu ý:** đây là menu test mới trong profile `mode_menu_96m`, không phải profile `system_test_96m` cũ vốn có bài thử motor 90°/180°/200 mm. Không nạp nhầm profile motor-capable.
 
