@@ -54,180 +54,61 @@ static MPU6050_Handle_t mpu;
  * admission-controlled OLED_SharedService, never by TIM11 or USART2 IRQ. */
 static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
 {
-    uint8_t first, row, i;
-    if (!menu) return;
-
+    uint8_t first,row,i,count;
+    if(!menu)return;
     SSD1306_Fill(SSD1306_BLACK);
-    if (menu->page == MODE_MENU_PAGE_ENCODER) {
-        /* Scroll four visible options for 128x64 OLED; OLED remains
-         * optional/off by default in the motor-locked SPP profile. */
-        SSD1306_SetCursor(0U, 0U);
-        SSD1306_WriteString("ENCODER TEST", &Font_7x10, SSD1306_WHITE);
-        SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
-        if (menu->active_encoder_option != MODE_MENU_NO_SELECTION) {
-            SSD1306_SetCursor(0U, 20U);
-            SSD1306_WriteString((char *)ModeMenu_EncoderName(menu->active_encoder_option),
-                                &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(0U, 38U);
-            SSD1306_WriteString(menu->active_encoder_option ==
-                                MODE_MENU_ENCODER_LOG_RECEIVE ?
-                                (menu->stream_running ? "LOG ACTIVE" : "LOG PAUSED") :
-                                "NO MOTION YET", &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(0U, 52U);
-            SSD1306_WriteString("Next: browse", &Font_7x10, SSD1306_WHITE);
-            return;
+    if(menu->page==MODE_MENU_PAGE_ENCODER){
+        SSD1306_SetCursor(0U,0U);
+        SSD1306_WriteString((char*)ModeMenu_TestName(menu->active_group),&Font_7x10,SSD1306_WHITE);
+        SSD1306_DrawLine(0U,12U,127U,12U,SSD1306_WHITE);
+        if(menu->active_encoder_option!=MODE_MENU_NO_SELECTION){
+            SSD1306_SetCursor(0U,20U);
+            SSD1306_WriteString((char*)ModeMenu_ItemName(menu->active_group,menu->active_encoder_option),&Font_7x10,SSD1306_WHITE);
+            SSD1306_SetCursor(0U,37U);
+            if(menu->active_test!=MODE_MENU_NO_SELECTION)
+                SSD1306_WriteString(menu->stream_running?"STREAM ACTIVE":"STREAM PAUSED",&Font_7x10,SSD1306_WHITE);
+            else SSD1306_WriteString("MENU ONLY / SAFE",&Font_7x10,SSD1306_WHITE);
+            SSD1306_SetCursor(0U,52U);SSD1306_WriteString("Next: browse",&Font_7x10,SSD1306_WHITE);return;
         }
-        if (menu->encoder_focus == MODE_MENU_NO_SELECTION) {
-            SSD1306_SetCursor(0U, 23U);
-            SSD1306_WriteString("Next: choose", &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(0U, 40U);
-            SSD1306_WriteString("Hold: select", &Font_7x10, SSD1306_WHITE);
-            return;
-        }
-        first = menu->encoder_focus >= 3U ?
-                (uint8_t)(menu->encoder_focus - 3U) : 0U;
-        for (row = 0U; row < 4U; ++row) {
-            i = (uint8_t)(first + row);
-            if (i >= MODE_MENU_ENCODER_COUNT) break;
-            SSD1306_SetCursor(0U, (uint8_t)(15U + row * 11U));
-            SSD1306_WriteString((i == menu->encoder_focus) ? ">" : " ",
-                                &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(10U, (uint8_t)(15U + row * 11U));
-            SSD1306_WriteString((char *)ModeMenu_EncoderName(i),
-                                &Font_7x10, SSD1306_WHITE);
-        }
-        return;
+        if(menu->encoder_focus==MODE_MENU_NO_SELECTION){SSD1306_SetCursor(0U,23U);SSD1306_WriteString("Next: choose test",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(0U,40U);SSD1306_WriteString("Hold: select",&Font_7x10,SSD1306_WHITE);return;}
+        count=ModeMenu_ItemCount(menu->active_group);first=menu->encoder_focus>=3U?(uint8_t)(menu->encoder_focus-3U):0U;
+        for(row=0U;row<4U;++row){i=(uint8_t)(first+row);if(i>=count)break;SSD1306_SetCursor(0U,(uint8_t)(15U+row*11U));SSD1306_WriteString(i==menu->encoder_focus?">":" ",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(10U,(uint8_t)(15U+row*11U));SSD1306_WriteString((char*)ModeMenu_ItemName(menu->active_group,i),&Font_7x10,SSD1306_WHITE);}return;
     }
-    if (menu->page == MODE_MENU_PAGE_TEST) {
-        SSD1306_SetCursor(0U, 0U);
-        SSD1306_WriteString("7.SYSTEM TEST", &Font_7x10, SSD1306_WHITE);
-        SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
-        if (menu->active_test != MODE_MENU_NO_SELECTION) {
-            SSD1306_SetCursor(0U, 20U);
-            SSD1306_WriteString((char *)ModeMenu_TestName(menu->active_test),
-                                &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(0U, 36U);
-            SSD1306_WriteString(menu->stream_running ?
-                                "STREAM ACTIVE" : "STREAM PAUSED",
-                                &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(0U, 52U);
-            SSD1306_WriteString("Next: stop", &Font_7x10, SSD1306_WHITE);
-            return;
-        }
-        if (menu->test_focus == MODE_MENU_NO_SELECTION) {
-            SSD1306_SetCursor(0U, 23U);
-            SSD1306_WriteString("Next: choose test", &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(0U, 40U);
-            SSD1306_WriteString("Hold: select", &Font_7x10, SSD1306_WHITE);
-            return;
-        }
-        for (row = 0U; row < MODE_MENU_TEST_COUNT; ++row) {
-            SSD1306_SetCursor(0U, (uint8_t)(16U + row * 11U));
-            SSD1306_WriteString((row == menu->test_focus) ? ">" : " ",
-                                &Font_7x10, SSD1306_WHITE);
-            SSD1306_SetCursor(10U, (uint8_t)(16U + row * 11U));
-            SSD1306_WriteString((char *)ModeMenu_TestName(row),
-                                &Font_7x10, SSD1306_WHITE);
-        }
-        return;
+    if(menu->page==MODE_MENU_PAGE_TEST){
+        SSD1306_SetCursor(0U,0U);SSD1306_WriteString("9.SYSTEM TEST",&Font_7x10,SSD1306_WHITE);SSD1306_DrawLine(0U,12U,127U,12U,SSD1306_WHITE);
+        if(menu->test_focus==MODE_MENU_NO_SELECTION){SSD1306_SetCursor(0U,23U);SSD1306_WriteString("Next: choose group",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(0U,40U);SSD1306_WriteString("Hold: select",&Font_7x10,SSD1306_WHITE);return;}
+        first=menu->test_focus>=3U?(uint8_t)(menu->test_focus-3U):0U;
+        for(row=0U;row<4U;++row){i=(uint8_t)(first+row);if(i>=MODE_MENU_TEST_COUNT)break;SSD1306_SetCursor(0U,(uint8_t)(15U+row*11U));SSD1306_WriteString(i==menu->test_focus?">":" ",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(10U,(uint8_t)(15U+row*11U));SSD1306_WriteString((char*)ModeMenu_TestName(i),&Font_7x10,SSD1306_WHITE);}return;
     }
-
-    if (confirmed && menu->selected != MODE_MENU_NO_SELECTION) {
-        SSD1306_SetCursor(0U, 0U);
-        SSD1306_WriteString("MODE SELECTED", &Font_7x10, SSD1306_WHITE);
-        SSD1306_SetCursor(0U, 20U);
-        SSD1306_WriteString((char *)ModeMenu_Label(menu->selected),
-                            &Font_7x10, SSD1306_WHITE);
-        SSD1306_SetCursor(0U, 39U);
-        SSD1306_WriteString("NO ACTION YET", &Font_7x10, SSD1306_WHITE);
-        SSD1306_SetCursor(0U, 52U);
-        SSD1306_WriteString("Short: next", &Font_7x10, SSD1306_WHITE);
-        return;
-    }
-    SSD1306_SetCursor(10U, 0U);
-    SSD1306_WriteString("SELECT MODE", &Font_7x10, SSD1306_WHITE);
-    SSD1306_DrawLine(0U, 12U, 127U, 12U, SSD1306_WHITE);
-    if (menu->focus == MODE_MENU_NO_SELECTION) {
-        SSD1306_SetCursor(0U, 25U);
-        SSD1306_WriteString("Press PA0: Next", &Font_7x10, SSD1306_WHITE);
-        SSD1306_SetCursor(0U, 43U);
-        SSD1306_WriteString("Hold: Select", &Font_7x10, SSD1306_WHITE);
-        return;
-    }
-    first = menu->focus >= 3U ? (uint8_t)(menu->focus - 3U) : 0U;
-    for (row = 0U; row < 4U; ++row) {
-        i = (uint8_t)(first + row);
-        if (i >= MODE_MENU_ITEM_COUNT) break;
-        SSD1306_SetCursor(0U, (uint8_t)(15U + row * 11U));
-        SSD1306_WriteString((i == menu->focus) ? ">" : " ",
-                            &Font_7x10, SSD1306_WHITE);
-        SSD1306_SetCursor(10U, (uint8_t)(15U + row * 11U));
-        SSD1306_WriteString((char *)ModeMenu_Label(i),
-                            &Font_7x10, SSD1306_WHITE);
-    }
+    if(confirmed&&menu->selected!=MODE_MENU_NO_SELECTION){SSD1306_SetCursor(0U,0U);SSD1306_WriteString("MODE SELECTED",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(0U,20U);SSD1306_WriteString((char*)ModeMenu_Label(menu->selected),&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(0U,39U);SSD1306_WriteString("NO ACTION YET",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(0U,52U);SSD1306_WriteString("Short: next",&Font_7x10,SSD1306_WHITE);return;}
+    SSD1306_SetCursor(10U,0U);SSD1306_WriteString("SELECT MODE",&Font_7x10,SSD1306_WHITE);SSD1306_DrawLine(0U,12U,127U,12U,SSD1306_WHITE);
+    if(menu->focus==MODE_MENU_NO_SELECTION){SSD1306_SetCursor(0U,25U);SSD1306_WriteString("Press PA0: Next",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(0U,43U);SSD1306_WriteString("Hold: Select",&Font_7x10,SSD1306_WHITE);return;}
+    first=menu->focus>=3U?(uint8_t)(menu->focus-3U):0U;
+    for(row=0U;row<4U;++row){i=(uint8_t)(first+row);if(i>=MODE_MENU_ITEM_COUNT)break;SSD1306_SetCursor(0U,(uint8_t)(15U+row*11U));SSD1306_WriteString(i==menu->focus?">":" ",&Font_7x10,SSD1306_WHITE);SSD1306_SetCursor(10U,(uint8_t)(15U+row*11U));SSD1306_WriteString((char*)ModeMenu_Label(i),&Font_7x10,SSD1306_WHITE);}
 }
-
-static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
+static void ModeMenu_Report(const ModeMenu *menu,ModeMenuEvent event)
 {
-    switch (event) {
-    case MODE_MENU_EVENT_FOCUS:
-        BT_Printf("Mode %u: %s\r\n", (unsigned)(menu->focus + 1U),
-                  ModeMenu_Name(menu->focus));
-        break;
-    case MODE_MENU_EVENT_SELECT:
-        BT_Printf("Selected mode %u: %s\r\n",
-                  (unsigned)(menu->selected + 1U),
-                  ModeMenu_Name(menu->selected));
-        break;
-    case MODE_MENU_EVENT_TEST_ENTER:
-        BT_SendString("Selected mode 7: System Test\r\n");
-        BT_SendString("System Test: choose IR / Encoder / MPU / Back\r\n");
-        break;
-    case MODE_MENU_EVENT_TEST_FOCUS:
-        BT_Printf("System Test %u: %s\r\n",
-                  (unsigned)(menu->test_focus + 1U),
-                  ModeMenu_TestName(menu->test_focus));
-        break;
-    case MODE_MENU_EVENT_TEST_SELECT:
-        BT_Printf("Selected test %u: %s\r\n",
-                  (unsigned)(menu->active_test + 1U),
-                  ModeMenu_TestName(menu->active_test));
-        break;
-    case MODE_MENU_EVENT_TEST_EXIT:
-        BT_SendString("System Test: back to main menu\r\n");
-        break;
-    case MODE_MENU_EVENT_ENCODER_ENTER:
-        BT_SendString("Encoder Test: choose Log Receive / motion tests / Back\r\n");
-        break;
-    case MODE_MENU_EVENT_ENCODER_FOCUS:
-        BT_Printf("Encoder Test option %u: %s\r\n",
-                  (unsigned)(menu->encoder_focus + 1U),
-                  ModeMenu_EncoderName(menu->encoder_focus));
-        break;
+    switch(event){
+    case MODE_MENU_EVENT_FOCUS: BT_Printf("Mode %u: %s\r\n",(unsigned)(menu->focus==6U?9U:menu->focus+1U),ModeMenu_Name(menu->focus));break;
+    case MODE_MENU_EVENT_SELECT: BT_Printf("Selected mode %u: %s\r\n",(unsigned)(menu->selected==6U?9U:menu->selected+1U),ModeMenu_Name(menu->selected));break;
+    case MODE_MENU_EVENT_TEST_ENTER: BT_SendString("Selected mode 9: System Test\r\n");BT_SendString("Groups: IR / Encoder / MPU / Motor / PID / Bluetooth / System Integration / Back\r\n");break;
+    case MODE_MENU_EVENT_TEST_FOCUS: BT_Printf("System Test group %u: %s\r\n",(unsigned)(menu->test_focus+1U),ModeMenu_TestName(menu->test_focus));break;
+    case MODE_MENU_EVENT_TEST_EXIT: BT_SendString("System Test: back to main menu\r\n");break;
+    case MODE_MENU_EVENT_ENCODER_ENTER: BT_Printf("%s: submenu opened\r\n",ModeMenu_TestName(menu->active_group));break;
+    case MODE_MENU_EVENT_ENCODER_FOCUS: BT_Printf("%s option %u: %s\r\n",ModeMenu_TestName(menu->active_group),(unsigned)(menu->encoder_focus+1U),ModeMenu_ItemName(menu->active_group,menu->encoder_focus));break;
     case MODE_MENU_EVENT_ENCODER_SELECT:
-        if (menu->active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE) {
-            BT_SendString("Selected encoder option 1: Log Receive\r\n");
-        } else {
+        if(menu->active_test!=MODE_MENU_NO_SELECTION)BT_Printf("Selected %s: live telemetry available\r\n",ModeMenu_ItemName(menu->active_group,menu->active_item));
+        else{
 #if defined(ENCODER_1BOX_TEST_MODE)
-            if (menu->active_encoder_option == 1U) {
-                BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
-            } else
+            if(menu->active_group==1U&&menu->active_item==MODE_MENU_ENCODER_ONE_BOX_FORWARD)BT_SendString("Selected 1 Box Forward (ARMED; send G to start)\r\n");
+            else
 #endif
-            {
-                BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
-                          (unsigned)(menu->active_encoder_option + 1U),
-                          ModeMenu_EncoderName(menu->active_encoder_option));
-            }
-        }
-        break;
-    case MODE_MENU_EVENT_ENCODER_EXIT:
-        BT_SendString("Encoder Test: back to System Test\r\n");
-        break;
-    default:
-        break;
+            BT_Printf("Selected %s: MENU ENTRY ONLY; diagnostic runner not integrated; MOTOR LOCKED\r\n",ModeMenu_ItemName(menu->active_group,menu->active_item));
+        }break;
+    case MODE_MENU_EVENT_ENCODER_EXIT: BT_SendString("System Test: back to diagnostic groups\r\n");break;
+    default: break;
     }
 }
-
 #endif
 
 #if !defined(MODE_MENU_ONLY)
@@ -538,12 +419,13 @@ int Main_Runtime(void)
 #endif
                 if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
-                              ModeMenu_TestName(mode_menu.active_test));
+                              ModeMenu_StreamName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
                 if (mode_menu.page == MODE_MENU_PAGE_ENCODER &&
-                    mode_menu.active_encoder_option == 1U) {
+                    mode_menu.active_group == 1U &&
+                    mode_menu.active_encoder_option == MODE_MENU_ENCODER_ONE_BOX_FORWARD) {
 #if defined(ENCODER_1BOX_TEST_MODE)
                     if (mpu_status == MPU6050_OK && EncoderOneBox_Start()) {
                         BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d\r\n",
@@ -558,7 +440,7 @@ int Main_Runtime(void)
                 } else if (ModeMenu_ResumeTest(&mode_menu)) {
                     last_test_ms = now; /* next measurement in ~50 ms */
                     BT_Printf("TEST STREAM STARTED: %s\r\n",
-                              ModeMenu_TestName(mode_menu.active_test));
+                              ModeMenu_StreamName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
@@ -581,7 +463,7 @@ int Main_Runtime(void)
             if (remote != MODE_MENU_EVENT_NONE) {
                 if (remote == MODE_MENU_EVENT_TEST_SELECT ||
                     (remote == MODE_MENU_EVENT_ENCODER_SELECT &&
-                     mode_menu.active_test == 1U))
+                     mode_menu.active_test != MODE_MENU_NO_SELECTION))
                     last_test_ms = now;
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
@@ -603,7 +485,7 @@ int Main_Runtime(void)
 #endif
                 if (event == MODE_MENU_EVENT_TEST_SELECT ||
                     (event == MODE_MENU_EVENT_ENCODER_SELECT &&
-                     mode_menu.active_test == 1U))
+                     mode_menu.active_test != MODE_MENU_NO_SELECTION))
                     last_test_ms = now;
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
