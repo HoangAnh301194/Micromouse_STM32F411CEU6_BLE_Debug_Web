@@ -1,7 +1,11 @@
 # Safe 7-mode menu and passive System Test over Classic SPP
 
 **Branch:** `giomuadongbacv2`  
-**Build:** `mode_menu_96m` (default in `platformio.ini`).
+**Default VS Code PlatformIO Upload (updated 24/11/2026):** `encoder_1box_96m`.
+The ordinary `mode_menu_96m` remains available as the permanently
+motor-locked profile. Selecting a menu item does **not** start motion:
+only pressing **Start test** on `Mode 7 → Encoder Test → 1 Box Forward`
+unlocks and runs a single, bounded test.
 
 ## Chế độ điều khiển
 
@@ -23,7 +27,7 @@ Main menu:
 6. Reset Map
 7. System Test   --> 1. IR Test
                      2. Encoder Test --> 1. Log Receive        [IDLE until START]
-                                         2. 1 Box Forward       [NO MOTION]
+                                         2. 1 Box Forward       [START -> 165 mm (default upload)]
                                          3. 5 Box Forward       [NO MOTION]
                                          4. Pivot 90 Left       [NO MOTION]
                                          5. Pivot 90 Right      [NO MOTION]
@@ -39,7 +43,7 @@ Chọn Mode 7 để vào menu con (ban đầu chưa focus mục nào).
 Nhấn Chuyển lần đầu focus IR, lần lượt Encoder, MPU, Back và quay vòng.
 Nhấn Chọn để kích hoạt IR/MPU và bắt đầu truyền luồng đo thụ động. **Encoder Test bây giờ chỉ mở thêm một cấp menu**, không phát `ENC` và không tạo file CSV ngay khi chọn. Trong Encoder Test, nhấn Chuyển để duyệt `Log Receive`, sáu bài thử di chuyển và `Back`; nhấn Chọn tại `Log Receive` **chỉ vào trạng thái chờ**. Phải nhấn nút **Start test** trên giao diện SPP mới phát encoder 20 Hz và tạo một file CSV mới. Nhấn **Stop test** sẽ ngừng phát, flush và đóng file; Start lần kế tiếp tạo **file mới**. Duyệt sang mục khác sẽ ngừng truyền. `Back` của Encoder Test trở lại System Test; `Back` của System Test trở lại menu chính.
 
-**Quan trọng:** sáu lựa chọn `1/5 Box Forward` và `Pivot 90/180 Left/Right` hiện là **placeholder** chỉ ghi sự kiện lên status terminal; **không cho xe chạy, không kích hoạt Motion, không phát log encoder**. Tất cả motor vẫn khóa trong `mode_menu_96m`. Trước khi lập trình di chuyển cần đặc tả quãng đường thực tế, tham số điều khiển, trạng thái an toàn và điều kiện dừng.
+**Quan trọng:** `1 Box Forward` được thực thi **chỉ trong firmware `encoder_1box_96m`** và **chỉ sau khi bấm Start test**. Năm mục `5 Box Forward` và `Pivot 90/180 Left/Right` còn lại chỉ ghi sự kiện, không điều khiển motor. Trong `mode_menu_96m`, tất cả các mục vẫn khóa motor. Trước khi lập trình di chuyển cần đặc tả quãng đường thực tế, tham số điều khiển, trạng thái an toàn và điều kiện dừng.
 Trong **Encoder → Log Receive**, Stop đóng dứt điểm CSV hiện tại, Start lần sau tạo CSV khác. Stop/Start không đặt lại số đếm encoder: các timer phần cứng vẫn đếm bình thường. IR/MPU giữ cách Stop/Start trước đó (tạm dừng/tiếp tục cùng file). Khung đo còn trong hàng đợi Bluetooth có thể đến muộn trước ACK Stop; chỉ ACK `TEST STREAM STOPPED` xác nhận kết thúc ghi.
 
 OLED và SPP báo cùng trạng thái. Status log bên phải chỉ nhận mỗi sự kiện một lần, không lặp heartbeat.
@@ -179,6 +183,12 @@ actual floor and adjust for wheel slip, braking and mechanical backlash.
 
 ### Important distinction between two firmware images
 
+- In `giomuadongbacv2`, `platformio.ini` now sets
+  `default_envs = encoder_1box_96m`. Therefore PlatformIO's regular
+  **Build** or **Upload** control in VS Code compiles/flashes the
+  guarded motor-capable one-box firmware, provided the user has not
+  explicitly selected a different environment from Project Tasks.
+  Check `ONEBOX,PROFILE,ENABLED` after SPP handshake.
 - `mode_menu_96m` is **still motor-locked for its entire session**,
   as in all previous revisions. It does not drive 1 Box Forward.
 - `encoder_1box_96m` is a deliberately **opt-in supervised trial**
@@ -227,8 +237,11 @@ git fetch origin
 git switch giomuadongbacv2
 git pull --ff-only origin giomuadongbacv2
 
-# Opt-in active motion (NOT the default safe menu image):
-pio run -e encoder_1box_96m
+# Default VS Code Build/Upload profile on giomuadongbacv2:
+pio run
+pio run -t upload
+
+# Same image explicitly, if VS Code selected a different environment:
 pio run -e encoder_1box_96m -t upload
 py tools/classic_spp_dashboard.py --port COM16
 
