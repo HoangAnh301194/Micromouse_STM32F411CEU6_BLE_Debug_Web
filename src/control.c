@@ -15,6 +15,7 @@
 #include "motor.h"
 #if defined(MODE_MENU_ONLY)
 #include "encoder_onebox.h"
+#include "mode_test_resources.h"
 #endif
 #include "stm32f4xx.h"
 #include "system_timer.h"
@@ -24,6 +25,21 @@
 
 static MPU6050_Handle_t *control_mpu = 0;
 static volatile uint8_t control_running = 0;
+#if defined(MODE_MENU_ONLY)
+static volatile uint8_t test_resource_mask = 0U;
+void Control_SetTestResources(uint8_t mask)
+{
+    uint32_t irq = __get_PRIMASK();
+    __disable_irq();
+    if ((test_resource_mask & TEST_RES_IR) != (mask & TEST_RES_IR)) {
+        /* ADC/TIM10/DMA and IR emitters run only in IR/All Test. */
+        if (mask & TEST_RES_IR) IR_StartScan();
+        else IR_Stop();
+    }
+    test_resource_mask = mask;
+    if (!irq) __enable_irq();
+}
+#endif
 static volatile IR_Data_t ir_latest;
 /* Updated by TIM11 only; read from main with a short IRQ-safe copy. */
 static IR_WallSignal wall_ir_ema10;
@@ -87,6 +103,9 @@ void Control_Init(MPU6050_Handle_t *mpu_handle)
 
     control_mpu = mpu_handle;
     control_running = 0;
+#if defined(MODE_MENU_ONLY)
+    test_resource_mask = 0U;
+#endif
     IR_WallSignal_Init(&wall_ir_ema10);
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
     di_stats = (Control_DebugStats_t){0};
@@ -230,9 +249,15 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #endif
     /* Policy B: only notify tick here; never run I2C in TIM11. */
 #if defined(MPU_TIM11_TICK_SCHED)
-    MPU6050_NotifyControlTick(control_mpu, micros());
+#if defined(MODE_MENU_ONLY)
+    if (test_resource_mask & TEST_RES_MPU)
+#endif
+        MPU6050_NotifyControlTick(control_mpu, micros());
 #endif
 
+#if defined(MODE_MENU_ONLY)
+    if (test_resource_mask & TEST_RES_IR) {
+#endif
     if (IR_GetLatest(&sample)) {
         uint8_t i;
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
@@ -269,6 +294,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     /* A failed scan returns to IDLE; retry here without waiting for a
      * successful snapshot that will never arrive after the failure. */
     IR_StartScan();
+#if defined(MODE_MENU_ONLY)
+    }
+#endif
 
 #if !defined(MODE_MENU_ONLY)
     /* In sensor-only mode, only encoder/IR/MPU acquisition runs in TIM11.
