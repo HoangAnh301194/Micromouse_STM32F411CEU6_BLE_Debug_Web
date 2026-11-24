@@ -414,7 +414,8 @@ class Dashboard:
     def _update_test_controls(self):
         can_control = self.menu_ready and self.active_test_name is not None
         if self.active_test_name == "1 Box Forward":
-            can_control = can_control and self.onebox_capable and self.mpu_boot_ok
+            # This is an encoder + motor test, not an MPU test.
+            can_control = can_control and self.onebox_capable
         self.start_test_btn.configure(
             state="normal" if can_control and not self.test_stream_running
                   and not self.onebox_start_pending else "disabled")
