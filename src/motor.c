@@ -165,7 +165,7 @@ void Motor_LockOutputs(void)
     UnlockIRQ(irq_state);
 }
 
-#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
+#if defined(MODE_MENU_ONLY)
 /* Only compiled in the opt-in one-box image; the ordinary menu stays
  * permanently locked. Re-arm is forbidden if the 300ms watchdog latched. */
 uint8_t Motor_OneBoxUnlockOutputs(void)
