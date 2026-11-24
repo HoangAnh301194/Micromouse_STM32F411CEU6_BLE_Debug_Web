@@ -17,6 +17,11 @@ void Control_Stop(void);
  * Existing Control_GetIRSnapshot is unaffected (RAW ON-OFF). */
 IR_WallStatus Control_GetWallIRSnapshot(IR_WallSnapshot *out);
 uint8_t Control_IsRunning(void);
+#if defined(MODE_MENU_ONLY)
+/* Runtime sensor acquisition routing; encoder timer and motor watchdog
+ * continue running independently for safe odometry and actuator control. */
+void Control_SetTestResources(uint8_t resource_mask);
+#endif
 /* Atomic copy of last TIM11 IR scan; does not consume ADC state. */
 void Control_GetIRSnapshot(IR_Data_t *out);
 #if defined(INTEGRATION_DIAG) || defined(OLED_MPU_DIAG)
