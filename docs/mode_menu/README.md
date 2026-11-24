@@ -7,7 +7,7 @@
 
 - KEY PA0 vật lý: nhấn ngắn để chuyển, giữ ít nhất 400 ms để chọn; debounce 30 ms.
 - Hai nút SPP **Chuyển (KEY ngắn)** và **Chọn (KEY giữ)** gửi một byte ASCII `N` hoặc `K` đến STM32. Mỗi cú nhấn gửi một sự kiện logic, không giữ phím điện tử 400 ms.
-- **Stop test** gửi `P` để tạm dừng truyền mẫu của bài test đang chọn; **Start test** gửi `G` để tiếp tục. Cả hai lệnh không tác động motor và chỉ được firmware chấp nhận khi đang chọn IR/Encoder/MPU Test. Dashboard chỉ cập nhật trạng thái nút khi nhận ACK từ STM32.
+- **Stop test** gửi `P` để tạm dừng truyền mẫu của bài test đang chọn; **Start test** gửi `G` để tiếp tục. Trong profile `mode_menu_96m`, hai lệnh này chỉ điều khiển luồng cảm biến; trong profile `encoder_1box_96m`, `G` khi chọn đúng `1 Box Forward` sẽ khởi động thử nghiệm motor có giám sát, và `P` sẽ dừng thử nghiệm. Dashboard chỉ cập nhật trạng thái nút khi nhận ACK từ STM32.
 - Sau khi chọn cổng COM Bluetooth **Outgoing**, dashboard gửi byte `?` để kiểm tra hai chiều. Nếu không thấy `SPP CONNECTED`, desktop tự gửi lại mỗi 0,8 giây trong sáu lần đầu rồi giảm xuống mỗi 3 giây. Chỉ khi nhận **đúng** bản tin này, hai nút mới được bật. Mở được COM không có nghĩa là MCU đã sẵn sàng nhận lệnh.
 - Mọi thao tác đọc/ghi serial được thực hiện trong cùng worker thread; Tkinter chỉ gửi lệnh vào queue.
 
@@ -195,7 +195,7 @@ actual floor and adjust for wheel slip, braking and mechanical backlash.
    **Start test**. SPP sends `G` once; the MCU verifies the calibrated,
    fresh gyro, running TIM11 control, no PA0 button press, and healthy
    motor watchdog.
-3. STM32 emits `ONEBOX,START,target_l=2400,target_r=2390,pwm_max=260`
+3. STM32 emits `ONEBOX,START,target_l=2400,target_r=2390,pwm_max=200`
    and performs one encoder feedback-controlled forward trial.
    Motor PWM is capped at **200/1000 = 20%**, with tapered PWM and
    a wheel-count imbalance correction (not full heading PID).
