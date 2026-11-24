@@ -18,6 +18,7 @@ static volatile uint8_t result_pending;
 static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
 static uint8_t physical_stop_latched; /* suppress PA0 key event after abort */
 static uint16_t brake_ticks;
+static uint32_t started_at_ms;
 static EncoderOneBoxResult result;
 
 static uint32_t Lock(void)
@@ -61,6 +62,7 @@ void EncoderOneBox_Init(void)
     fault_latched = 0U;
     physical_stop_latched = 0U;
     brake_ticks = 0U;
+    started_at_ms = 0U;
     core.running = 0U;
     Unlock(irq);
 }
@@ -75,6 +77,7 @@ uint8_t EncoderOneBox_Start(void)
         return 0U;
     }
     Motor_Stop();
+    started_at_ms = millis();
     OneBoxCore_Start(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
     result_pending = 0U;
     phase = 1U;
@@ -134,6 +137,24 @@ void EncoderOneBox_ControlTick(void)
 uint8_t EncoderOneBox_IsRunning(void)
 {
     return phase == 1U;
+}
+uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
+{
+    uint32_t irq;
+    if (!out) return 0U;
+    irq = Lock();
+    if (phase == 0U && !result_pending) {
+        Unlock(irq);
+        return 0U;
+    }
+    out->elapsed_ms = (uint32_t)(millis() - started_at_ms);
+    /* These are cumulative counts, exactly like Encoder Log Receive.
+     * Query the motor driver for APPLIED PWM (not a PID target). */
+    out->left = Encoder_GetLeftCount();
+    out->right = Encoder_GetRightCount();
+    Motor_GetAppliedPairPermille(&out->pwm_l, &out->pwm_r);
+    Unlock(irq);
+    return 1U;
 }
 uint8_t EncoderOneBox_SuppressMenuButton(void)
 {
