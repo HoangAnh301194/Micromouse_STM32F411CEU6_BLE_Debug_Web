@@ -194,7 +194,6 @@ static void IR_CompleteDma(void)
 #endif
         scan_count++;
         completed_us = now;
-        state = IR_READY;
         TIM10->CR1 &= ~TIM_CR1_CEN;
 #if defined(INTEGRATION_DIAG) || defined(IR_FILTER_DIAG)
         {
@@ -210,6 +209,8 @@ static void IR_CompleteDma(void)
                 diagnostics.scan_max_us = scan_duration;
         }
 #endif
+        __DMB();
+        state = IR_READY;
         break;
 
     default:
@@ -232,7 +233,7 @@ static void ADC_DMA_Init(void)
 
     ADC1->CR1 = ADC_CR1_SCAN;
     ADC1->CR2 = ADC_CR2_DMA | ADC_CR2_DDS;
-    ADC1->SMPR2 = 0x04924924UL;
+    ADC1->SMPR2 = 0x24924924UL;
     ADC1->SMPR1 = 0x04924924UL;
     ADC1->SQR1 = ((IR_SENSOR_COUNT - 1U) << 20);
     ADC1->SQR3 = ((uint32_t)adc_channels[0] << 0) |
