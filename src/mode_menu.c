@@ -12,7 +12,7 @@ static const char *const menu_names[MODE_MENU_ITEM_COUNT] = {
 };
 
 static const char *const test_names[MODE_MENU_TEST_COUNT] = {
-    "IR Test", "Encoder Test", "MPU Test", "Back"
+    "IR Test", "Encoder Test", "MPU Test", "All Sensors Test", "Back"
 };
 
 /* Encoder submenu: navigation and passive Log Receive only.
@@ -136,7 +136,7 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
             menu->test_focus = MODE_MENU_NO_SELECTION;
             return MODE_MENU_EVENT_TEST_EXIT;
         }
-        if (menu->test_focus == 1U) {
+        if (menu->test_focus == MODE_MENU_TEST_ENCODER) {
             /* Encoder Test is a navigation page, not an active stream. */
             menu->page = MODE_MENU_PAGE_ENCODER;
             menu->encoder_focus = MODE_MENU_NO_SELECTION;
