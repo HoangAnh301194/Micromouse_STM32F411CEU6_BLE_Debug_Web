@@ -13,6 +13,7 @@ CC = os.environ.get("CC", "gcc")
 
 HARNESS = r'''
 #include "mode_menu.h"
+#include "mode_test_resources.h"
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -36,6 +37,8 @@ int main(void) {
     assert(m.focus == MODE_MENU_NO_SELECTION);
     assert(m.selected == MODE_MENU_NO_SELECTION);
     assert(m.stream_running == 0);
+    assert(ModeTest_Resources(&m) == 0U);
+    assert(!ModeTest_OneBoxArmed(&m));
     assert(!ModeMenu_PauseTest(&m));
     assert(!ModeMenu_ResumeTest(&m));
     assert(!ModeMenu_PauseTest(NULL));
@@ -121,6 +124,7 @@ int main(void) {
     assert(!strcmp(ModeMenu_TestName(0), "IR Test"));
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
     assert(m.active_test == 0 && m.stream_running);
+    assert(ModeTest_Resources(&m) == TEST_RES_IR);
     assert(ModeMenu_CanResetSensor(&m, 0));
     assert(!ModeMenu_CanResetSensor(&m, 1));
     assert(!ModeMenu_CanResetSensor(&m, 2));
@@ -148,6 +152,7 @@ int main(void) {
     assert(m.active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE);
     /* Selection is IDLE: absolutely no Encoder telemetry before START. */
     assert(m.active_test == 1 && !m.stream_running);
+    assert(ModeTest_Resources(&m) == TEST_RES_ENCODER);
     assert(ModeMenu_CanResetSensor(&m, 1));
     assert(!ModeMenu_CanResetSensor(&m, 0));
     assert(!ModeMenu_CanResetSensor(&m, 2));
@@ -171,6 +176,13 @@ int main(void) {
         assert(m.active_test == MODE_MENU_NO_SELECTION);
         assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_SELECT);
         assert(m.active_encoder_option == i);
+        if (i == MODE_MENU_ENCODER_1BOX) {
+            assert(ModeTest_OneBoxArmed(&m));
+            assert(ModeTest_Resources(&m) == (TEST_RES_ENCODER | TEST_RES_MOTOR));
+        } else {
+            assert(!ModeTest_OneBoxArmed(&m));
+            assert(ModeTest_Resources(&m) == 0U);
+        }
         assert(m.active_test == MODE_MENU_NO_SELECTION);
         assert(!m.stream_running && !ModeMenu_ResumeTest(&m));
         assert(!ModeMenu_CanResetSensor(&m, 1));
@@ -191,17 +203,26 @@ int main(void) {
     assert(m.test_focus == 2 && m.active_test == MODE_MENU_NO_SELECTION);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
     assert(m.active_test == 2);
+    assert(ModeTest_Resources(&m) == TEST_RES_MPU);
     assert(ModeMenu_CanResetSensor(&m, 2));
     assert(!ModeMenu_CanResetSensor(&m, 1));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
+    assert(m.test_focus == MODE_MENU_TEST_ALL);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
+    assert(m.active_test == MODE_MENU_TEST_ALL);
+    assert(ModeTest_Resources(&m) ==
+           (TEST_RES_IR | TEST_RES_MPU | TEST_RES_ENCODER | TEST_RES_MOTOR));
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == MODE_MENU_TEST_BACK && m.active_test == MODE_MENU_NO_SELECTION);
+    assert(ModeTest_Resources(&m) == 0U);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_EXIT);
     assert(m.page == MODE_MENU_PAGE_MAIN && m.selected == 6);
     assert(!m.stream_running && !ModeMenu_ResumeTest(&m));
     assert(!ModeMenu_CanResetSensor(&m, 2));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_FOCUS);
     assert(m.focus == 0);
-    assert(!strcmp(ModeMenu_TestName(4), "INVALID"));
+    assert(!strcmp(ModeMenu_TestName(3), "All Sensors Test"));
+    assert(!strcmp(ModeMenu_TestName(5), "INVALID"));
 
     puts("Mode menu native tests: PASS");
     return 0;
@@ -219,7 +240,8 @@ def main() -> None:
         subprocess.run(
             [CC, "-std=c99", "-Wall", "-Wextra", "-Werror",
              "-I", str(ROOT / "include"),
-             str(ROOT / "src" / "mode_menu.c"), str(source),
+             str(ROOT / "src" / "mode_menu.c"),
+             str(ROOT / "src" / "mode_test_resources.c"), str(source),
              "-o", str(binary)],
             check=True,
         )
