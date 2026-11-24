@@ -669,7 +669,7 @@ class Dashboard:
                 self.test_stream_running = True
                 self.reader.motion_lease.set()
                 self._update_test_controls()
-                self.status.set("1 Box Forward running (one-shot, max 26% PWM).")
+                self.status.set("1 Box Forward running (one-shot, max 20% PWM).")
         elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
