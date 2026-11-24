@@ -98,7 +98,9 @@ void EncoderOneBox_ControlTick(void)
     if (phase == 2U) {
         if (brake_ticks > 0U) --brake_ticks;
         if (brake_ticks == 0U) {
-            Motor_Stop();
+            /* Every one-shot ends in a driver LOCK. Re-arming is only
+             * permitted by the next guarded Start in 1 Box Forward. */
+            Motor_LockOutputs();
             phase = 0U;
         }
         return;
