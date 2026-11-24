@@ -57,7 +57,7 @@ static uint16_t MakeLine(uint16_t index)
 {
     MC_Sample *a=&frames[index];
     int n=snprintf(line,sizeof(line),
-        "MC,%u,%u,%lu,%ld,%ld,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+        "MC,%u,%u,%lu,%ld,%ld,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u\n",
         (unsigned)index,(unsigned)a->ms,(unsigned long)a->scan,
         (long)a->enc_l,(long)a->enc_r,
         (int)a->yaw_cd,(int)a->rate_cd,(unsigned)a->age_us,

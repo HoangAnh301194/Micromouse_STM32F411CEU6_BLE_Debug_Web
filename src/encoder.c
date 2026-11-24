@@ -261,11 +261,13 @@ static void GPIO_EncoderAF(GPIO_TypeDef *port, uint8_t pin, uint8_t af)
 
 static void Encoder_TimerInit(TIM_TypeDef *tim)
 {
-    tim->CR1 &= ~TIM_CR1_CEN;
-    tim->SMCR = (tim->SMCR & ~TIM_SMCR_SMS) | (3UL << 0);
-    tim->CCMR1 = (tim->CCMR1 & ~((3UL << 0) | (3UL << 8))) |
-                 (1UL << 0) | (1UL << 8);
-    tim->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2E;
+    tim->CR1 = 0U;
+    tim->PSC = 0U;
+    tim->CCER = 0U;
+    tim->SMCR = 3UL;
+    /* IC1F = 2, IC2F = 2 (4 samples @ 96 MHz) to reject adjacent PWM glitches. */
+    tim->CCMR1 = (1UL << 0) | (2UL << 4) | (1UL << 8) | (2UL << 12);
+    tim->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;
     tim->ARR = 0xFFFFU;
     tim->CNT = 0;
     tim->EGR = TIM_EGR_UG;
@@ -277,6 +279,7 @@ void Encoder_Init(void)
 {
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN | RCC_APB1ENR_TIM4EN;
+    (void)RCC->APB1ENR;
 
     GPIO_EncoderAF(ENCODER_R_CHA_PORT, ENCODER_R_CHA_PIN, ENCODER_R_CHA_AF);
     GPIO_EncoderAF(ENCODER_R_CHB_PORT, ENCODER_R_CHB_PIN, ENCODER_R_CHB_AF);

@@ -1,0 +1,74 @@
+Processing genericSTM32F411CE (platform: ststm32; board: genericSTM32F411CE; framework: cmsis)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F411CE.html
+PLATFORM: ST STM32 (19.2.0) > STM32F411CE (128k RAM. 512k Flash)
+HARDWARE: STM32F411CEU6 100MHz, 128KB RAM, 256KB Flash
+DEBUG: Current (blackmagic) External (blackmagic, jlink, stlink)
+PACKAGES: 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - framework-cmsis-stm32f4 @ 2.6.11 
+ - tool-ldscripts-ststm32 @ 0.2.0 
+ - toolchain-gccarmnoneeabi @ 1.70201.0 (7.2.1)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 0 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Compiling .pio\build\genericSTM32F411CE\FrameworkCMSIS\gcc\startup_stm32f411xe.o
+Compiling .pio\build\genericSTM32F411CE\FrameworkCMSIS\system_stm32f4xx.o
+Compiling .pio\build\genericSTM32F411CE\src\ble_benchmark.o
+Compiling .pio\build\genericSTM32F411CE\src\ble_rx_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\board.o
+Compiling .pio\build\genericSTM32F411CE\src\bt_debug.o
+Compiling .pio\build\genericSTM32F411CE\src\control.o
+Compiling .pio\build\genericSTM32F411CE\src\encoder.o
+Compiling .pio\build\genericSTM32F411CE\src\flash_map_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\flash_map_protocol.o
+Compiling .pio\build\genericSTM32F411CE\src\flash_record_format.o
+Compiling .pio\build\genericSTM32F411CE\src\flash_storage.o
+Compiling .pio\build\genericSTM32F411CE\src\fonts.o
+Compiling .pio\build\genericSTM32F411CE\src\i2c.o
+Compiling .pio\build\genericSTM32F411CE\src\integration_serial.o
+Compiling .pio\build\genericSTM32F411CE\src\integration_sweep.o
+Compiling .pio\build\genericSTM32F411CE\src\ir_filter.o
+Compiling .pio\build\genericSTM32F411CE\src\ir_filter_burst_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\ir_filter_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\ir_oled_test.o
+Compiling .pio\build\genericSTM32F411CE\src\ir_sensor.o
+Compiling .pio\build\genericSTM32F411CE\src\ir_wall_signal.o
+Compiling .pio\build\genericSTM32F411CE\src\main.o
+Compiling .pio\build\genericSTM32F411CE\src\main_runtime.o
+Compiling .pio\build\genericSTM32F411CE\src\maze_sensor_capture.o
+Compiling .pio\build\genericSTM32F411CE\src\motion.o
+Compiling .pio\build\genericSTM32F411CE\src\motion_primitives.o
+Compiling .pio\build\genericSTM32F411CE\src\motor.o
+Compiling .pio\build\genericSTM32F411CE\src\motor_startup.o
+Compiling .pio\build\genericSTM32F411CE\src\motor_test.o
+Compiling .pio\build\genericSTM32F411CE\src\mpu6050.o
+Compiling .pio\build\genericSTM32F411CE\src\oled_mpu_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\oled_shared.o
+Compiling .pio\build\genericSTM32F411CE\src\pid.o
+Compiling .pio\build\genericSTM32F411CE\src\speed_pid_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\ssd1306.o
+Compiling .pio\build\genericSTM32F411CE\src\system_test.o
+Compiling .pio\build\genericSTM32F411CE\src\system_timer.o
+Compiling .pio\build\genericSTM32F411CE\src\turn_pid_diag.o
+Compiling .pio\build\genericSTM32F411CE\src\uart.o
+Compiling .pio\build\genericSTM32F411CE\src\uart_bench.o
+Compiling .pio\build\genericSTM32F411CE\src\wall_pid_test.o
+Compiling .pio\build\genericSTM32F411CE\src\wall_pid_test_core.o
+Compiling .pio\build\genericSTM32F411CE\src\wall_pid_trace.o
+Compiling .pio\build\genericSTM32F411CE\src\wheel_speed_pid.o
+Linking .pio\build\genericSTM32F411CE\firmware.elf
+arm-none-eabi-gcc: error: .pio\build\genericSTM32F411CE\src\motor.o: No such file or directory
+arm-none-eabi-gcc: error: .pio\build\genericSTM32F411CE\src\motor_startup.o: No such file or directory
+arm-none-eabi-gcc: error: .pio\build\genericSTM32F411CE\src\motor_test.o: No such file or directory
+*** [.pio\build\genericSTM32F411CE\firmware.elf] Error 1
+========================= [FAILED] Took 10.43 seconds =========================
+
+Environment         Status    Duration
+------------------  --------  ------------
+genericSTM32F411CE  FAILED    00:00:10.430
+==================== 1 failed, 0 succeeded in 00:00:10.430 ====================

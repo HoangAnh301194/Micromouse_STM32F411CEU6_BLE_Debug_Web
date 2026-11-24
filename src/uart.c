@@ -206,12 +206,19 @@ void UART_Printf(const char *format, ...)
 {
     char buffer[256];
     va_list args;
+    int n;
 #if defined(INTEGRATION_DIAG)
     uint32_t start_cycles = DWT->CYCCNT;
 #endif
     va_start(args, format);
-    (void)vsnprintf(buffer, sizeof(buffer), format, args);
+    n = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
+    if (n <= 0) return;
+    if ((size_t)n >= sizeof(buffer)) {
+        buffer[sizeof(buffer) - 3U] = '\r';
+        buffer[sizeof(buffer) - 2U] = '\n';
+        buffer[sizeof(buffer) - 1U] = '\0';
+    }
     UART_SendString_DMA(buffer);
 #if defined(INTEGRATION_DIAG)
     {

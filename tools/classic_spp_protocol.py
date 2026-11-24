@@ -208,6 +208,7 @@ class MazeState:
                 try:
                     pos, walls = payload.split(":", 1)
                     xyz = [int(x) for x in pos.split(",")]
+                    self.walls = [[0] * 16 for _ in range(16)]
                     self.n = 16
                     self._position(*xyz[:3])
                     payload = walls

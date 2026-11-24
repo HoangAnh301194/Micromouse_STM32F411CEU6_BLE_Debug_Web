@@ -75,7 +75,7 @@ static I2C_OledStats_t oled_stats;
 static volatile uint32_t oled_shared_recoveries;
 #define OLED_DMA_FLAGS (0x3FUL << 16)
 #define OLED_DMA_TC (1UL << 21)
-#define OLED_DMA_FAIL ((1UL << 16) | (1UL << 18) | (1UL << 19))
+#define OLED_DMA_FAIL ((1UL << 18) | (1UL << 19))
 #define OLED_TX_TIMEOUT_US 2000U
 #endif
 static uint32_t i2c_nominal_scl_hz = 0;
@@ -130,23 +130,23 @@ static void I2C_BusRecovery(void) {
     /* Called only from main on an idle/failed transaction. Never from TIM11. */
     I2C1->CR1 &= ~I2C_CR1_PE;
     GPIOB_OTYPER |= (1UL << 8) | (1UL << 9);
-    GPIOB_ODR |= (1UL << 8) | (1UL << 9);
+    GPIOB->BSRR = (1UL << 8) | (1UL << 9);
     GPIOB_MODER = (GPIOB_MODER & ~((3UL << 16) | (3UL << 18))) |
                   (1UL << 16) | (1UL << 18);
     delay_us_blocking(5);
     for (i = 0U; i < 9U; i++) {
         if (GPIOB_IDR & (1UL << 9)) break; /* SDA has been released */
-        GPIOB_ODR &= ~(1UL << 8);
+        GPIOB->BSRR = (1UL << (8U + 16U));
         delay_us_blocking(5);
-        GPIOB_ODR |= (1UL << 8);
+        GPIOB->BSRR = (1UL << 8);
         delay_us_blocking(5);
     }
     /* Software STOP: drive SDA low, release SCL, then release SDA. */
-    GPIOB_ODR &= ~(1UL << 9);
+    GPIOB->BSRR = (1UL << (9U + 16U));
     delay_us_blocking(5);
-    GPIOB_ODR |= (1UL << 8);
+    GPIOB->BSRR = (1UL << 8);
     delay_us_blocking(5);
-    GPIOB_ODR |= (1UL << 9);
+    GPIOB->BSRR = (1UL << 9);
     delay_us_blocking(5);
     /* I2C_Init() restores PB8/PB9 alternate functions after this call. */
 }
@@ -171,11 +171,12 @@ static I2C_Status I2C_WaitBusFree(uint32_t i2c_base) {
             
             if ((*(volatile uint32_t *)(i2c_base + I2C_SR2)) & I2C_SR2_BUSY) {
                 I2C_BusRecovery();
+                I2C_Init(I2C_1, i2c_current_speed_mode);
 #if defined(ENCODER_ALPHA_AB_DIAG)
                 ++i2c_busy_diag.bus_recoveries;
                 i2c_busy_diag.last_after_recovery_levels = (GPIOB_IDR >> 8) & 3U;
 #endif
-                return I2C_BUSY;
+                return ((*(volatile uint32_t *)(i2c_base + I2C_SR2)) & I2C_SR2_BUSY) ? I2C_BUSY : I2C_OK;
             }
         }
     }
@@ -450,7 +451,7 @@ void I2C_OledAsync_Init(void)
                        (1UL << 6) | DMA_SxCR_TCIE |
                        DMA_SxCR_TEIE | DMA_SxCR_DMEIE;
     DMA1_Stream6->PAR = (uint32_t)&I2C1->DR;
-    NVIC_SetPriority(DMA1_Stream6_IRQn, 4U);
+    NVIC_SetPriority(DMA1_Stream6_IRQn, 5U);
     NVIC_ClearPendingIRQ(DMA1_Stream6_IRQn);
     NVIC_EnableIRQ(DMA1_Stream6_IRQn);
     oled_phase = OLED_IDLE;
@@ -495,9 +496,15 @@ I2C_Status I2C_OledAsync_Poll(uint32_t *duration_us)
     if (oled_phase != OLED_DONE &&
         (uint32_t)(micros() - oled_start_us) > OLED_TX_TIMEOUT_US) {
         ++oled_stats.timeouts;
+        I2C1->CR2 &= ~(I2C_CR2_ITEVTEN | I2C_CR2_ITERREN | I2C_CR2_DMAEN);
         DMA1_Stream6->CR &= ~DMA_SxCR_EN;
+        while (DMA1_Stream6->CR & DMA_SxCR_EN) {}
         DMA1->HIFCR = OLED_DMA_FLAGS;
         OLED_Finish(I2C_TIMEOUT);
+        if (I2C1->SR2 & I2C_SR2_BUSY) {
+            I2C_BusRecovery();
+            I2C_Init(I2C_1, i2c_current_speed_mode);
+        }
     }
     if (oled_phase != OLED_DONE) return I2C_BUSY;
     s = oled_result;
@@ -647,7 +654,7 @@ I2C_Status I2C_Write(I2C_Instance instance, uint8_t slave_addr,
     I2C_Status status;
     
     if (I2C_WaitBusFree(i2c_base) != I2C_OK) {
-        I2C_Init(instance, 1);
+        I2C_Init(instance, i2c_current_speed_mode);
         delay_us_blocking(100);
         if (I2C_WaitBusFree(i2c_base) != I2C_OK) return I2C_BUSY;
     }
@@ -960,11 +967,12 @@ void I2C1_EV_IRQHandler(void)
             break;
         case OLED_ADDR:
             if (sr1 & I2C_SR1_ADDR) {
-                /* Configure DMA before clearing ADDR. */
+                /* Disable event IRQ and publish OLED_DMA before clearing ADDR. */
+                oled_phase = OLED_DMA;
+                I2C1->CR2 &= ~I2C_CR2_ITEVTEN;
                 I2C1->CR2 |= I2C_CR2_DMAEN;
                 DMA1_Stream6->CR |= DMA_SxCR_EN;
                 (void)I2C1->SR2;
-                oled_phase = OLED_DMA;
             }
             break;
         case OLED_DRAIN:

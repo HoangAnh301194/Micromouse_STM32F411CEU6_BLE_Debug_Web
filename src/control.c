@@ -5,11 +5,7 @@
 #include "ir_sensor.h"
 #include "ir_wall_signal.h"
 #include "motion.h"
-#if defined(SYSTEM_TEST_MODE)
-#include "system_test.h"
-#elif defined(TURN_PID_DIAG)
-#include "turn_pid_diag.h"
-#elif defined(WALL_PID_TEST_MODE)
+#if defined(WALL_PID_TEST_MODE)
 #include "wall_pid_test.h"
 #endif
 #include "motor.h"

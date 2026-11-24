@@ -32,9 +32,6 @@
 #endif
 
 #include "stm32f4xx.h"
-#if defined(ENCODER_SPEED_PID_DIAG)
-#include "speed_pid_diag.h"
-#endif
 
 #define DEBUG_PERIOD_MS 20UL
 
@@ -72,10 +69,10 @@ static void OLED_DrawProductionStatus(uint32_t now)
     SSD1306_SetCursor(0U, 26U);
     if (motion_state == MOTION_STRAIGHT) {
         SSD1306_WriteString("MOTION: STRAIGHT", &Font_7x10, SSD1306_WHITE);
-    } else if (motion_state == MOTION_TURN) {
+    } else if (motion_state == MOTION_TURN_PROFILE) {
         SSD1306_WriteString("MOTION: TURN", &Font_7x10, SSD1306_WHITE);
-    } else if (motion_state == MOTION_PIVOT_PRIMITIVE) {
-        SSD1306_WriteString("MOTION: PIVOT", &Font_7x10, SSD1306_WHITE);
+    } else if (motion_state == MOTION_VELOCITY) {
+        SSD1306_WriteString("MOTION: VEL", &Font_7x10, SSD1306_WHITE);
     } else {
         SSD1306_WriteString("MOTION: IDLE", &Font_7x10, SSD1306_WHITE);
     }

@@ -360,11 +360,6 @@ def run(port: str, seconds: int, out: Path, baud: int):
             raw.write(data)
             old_crc = decoder.crc_failures
             decoder.feed(data, time.perf_counter_ns())
-            if decoder.crc_failures > old_crc and active_session is not None:
-                # Assign CRC failures to the currently streaming session.
-                # Markers may share a read chunk; always keep global count.
-                crc_by_session[active_session] = (crc_by_session.get(active_session, 0)
-                                                  + decoder.crc_failures - old_crc)
             for event in decoder.events[seen_events:]:
                 kind = event.get("type")
                 if kind == "!B" and isinstance(event.get("s"), int):
@@ -373,8 +368,13 @@ def run(port: str, seconds: int, out: Path, baud: int):
                     active_session = None
                 if kind in ("!Q", "!B", "!E", "!R"):
                     print(event, flush=True)
-                if kind == "!Q" and event.get("state") == "DONE":
+                if kind == "!Q" and event.get("state") in ("DONE", "ABORT"):
                     done = True
+            if decoder.crc_failures > old_crc and active_session is not None:
+                # Assign CRC failures to the currently streaming session.
+                # Markers may share a read chunk; always keep global count.
+                crc_by_session[active_session] = (crc_by_session.get(active_session, 0)
+                                                  + decoder.crc_failures - old_crc)
             seen_events = len(decoder.events)
             if done:
                 break

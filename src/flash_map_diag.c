@@ -44,7 +44,7 @@ static Flash_Status_t ReadMap(uint8_t *dest,uint16_t *len,uint8_t *legacy)
     Flash_Status_t st=Flash_LoadMapData(flash_buffer,sizeof(flash_buffer),&n);
     *legacy=0U;
     if(st==FLASH_OK && MapDiag_Validate(flash_buffer,n)) {
-        memcpy(dest,flash_buffer,n);
+        memmove(dest,flash_buffer,n);
         *len=n;
         return FLASH_OK;
     }

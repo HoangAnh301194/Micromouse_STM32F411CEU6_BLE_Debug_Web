@@ -9,12 +9,6 @@ int main(void) { return IR_BurstDiag_Main(); }
 #elif defined(WALL_PID_TEST_MODE)
 #include "wall_pid_test.h"
 int main(void) { return WallPidTest_Main(); }
-#elif defined(TURN_PID_DIAG)
-#include "turn_pid_diag.h"
-int main(void) { return TurnPidDiag_Main(); }
-#elif defined(SYSTEM_TEST_MODE)
-#include "system_test.h"
-int main(void) { return SystemTest_Main(); }
 #elif defined(BLE_RX_DIAG)
 int BleRxDiag_Main(void);
 int main(void) { return BleRxDiag_Main(); }

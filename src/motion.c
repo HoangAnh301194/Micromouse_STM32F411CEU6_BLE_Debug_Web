@@ -57,9 +57,6 @@ typedef struct {
 } Motion_Context_t;
 
 static Motion_Context_t motion;
-/* Separate reusable primitive controller; never shares live state with
- * the legacy heading and turn PIDs. */
-static MotionPrimitiveController pivot;
 
 static float NormalizeAngle(float angle)
 {
@@ -214,7 +211,6 @@ void Motion_Init(void)
 {
     WheelSpeedConfig_t ws_cfg;
 
-    MotionPrimitive_Init(&pivot);
     motion.state = MOTION_IDLE;
     motion.done = 1U;
     motion.target_distance_mm = 0.0f;
@@ -304,32 +300,7 @@ void Motion_CommandStraight(float distance_mm, float current_yaw_deg)
 
 void Motion_CommandTurn(float angle_deg, float current_yaw_deg)
 {
-    uint32_t primask;
-
-    if (!isfinite(angle_deg) || fabsf(angle_deg) < 1.0f) return;
-
-    primask = __get_PRIMASK();
-    __disable_irq();
-
-    Encoder_Reset();
-    PID_Reset(&motion.turn_pid);
-    WheelSpeedPid_Reset(&motion.speed_ctrl);
-    ClearSpeedDebug();
-
-    motion.target_angle_deg = angle_deg;
-    motion.start_yaw_deg = current_yaw_deg;
-    motion.angle_error_deg = angle_deg;
-    motion.distance_mm = 0.0f;
-    motion.current_pwm = 0.0f;
-    motion.current_speed_mm_s = 0.0f;
-    motion.current_w_dps = 0.0f;
-    motion.steering_bias_dps = 0.0f;
-    motion.elapsed_s = 0.0f;
-
-    motion.done = 0U;
-    motion.state = MOTION_TURN;
-
-    if (!primask) __enable_irq();
+    Motion_CommandTurnProfile(angle_deg, current_yaw_deg, NULL);
 }
 
 void Motion_CommandTurnProfile(float angle_deg,
@@ -498,93 +469,21 @@ void Motion_CommandQuickStepTest(void)
     motion.elapsed_s = 0.0f;
 
     motion.done = 0U;
-    motion.state = MOTION_QUICK_TEST;
+    motion.state = MOTION_IDLE;
 
     if (!primask) __enable_irq();
 }
 
-MotionPrimitiveResult Motion_RequestPrimitive(MotionPrimitiveKind kind,
-                                               MotionPrimitiveDirection direction,
-                                               float current_yaw_deg)
-{
-    uint32_t primask = __get_PRIMASK();
-    MotionPrimitiveResult result;
-    __disable_irq();
-
-    /* Reject unsupported motion / concurrent motion before touching
-     * encoders, PID, motor output, or changing state. */
-    if (!motion.done || motion.state != MOTION_IDLE ||
-        Motor_OutputsLocked()) {
-        if (!primask) __enable_irq();
-        return MOTION_PRIMITIVE_BUSY;
-    }
-    result = MotionPrimitive_Start(&pivot, kind, direction, current_yaw_deg);
-    if (result == MOTION_PRIMITIVE_OK) {
-        Encoder_Reset();
-        WheelSpeedPid_Reset(&motion.speed_ctrl);
-        ClearSpeedDebug();
-        motion.target_angle_deg = (float)direction *
-                                  (kind==MOTION_PRIMITIVE_PIVOT_180?180.0f:90.0f);
-        motion.start_yaw_deg = current_yaw_deg;
-        motion.angle_error_deg = motion.target_angle_deg;
-        motion.distance_mm = 0.0f;
-        motion.current_pwm = 0.0f;
-        motion.current_speed_mm_s = 0.0f;
-        motion.current_w_dps = 0.0f;
-        motion.steering_bias_dps = 0.0f;
-        motion.elapsed_s = 0.0f;
-        motion.done = 0U;
-        motion.state = MOTION_PIVOT_PRIMITIVE; /* publish last */
-    }
-    if (!primask) __enable_irq();
-    return result;
-}
-
-MotionPrimitiveResult Motion_Turn90(MotionPrimitiveDirection direction,
-                                     float current_yaw_deg)
-{
-    return Motion_RequestPrimitive(MOTION_PRIMITIVE_PIVOT_90,
-                                   direction,current_yaw_deg);
-}
-MotionPrimitiveResult Motion_Turn180(MotionPrimitiveDirection direction,
-                                      float current_yaw_deg)
-{
-    return Motion_RequestPrimitive(MOTION_PRIMITIVE_PIVOT_180,
-                                   direction,current_yaw_deg);
-}
-MotionPrimitiveStatus Motion_GetPrimitiveStatus(void)
-{
-    return pivot.status;
-}
-MotionPrimitiveResult Motion_GetPrimitiveResult(void)
-{
-    return pivot.result;
-}
-MotionPivotPhase Motion_GetPrimitivePhase(void)
-{
-    return pivot.phase;
-}
-
-static void StopWithReason(MotionPrimitiveResult reason)
-{
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-
-    /* Publish IDLE before returning; abort reason remains queryable
-     * until next Motion_RequestPrimitive. Preserve legacy motor stop. */
-    if (motion.state == MOTION_PIVOT_PRIMITIVE)
-        MotionPrimitive_Abort(&pivot,reason);
-    FinishMotion();
-
-    if (!primask) __enable_irq();
-}
 void Motion_Stop(void)
 {
-    StopWithReason(MOTION_PRIMITIVE_STOP_REQUEST);
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    FinishMotion();
+    if (!primask) __enable_irq();
 }
 void Motion_SensorFault(void)
 {
-    StopWithReason(MOTION_PRIMITIVE_SENSOR_FAULT);
+    Motion_Stop();
 }
 
 void Motion_Update(float dt_s,
@@ -604,60 +503,6 @@ void Motion_Update(float dt_s,
     left_mm = (float)encoder_left * MM_PER_PULSE;
     right_mm = (float)encoder_right * MM_PER_PULSE;
     motion.distance_mm = 0.5f * (left_mm + right_mm);
-
-    if (motion.state == MOTION_PIVOT_PRIMITIVE) {
-        MotionPrimitiveOutput out;
-        MotionPrimitive_Update(&pivot,dt_s,yaw_deg,gyro_z_dps,&out);
-        motion.angle_error_deg = (float)pivot.direction *
-                                 out.angle_error_deg;
-        motion.current_pwm = (float)out.right_pm * 0.1f;
-        if (out.status != MOTION_PRIMITIVE_RUNNING) {
-            FinishMotion(); /* DONE and FAULT both force output neutral. */
-            return;
-        }
-        if (out.immediate_neutral) Motor_Stop();
-        else Motor_SetPairPermille(out.left_pm,out.right_pm);
-        return;
-    }
-
-    if (motion.state == MOTION_QUICK_TEST) {
-        float v_ref_mm_s;
-        float w_ref_dps;
-
-        if (motion.elapsed_s < 0.8f) {
-            v_ref_mm_s = 500.0f;
-            w_ref_dps = 0.0f;
-        } else if (motion.elapsed_s < 1.6f) {
-            v_ref_mm_s = 280.0f;
-            w_ref_dps = 420.0f;
-        } else if (motion.elapsed_s < 2.4f) {
-            v_ref_mm_s = 280.0f;
-            w_ref_dps = -420.0f;
-        } else if (motion.elapsed_s < 3.0f) {
-            v_ref_mm_s = 420.0f;
-            w_ref_dps = 0.0f;
-        } else if (motion.elapsed_s < 3.8f) {
-            v_ref_mm_s = 340.0f;
-            w_ref_dps = 300.0f;
-        } else if (motion.elapsed_s < 4.6f) {
-            v_ref_mm_s = 340.0f;
-            w_ref_dps = -300.0f;
-        } else if (motion.elapsed_s < 5.3f) {
-            v_ref_mm_s = 0.0f;
-            w_ref_dps = 720.0f;
-        } else if (motion.elapsed_s < 6.0f) {
-            v_ref_mm_s = 0.0f;
-            w_ref_dps = -720.0f;
-        } else {
-            FinishMotion();
-            return;
-        }
-
-        motion.current_speed_mm_s = v_ref_mm_s;
-        motion.current_w_dps = w_ref_dps;
-        ApplyCmdVel(v_ref_mm_s, w_ref_dps, 0.0f, 0.0f, dt_s);
-        return;
-    }
 
     if (motion.state == MOTION_VELOCITY) {
         float w_ref_dps = motion.cmd_w_dps + motion.steering_bias_dps;
@@ -756,29 +601,6 @@ void Motion_Update(float dt_s,
                        -p->max_w_dps, p->max_w_dps);
         ApplyCmdVel(0.0f, w_cmd, 0.0f, alpha_ref, dt_s);
         return;
-    }
-
-    if (motion.state == MOTION_TURN) {
-        float traveled = NormalizeAngle(yaw_deg - motion.start_yaw_deg);
-        float error = NormalizeAngle(motion.target_angle_deg - traveled);
-        float output;
-        float magnitude;
-
-        motion.angle_error_deg = error;
-
-        if ((fabsf(error) <= TURN_TOLERANCE_DEG &&
-             fabsf(gyro_z_dps) <= TURN_RATE_TOL_DPS) ||
-            motion.elapsed_s >= TURN_TIMEOUT_S) {
-            FinishMotion();
-            return;
-        }
-
-        output = PID_Compute(&motion.turn_pid, error, 0.0f, dt_s);
-        magnitude = fabsf(output);
-        magnitude = ClampF(magnitude, TURN_PWM_MIN, TURN_PWM_MAX);
-        output = (output < 0.0f) ? -magnitude : magnitude;
-
-        Motor_SetPair(ClampPwm(-output), ClampPwm(output));
     }
 }
 

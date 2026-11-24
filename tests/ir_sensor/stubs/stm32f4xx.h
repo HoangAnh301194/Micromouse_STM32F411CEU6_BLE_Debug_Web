@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifndef __DMB
+#define __DMB() do {} while (0)
+#endif
+
 typedef struct {
     volatile uint32_t MODER, OTYPER, PUPDR, BSRR;
 } GPIO_TypeDef;

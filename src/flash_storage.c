@@ -25,8 +25,21 @@
 #define FLASH_KEY1 0x45670123UL
 #define FLASH_KEY2 0xCDEF89ABUL
 #define FLASH_PSIZE_WORD (2UL << 8)
-#define FLASH_ERR_MASK (FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR | FLASH_SR_WRPERR)
+#define FLASH_ERR_MASK (FLASH_SR_OPERR | FLASH_SR_PGSERR | FLASH_SR_PGPERR | FLASH_SR_PGAERR | FLASH_SR_WRPERR)
 #define FLASH_WAIT_US 3000000UL
+
+static void Flash_FlushDataCache(void)
+{
+  uint32_t acr = FLASH->ACR;
+  if (acr & FLASH_ACR_DCEN) {
+    FLASH->ACR = acr & ~FLASH_ACR_DCEN;
+    FLASH->ACR |= FLASH_ACR_DCRST;
+    FLASH->ACR &= ~FLASH_ACR_DCRST;
+    FLASH->ACR = acr;
+    __DSB();
+    __ISB();
+  }
+}
 
 static uint32_t Flash_SectorBase(uint32_t type)
 {
@@ -115,10 +128,12 @@ static Flash_Status_t Flash_ProgramWord(uint32_t address, uint32_t word)
   FLASH->CR &= ~(FLASH_CR_PG | FLASH_CR_SER | FLASH_CR_SNB | FLASH_CR_PSIZE);
   FLASH->CR |= FLASH_PSIZE_WORD | FLASH_CR_PG;
   *(volatile uint32_t *)address = word;
+  __DSB();
   status = Flash_WaitReady();
   FLASH->CR &= ~FLASH_CR_PG; /* CRITICAL: do not leave PG set. */
   if (status != FLASH_OK) return status;
   if (FLASH->SR & FLASH_ERR_MASK) return FLASH_ERR_CONTROLLER;
+  Flash_FlushDataCache();
   return (*(const volatile uint32_t *)address == word) ? FLASH_OK : FLASH_ERR_VERIFY;
 }
 

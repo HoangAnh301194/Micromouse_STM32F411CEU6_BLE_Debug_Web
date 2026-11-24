@@ -122,27 +122,32 @@ class SPPReader:
         try:
             import serial
             with serial.Serial(port=port, baudrate=baud, timeout=0.15,
-                               write_timeout=0.5) as link:
+                               write_timeout=2.0) as link:
                 connected_at = time.monotonic()
                 self._emit("state", "%s COM open; verifying SPP firmware" % port)
                 framer = LineFramer()
                 handshake = SPPHandshake()
                 last_motion_ping = 0.0
+                telemetry_only = False
                 while not self.stop.is_set():
                     # The first probe may be lost while Windows/RFCOMM or the
                     # MCU is becoming ready. Retry safely and rate-limit probes.
                     now = time.monotonic()
-                    if handshake.should_probe(now):
-                        link.write(b"?")
-                        link.flush()  # Match the previously working two-pane SPP.
-                        handshake.record_probe(now)
-                        if handshake.attempts == handshake.fast_attempts:
-                            self._emit("warning", (
-                                "COM open, no SPP CONNECTED after %d probes; "
-                                "%d RX bytes. Check firmware/MPU boot status "
-                                "and COM Outgoing; use Reconnect COM if needed."
-                                % (handshake.attempts, total_bytes)
-                            ))
+                    if not telemetry_only and handshake.should_probe(now):
+                        try:
+                            link.write(b"?")
+                            handshake.record_probe(now)
+                            if handshake.attempts == handshake.fast_attempts:
+                                self._emit("warning", (
+                                    "COM open, no SPP CONNECTED after %d probes; "
+                                    "%d RX bytes. Check firmware/MPU boot status "
+                                    "and COM Outgoing; use Reconnect COM if needed."
+                                    % (handshake.attempts, total_bytes)
+                                ))
+                        except serial.SerialTimeoutException:
+                            # Do not tear down a healthy RX stream on a slow Windows BT write.
+                            handshake.record_probe(now)
+                            self._emit("warning", "SPP probe write timeout (RX kept alive)")
                     # All serial operations remain in this worker, never Tkinter.
                     for _ in range(4):
                         try:
@@ -164,6 +169,10 @@ class SPPReader:
                         self._emit("rx_bytes", total_bytes)
                     for line in framer.feed(chunk):
                         handshake.observe_line(line)
+                        if not handshake.confirmed and not telemetry_only and (
+                                line.startswith("t=") and "encL=" in line):
+                            telemetry_only = True
+                            self._emit("state", "%s SPP RX active (production telemetry)" % port)
                         self._emit("line", line)
                     if framer.discarded:
                         self._emit("warning", "Line buffer overflow: %d" % framer.discarded)

@@ -1,0 +1,11 @@
+{
+  "timestamp": "20261124_160436",
+  "env": "genericSTM32F411CE",
+  "baud": 115200,
+  "duration_s": 15.0,
+  "regression_tests": [],
+  "build_ok": false,
+  "upload_ok": null,
+  "uart_analysis": null,
+  "verdict": "FAIL_BUILD"
+}

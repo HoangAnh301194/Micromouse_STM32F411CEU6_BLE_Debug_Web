@@ -2,15 +2,11 @@
 #define MOTION_H
 
 #include <stdint.h>
-#include "motion_primitives.h"
 #include "wheel_speed_pid.h"
 
 typedef enum {
     MOTION_IDLE = 0,
     MOTION_STRAIGHT,
-    MOTION_TURN,
-    MOTION_PIVOT_PRIMITIVE,
-    MOTION_QUICK_TEST,
     MOTION_VELOCITY,
     MOTION_TURN_PROFILE
 } Motion_State_t;
@@ -38,9 +34,12 @@ typedef struct {
 
 void Motion_Init(void);
 
-/* Default profiles for straight and gyro-closed-loop velocity turns. */
+/* Default profiles for straight, pivot turns, and clothoid smooth turns. */
 void Motion_GetDefaultStraightProfile(Motion_StraightProfile_t *out);
 void Motion_GetDefaultTurnProfile(Motion_TurnProfile_t *out);
+void Motion_GetSmoothTurnPreset(Motion_SmoothTurnKind_t kind,
+                                MotionPrimitiveDirection direction,
+                                Motion_SmoothTurnProfile_t *out);
 
 /* Basic motion commands (backward-compatible). */
 void Motion_CommandStraight(float distance_mm, float current_yaw_deg);
@@ -55,6 +54,13 @@ void Motion_CommandStraightProfile(float distance_mm,
 void Motion_CommandTurnProfile(float angle_deg,
                                float current_yaw_deg,
                                const Motion_TurnProfile_t *profile);
+
+void Motion_CommandSmoothTurn(Motion_SmoothTurnKind_t kind,
+                              MotionPrimitiveDirection direction,
+                              float current_yaw_deg);
+
+void Motion_CommandSmoothTurnProfile(float current_yaw_deg,
+                                     const Motion_SmoothTurnProfile_t *profile);
 
 /* Continuous chassis velocity command (v_mm_s, w_dps) for wall-following,
  * smooth clothoid curves, or high-level maze controllers. Calling repeatedly
@@ -77,21 +83,8 @@ void Motion_GetWheelSpeedGains(WheelSpeedConfig_t *left_cfg,
 void Motion_SetHeadingPidGains(float kp, float ki, float kd, float max_w_dps);
 // void Motion_SetBatteryVoltage(float nominal_v, float measured_v);  /* Disabled. */
 
-/* Opt-in motion-primitive runtime. Existing CommandTurn legacy PID
- * and BLE L/R behavior remain unchanged until separately qualified.
- * +yaw = left, -yaw = right. One active primitive at a time. */
-MotionPrimitiveResult Motion_RequestPrimitive(MotionPrimitiveKind kind,
-                                               MotionPrimitiveDirection direction,
-                                               float current_yaw_deg);
-MotionPrimitiveResult Motion_Turn90(MotionPrimitiveDirection direction,
-                                     float current_yaw_deg);
-MotionPrimitiveResult Motion_Turn180(MotionPrimitiveDirection direction,
-                                      float current_yaw_deg);
-MotionPrimitiveStatus Motion_GetPrimitiveStatus(void);
-MotionPrimitiveResult Motion_GetPrimitiveResult(void);
-MotionPivotPhase Motion_GetPrimitivePhase(void);
 void Motion_Stop(void);
-void Motion_SensorFault(void); /* Fail active primitive with SENSOR_FAULT, force motor neutral. */
+void Motion_SensorFault(void);
 
 void Motion_Update(float dt_s,
                    int32_t encoder_left,
@@ -110,6 +103,7 @@ typedef struct {
 
 uint8_t Motion_IsDone(void);
 Motion_State_t Motion_GetState(void);
+Motion_SmoothTurnPhase_t Motion_GetSmoothTurnPhase(void);
 float Motion_GetDistanceMm(void);
 float Motion_GetRemainingDistanceMm(void);
 float Motion_GetAngleErrorDeg(void);

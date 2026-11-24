@@ -139,13 +139,15 @@ static void SSD1306_DMA_Callback(void) {
  */
 SSD1306_Status_t SSD1306_Init(void) {
     ssd1306_io_error = 0U;
-    /* Check if device is connected */
-    if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR) != I2C_OK) {
-        return SSD1306_NOT_FOUND;
-    }
-    
-    /* Wait for power stabilization */
+    /* Wait for OLED power-on reset stabilization before probing I2C. */
     delay_ms_blocking(100);
+    /* Check if device is connected (with one brief retry). */
+    if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR) != I2C_OK) {
+        delay_ms_blocking(20);
+        if (I2C_IsDeviceReady(SSD1306_I2C_INSTANCE, SSD1306_I2C_ADDR) != I2C_OK) {
+            return SSD1306_NOT_FOUND;
+        }
+    }
     
     /* Initialization sequence */
     SSD1306_WriteCommand(SSD1306_CMD_DISPLAY_OFF);

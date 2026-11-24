@@ -230,6 +230,13 @@ void HardFault_Handler(void)
                   (1UL << (MOTOR_L_IN2_PIN + 16U)) |
                   (1UL << (MOTOR_R_IN1_PIN + 16U)) |
                   (1UL << (MOTOR_R_IN2_PIN + 16U));
+    /* Ensure all 6 IR emitters are turned off to prevent continuous high-current drive. */
+    IR_LED_OFF(IR_LED_L90_PORT, IR_LED_L90_PIN);
+    IR_LED_OFF(IR_LED_L45_PORT, IR_LED_L45_PIN);
+    IR_LED_OFF(IR_LED_L0_PORT, IR_LED_L0_PIN);
+    IR_LED_OFF(IR_LED_R0_PORT, IR_LED_R0_PIN);
+    IR_LED_OFF(IR_LED_R45_PORT, IR_LED_R45_PIN);
+    IR_LED_OFF(IR_LED_R90_PORT, IR_LED_R90_PIN);
     TIM11->CR1 &= ~TIM_CR1_CEN;
     TIM10->CR1 &= ~TIM_CR1_CEN;
 

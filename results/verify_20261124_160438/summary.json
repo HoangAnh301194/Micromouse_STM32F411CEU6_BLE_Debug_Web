@@ -1,0 +1,33 @@
+{
+  "timestamp": "20261124_160438",
+  "env": "genericSTM32F411CE",
+  "baud": 115200,
+  "duration_s": 12.0,
+  "regression_tests": [],
+  "build_ok": true,
+  "upload_ok": true,
+  "uart_analysis": {
+    "line_count": 121,
+    "sys_t_frames": 0,
+    "sys_ir_frames": 0,
+    "sys_mpu_frames": 0,
+    "ir_nonzero_scans": 0,
+    "max_tim11_late": 0,
+    "max_tim11_gap": 0,
+    "max_i2c_err": 0,
+    "max_i2c_timeout": 0,
+    "max_uart_ore": 0,
+    "max_uart_drop": 0,
+    "fault_lines": [],
+    "checks": {
+      "has_uart_output": true,
+      "no_fault_lines": true,
+      "tim11_no_late_or_gap": true,
+      "i2c_no_errors_or_timeouts": true,
+      "uart_no_ore_or_drop": true
+    },
+    "verdict": "PASS"
+  },
+  "verdict": "PASS",
+  "port": "COM16"
+}

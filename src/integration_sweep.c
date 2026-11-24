@@ -12,9 +12,6 @@
 #include "board.h"
 #include "system_timer.h"
 #include "stm32f4xx.h"
-#if defined(ENCODER_SPEED_PID_DIAG)
-#include "speed_pid_diag.h"
-#endif
 
 #if defined(INTEGRATION_DIAG_MOTOR_OFF) && defined(INTEGRATION_DIAG_MOTOR_ON)
 #error "Motor ON/OFF diagnostics cannot both be enabled"
@@ -71,13 +68,17 @@ static uint32_t CoastDurationMs(uint32_t stage)
 #define SWEEP_TIM11_MAX_CYCLES 96000U
 
 static volatile SweepSnapshot state;
+static volatile uint8_t isr_imu_fault = 0U;
 static uint32_t since_ms, last_cmd_ms, session_ms, last_heartbeat_ms;
 static uint32_t baseline_gap, baseline_timeout;
 
 static void LockDone(uint8_t newstate, uint8_t reason)
 {
+    uint32_t irq = __get_PRIMASK();
+    __disable_irq();
     state.state = newstate;
     state.fault = reason;
+    if (!irq) __enable_irq();
 #if defined(ENCODER_SPEED_PID_DIAG)
     SpeedPidDiag_Stop();
 #endif
@@ -86,6 +87,7 @@ static void LockDone(uint8_t newstate, uint8_t reason)
 void Sweep_Init(void)
 {
     state = (SweepSnapshot){0};
+    isr_imu_fault = 0U;
 #if defined(ENCODER_SPEED_PID_DIAG)
     SpeedPidDiag_Init();
 #endif
@@ -183,7 +185,10 @@ void Sweep_Abort(uint8_t reason)
 }
 void Sweep_ImuFaultFromISR(void)
 {
-    if (Sweep_IsActive()) LockDone(SWEEP_FAULT, SWEEP_IMU_STALE);
+    if (state.state == SWEEP_DRIVE || state.state == SWEEP_COAST) {
+        isr_imu_fault = 1U;
+        Motor_LockOutputs();
+    }
 }
 void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
 {
@@ -191,6 +196,10 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
     Motor_Diagnostics_t motor;
     uint32_t age;
     if (!Sweep_IsActive()) return;
+    if (isr_imu_fault) {
+        Sweep_Abort(SWEEP_IMU_STALE);
+        return;
+    }
     age = (uint32_t)(now_ms - session_ms);
     if (state.motor_enabled &&
         (uint32_t)(now_ms - last_heartbeat_ms) > SWEEP_LINK_TIMEOUT_MS) {
@@ -222,6 +231,7 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
 #else
             Motor_Stop();
 #endif
+            if (isr_imu_fault) { Sweep_Abort(SWEEP_IMU_STALE); return; }
             state.state = SWEEP_COAST;
             since_ms = now_ms;
         } else if ((uint32_t)(now_ms - last_cmd_ms) >= SWEEP_COMMAND_RENEW_MS) {
@@ -229,6 +239,7 @@ void Sweep_Update(uint32_t now_ms, const MPU6050_Handle_t *mpu)
             Command((uint8_t)state.stage_id); /* real command renews lease */
         }
     } else if ((uint32_t)(now_ms - since_ms) >= CoastDurationMs(state.stage_id)) {
+        if (isr_imu_fault) { Sweep_Abort(SWEEP_IMU_STALE); return; }
         if (++state.stage_id >= SWEEP_STEP_TOTAL) {
             LockDone(SWEEP_DONE, SWEEP_OK);
             return;

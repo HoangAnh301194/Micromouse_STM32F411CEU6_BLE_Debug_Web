@@ -9,7 +9,7 @@
 #include <string.h>
 #define OLED_PERIOD_MS 200U
 #define OLED_DATA_CHUNK 8U
-#define OLED_MIN_SCL_HZ 300000UL
+#define OLED_MIN_SCL_HZ 290000UL
 #define OLED_GUARD_US 150U
 static uint8_t shadow[SSD1306_BUFFER_SIZE];
 static uint8_t frame[SSD1306_BUFFER_SIZE];
@@ -37,7 +37,7 @@ uint8_t OLED_SharedReady(void) { return present; }
 void OLED_SharedGetStats(OLED_SharedStats *out) { if(out) *out=stats; }
 static uint8_t CanStart(const MPU6050_Handle_t *h,uint8_t len) {
     uint32_t hz,seq,tick,age,estimate;
-    if(!h||!h->calibrated||h->calibrating||h->sample_phase) return 0U;
+    if(!h||(!h->calibrated&&h->cal_state!=4U)||h->calibrating||h->sample_phase) return 0U;
 #if defined(MPU_TEMP_MONITOR)
     if(h->temperature_pending) return 0U;
 #endif

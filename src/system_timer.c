@@ -5,6 +5,9 @@
 #include "board.h"
 #include "stm32f4xx.h"
 
+static volatile uint32_t ms_accum = 0U;
+static volatile uint32_t ms_last_us = 0U;
+
 void SystemTimer_Init(void)
 {
     uint32_t timer_hz = Board_GetAPB1TimerClockHz();
@@ -18,11 +21,27 @@ void SystemTimer_Init(void)
     TIM5->CNT = 0U;
     TIM5->EGR = TIM_EGR_UG;
     TIM5->SR = 0U;
+    ms_accum = 0U;
+    ms_last_us = 0U;
     TIM5->CR1 |= TIM_CR1_CEN;
 }
 
 uint32_t micros(void) { return TIM5->CNT; }
-uint32_t millis(void) { return TIM5->CNT / 1000UL; }
+uint32_t millis(void)
+{
+    uint32_t irq = __get_PRIMASK();
+    __disable_irq();
+    uint32_t now_us = TIM5->CNT;
+    uint32_t delta_us = (uint32_t)(now_us - ms_last_us);
+    if (delta_us >= 1000UL) {
+        uint32_t add_ms = delta_us / 1000UL;
+        ms_accum += add_ms;
+        ms_last_us += add_ms * 1000UL;
+    }
+    uint32_t ret = ms_accum;
+    if (!irq) __enable_irq();
+    return ret;
+}
 
 void delay_us_blocking(uint32_t us)
 {

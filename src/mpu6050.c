@@ -517,7 +517,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
      * This code must not interpret TEMP bytes as gyro samples. */
     if (h->sample_phase == 5U) {
         status = I2C_Read2Async_Poll(bytes, &duration_us);
-        if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
+        if (status == I2C_BUSY) return MPU6050_OK;
         h->sample_phase = 0U;
         if (status == I2C_OK) {
             int16_t temp_raw=(int16_t)(((uint16_t)bytes[0]<<8)|bytes[1]);
@@ -528,6 +528,7 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
         } else {
             h->temperature_errors++;
             if (status == I2C_TIMEOUT) h->temperature_timeouts++;
+            h->temperature_last_ms = millis();
         }
         return MPU6050_OK;
     }
@@ -535,7 +536,11 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
 
     if (h->sample_phase == 1U || h->sample_phase == 2U) {
         status = I2C_Read2Async_Poll(bytes, &duration_us);
-        if (status == I2C_BUSY || status == I2C_IDLE) return MPU6050_OK;
+        if (status == I2C_BUSY) return MPU6050_OK;
+        if (status == I2C_IDLE) {
+            h->sample_phase = 0U;
+            return MPU6050_OK;
+        }
         now = micros();
 #if defined(MPU_PHASE_AB)
         if (status == I2C_OK && h->sample_phase == 2U) {

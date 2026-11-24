@@ -15,9 +15,9 @@
 #define RX_SIZE 256U
 #define RX_MASK (RX_SIZE - 1U)
 
-static uint8_t tx_buf[BT_TX_BUF_SIZE];
+static volatile uint8_t tx_buf[BT_TX_BUF_SIZE];
 static volatile uint16_t tx_head, tx_tail;
-static uint8_t rx_buf[RX_SIZE];
+static volatile uint8_t rx_buf[RX_SIZE];
 static volatile uint16_t rx_head, rx_tail;
 static volatile BT_Profile_t profile;
 
@@ -68,10 +68,16 @@ uint8_t BT_TrySendData(const uint8_t *data, uint16_t len)
         tx_buf[write_head]=data[i];
         write_head=(uint16_t)((write_head+1U)&TX_MASK);
     }
+    __DMB();
     tx_head=write_head;
     profile.tx_accepted+=len;
     if (used+len > profile.tx_queue_peak) profile.tx_queue_peak=used+len;
-    USART2->CR1 |= USART_CR1_TXEIE;
+    {
+        uint32_t irq = __get_PRIMASK();
+        __disable_irq();
+        USART2->CR1 |= USART_CR1_TXEIE;
+        if (!irq) __enable_irq();
+    }
     return 1U;
 }
 
@@ -94,11 +100,14 @@ void BT_Printf(const char *fmt,...)
     char buf[256];
     va_list args;
     int n;
+    size_t len;
     va_start(args,fmt);
     n=vsnprintf(buf,sizeof(buf),fmt,args);
     va_end(args);
-    if (n<0 || (size_t)n >= sizeof(buf)) { profile.tx_drop++; return; }
-    BT_SendData((const uint8_t *)buf,(uint16_t)n);
+    if (n<=0 || (size_t)n >= sizeof(buf)) { profile.tx_drop++; return; }
+    buf[sizeof(buf)-1U]='\0';
+    len=strlen(buf);
+    if (len > 0U) BT_SendData((const uint8_t *)buf,(uint16_t)len);
 }
 
 void USART2_IRQHandler(void)
