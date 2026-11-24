@@ -213,6 +213,70 @@ direction, wheel divergence, stall, 6.5s deadline, PA0/Stop and 350ms
 host heartbeat. Without IMU supervision there is no independent yaw
 measurement or obstacle avoidance. Test with wheels lifted first.
 
+### Continuous CSV for Encoder → 1 Box Forward
+
+The one-firmware System Test streams **each implemented sensor test**
+through the left Continuous Data pane:
+
+- IR Test → `IR` CSV (six IR channels)
+- MPU Test → `MPU` CSV (yaw and gyro-Z)
+- Encoder → Log Receive → `ENC` CSV (signed total counts)
+- Encoder → **1 Box Forward** → `ONEBOX_CSV` CSV (encoder + applied PWM)
+- All Sensors Test → `ALL` CSV (IR, MPU, and encoder)
+
+The five other Forward/Pivot menu options remain **unimplemented**:
+they only issue one-shot status messages and do not pretend to measure
+an unexecuted motor experiment.
+
+For **1 Box Forward**, pressing Start only in the armed submenu unlocks
+the motor and returns a status ACK `ONEBOX,START,...`. The MCU then sends
+20-Hz, main-context telemetry (no USART inside the 1-kHz control ISR):
+
+```text
+ONEBOX_CSV,ms=0,left=100,right=150,pwm_l=0,pwm_r=0
+ONEBOX_CSV,ms=50,left=146,right=195,pwm_l=150,pwm_r=148
+ONEBOX_CSV,ms=100,left=210,right=260,pwm_l=185,pwm_r=180
+ONEBOX_CSV,ms=...,left=...,right=...,pwm_l=0,pwm_r=0
+ONEBOX,RESULT,reason=DONE,L=...,R=...,ms=...,locked=1
+```
+
+Example numbers above are **illustrative**, not measured on the robot.
+The Python application converts the sensor frames into:
+
+```csv
+timestamp,t_ms,ENC_L,ENC_R,PWM_L,PWM_R
+2026-11-24T14:01:02.000,0,100,150,0,0
+2026-11-24T14:01:02.050,50,146,195,150,148
+2026-11-24T14:01:02.100,100,210,260,185,180
+```
+
+- `timestamp`: Windows host-receive ISO 8601 time.
+- `t_ms`: MCU elapsed milliseconds since successful Start.
+- `ENC_L`, `ENC_R`: **absolute signed cumulative encoder counts**,
+  same semantics as Encoder Log Receive; they do **not** reset at Start.
+  For travel counts, subtract the first value in each run.
+- `PWM_L`, `PWM_R`: **actually applied signed motor PWM**, units
+  per mille of full scale (`200` = 20% duty), read from the driver.
+  These are not PID targets and may lag commands due to slew/deadband.
+- A final zero-PWM sample is emitted **before** `ONEBOX,RESULT`, so
+  normal completion, Stop, timeout and encoder faults all close a file.
+- The first `ONEBOX,START` creates a new timestamp-named file.
+  `ONEBOX,RESULT` closes/flushed it. Every subsequent Start makes a
+  **separate file** in the stable directory:
+
+```text
+logs/spp_runs/
+└── mode 7 - encoder test - 1 box forward/
+    ├── 20261124_140102_000000_COM16.csv
+    └── 20261124_140213_000000_COM16.csv
+```
+
+The `ONEBOX,START/RESULT/REJECT` status messages remain visible only
+in the right terminal; they are **not** appended to continuous-data CSV.
+Other test CSV formats and the separate Encoder Log Receive folder are
+preserved. No new motor control behavior or new PWM setting is introduced
+by this logging change.
+
 ### Start/Stop and safeguards
 
 1. Enter `1 Box Forward`. Status says `ARMED; press Start`.
