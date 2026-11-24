@@ -11,6 +11,16 @@ typedef struct {
     uint8_t motor_locked;
 } EncoderOneBoxResult;
 
+/* Real motor telemetry: absolute signed quadrature counts (same as
+ * Log Receive) and actual APPLIED motor PWM in permille (-1000..1000).
+ * elapsed_ms is measured since the last accepted Start. No SPP I/O in ISR. */
+typedef struct {
+    uint32_t elapsed_ms;
+    int32_t left, right;
+    int16_t pwm_l, pwm_r;
+} EncoderOneBoxTelemetry;
+
+uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out);
 void EncoderOneBox_Init(void);
 uint8_t EncoderOneBox_Start(void); /* SPP 'G' only, after menu 1 Box Forward */
 void EncoderOneBox_HostPing(void);  /* SPP 'H' <=100ms, 350ms safety lease */
