@@ -49,7 +49,11 @@ jobs:
         run: python -m pip install --disable-pip-version-check platformio
       - name: Compile motor-locked menu firmware
         run: python -m platformio run -e mode_menu_96m
-      - name: Compile opt-in 1-box motor-capable firmware
+      - name: Compile default VS Code Upload image (guarded 1-box)
+        run: |
+          python -c "import configparser; c=configparser.ConfigParser(interpolation=None); c.read('platformio.ini'); assert c['platformio']['default_envs'].strip() == 'encoder_1box_96m'"
+          python -m platformio run
+      - name: Compile explicit 1-box motor-capable firmware
         run: python -m platformio run -e encoder_1box_96m
       - name: Compile isolated motor-locked SPP smoke firmware
         run: python -m platformio run -e spp_smoke_96m
