@@ -194,6 +194,7 @@ class MotionControlTab(ttk.Frame):
         self._build_turn_subtab()
         self._build_vel_subtab()
         self._build_qstep_subtab()
+        self._build_smooth_turn_subtab()
 
         # 3. Telemetry & Plots Area (Top = Terminal + toggles, Bottom = L/R/Chassis plots)
         data_pane = ttk.Panedwindow(self, orient="vertical")
@@ -472,6 +473,58 @@ class MotionControlTab(ttk.Frame):
         self.qs_preview.insert("1.0", tables.get(self.qs_level.get(), ""))
         self.qs_preview.config(state="disabled")
 
+    def _build_smooth_turn_subtab(self) -> None:
+        f = ttk.Frame(self.mode_tabs, padding=6)
+        self.mode_tabs.add(f, text="Smooth Turn")
+        self.sm_kind = tk.StringVar(value="SS90E (0)")
+        self.sm_dir = tk.StringVar(value="Left (+1)")
+        self.sm_speed = tk.StringVar(value="180.0")
+        self.sm_maxw = tk.StringVar(value="240.0")
+        self.sm_alpha = tk.StringVar(value="1200.0")
+        self.sm_entry = tk.StringVar(value="20.0")
+        self.sm_exit = tk.StringVar(value="20.0")
+        self.sm_rkp = tk.StringVar(value="0.35")
+
+        kinds = [
+            "SS90E (0)", "SS90F (1)", "SS180 (2)", "SD45 (3)",
+            "DS45 (4)", "SD135 (5)", "DS135 (6)", "DD90 (7)",
+        ]
+        ttk.Label(f, text="Preset:").grid(row=0, column=0, sticky="w")
+        cb = ttk.Combobox(f, textvariable=self.sm_kind, values=kinds, state="readonly", width=13)
+        cb.grid(row=0, column=1, padx=4, pady=2)
+        cb.bind("<<ComboboxSelected>>", self._on_sm_preset)
+
+        ttk.Label(f, text="Direction:").grid(row=0, column=2, sticky="w")
+        ttk.Combobox(f, textvariable=self.sm_dir, values=["Left (+1)", "Right (-1)"], state="readonly", width=11).grid(
+            row=0, column=3, padx=4, pady=2
+        )
+
+        for idx, (lbl, var) in enumerate([
+            ("Speed (mm/s):", self.sm_speed), ("Max W (dps):", self.sm_maxw),
+            ("Alpha (dps²):", self.sm_alpha), ("Entry (mm):", self.sm_entry),
+            ("Exit (mm):", self.sm_exit), ("Rate Kp:", self.sm_rkp),
+        ]):
+            r = 1 + (idx // 2)
+            c = (idx % 2) * 2
+            ttk.Label(f, text=lbl).grid(row=r, column=c, sticky="w", padx=4, pady=1)
+            ttk.Entry(f, textvariable=var, width=10).grid(row=r, column=c + 1, padx=4, pady=1, sticky="w")
+
+    def _on_sm_preset(self, _evt=None) -> None:
+        presets = {
+            "SS90E (0)": ("180.0", "240.0", "1200.0", "20.0", "20.0"),
+            "SS90F (1)": ("280.0", "340.0", "1800.0", "15.0", "15.0"),
+            "SS180 (2)": ("200.0", "280.0", "1500.0", "20.0", "20.0"),
+            "SD45 (3)": ("220.0", "240.0", "1400.0", "15.0", "15.0"),
+            "DS45 (4)": ("220.0", "240.0", "1400.0", "15.0", "15.0"),
+            "SD135 (5)": ("200.0", "280.0", "1500.0", "15.0", "15.0"),
+            "DS135 (6)": ("200.0", "280.0", "1500.0", "15.0", "15.0"),
+            "DD90 (7)": ("220.0", "280.0", "1400.0", "10.0", "10.0"),
+        }
+        v = presets.get(self.sm_kind.get())
+        if v:
+            self.sm_speed.set(v[0]); self.sm_maxw.set(v[1]); self.sm_alpha.set(v[2])
+            self.sm_entry.set(v[3]); self.sm_exit.set(v[4])
+
     def _log_term(self, text: str) -> None:
         self.term_text.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] {text}\n")
         lines = int(self.term_text.index("end-1c").split(".")[0])
@@ -590,6 +643,19 @@ class MotionControlTab(ttk.Frame):
                 self._start_run_logger(f"gui_qstep_lvl{lvl}", {"level": lvl})
                 self.set_hb_fn(True)
                 self._send("QSTEP", lvl)
+            elif tab_idx == 5:  # Smooth Turn
+                kind_str = self.sm_kind.get()
+                kind = int(kind_str.split("(")[1].rstrip(")"))
+                d = -1 if "-1" in self.sm_dir.get() else 1
+                args = (
+                    kind, d,
+                    float(self.sm_speed.get()), float(self.sm_maxw.get()),
+                    float(self.sm_alpha.get()), float(self.sm_entry.get()),
+                    float(self.sm_exit.get()), float(self.sm_rkp.get()),
+                )
+                self._start_run_logger(f"gui_smooth_k{kind}_d{d}", {"kind": kind, "dir": d})
+                self.set_hb_fn(True)
+                self._send("SMOOTH", *args)
         except ValueError as exc:
             messagebox.showerror("Invalid Parameter", str(exc))
 

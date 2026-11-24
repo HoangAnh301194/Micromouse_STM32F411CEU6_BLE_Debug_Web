@@ -1,0 +1,55 @@
+{
+  "test_name": "table_vel_arc_left_90",
+  "test_id": "T_ARC_L",
+  "git_commit": "cfed015",
+  "port": "COM16",
+  "command": [
+    "VEL",
+    120.0,
+    90.0,
+    0,
+    0.0,
+    1.0
+  ],
+  "gains_confirmed": {
+    "ack": {
+      "kind": "ACK",
+      "cmd_id": 4,
+      "verb": "GET_GAINS",
+      "status": "OK",
+      "fields": {},
+      "raw": "ACK,4,GET_GAINS,OK"
+    },
+    "left": {
+      "kp": 0.09,
+      "ki": 0.25,
+      "ks": 80.0,
+      "kv": 0.098,
+      "ka": 0.0,
+      "integral_limit": 3000.0,
+      "pwm_limit": 1000.0
+    },
+    "right": {
+      "kp": 0.09,
+      "ki": 0.25,
+      "ks": 80.0,
+      "kv": 0.098,
+      "ka": 0.0,
+      "integral_limit": 3000.0,
+      "pwm_limit": 1000.0
+    },
+    "heading": {
+      "kp": 4.0,
+      "ki": 0.0,
+      "kd": 0.05,
+      "max_w_dps": 120.0
+    }
+  },
+  "pwm_limit_pm": 1000.0,
+  "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_005702_table_vel_arc_left_90",
+  "started_at": "2026-11-25T00:57:02",
+  "finish_result": "SUCCESS",
+  "finished_at": "2026-11-25T00:57:04",
+  "sample_count": 74,
+  "drop_estimate": 0
+}

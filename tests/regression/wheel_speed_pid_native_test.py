@@ -290,6 +290,37 @@ int main(void) {
         return fail("SensorFault did not record MOTION_RES_SENSOR_FAULT");
     }
 
+    /* 8. 5-phase Clothoid Smooth Turn (SS90E Left) */
+    {
+        float sim_yaw = 0.0f;
+        int32_t sim_enc = 0;
+        int seen_entry = 0, seen_accel = 0, seen_cruise = 0, seen_decel = 0, seen_exit = 0;
+        Motion_CommandSmoothTurn(MOTION_STURN_SS90E, 1, 0.0f);
+        if (Motion_GetState() != MOTION_SMOOTH_TURN) {
+            return fail("SmoothTurn did not enter MOTION_SMOOTH_TURN");
+        }
+        for (int i = 0; i < 2000; ++i) {
+            Motion_ExtendedDebug_t ext;
+            uint8_t ph = Motion_GetPhase();
+            if (ph == MOTION_STURN_PHASE_ENTRY) seen_entry = 1;
+            else if (ph == MOTION_STURN_PHASE_ACCEL) seen_accel = 1;
+            else if (ph == MOTION_STURN_PHASE_CRUISE) seen_cruise = 1;
+            else if (ph == MOTION_STURN_PHASE_DECEL) seen_decel = 1;
+            else if (ph == MOTION_STURN_PHASE_EXIT) seen_exit = 1;
+            Motion_GetExtendedDebug(&ext);
+            sim_enc += (int32_t)(ext.v_ref_mm_s * 0.001f * (1430.0f / (3.14159265f * 34.0f)) + 0.5f);
+            sim_yaw += ext.w_ref_dps * 0.001f;
+            Motion_Update(0.001f, sim_enc, sim_enc, sim_yaw, ext.w_ref_dps);
+            if (Motion_IsDone()) break;
+        }
+        if (!Motion_IsDone() || Motion_GetLastResult() != MOTION_RES_SUCCESS) {
+            return fail("SmoothTurn SS90E did not finish with SUCCESS");
+        }
+        if (!(seen_entry && seen_accel && seen_cruise && seen_decel && seen_exit)) {
+            return fail("SmoothTurn SS90E did not visit all 5 phases");
+        }
+    }
+
     printf("ALL_MOTION_API_TESTS_PASS\n");
     return 0;
 }

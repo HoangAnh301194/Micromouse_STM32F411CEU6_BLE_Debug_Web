@@ -30,7 +30,15 @@
       - `D1 (165 mm @ 100 mm/s, hold=0)`: **PASS** (`165.0 mm`, sai số `4.79%` L / `4.64%` R, overshoot `0.07%` / `0.30%`).
       - `D2 (330 mm @ 100 mm/s, hold=0)`: **PASS** (`330.0 mm`, sai số `1.18%` L / `1.24%` R, overshoot `2.32%`).
       - `E1 (VEL arc)` & `E2 (QSTEP LOW 2409 PPS)`: hoàn tất `RES=SUCCESS`, không fault; phần `2222–2409 PPS` chạm trần vật lý pin hiện tại (`~1770 PPS` @ `1000‰` PWM).
-  - *Chưa thực hiện:* Chạy có tải trên mặt đất, bám tường IR/quay góc thực tế trên sa bàn (cần sạc đầy pin 2S để mở lại trần > `1800 PPS`).
+  - **Bổ sung `MOTION_SMOOTH_TURN` (5 tiểu pha + Gyro slip compensation):**
+    - Hỗ trợ 8 preset (`SS90E`, `SS90F`, `SS180`, `SD45`, `DS45`, `SD135`, `DS135`, `DD90`) chuẩn hóa theo ô `165 × 165 mm` trong `include/motion.h` & `src/motion.c`.
+    - Tích hợp vào SPP v2 (`$id,SMOOTH,...`), `tools/motion_dashboard_tab.py` (tab con `Smooth Turn`) và test C-native 5 tiểu pha trong `tests/regression/wheel_speed_pid_native_test.py` (PASS).
+  - *Hardware On-Table (trên mặt bàn, pin 2S đầy):*
+    - `table_def_straight_165mm_hold1` (150 mm/s, Heading Hold ON): `SUCCESS`, đạt `165,0 mm`, yaw `-3,78°`, sai số `5,66%` L / `3,86%` R.
+    - `table_def_turn_left_90deg` (`+90°`, `max_w=300 dps`, `tol=3,0°`): `SUCCESS`, góc cuối `87,24°` (`~0,96 s`).
+    - `table_vel_arc_left_90` & `table_vel_arc_right_90` (`v=120, ω=±90°/s, 1.0s`): `SUCCESS`, bánh ngoài bám `0,28%–2,10%`; nhưng do `VEL` vòng hở góc nên yaw cuối lệch (`+49,37°` / `-101,59°`).
+    - `table_arc_160_L` & `table_arc_160_R` (`v=160, ω=±90°/s, 1.0s`): `SUCCESS`, quãng đường `161,9 / 157,6 mm`, yaw `+57,18° / -106,82°`.
+  - *Chưa thực hiện:* Chưa nạp bản có `MOTION_SMOOTH_TURN` xuống mạch do ST-Link đã rút khi đặt xe lên bàn (`OpenOCD init failed`), chưa test `Smooth Turn`, `-90°`, `±180°` và bám tường IR trên bàn/sa bàn.
 
 ## Cập nhật Dọn dẹp Kiến trúc Motion & Pipeline Kiểm chứng (Mức 2) — 24/11/2026 (`giomuadongbac`)
 

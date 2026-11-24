@@ -1,0 +1,58 @@
+{
+  "test_name": "table_straight_165mm_hold1",
+  "test_id": "T_S165",
+  "git_commit": "cfed015",
+  "port": "COM16",
+  "command": [
+    "STRAIGHT",
+    165.0,
+    100.0,
+    60.0,
+    0.0,
+    300.0,
+    300.0,
+    120.0,
+    1
+  ],
+  "gains_confirmed": {
+    "ack": {
+      "kind": "ACK",
+      "cmd_id": 13,
+      "verb": "GET_GAINS",
+      "status": "OK",
+      "fields": {},
+      "raw": "ACK,13,GET_GAINS,OK"
+    },
+    "left": {
+      "kp": 0.09,
+      "ki": 0.65,
+      "ks": 120.0,
+      "kv": 0.36,
+      "ka": 0.0,
+      "integral_limit": 3000.0,
+      "pwm_limit": 1000.0
+    },
+    "right": {
+      "kp": 0.09,
+      "ki": 0.65,
+      "ks": 120.0,
+      "kv": 0.36,
+      "ka": 0.0,
+      "integral_limit": 3000.0,
+      "pwm_limit": 1000.0
+    },
+    "heading": {
+      "kp": 4.0,
+      "ki": 0.0,
+      "kd": 0.05,
+      "max_w_dps": 120.0
+    }
+  },
+  "pwm_limit_pm": 1000.0,
+  "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_004532_table_straight_165mm_hold1",
+  "started_at": "2026-11-25T00:45:32",
+  "finish_result": "SUCCESS",
+  "finished_at": "2026-11-25T00:45:34",
+  "sample_count": 89,
+  "drop_estimate": 0
+}

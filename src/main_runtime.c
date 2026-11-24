@@ -86,6 +86,8 @@ static void OLED_DrawProductionStatus(uint32_t now)
         SSD1306_WriteString("MOTION: WTEST", &Font_7x10, SSD1306_WHITE);
     } else if (motion_state == MOTION_QUICK_STEP) {
         SSD1306_WriteString("MOTION: QSTEP", &Font_7x10, SSD1306_WHITE);
+    } else if (motion_state == MOTION_SMOOTH_TURN) {
+        SSD1306_WriteString("MOTION: SMOOTH", &Font_7x10, SSD1306_WHITE);
     } else {
         SSD1306_WriteString("MOTION: IDLE", &Font_7x10, SSD1306_WHITE);
     }
@@ -418,6 +420,35 @@ static void HandleStructuredSppLine(char *line)
         Motion_CommandQuickStepTestLevel((Motion_QuickStepLevel_t)lvl);
         Motion_EnableHostWatchdog(2.0f);
         BT_Printf("ACK,%ld,QSTEP,STARTED\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "SMOOTH") == 0) {
+        /* $id,SMOOTH,kind(0..7),dir(-1|1)[,speed,max_w,alpha,entry,exit,rate_kp] */
+        long kind = 0;
+        long dir = 1;
+        Motion_SmoothTurnProfile_t sp;
+        if (ntok < 4U ||
+            !ParseIntToken(tokens[2], &kind) || kind < 0 || kind > 7 ||
+            !ParseIntToken(tokens[3], &dir) || (dir != 1 && dir != -1)) {
+            BT_Printf("NACK,%ld,SMOOTH,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        Motion_GetSmoothTurnPreset((Motion_SmoothTurnKind_t)kind, (int8_t)dir, &sp);
+        if (ntok >= 10U) {
+            if (!ParseFloatToken(tokens[4], &sp.speed_mm_s) ||
+                !ParseFloatToken(tokens[5], &sp.max_w_dps) ||
+                !ParseFloatToken(tokens[6], &sp.alpha_dps2) ||
+                !ParseFloatToken(tokens[7], &sp.entry_mm) ||
+                !ParseFloatToken(tokens[8], &sp.exit_mm) ||
+                !ParseFloatToken(tokens[9], &sp.gyro_rate_kp)) {
+                BT_Printf("NACK,%ld,SMOOTH,BAD_ARGS\r\n", cmd_id);
+                return;
+            }
+        }
+        Motion_CommandSmoothTurnProfile(yaw, &sp);
+        Motion_EnableHostWatchdog(2.0f);
+        BT_Printf("ACK,%ld,SMOOTH,STARTED\r\n", cmd_id);
         return;
     }
 

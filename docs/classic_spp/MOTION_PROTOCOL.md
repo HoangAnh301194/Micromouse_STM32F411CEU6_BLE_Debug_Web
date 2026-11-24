@@ -42,6 +42,7 @@ $<cmd_id>,<VERB>[,<arg1>,<arg2>,...]\n
 | `TURN` | `<ang_deg>,<max_w>,<min_w>,<acc_w>,<dec_w>,<ang_kp>,<rate_kp>,<ang_tol>,<rate_tol>,<timeout>` | `ACK,<id>,TURN,STARTED` | Quay vòng kín Gyro + `WheelSpeedPid` |
 | `VEL` | `<v_mm_s>,<w_dps>,<hold(0\|1)>,<target_yaw>,<dur_s>` | `ACK,<id>,VEL,STARTED` | Chạy có giới hạn thời gian + Watchdog |
 | `QSTEP` | `<level(0\|1\|2)>` | `ACK,<id>,QSTEP,STARTED` | `0=LOW`, `1=MEDIUM`, `2=HIGH` |
+| `SMOOTH` | `<kind(0..7)>,<dir(-1\|1)>[,v,max_w,alpha,entry,exit,rate_kp]` | `ACK,<id>,SMOOTH,STARTED` | Cua mượt 5 pha (`SS90E..DD90`) |
 
 ## 3. Sự kiện & Telemetry (STM32 → Host)
 1. **Sự kiện kết thúc Motion:**

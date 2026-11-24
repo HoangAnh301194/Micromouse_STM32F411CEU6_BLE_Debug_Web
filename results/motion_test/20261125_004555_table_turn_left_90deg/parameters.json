@@ -1,0 +1,60 @@
+{
+  "test_name": "table_turn_left_90deg",
+  "test_id": "T_L90",
+  "git_commit": "cfed015",
+  "port": "COM16",
+  "command": [
+    "TURN",
+    90.0,
+    240.0,
+    40.0,
+    1000.0,
+    1000.0,
+    6.0,
+    0.35,
+    3.0,
+    10.0,
+    2.0
+  ],
+  "gains_confirmed": {
+    "ack": {
+      "kind": "ACK",
+      "cmd_id": 4,
+      "verb": "GET_GAINS",
+      "status": "OK",
+      "fields": {},
+      "raw": "ACK,4,GET_GAINS,OK"
+    },
+    "left": {
+      "kp": 0.09,
+      "ki": 0.65,
+      "ks": 120.0,
+      "kv": 0.36,
+      "ka": 0.0,
+      "integral_limit": 3000.0,
+      "pwm_limit": 1000.0
+    },
+    "right": {
+      "kp": 0.09,
+      "ki": 0.65,
+      "ks": 120.0,
+      "kv": 0.36,
+      "ka": 0.0,
+      "integral_limit": 3000.0,
+      "pwm_limit": 1000.0
+    },
+    "heading": {
+      "kp": 4.0,
+      "ki": 0.0,
+      "kd": 0.05,
+      "max_w_dps": 120.0
+    }
+  },
+  "pwm_limit_pm": 1000.0,
+  "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_004555_table_turn_left_90deg",
+  "started_at": "2026-11-25T00:45:55",
+  "finish_result": "SUCCESS",
+  "finished_at": "2026-11-25T00:45:57",
+  "sample_count": 85,
+  "drop_estimate": 0
+}

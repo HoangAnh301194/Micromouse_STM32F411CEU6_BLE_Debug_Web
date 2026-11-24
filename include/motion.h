@@ -10,8 +10,41 @@ typedef enum {
     MOTION_VELOCITY,
     MOTION_TURN_PROFILE,
     MOTION_WHEEL_TEST,
-    MOTION_QUICK_STEP
+    MOTION_QUICK_STEP,
+    MOTION_SMOOTH_TURN
 } Motion_State_t;
+
+typedef enum {
+    MOTION_STURN_SS90E = 0,
+    MOTION_STURN_SS90F = 1,
+    MOTION_STURN_SS180 = 2,
+    MOTION_STURN_SD45  = 3,
+    MOTION_STURN_DS45  = 4,
+    MOTION_STURN_SD135 = 5,
+    MOTION_STURN_DS135 = 6,
+    MOTION_STURN_DD90  = 7
+} Motion_SmoothTurnKind_t;
+
+typedef enum {
+    MOTION_STURN_PHASE_IDLE = 0,
+    MOTION_STURN_PHASE_ENTRY = 1,
+    MOTION_STURN_PHASE_ACCEL = 2,
+    MOTION_STURN_PHASE_CRUISE = 3,
+    MOTION_STURN_PHASE_DECEL = 4,
+    MOTION_STURN_PHASE_EXIT = 5
+} Motion_SmoothTurnPhase_t;
+
+typedef struct {
+    float target_angle_deg;
+    float speed_mm_s;
+    float max_w_dps;
+    float alpha_dps2;
+    float entry_mm;
+    float exit_mm;
+    float gyro_rate_kp;
+    float angle_kp;
+    float timeout_s;
+} Motion_SmoothTurnProfile_t;
 
 typedef enum {
     MOTION_RES_NONE = 0,
@@ -81,6 +114,16 @@ void Motion_CommandStraightProfile(float distance_mm,
 void Motion_CommandTurnProfile(float angle_deg,
                                float current_yaw_deg,
                                const Motion_TurnProfile_t *profile);
+
+/* 5-phase clothoid smooth turn APIs (165mm cell geometry + Gyro slip comp). */
+void Motion_GetSmoothTurnPreset(Motion_SmoothTurnKind_t kind,
+                                int8_t direction,
+                                Motion_SmoothTurnProfile_t *out);
+void Motion_CommandSmoothTurn(Motion_SmoothTurnKind_t kind,
+                              int8_t direction,
+                              float current_yaw_deg);
+void Motion_CommandSmoothTurnProfile(float current_yaw_deg,
+                                     const Motion_SmoothTurnProfile_t *profile);
 
 /* Continuous chassis velocity command (v_mm_s, w_dps) for wall-following,
  * smooth clothoid curves, or high-level maze controllers. Calling repeatedly

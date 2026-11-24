@@ -53,6 +53,9 @@ typedef struct {
 
     Motion_StraightProfile_t straight_profile;
     Motion_TurnProfile_t turn_profile;
+    Motion_SmoothTurnProfile_t sturn_profile;
+    float sturn_exit_start_mm;
+    float sturn_target_yaw_deg;
 
     float cmd_v_mm_s;
     float cmd_w_dps;
@@ -166,6 +169,38 @@ static void SanitizeTurnProfile(Motion_TurnProfile_t *p)
     if (!isfinite(p->tolerance_deg) || p->tolerance_deg <= 0.0f) p->tolerance_deg = def.tolerance_deg;
     if (!isfinite(p->rate_tol_dps) || p->rate_tol_dps <= 0.0f) p->rate_tol_dps = def.rate_tol_dps;
     if (!isfinite(p->timeout_s) || p->timeout_s <= 0.0f) p->timeout_s = def.timeout_s;
+}
+
+static void SanitizeSmoothTurnProfile(Motion_SmoothTurnProfile_t *p)
+{
+    if (!isfinite(p->target_angle_deg) || fabsf(p->target_angle_deg) < 5.0f) {
+        p->target_angle_deg = 90.0f;
+    }
+    p->target_angle_deg = ClampF(p->target_angle_deg, -360.0f, 360.0f);
+
+    if (!isfinite(p->speed_mm_s) || p->speed_mm_s <= 0.0f) p->speed_mm_s = 200.0f;
+    p->speed_mm_s = ClampF(p->speed_mm_s, 40.0f, STRAIGHT_SPEED_ABS_MAX_MM_S);
+
+    if (!isfinite(p->max_w_dps) || p->max_w_dps <= 0.0f) p->max_w_dps = 240.0f;
+    p->max_w_dps = ClampF(p->max_w_dps, 30.0f, VELOCITY_W_ABS_MAX_DPS);
+
+    if (!isfinite(p->alpha_dps2) || p->alpha_dps2 <= 0.0f) p->alpha_dps2 = 1200.0f;
+    p->alpha_dps2 = ClampF(p->alpha_dps2, 100.0f, 8000.0f);
+
+    if (!isfinite(p->entry_mm) || p->entry_mm < 0.0f) p->entry_mm = 0.0f;
+    p->entry_mm = ClampF(p->entry_mm, 0.0f, 200.0f);
+
+    if (!isfinite(p->exit_mm) || p->exit_mm < 0.0f) p->exit_mm = 0.0f;
+    p->exit_mm = ClampF(p->exit_mm, 0.0f, 200.0f);
+
+    if (!isfinite(p->gyro_rate_kp) || p->gyro_rate_kp < 0.0f) p->gyro_rate_kp = 0.35f;
+    p->gyro_rate_kp = ClampF(p->gyro_rate_kp, 0.0f, 1.5f);
+
+    if (!isfinite(p->angle_kp) || p->angle_kp <= 0.0f) p->angle_kp = 4.0f;
+    p->angle_kp = ClampF(p->angle_kp, 0.5f, 20.0f);
+
+    if (!isfinite(p->timeout_s) || p->timeout_s <= 0.0f) p->timeout_s = 2.5f;
+    p->timeout_s = ClampF(p->timeout_s, 0.3f, 10.0f);
 }
 
 static void PublishWheelSpeedOutput(const WheelSpeedOutput_t *ws_out)
@@ -434,6 +469,130 @@ void Motion_CommandTurnProfile(float angle_deg,
     motion.state = MOTION_TURN_PROFILE;
 
     if (!primask) __enable_irq();
+}
+
+void Motion_GetSmoothTurnPreset(Motion_SmoothTurnKind_t kind,
+                                int8_t direction,
+                                Motion_SmoothTurnProfile_t *out)
+{
+    float dir = (direction < 0) ? -1.0f : 1.0f;
+    if (!out) return;
+
+    /* Calibrated for 165 x 165 mm cell geometry, 34 mm wheels, 84 mm wheelbase. */
+    out->gyro_rate_kp = 0.35f;
+    out->angle_kp = 4.0f;
+    out->timeout_s = 2.5f;
+
+    switch (kind) {
+    case MOTION_STURN_SS90F:
+        out->target_angle_deg = dir * 90.0f;
+        out->speed_mm_s = 280.0f;
+        out->max_w_dps = 340.0f;
+        out->alpha_dps2 = 1800.0f;
+        out->entry_mm = 15.0f;
+        out->exit_mm = 15.0f;
+        break;
+    case MOTION_STURN_SS180:
+        out->target_angle_deg = dir * 180.0f;
+        out->speed_mm_s = 200.0f;
+        out->max_w_dps = 280.0f;
+        out->alpha_dps2 = 1500.0f;
+        out->entry_mm = 20.0f;
+        out->exit_mm = 20.0f;
+        out->timeout_s = 3.0f;
+        break;
+    case MOTION_STURN_SD45:
+    case MOTION_STURN_DS45:
+        out->target_angle_deg = dir * 45.0f;
+        out->speed_mm_s = 220.0f;
+        out->max_w_dps = 240.0f;
+        out->alpha_dps2 = 1400.0f;
+        out->entry_mm = 15.0f;
+        out->exit_mm = 15.0f;
+        break;
+    case MOTION_STURN_SD135:
+    case MOTION_STURN_DS135:
+        out->target_angle_deg = dir * 135.0f;
+        out->speed_mm_s = 200.0f;
+        out->max_w_dps = 280.0f;
+        out->alpha_dps2 = 1500.0f;
+        out->entry_mm = 15.0f;
+        out->exit_mm = 15.0f;
+        out->timeout_s = 3.0f;
+        break;
+    case MOTION_STURN_DD90:
+        out->target_angle_deg = dir * 90.0f;
+        out->speed_mm_s = 220.0f;
+        out->max_w_dps = 280.0f;
+        out->alpha_dps2 = 1400.0f;
+        out->entry_mm = 10.0f;
+        out->exit_mm = 10.0f;
+        break;
+    case MOTION_STURN_SS90E:
+    default:
+        out->target_angle_deg = dir * 90.0f;
+        out->speed_mm_s = 180.0f;
+        out->max_w_dps = 240.0f;
+        out->alpha_dps2 = 1200.0f;
+        out->entry_mm = 20.0f;
+        out->exit_mm = 20.0f;
+        break;
+    }
+}
+
+void Motion_CommandSmoothTurnProfile(float current_yaw_deg,
+                                     const Motion_SmoothTurnProfile_t *profile)
+{
+    uint32_t primask;
+    Motion_SmoothTurnProfile_t cfg;
+    uint8_t chaining;
+
+    if (profile) cfg = *profile;
+    else Motion_GetSmoothTurnPreset(MOTION_STURN_SS90E, 1, &cfg);
+    SanitizeSmoothTurnProfile(&cfg);
+
+    primask = __get_PRIMASK();
+    __disable_irq();
+
+    chaining = (motion.state == MOTION_STRAIGHT || motion.state == MOTION_VELOCITY) &&
+               !motion.done;
+    Encoder_Reset();
+    if (!chaining) {
+        PID_Reset(&motion.heading_pid);
+        WheelSpeedPid_Reset(&motion.speed_ctrl);
+        ClearSpeedDebug();
+    }
+
+    motion.sturn_profile = cfg;
+    motion.target_angle_deg = cfg.target_angle_deg;
+    motion.start_yaw_deg = current_yaw_deg;
+    motion.sturn_target_yaw_deg = NormalizeAngle(current_yaw_deg + cfg.target_angle_deg);
+    motion.angle_error_deg = cfg.target_angle_deg;
+    motion.distance_mm = 0.0f;
+    motion.sturn_exit_start_mm = 0.0f;
+    motion.current_pwm = 0.0f;
+    motion.current_speed_mm_s = cfg.speed_mm_s;
+    motion.current_w_dps = 0.0f;
+    motion.steering_bias_dps = 0.0f;
+    motion.elapsed_s = 0.0f;
+    motion.phase = (cfg.entry_mm > 0.5f)
+                       ? (uint8_t)MOTION_STURN_PHASE_ENTRY
+                       : (uint8_t)MOTION_STURN_PHASE_ACCEL;
+    motion.last_result = MOTION_RES_NONE;
+
+    motion.done = 0U;
+    motion.state = MOTION_SMOOTH_TURN;
+
+    if (!primask) __enable_irq();
+}
+
+void Motion_CommandSmoothTurn(Motion_SmoothTurnKind_t kind,
+                              int8_t direction,
+                              float current_yaw_deg)
+{
+    Motion_SmoothTurnProfile_t cfg;
+    Motion_GetSmoothTurnPreset(kind, direction, &cfg);
+    Motion_CommandSmoothTurnProfile(current_yaw_deg, &cfg);
 }
 
 void Motion_CommandVelocityTimed(float v_ref_mm_s,
@@ -933,6 +1092,100 @@ void Motion_Update(float dt_s,
                        -p->max_w_dps, p->max_w_dps);
         ApplyCmdVel(0.0f, w_cmd, 0.0f, alpha_ref, dt_s);
         return;
+    }
+
+    if (motion.state == MOTION_SMOOTH_TURN) {
+        const Motion_SmoothTurnProfile_t *p = &motion.sturn_profile;
+        float dir = (p->target_angle_deg >= 0.0f) ? 1.0f : -1.0f;
+        float traveled = NormalizeAngle(yaw_deg - motion.start_yaw_deg);
+        float error = NormalizeAngle(p->target_angle_deg - traveled);
+        float rem_mag = dir * error;
+        float w_prev = motion.current_w_dps;
+        float w_target = 0.0f;
+        float w_cmd = 0.0f;
+        float alpha_ref = 0.0f;
+
+        motion.angle_error_deg = error;
+
+        if (motion.elapsed_s >= p->timeout_s) {
+            FinishMotionWithResult(MOTION_RES_TIMEOUT);
+            return;
+        }
+
+        if (motion.phase == MOTION_STURN_PHASE_ENTRY) {
+            float heading_err = NormalizeAngle(yaw_deg - motion.start_yaw_deg);
+            w_cmd = PID_Compute(&motion.heading_pid, -heading_err, 0.0f, dt_s);
+            motion.current_speed_mm_s = p->speed_mm_s;
+            motion.current_w_dps = 0.0f;
+            if (motion.distance_mm >= p->entry_mm) {
+                motion.phase = (uint8_t)MOTION_STURN_PHASE_ACCEL;
+            }
+            ApplyCmdVel(p->speed_mm_s, w_cmd, 0.0f, 0.0f, dt_s);
+            return;
+        }
+
+        if (motion.phase == MOTION_STURN_PHASE_ACCEL ||
+            motion.phase == MOTION_STURN_PHASE_CRUISE ||
+            motion.phase == MOTION_STURN_PHASE_DECEL) {
+            float w_mag = fabsf(w_prev);
+            float theta_decel = (w_mag * w_mag) / (2.0f * p->alpha_dps2);
+
+            if (rem_mag <= 2.0f) {
+                motion.phase = (uint8_t)MOTION_STURN_PHASE_EXIT;
+                motion.sturn_exit_start_mm = motion.distance_mm;
+                motion.current_w_dps = 0.0f;
+                PID_Reset(&motion.heading_pid);
+            } else {
+                if (motion.phase == MOTION_STURN_PHASE_ACCEL) {
+                    w_mag += p->alpha_dps2 * dt_s;
+                    if (w_mag >= p->max_w_dps) {
+                        w_mag = p->max_w_dps;
+                        motion.phase = (uint8_t)MOTION_STURN_PHASE_CRUISE;
+                    }
+                    theta_decel = (w_mag * w_mag) / (2.0f * p->alpha_dps2);
+                    if (rem_mag <= theta_decel) {
+                        motion.phase = (uint8_t)MOTION_STURN_PHASE_DECEL;
+                    }
+                } else if (motion.phase == MOTION_STURN_PHASE_CRUISE) {
+                    w_mag = p->max_w_dps;
+                    if (rem_mag <= theta_decel) {
+                        motion.phase = (uint8_t)MOTION_STURN_PHASE_DECEL;
+                    }
+                }
+
+                if (motion.phase == MOTION_STURN_PHASE_DECEL) {
+                    float w_env = sqrtf(2.0f * p->alpha_dps2 * rem_mag);
+                    float w_prop = rem_mag * p->angle_kp;
+                    w_mag = (w_env < w_prop) ? w_env : w_prop;
+                    w_mag = ClampF(w_mag, 25.0f, p->max_w_dps);
+                }
+
+                w_target = dir * w_mag;
+                alpha_ref = (w_target - w_prev) / dt_s;
+                motion.current_speed_mm_s = p->speed_mm_s;
+                motion.current_w_dps = w_target;
+
+                w_cmd = ClampF(w_target + p->gyro_rate_kp * (w_target - gyro_z_dps),
+                               -VELOCITY_W_ABS_MAX_DPS, VELOCITY_W_ABS_MAX_DPS);
+                ApplyCmdVel(p->speed_mm_s, w_cmd, 0.0f, alpha_ref, dt_s);
+                return;
+            }
+        }
+
+        if (motion.phase == MOTION_STURN_PHASE_EXIT) {
+            float exit_traveled = motion.distance_mm - motion.sturn_exit_start_mm;
+            float exit_err = NormalizeAngle(yaw_deg - motion.sturn_target_yaw_deg);
+            motion.angle_error_deg = -exit_err;
+            if (exit_traveled >= p->exit_mm) {
+                FinishMotionWithResult(MOTION_RES_SUCCESS);
+                return;
+            }
+            w_cmd = PID_Compute(&motion.heading_pid, -exit_err, 0.0f, dt_s);
+            motion.current_speed_mm_s = p->speed_mm_s;
+            motion.current_w_dps = 0.0f;
+            ApplyCmdVel(p->speed_mm_s, w_cmd, 0.0f, 0.0f, dt_s);
+            return;
+        }
     }
 }
 
