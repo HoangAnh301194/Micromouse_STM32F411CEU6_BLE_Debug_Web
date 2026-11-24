@@ -34,7 +34,8 @@ Main menu:
                                          5. Pivot 90 Right      [NO MOTION]
                                          6. Pivot 180 Left      [NO MOTION]
                                          7. Pivot 180 Right     [NO MOTION]
-                                         8. Back
+                                         8. PID                 [RAM tuning, MOTOR LOCKED]
+                                         9. Back
                      3. MPU Test
                      4. All Sensors Test [IR+MPU+ENC; motor initialized, locked]
                      5. Back
@@ -530,3 +531,8 @@ phản hồi `?`. Bản sửa retry chỉ khắc phục trường hợp mất pr
 đoạn khởi tạo link; nó không sửa lỗi MPU hay lỗi ghép đôi Windows.
 
 Kiểm thử no-radio: `py tests/regression/spp_handshake_test.py`.
+
+## PID vận tốc bánh (24/11/2026)
+Chọn PID để GUI hiện sáu ô (P_L/I_L/D_L, P_R/I_R/D_R); bấm Áp dụng PID và chờ PID,APPLIED từ STM32. Chỉ ghi RAM khi motor khóa và đúng mode; reset MCU khôi phục mặc định. Chuyển sang 1 Box Forward, Start để chạy với setpoint cố định 1100 PPS mỗi bánh, PWM 0..200, dừng/phanh theo encoder. PWM thay đổi để bám vận tốc; không còn giảm setpoint gần đích. Tối đa bốn chữ số thập phân, P 0..1, I 0..2, D 0..0.1. Kiểm tra build và thử nâng bánh, có ngắt VM độc lập trước thử trên sàn. Chưa nghiệm thu thực địa.
+
+CSV 1 Box Forward giữ sáu cột cũ và thêm REF_L_PPS, REF_R_PPS, SPEED_L_PPS, SPEED_R_PPS; firmware cũ để trống bốn cột mới. Tần số SPP 20 Hz, không thay đổi PID 100 Hz.

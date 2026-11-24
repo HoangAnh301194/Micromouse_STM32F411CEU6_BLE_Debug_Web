@@ -14,7 +14,21 @@
  * Duty is NOT wheel speed; a stall at low duty is detected and aborted.
  * Do not raise PWM without a supervised lifted-wheel test. */
 #define ONEBOX_MAX_PWM 200
-#define ONEBOX_MIN_PWM 120
+#define ONEBOX_SPEED_PPS 1100
+#define ONEBOX_FEEDFORWARD_PWM 145
+#define ONEBOX_PID_DT_S 0.010f
+#define ONEBOX_GAIN_SCALE 10000U
+#define ONEBOX_PID_P_MAX 10000U
+#define ONEBOX_PID_I_MAX 20000U
+#define ONEBOX_PID_D_MAX 1000U
+
+/* Separate state and gains for each wheel; coefficients use PPS and permille. */
+typedef struct { uint32_t p, i, d; } OneBoxGains;
+typedef struct { float integral, previous_speed; uint8_t initialized; } OneBoxSpeedPid;
+uint8_t OneBoxGains_Valid(const OneBoxGains *g);
+void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s);
+int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
+                            float reference, float measured);
 #define ONEBOX_MAX_TICKS 6500U      /* hard 6.5 s one-shot limit */
 #define ONEBOX_STALL_TICKS 900U      /* no encoder movement */
 #define ONEBOX_LEASE_TICKS 350U      /* require host heartbeat <350ms */

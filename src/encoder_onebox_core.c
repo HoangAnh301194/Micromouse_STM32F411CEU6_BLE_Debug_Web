@@ -1,9 +1,43 @@
 #include "encoder_onebox_core.h"
 
 static int32_t Abs32(int32_t x) { return x < 0 ? -x : x; }
-static int32_t Clamp32(int32_t v, int32_t min, int32_t max)
+static float ClampF(float v, float lo, float hi)
 {
-    return v < min ? min : (v > max ? max : v);
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+uint8_t OneBoxGains_Valid(const OneBoxGains *g)
+{
+    return g && g->p <= ONEBOX_PID_P_MAX && g->i <= ONEBOX_PID_I_MAX &&
+           g->d <= ONEBOX_PID_D_MAX;
+}
+void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s)
+{
+    *s = (OneBoxSpeedPid){0};
+}
+int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
+                            float reference, float measured)
+{
+    float error, p, d, candidate, output, ki;
+    if (!OneBoxGains_Valid(g) || !(reference > 0.0f) ||
+        !(measured >= -100000.0f && measured <= 100000.0f)) {
+        OneBoxSpeedPid_Reset(s);
+        return 0;
+    }
+    error = reference - measured;
+    p = (float)g->p / ONEBOX_GAIN_SCALE * error;
+    ki = (float)g->i / ONEBOX_GAIN_SCALE;
+    d = s->initialized ? -(float)g->d / ONEBOX_GAIN_SCALE *
+             (measured - s->previous_speed) / ONEBOX_PID_DT_S : 0.0f;
+    s->previous_speed = measured;
+    s->initialized = 1U;
+    candidate = ki > 0.0f ? ClampF(s->integral + ki * error * ONEBOX_PID_DT_S,
+                                 -ONEBOX_MAX_PWM, ONEBOX_MAX_PWM) : 0.0f;
+    output = ONEBOX_FEEDFORWARD_PWM + p + candidate + d;
+    /* Conditional integration against the FINAL actuator saturation. */
+    if (!((output > ONEBOX_MAX_PWM && error > 0.0f) ||
+          (output < 0.0f && error < 0.0f))) s->integral = candidate;
+    output = ONEBOX_FEEDFORWARD_PWM + p + s->integral + d;
+    return (int16_t)(ClampF(output, 0.0f, ONEBOX_MAX_PWM) + 0.5f);
 }
 
 void OneBoxCore_Start(OneBoxCore *s, int32_t left, int32_t right)
@@ -31,7 +65,7 @@ void OneBoxCore_Stop(OneBoxCore *s, uint8_t reason)
 OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
 {
     OneBoxOutput out = {0,0,ONEBOX_REASON_NONE};
-    int32_t dl,dr,average,remaining,base,trim,imbalance;
+    int32_t dl,dr,average,imbalance;
     if (!s || !s->running) return out;
 
     s->ticks++;
@@ -81,15 +115,8 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
         return out;
     }
 
-    remaining = ((ONEBOX_TARGET_L + ONEBOX_TARGET_R) / 2L) - average;
-    /* Taper from 20% toward 12% in the last ~800 counts (real vehicle
-     * must validate minimum moving PWM; a stalled wheel times out).
-     */
-    base = Clamp32(remaining / 6L, ONEBOX_MIN_PWM, ONEBOX_MAX_PWM);
-    trim = Clamp32(imbalance / 8L, -45L, 45L);
-    out.pwm_l = (int16_t)Clamp32(base - trim, 0L, ONEBOX_MAX_PWM);
-    out.pwm_r = (int16_t)Clamp32(base + trim, 0L, ONEBOX_MAX_PWM);
-    if (dl >= ONEBOX_TARGET_L) out.pwm_l = 0;
-    if (dr >= ONEBOX_TARGET_R) out.pwm_r = 0;
+    /* Distance core owns only stop/fault decisions. Fixed nominal output
+     * is a compatibility indicator; actual PWM is produced by wheel PID. */
+    out.pwm_l = out.pwm_r = ONEBOX_FEEDFORWARD_PWM;
     return out;
 }

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """JDY-33 Classic SPP dashboard with safe menu Next/Select commands.
 
-Only '?' link probe and 'N'/'K' menu navigation can be sent.
-No motor/PID/Flash commands. Web BLE remains untouched.
+Guarded menu commands, one-box test and RAM-only wheel PID tuning.
+No Flash commands. Web BLE remains untouched.
 Run: python tools/classic_spp_dashboard.py --port COM37
 """
 from __future__ import annotations
 
 import argparse
 import csv
+from decimal import Decimal, InvalidOperation
 import os
 from collections import defaultdict, deque
 from datetime import datetime
@@ -108,6 +109,19 @@ class SPPReader:
 
     def send_menu(self, command: bytes) -> bool:
         if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I") or not self.thread or not self.thread.is_alive():
+            return False
+        return self._enqueue(command)
+
+    def send_pid(self, values):
+        limits = (10000, 20000, 1000) * 2
+        if len(values) != 6 or any(not isinstance(v, int) or not 0 <= v <= m
+                                   for v, m in zip(values, limits)):
+            return False
+        frame = ("p" + "".join(f"{v:05d}" for v in values) + ";").encode("ascii")
+        return self._enqueue(frame)
+
+    def _enqueue(self, command):
+        if not self.thread or not self.thread.is_alive():
             return False
         try:
             self.commands.put_nowait(command)
@@ -238,7 +252,7 @@ class Dashboard:
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
         ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select. "
-                  "No motor or Flash commands.",
+                  "Guarded one-box motion; RAM-only PID; no Flash commands.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
         bar.pack(fill="x", pady=(0, 8))
@@ -328,7 +342,23 @@ class Dashboard:
                                          command=lambda: self.send_sensor_reset(b"I", "IR Test"),
                                          state="disabled")
         self.restart_ir_btn.pack(side="left")
-        status_bar = ttk.Frame(right)
+        self.pid_panel = ttk.LabelFrame(right, text="Wheel PID (RAM) — PPS / permille", padding=6)
+        self.pid_values = [tk.StringVar(value=x) for x in ("0.05", "0.08", "0", "0.05", "0.08", "0")]
+        self.pid_ready = False
+        self.pid_pending = False
+        self.pid_entries = []
+        for col, side in enumerate(("L", "R")):
+            ttk.Label(self.pid_panel, text="Motor " + ("trái" if col == 0 else "phải")).grid(row=0, column=col*2, columnspan=2, sticky="w")
+            for row, gain in enumerate(("P", "I", "D"), 1):
+                ttk.Label(self.pid_panel, text=f"{gain}_{side}").grid(row=row, column=col*2, padx=4, pady=2)
+                entry = ttk.Entry(self.pid_panel, textvariable=self.pid_values[col*3+row-1], width=12)
+                entry.grid(row=row, column=col*2+1, padx=4, pady=2, sticky="ew")
+                self.pid_entries.append(entry)
+        self.pid_apply_btn = ttk.Button(self.pid_panel, text="Áp dụng PID", command=self.apply_pid, state="disabled")
+        self.pid_apply_btn.grid(row=4, column=0, columnspan=4, pady=4)
+        self.pid_note = tk.StringVar(value="Chờ thông số từ STM32")
+        ttk.Label(self.pid_panel, textvariable=self.pid_note, wraplength=360).grid(row=5, column=0, columnspan=4, sticky="w")
+        status_bar = self.pid_status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(status_bar, text="Filter:").pack(side="left")
         ttk.Entry(status_bar, textvariable=self.filter_text, width=15).pack(side="left", padx=5)
@@ -411,8 +441,47 @@ class Dashboard:
         # Keep manually entered ports; never silently choose among multiple
         # outgoing Bluetooth devices or assume a hard-coded COM number.
 
+    def apply_pid(self):
+        if not self.menu_ready or self.active_test_name != "PID" or not self.pid_ready or self.pid_pending:
+            return
+        limits = (10000, 20000, 1000) * 2
+        try:
+            values = []
+            for var, limit in zip(self.pid_values, limits):
+                raw = Decimal(var.get().strip()) * 10000
+                if not raw.is_finite() or raw != raw.to_integral_value() or not 0 <= raw <= limit:
+                    raise ValueError
+                values.append(int(raw))
+        except (InvalidOperation, ValueError, OverflowError):
+            self.pid_note.set("P: 0..1; I: 0..2; D: 0..0.1; tối đa 4 chữ số thập phân.")
+            return
+        if self.reader.send_pid(values):
+            self.pid_pending = True
+            self.pid_note.set("Đã gửi; chờ STM32 xác nhận RAM...")
+            self._update_test_controls()
+            self.root.after(2000, self._pid_ack_timeout)
+        else:
+            self.pid_note.set("Không gửi được PID; kiểm tra SPP.")
+
+    def _pid_ack_timeout(self):
+        if self.pid_pending:
+            self.pid_pending = False
+            self.pid_note.set("Chưa nhận ACK; chọn lại PID để đọc RAM hoặc gửi lại.")
+            self._update_test_controls()
+
     def _update_test_controls(self):
-        can_control = self.menu_ready and self.active_test_name is not None
+        pid_visible = self.menu_ready and self.active_test_name == "PID"
+        if pid_visible:
+            if not self.pid_panel.winfo_manager():
+                self.pid_panel.pack(fill="x", before=self.pid_status_bar, pady=(0, 6))
+        else:
+            self.pid_panel.pack_forget()
+            self.pid_ready = self.pid_pending = False
+        pid_editable = pid_visible and self.pid_ready and not self.pid_pending
+        self.pid_apply_btn.configure(state="normal" if pid_editable else "disabled")
+        for entry in self.pid_entries:
+            entry.configure(state="normal" if pid_editable else "disabled")
+        can_control = self.menu_ready and self.active_test_name not in (None, "PID")
         if self.active_test_name == "1 Box Forward":
             # This is an encoder + motor test, not an MPU test.
             can_control = can_control and self.onebox_capable
@@ -453,7 +522,7 @@ class Dashboard:
     def send_test_control(self, command: bytes):
         # MCU acknowledgement is authoritative. For one-box, an in-flight
         # Start disables repeat Start clicks and still permits Stop.
-        if not self.menu_ready or not self.active_test_name:
+        if not self.menu_ready or self.active_test_name in (None, "PID"):
             self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
             return
         if self.active_test_name == "1 Box Forward" and not self.onebox_capable:
@@ -627,7 +696,33 @@ class Dashboard:
         is_ir_or_mpu = (line.startswith("Selected test ") and
                          line.split(": ", 1)[-1].strip() in
                          ("IR Test", "MPU Test", "All Sensors Test"))
-        if is_encoder_log or is_onebox or is_ir_or_mpu:
+        if line == "Selected encoder option 8: PID":
+            self.active_test_name = "PID"
+            self.test_stream_running = False
+            self.onebox_start_pending = False
+            self.reader.motion_lease.clear()
+            self.pid_ready = self.pid_pending = False
+            self.pid_note.set("Chờ đọc hệ số đang lưu trong RAM...")
+            self._update_test_controls()
+        elif line.startswith(("PID,VALUES,", "PID,APPLIED,")) and self.active_test_name == "PID":
+            try:
+                fields = line.split(",")
+                vals = [int(x) for x in fields[2:]]
+                if len(vals) != 6 or any(not 0 <= v <= m for v, m in zip(vals, (10000,20000,1000)*2)):
+                    raise ValueError
+                for var, value in zip(self.pid_values, vals):
+                    var.set(f"{value / 10000:.4f}")
+                self.pid_ready = True
+                self.pid_pending = False
+                self.pid_note.set("Đã áp dụng vào RAM STM32" if fields[1] == "APPLIED" else "Đã đọc PID từ RAM STM32")
+                self._update_test_controls()
+            except ValueError:
+                self.pid_note.set("Bản tin PID không hợp lệ.")
+        elif line.startswith("PID,REJECT,") and self.active_test_name == "PID":
+            self.pid_pending = False
+            self.pid_note.set("STM32 từ chối PID: kiểm tra mode, giới hạn hoặc trạng thái motor.")
+            self._update_test_controls()
+        elif is_encoder_log or is_onebox or is_ir_or_mpu:
             self.active_test_name = ("Encoder Test" if is_encoder_log else
                                      "1 Box Forward" if is_onebox else
                                      line.split(": ", 1)[-1].strip())
@@ -674,7 +769,7 @@ class Dashboard:
                 self.test_stream_running = True
                 self.reader.motion_lease.set()
                 self._update_test_controls()
-                self.status.set("1 Box Forward running (one-shot, max 20% PWM).")
+                self.status.set("1 Box Forward running (fixed speed PID, max 20% PWM).")
         elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
@@ -966,6 +1061,9 @@ class Dashboard:
                                         (int(row["t_ms"]), int(row["ENC_L"]),
                                          int(row["ENC_R"]), int(row["PWM_L"]),
                                          int(row["PWM_R"])))
+                                speed_cols = ("REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS")
+                                if all(row.get(key) not in (None, "") for key in speed_cols):
+                                    line += "," + ",".join(f"{key}={int(row[col])}" for key, col in zip(("ref_l", "ref_r", "speed_l", "speed_r"), speed_cols))
                             elif mode == "ALL":
                                 keys = ("ir_valid", "L0", "L45", "L90",
                                         "R0", "R45", "R90", "mpu_valid",

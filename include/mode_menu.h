@@ -18,11 +18,12 @@
 #define MODE_MENU_PAGE_MAIN 0U
 #define MODE_MENU_PAGE_TEST 1U
 #define MODE_MENU_PAGE_ENCODER 2U
-/* Seven encoder submenu items plus Back; only Log Receive streams data. */
-#define MODE_MENU_ENCODER_COUNT 8U
+/* Encoder submenu: PID configuration is motor-locked. */
+#define MODE_MENU_ENCODER_COUNT 9U
 #define MODE_MENU_ENCODER_LOG_RECEIVE 0U
 #define MODE_MENU_ENCODER_1BOX 1U
-#define MODE_MENU_ENCODER_BACK 7U
+#define MODE_MENU_ENCODER_PID 7U
+#define MODE_MENU_ENCODER_BACK 8U
 
 typedef enum {
     MODE_MENU_EVENT_NONE = 0,

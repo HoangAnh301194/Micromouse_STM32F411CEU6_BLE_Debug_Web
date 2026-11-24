@@ -4,6 +4,12 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Cập nhật PID vận tốc hai bánh — 24/11/2026, giomuadongbacv2
+
+- Mode 7 / Encoder Test / PID: sáu hệ số độc lập P/I/D trái phải, truyền SPP dạng số nguyên scale 10000, đọc lại và ACK, chỉ ghi RAM khi chọn PID và motor khóa. Reset MCU phục hồi mặc định 0.05/0.08/0 từng bên.
+- 1 Box Forward: PID 100 Hz, feedback EMA encoder 1 kHz, setpoint cố định 1100 PPS hai bánh, feedforward 145 permille, giới hạn 0..200 permille. Không taper theo khoảng cách; vẫn giữ đích 2400/2390, brake, lease và fault guards. D trên measurement, conditional anti-windup.
+- Chưa xác nhận build/flash/bench trên phần cứng; cần chạy CI và thử an toàn trước sử dụng. Không thay đổi Web BLE, Flash, driver hay log lịch sử.
+
 ## Cập nhật SPP handshake — 23/11/2026, chỉ nhánh giomuadongbacv2
 
 - **Nguyên nhân UI disabled:** Chuyển/Chọn được khóa cho đến khi GUI nhận chính xác `SPP CONNECTED`; COM open hoặc bất kỳ RX byte nào chưa đủ. Đường host trước đây gửi `?` đúng một lần ngay sau `Serial.open()`, có thể mất trong giai đoạn link chưa ổn định.

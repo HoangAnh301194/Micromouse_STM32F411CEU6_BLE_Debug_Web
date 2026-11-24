@@ -13,6 +13,8 @@
 #include "stm32f4xx.h"
 
 static OneBoxCore core;
+static OneBoxGains gains_l = {500U, 800U, 0U}, gains_r = {500U, 800U, 0U};
+static OneBoxSpeedPid pid_l, pid_r;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
 static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
@@ -28,6 +30,23 @@ static uint32_t Lock(void)
     return x;
 }
 static void Unlock(uint32_t x) { if (!x) __enable_irq(); }
+uint8_t EncoderOneBox_SetGains(const OneBoxGains *left, const OneBoxGains *right)
+{
+    uint32_t irq;
+    if (!OneBoxGains_Valid(left) || !OneBoxGains_Valid(right)) return 0U;
+    irq = Lock();
+    if (phase != 0U || !Motor_OutputsLocked()) { Unlock(irq); return 0U; }
+    gains_l = *left; gains_r = *right;
+    OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
+    Unlock(irq);
+    return 1U;
+}
+void EncoderOneBox_GetGains(OneBoxGains *left, OneBoxGains *right)
+{
+    uint32_t irq = Lock();
+    *left = gains_l; *right = gains_r;
+    Unlock(irq);
+}
 static uint8_t IsSevere(uint8_t reason)
 {
     return reason != ONEBOX_REASON_DONE &&
@@ -37,6 +56,7 @@ static void Finish(uint8_t reason)
 {
     if (phase != 1U) return;
     OneBoxCore_Stop(&core, reason);
+    OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
     result.reason = reason;
     result.count_l = core.delta_l;
     result.count_r = core.delta_r;
@@ -79,6 +99,7 @@ uint8_t EncoderOneBox_Start(void)
     Motor_Stop();
     started_at_ms = millis();
     OneBoxCore_Start(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
+    OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
     result_pending = 0U;
     phase = 1U;
     Unlock(irq);
@@ -131,8 +152,13 @@ void EncoderOneBox_ControlTick(void)
         Finish(cmd.reason);
         return;
     }
-    if ((core.ticks % 10U) == 0U)
-        Motor_SetPairPermille(cmd.pwm_l, cmd.pwm_r);
+    if ((core.ticks % 10U) == 0U) {
+        int16_t left = OneBoxSpeedPid_Step(&pid_l, &gains_l, ONEBOX_SPEED_PPS,
+                                           Encoder_GetLeftSpeedPPS());
+        int16_t right = OneBoxSpeedPid_Step(&pid_r, &gains_r, ONEBOX_SPEED_PPS,
+                                            Encoder_GetRightSpeedPPS());
+        Motor_SetPairPermille(left, right);
+    }
 }
 uint8_t EncoderOneBox_IsRunning(void)
 {
@@ -153,6 +179,9 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     out->left = Encoder_GetLeftCount();
     out->right = Encoder_GetRightCount();
     Motor_GetAppliedPairPermille(&out->pwm_l, &out->pwm_r);
+    out->ref_l = out->ref_r = phase == 1U ? ONEBOX_SPEED_PPS : 0;
+    out->speed_l = (int32_t)Encoder_GetLeftSpeedPPS();
+    out->speed_r = (int32_t)Encoder_GetRightSpeedPPS();
     Unlock(irq);
     return 1U;
 }

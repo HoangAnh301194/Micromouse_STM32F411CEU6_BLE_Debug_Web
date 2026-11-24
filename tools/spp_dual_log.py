@@ -30,7 +30,8 @@ def classify_spp_line(line):
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
-    "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"),
+    "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
+               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "MPU": ("valid", "yaw_cd", "gz_cd"),
     "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
@@ -76,7 +77,10 @@ def sensor_test_csv(line, host_time=None):
         keys = ("ms", "left", "right", "pwm_l", "pwm_r")
         if not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in keys):
             return None
-        values = tuple(fields[key] for key in keys)
+        speed_keys = ("ref_l", "ref_r", "speed_l", "speed_r")
+        if any(key in fields for key in speed_keys) and not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in speed_keys):
+            return None
+        values = tuple(fields[key] for key in keys) + tuple(fields.get(key, "") for key in speed_keys)
     elif sensor == "ALL":
         keys = ("enc_l", "enc_r", "ir_valid", "L0", "L45", "L90",
                 "R0", "R45", "R90", "mpu_valid", "yaw_cd", "gz_cd")

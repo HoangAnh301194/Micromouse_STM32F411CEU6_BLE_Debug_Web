@@ -21,7 +21,7 @@ static const char *const encoder_names[MODE_MENU_ENCODER_COUNT] = {
     "Log Receive",
     "1 Box Forward", "5 Box Forward",
     "Pivot 90 Left", "Pivot 90 Right",
-    "Pivot 180 Left", "Pivot 180 Right", "Back"
+    "Pivot 180 Left", "Pivot 180 Right", "PID", "Back"
 };
 
 const char *ModeMenu_EncoderName(uint8_t index)

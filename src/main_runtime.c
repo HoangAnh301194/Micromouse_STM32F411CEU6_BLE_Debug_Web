@@ -49,6 +49,49 @@
 static MPU6050_Handle_t mpu;
 
 #if defined(MODE_MENU_ONLY)
+/* PID gain protocol: p + six 5-digit unsigned fixed-point coefficients + ';'.
+ * All bytes are consumed as a frame, never dispatched as motion commands.
+ * '?' resynchronizes; 'P' always remains available as an abort. */
+static uint8_t pid_rx_active, pid_rx_bad, pid_rx_count;
+static uint32_t pid_rx_started, pid_rx_values[6];
+static void PidMenu_ReportGains(const char *tag)
+{
+    OneBoxGains l, r;
+    EncoderOneBox_GetGains(&l, &r);
+    BT_Printf("PID,%s,%lu,%lu,%lu,%lu,%lu,%lu\r\n", tag,
+              (unsigned long)l.p, (unsigned long)l.i, (unsigned long)l.d,
+              (unsigned long)r.p, (unsigned long)r.i, (unsigned long)r.d);
+}
+static uint8_t PidMenu_Consume(char c, const ModeMenu *menu, uint32_t now)
+{
+    if (c == '?' || c == 'P') { pid_rx_active = 0U; return 0U; }
+    if (c == 'p') {
+        uint8_t i;
+        pid_rx_active = 1U; pid_rx_bad = 0U; pid_rx_count = 0U; pid_rx_started = now;
+        for (i=0U; i<6U; ++i) pid_rx_values[i] = 0U;
+        return 1U;
+    }
+    if (!pid_rx_active) return 0U;
+    if ((uint32_t)(now - pid_rx_started) > 1000U) {
+        pid_rx_bad = 1U;
+        if (c == 'N' || c == 'K') { pid_rx_active = 0U; return 0U; }
+    }
+    if (c == ';') {
+        OneBoxGains l = {pid_rx_values[0], pid_rx_values[1], pid_rx_values[2]};
+        OneBoxGains r = {pid_rx_values[3], pid_rx_values[4], pid_rx_values[5]};
+        pid_rx_active = 0U;
+        if (!pid_rx_bad && pid_rx_count == 30U &&
+            menu->page == MODE_MENU_PAGE_ENCODER &&
+            menu->active_encoder_option == MODE_MENU_ENCODER_PID &&
+            EncoderOneBox_SetGains(&l, &r)) PidMenu_ReportGains("APPLIED");
+        else BT_SendString("PID,REJECT,INVALID_OR_NOT_IDLE\r\n");
+    } else if (c >= '0' && c <= '9' && pid_rx_count < 30U) {
+        uint8_t slot = pid_rx_count / 5U;
+        pid_rx_values[slot] = pid_rx_values[slot] * 10U + (uint32_t)(c - '0');
+        ++pid_rx_count;
+    } else pid_rx_bad = 1U;
+    return 1U;
+}
 /* Main-context framebuffer edits only. I2C transfers are owned by the
  * admission-controlled OLED_SharedService, never by TIM11 or USART2 IRQ. */
 static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
@@ -71,7 +114,9 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
             SSD1306_WriteString(menu->active_encoder_option ==
                                 MODE_MENU_ENCODER_LOG_RECEIVE ?
                                 (menu->stream_running ? "LOG ACTIVE" : "LOG PAUSED") :
-                                "NO MOTION YET", &Font_7x10, SSD1306_WHITE);
+                                (menu->active_encoder_option == MODE_MENU_ENCODER_PID ? "EDIT PID ON PC" :
+                                 menu->active_encoder_option == MODE_MENU_ENCODER_1BOX ? "START ON PC" : "NO MOTION YET"),
+                                &Font_7x10, SSD1306_WHITE);
             SSD1306_SetCursor(0U, 52U);
             SSD1306_WriteString("Next: browse", &Font_7x10, SSD1306_WHITE);
             return;
@@ -208,6 +253,9 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
             BT_SendString("Selected encoder option 1: Log Receive\r\n");
         } else if (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX) {
             BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
+        } else if (menu->active_encoder_option == MODE_MENU_ENCODER_PID) {
+            BT_SendString("Selected encoder option 8: PID\r\n");
+            PidMenu_ReportGains("VALUES");
         } else {
             BT_Printf("Selected encoder option %u: %s (NOT IMPLEMENTED; MOTOR LOCKED)\r\n",
                       (unsigned)(menu->active_encoder_option + 1U),
@@ -525,7 +573,9 @@ int Main_Runtime(void)
              * Motors remain locked regardless of Bluetooth traffic. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
-            if (command == '?') {
+            if (PidMenu_Consume(command, &mode_menu, now)) {
+                /* gain configuration never enters the single-byte command dispatcher */
+            } else if (command == '?') {
                 BT_SendString("SPP CONNECTED\r\n");
                 if (mpu_status == MPU6050_OK)
                     BT_SendString("BOOT,READY,MPU=OK\r\n");
@@ -535,6 +585,11 @@ int Main_Runtime(void)
                               (unsigned)mpu.init_i2c_status);
                 BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
                 BT_SendString("TEST,PROFILE,UNIFIED,IR,MPU,ENC,MOTOR\r\n");
+                if (mode_menu.page == MODE_MENU_PAGE_ENCODER &&
+                    mode_menu.active_encoder_option == MODE_MENU_ENCODER_PID) {
+                    BT_SendString("Selected encoder option 8: PID\r\n");
+                    PidMenu_ReportGains("VALUES");
+                }
             } else if (command == 'N') {
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 remote = ModeMenu_Next(&mode_menu);
@@ -555,9 +610,9 @@ int Main_Runtime(void)
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
                     (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
                     if (EncoderOneBox_Start()) {
-                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d\r\n",
+                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_pps=%d\r\n",
                                   (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
-                                  (int)ONEBOX_MAX_PWM);
+                                  (int)ONEBOX_MAX_PWM, (int)ONEBOX_SPEED_PPS);
                     } else {
                         BT_SendString("ONEBOX,REJECT,reason=MOTOR_OR_ENCODER_NOT_READY\r\n");
                     }
@@ -698,15 +753,20 @@ int Main_Runtime(void)
                     motion.right = Encoder_GetRightCount();
                     motion.pwm_l = 0;
                     motion.pwm_r = 0;
+                    motion.ref_l = motion.ref_r = 0;
+                    motion.speed_l = (int32_t)Encoder_GetLeftSpeedPPS();
+                    motion.speed_r = (int32_t)Encoder_GetRightSpeedPPS();
                     has_motion = 1U;
                 }
                 if (has_motion && (has_result ||
                     (uint32_t)(now - last_onebox_log_ms) >= 50U)) {
                     last_onebox_log_ms = now;
-                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d\r\n",
+                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
-                              (int)motion.pwm_l, (int)motion.pwm_r);
+                              (int)motion.pwm_l, (int)motion.pwm_r,
+                              (long)motion.ref_l, (long)motion.ref_r,
+                              (long)motion.speed_l, (long)motion.speed_r);
                 }
                 if (has_result) {
                     BT_Printf("ONEBOX,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",

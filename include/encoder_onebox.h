@@ -18,9 +18,12 @@ typedef struct {
     uint32_t elapsed_ms;
     int32_t left, right;
     int16_t pwm_l, pwm_r;
+    int32_t ref_l, ref_r, speed_l, speed_r;
 } EncoderOneBoxTelemetry;
 
 uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out);
+uint8_t EncoderOneBox_SetGains(const OneBoxGains *left, const OneBoxGains *right);
+void EncoderOneBox_GetGains(OneBoxGains *left, OneBoxGains *right);
 void EncoderOneBox_Init(void);
 uint8_t EncoderOneBox_Start(void); /* SPP 'G' only, after menu 1 Box Forward */
 void EncoderOneBox_HostPing(void);  /* SPP 'H' <=100ms, 350ms safety lease */

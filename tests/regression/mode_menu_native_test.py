@@ -193,7 +193,8 @@ int main(void) {
     assert(!strcmp(ModeMenu_EncoderName(4), "Pivot 90 Right"));
     assert(!strcmp(ModeMenu_EncoderName(5), "Pivot 180 Left"));
     assert(!strcmp(ModeMenu_EncoderName(6), "Pivot 180 Right"));
-    assert(!strcmp(ModeMenu_EncoderName(8), "INVALID"));
+    assert(!strcmp(ModeMenu_EncoderName(MODE_MENU_ENCODER_PID), "PID"));
+    assert(!strcmp(ModeMenu_EncoderName(9), "INVALID"));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_ENCODER_FOCUS);
     assert(m.encoder_focus == MODE_MENU_ENCODER_BACK);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_EXIT);

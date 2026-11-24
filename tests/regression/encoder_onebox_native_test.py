@@ -80,7 +80,17 @@ static void CheckExternalStop(void) {
     OneBoxCore_Stop(&s,ONEBOX_REASON_USER_STOP);
     assert(!s.running && s.reason==ONEBOX_REASON_USER_STOP);
 }
+static void CheckSpeedPid(void) {
+    OneBoxGains l={500,800,0},r={200,0,0},bad={10001,0,0};
+    OneBoxSpeedPid a,b;
+    OneBoxSpeedPid_Reset(&a);OneBoxSpeedPid_Reset(&b);
+    assert(OneBoxGains_Valid(&l) && !OneBoxGains_Valid(&bad));
+    assert(OneBoxSpeedPid_Step(&a,&l,1100,900)>OneBoxSpeedPid_Step(&b,&r,1100,900));
+    assert(OneBoxSpeedPid_Step(&a,&l,1100,0)==ONEBOX_MAX_PWM);
+    assert(OneBoxSpeedPid_Step(&a,&l,0,1000)==0 && !a.initialized);
+}
 int main(void) {
+    CheckSpeedPid();
     assert(ONEBOX_TARGET_L==2400L && ONEBOX_TARGET_R==2390L);
     CheckTargets();CheckHostLoss();CheckReverse();
     CheckDivergence();CheckStall();CheckTimeout();CheckExternalStop();

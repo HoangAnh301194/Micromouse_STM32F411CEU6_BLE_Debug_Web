@@ -36,8 +36,9 @@ def main():
     assert classify_spp_line(onebox_frame) == "data"
     assert classify_spp_line("ONEBOX,START,target_l=2400") == "status"
     assert sensor_test_csv(onebox_frame, host_time=t0) == (
-        "ONEBOX", ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"),
-        (t0, "500", "2400", "2390", "175", "160"))
+        "ONEBOX", ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R", "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
+        (t0, "500", "2400", "2390", "175", "160", "", "", "", ""))
+    assert sensor_test_csv(onebox_frame + ",ref_l=1100,ref_r=1100,speed_l=1050,speed_r=1090", host_time=t0)[2][-4:] == ("1100", "1100", "1050", "1090")
     assert sensor_test_csv("ONEBOX_CSV,ms=bad,left=1,right=2,pwm_l=3,pwm_r=4") is None
 
     with TemporaryDirectory() as temp:
@@ -128,7 +129,7 @@ def main():
         motion1 = motion_dir / "20261123_153340_852000_COM16.csv"
         assert motion1.exists()
         assert read_csv(motion1) == [
-            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"]]
+            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R", "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"]]
         assert log.write("ONEBOX_CSV,ms=0,left=100,right=150,pwm_l=0,pwm_r=0",
                          host_time=t0) == motion1
         assert log.write(onebox_frame, host_time=t1) == motion1
@@ -141,10 +142,10 @@ def main():
         assert log.last_saved_path == motion1 and log._active_file is None
         assert log.write(onebox_frame, host_time=t2) is None
         assert read_csv(motion1) == [
-            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"],
-            [t0, "0", "100", "150", "0", "0"],
-            [t1, "500", "2400", "2390", "175", "160"],
-            [t2, "601", "2501", "2491", "0", "0"]]
+            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R", "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"],
+            [t0, "0", "100", "150", "0", "0", "", "", "", ""],
+            [t1, "500", "2400", "2390", "175", "160", "", "", "", ""],
+            [t2, "601", "2501", "2491", "0", "0", "", "", "", ""]]
 
         # Second motor Start must produce ANOTHER file in the same folder,
         # even when the previous take ended due to emergency Stop.
@@ -158,9 +159,9 @@ def main():
                   host_time=t3)
         assert log.last_saved_path == motion2
         assert read_csv(motion2) == [
-            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"],
-            [t3, "15", "-5", "-9", "120", "125"]]
-        assert read_csv(motion1)[-1][-2:] == ["0", "0"]
+            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R", "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"],
+            [t3, "15", "-5", "-9", "120", "125", "", "", "", ""]]
+        assert read_csv(motion1)[-1][4:6] == ["0", "0"]
         assert len(list(motion_dir.glob("*.csv"))) == 2
         log.write("Encoder Test: back to System Test")
 
