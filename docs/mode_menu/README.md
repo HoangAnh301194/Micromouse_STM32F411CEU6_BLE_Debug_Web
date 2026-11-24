@@ -1,17 +1,18 @@
 # Safe 7-mode menu and passive System Test over Classic SPP
 
 **Branch:** `giomuadongbacv2`  
-**Default VS Code PlatformIO Upload (updated 24/11/2026):** `encoder_1box_96m`.
-The ordinary `mode_menu_96m` remains available as the permanently
-motor-locked profile. Selecting a menu item does **not** start motion:
-only pressing **Start test** on `Mode 7 → Encoder Test → 1 Box Forward`
-unlocks and runs a single, bounded test.
+**Firmware thống nhất (24/11/2026):** `mode_menu_96m` là bản Build/Upload
+mặc định trong VS Code. Một firmware chứa toàn bộ menu và driver encoder,
+MPU, IR, motor. Các tài nguyên được cấp quyền theo chế độ **ở runtime**.
+Motor **bị khóa lúc khởi động**, chỉ `Mode 7 → Encoder Test →
+1 Box Forward → Start test` mới mở khóa để chạy thử có giới hạn.
+`encoder_1box_96m` là alias tương thích có cùng chức năng.
 
 ## Chế độ điều khiển
 
 - KEY PA0 vật lý: nhấn ngắn để chuyển, giữ ít nhất 400 ms để chọn; debounce 30 ms.
 - Hai nút SPP **Chuyển (KEY ngắn)** và **Chọn (KEY giữ)** gửi một byte ASCII `N` hoặc `K` đến STM32. Mỗi cú nhấn gửi một sự kiện logic, không giữ phím điện tử 400 ms.
-- **Stop test** gửi `P` để tạm dừng truyền mẫu của bài test đang chọn; **Start test** gửi `G` để tiếp tục. Trong profile `mode_menu_96m`, hai lệnh này chỉ điều khiển luồng cảm biến; trong profile `encoder_1box_96m`, `G` khi chọn đúng `1 Box Forward` sẽ khởi động thử nghiệm motor có giám sát, và `P` sẽ dừng thử nghiệm. Dashboard chỉ cập nhật trạng thái nút khi nhận ACK từ STM32.
+- **Start test** gửi `G`, **Stop test** gửi `P`. Trong Log Receive, hai lệnh điều khiển các phiên ghi encoder; trong 1 Box Forward, `G` khởi động **một lượt đi thẳng 165 mm**, `P` dừng. Với IR/MPU/All, chúng điều khiển luồng cảm biến. Dashboard cập nhật trạng thái theo ACK.
 - Sau khi chọn cổng COM Bluetooth **Outgoing**, dashboard gửi byte `?` để kiểm tra hai chiều. Nếu không thấy `SPP CONNECTED`, desktop tự gửi lại mỗi 0,8 giây trong sáu lần đầu rồi giảm xuống mỗi 3 giây. Chỉ khi nhận **đúng** bản tin này, hai nút mới được bật. Mở được COM không có nghĩa là MCU đã sẵn sàng nhận lệnh.
 - Mọi thao tác đọc/ghi serial được thực hiện trong cùng worker thread; Tkinter chỉ gửi lệnh vào queue.
 
@@ -27,7 +28,7 @@ Main menu:
 6. Reset Map
 7. System Test   --> 1. IR Test
                      2. Encoder Test --> 1. Log Receive        [IDLE until START]
-                                         2. 1 Box Forward       [START -> 165 mm (default upload)]
+                                         2. 1 Box Forward       [START -> 165 mm]
                                          3. 5 Box Forward       [NO MOTION]
                                          4. Pivot 90 Left       [NO MOTION]
                                          5. Pivot 90 Right      [NO MOTION]
@@ -35,7 +36,8 @@ Main menu:
                                          7. Pivot 180 Right     [NO MOTION]
                                          8. Back
                      3. MPU Test
-                     4. Back
+                     4. All Sensors Test [IR+MPU+ENC; motor initialized, locked]
+                     5. Back
 ```
 
 Ở menu chính, chọn các mode 1–6 **chỉ phát trạng thái**, không thực hiện hành động nào.
@@ -43,7 +45,7 @@ Chọn Mode 7 để vào menu con (ban đầu chưa focus mục nào).
 Nhấn Chuyển lần đầu focus IR, lần lượt Encoder, MPU, Back và quay vòng.
 Nhấn Chọn để kích hoạt IR/MPU và bắt đầu truyền luồng đo thụ động. **Encoder Test bây giờ chỉ mở thêm một cấp menu**, không phát `ENC` và không tạo file CSV ngay khi chọn. Trong Encoder Test, nhấn Chuyển để duyệt `Log Receive`, sáu bài thử di chuyển và `Back`; nhấn Chọn tại `Log Receive` **chỉ vào trạng thái chờ**. Phải nhấn nút **Start test** trên giao diện SPP mới phát encoder 20 Hz và tạo một file CSV mới. Nhấn **Stop test** sẽ ngừng phát, flush và đóng file; Start lần kế tiếp tạo **file mới**. Duyệt sang mục khác sẽ ngừng truyền. `Back` của Encoder Test trở lại System Test; `Back` của System Test trở lại menu chính.
 
-**Quan trọng:** `1 Box Forward` được thực thi **chỉ trong firmware `encoder_1box_96m`** và **chỉ sau khi bấm Start test**. Năm mục `5 Box Forward` và `Pivot 90/180 Left/Right` còn lại chỉ ghi sự kiện, không điều khiển motor. Trong `mode_menu_96m`, tất cả các mục vẫn khóa motor. Trước khi lập trình di chuyển cần đặc tả quãng đường thực tế, tham số điều khiển, trạng thái an toàn và điều kiện dừng.
+**Quan trọng:** `1 Box Forward` chạy trong firmware thống nhất `mode_menu_96m` **nhưng chỉ sau Start test**. Năm mục `5 Box Forward` và `Pivot 90/180 Left/Right` còn lại chưa điều khiển motor. `All Sensors Test` đo các cảm biến nhưng không tự chạy xe.
 Trong **Encoder → Log Receive**, Stop đóng dứt điểm CSV hiện tại, Start lần sau tạo CSV khác. Stop/Start không đặt lại số đếm encoder: các timer phần cứng vẫn đếm bình thường. IR/MPU giữ cách Stop/Start trước đó (tạm dừng/tiếp tục cùng file). Khung đo còn trong hàng đợi Bluetooth có thể đến muộn trước ACK Stop; chỉ ACK `TEST STREAM STOPPED` xác nhận kết thúc ghi.
 
 OLED và SPP báo cùng trạng thái. Status log bên phải chỉ nhận mỗi sự kiện một lần, không lặp heartbeat.
@@ -69,7 +71,7 @@ TEST STREAM STOPPED: Encoder Test
 TEST STREAM STARTED: Encoder Test
 TEST STREAM STOPPED: Encoder Test
 Encoder Test option 2: 1 Box Forward
-Selected encoder option 2: 1 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)
+Selected encoder option 2: 1 Box Forward (ARMED; press Start)
 Encoder Test: back to System Test
 System Test 3: MPU Test
 System Test 4: Back
@@ -181,30 +183,42 @@ Target counts for the initial one-shot controller:
 not proof of physically accurate autonomous stopping. Verify on the
 actual floor and adjust for wheel slip, braking and mechanical backlash.
 
-### Important distinction between two firmware images
+### Unified runtime resource selection (one firmware)
 
-- In `giomuadongbacv2`, `platformio.ini` now sets
-  `default_envs = encoder_1box_96m`. Therefore PlatformIO's regular
-  **Build** or **Upload** control in VS Code compiles/flashes the
-  guarded motor-capable one-box firmware, provided the user has not
-  explicitly selected a different environment from Project Tasks.
-  Check `ONEBOX,PROFILE,ENABLED` after SPP handshake.
-- `mode_menu_96m` is **still motor-locked for its entire session**,
-  as in all previous revisions. It does not drive 1 Box Forward.
-- `encoder_1box_96m` is a deliberately **opt-in supervised trial**
-  compiled with `ENCODER_1BOX_TEST_MODE`; at boot motors are still
-  locked. Only pressing **Start test** while **Mode 7 → Encoder Test →
-  1 Box Forward** is selected can pass the guarded unlock.
-- Six other forward/turn menu placeholders have no motor handlers.
+Default Build/Upload: **`mode_menu_96m`**, which includes the encoder
+one-box motion controller and all test drivers. The old
+`encoder_1box_96m` environment is retained only as an alias.
+
+| Test state | IR acquisition | MPU acquisition | Encoder | Motor |
+|---|---|---|---|---|
+| Idle/menu | Off | Off | Hardware counts only | Locked |
+| IR Test | On | Off | Hardware counts only | Locked |
+| MPU Test | Off | On; async gyro calibration starts on first use | Hardware counts only | Locked |
+| Encoder → Log Receive | Off | Off | Log after Start | Locked |
+| Encoder → 1 Box Forward | Off | Off | Closed-loop motion after Start | Conditional unlock only |
+| Other Forward/Pivot | Off | Off | Hardware counts only | Locked |
+| All Sensors Test | On | On | Combined readings | Initialized but locked |
+
+Driver initialization is shared, but acquisition and motor permissions
+are selected at runtime. Encoder timer counting and motor command
+watchdog continue independently for safety. **No sensor power rails are
+switched by software.** All Sensors Test emits 20-Hz combined `ALL`
+CSV (wheel counts, IR, yaw/rate and validity flags) in its own folder.
+All mode does not run a motor task; motor stays locked until a future
+explicitly supervised controller is implemented.
+
+Encoder one-box is now **encoder-feedback only**. No MPU or IR samples
+are used during motion. Remaining safety guards are signed-count
+direction, wheel divergence, stall, 6.5s deadline, PA0/Stop and 350ms
+host heartbeat. Without IMU supervision there is no independent yaw
+measurement or obstacle avoidance. Test with wheels lifted first.
 
 ### Start/Stop and safeguards
 
 1. Enter `1 Box Forward`. Status says `ARMED; press Start`.
    **No motor command is issued by selection.**
-2. After a successful MPU6050 startup calibration, press GUI
-   **Start test**. SPP sends `G` once; the MCU verifies the calibrated,
-   fresh gyro, running TIM11 control, no PA0 button press, and healthy
-   motor watchdog.
+2. In Encoder → 1 Box Forward press **Start test**. STM32 checks selected
+   mode, clock, TIM11 scheduler, PA0 and motor watchdog; **MPU is not required**.
 3. STM32 emits `ONEBOX,START,target_l=2400,target_r=2390,pwm_max=200`
    and performs one encoder feedback-controlled forward trial.
    Motor PWM is capped at **200/1000 = 20%**, with tapered PWM and
@@ -212,8 +226,7 @@ actual floor and adjust for wheel slip, braking and mechanical backlash.
 4. GUI sends one-byte `H` heartbeats at about 100ms intervals only
    while onebox motion is requested. **350 ms without the lease**, a
    physical PA0 press, GUI Stop (`P`), wrong-sign encoder feedback,
-   wheel divergence, stale MPU or yaw deviation >12 degrees, no
-   progress for 900ms, or a run lasting >6.5 s forces a motor stop.
+   wheel divergence, no progress for 900ms, or a run lasting >6.5 s forces a motor stop.
    A severe fault locks the driver until MCU reset.
 5. At the encoder target, the MCU brakes for 100ms then coasts.
    Result is a status-only event, e.g.
@@ -237,16 +250,10 @@ git fetch origin
 git switch giomuadongbacv2
 git pull --ff-only origin giomuadongbacv2
 
-# Default VS Code Build/Upload profile on giomuadongbacv2:
+# One firmware for all tests; default VS Code Upload:
 pio run
 pio run -t upload
-
-# Same image explicitly, if VS Code selected a different environment:
-pio run -e encoder_1box_96m -t upload
 py tools/classic_spp_dashboard.py --port COM16
-
-# Restore permanently locked menu after test:
-pio run -e mode_menu_96m -t upload
 ```
 
 Test coverage: `tests/regression/encoder_onebox_native_test.py`
@@ -413,9 +420,9 @@ py tests/regression/spp_dual_log_test.py
 py tests/regression/spp_handshake_test.py
 ```
 
-Cấu hình `mode_menu_96m` **luôn gọi `Motor_LockOutputs()`** trước khi khởi tạo menu. Không có lệnh motor/PID/Flash ở Mode 7 hoặc trên hai nút từ xa. Khi thử encoder, tách VM 2S và quay bánh bằng tay, cố định thân xe; sau đó kiểm tra dấu tiến dương, số xung/vòng và tương quan tốc độ giữa hai phía. Kết quả kiểm thử native hoặc build không thay cho phép đo trên phần cứng thật.
+Cấu hình `mode_menu_96m` vẫn khóa motor ngay khi boot, nhưng **mở khóa có điều kiện** khi Start đúng Encoder → 1 Box Forward. Các mode khác không kích hoạt chuyển động. Thử motor lần đầu phải nâng bánh khỏi sàn, có bộ ngắt nguồn VM vật lý, xác nhận chiều bánh và Stop/PA0; CI không thay thế phép thử thực tế.
 
-**Lưu ý:** đây là menu test mới trong profile `mode_menu_96m`, không phải profile `system_test_96m` cũ vốn có bài thử motor 90°/180°/200 mm. Không nạp nhầm profile motor-capable.
+**Lưu ý:** `mode_menu_96m` là firmware menu thống nhất, khác `system_test_96m` cũ. Không nạp các profile chẩn đoán cũ khi kiểm thử menu.
 
 ## Kết nối SPP và nút điều khiển bị mờ (23/11/2026)
 
