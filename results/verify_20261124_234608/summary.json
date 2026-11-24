@@ -1,0 +1,52 @@
+{
+  "timestamp": "20261124_234608",
+  "env": "genericSTM32F411CE",
+  "baud": 115200,
+  "duration_s": 15.0,
+  "regression_tests": [
+    {
+      "script": "ir_sensor_native_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "flash_map_protocol_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "ssd1306_native_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "spp_handshake_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "wheel_speed_pid_native_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "motor_driver_native_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "encoder_native_test.py",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "script": "platformio_profile_cleanup_test.py",
+      "passed": true,
+      "returncode": 0
+    }
+  ],
+  "build_ok": true,
+  "upload_ok": null,
+  "uart_analysis": null,
+  "verdict": "PASS_OFFLINE"
+}

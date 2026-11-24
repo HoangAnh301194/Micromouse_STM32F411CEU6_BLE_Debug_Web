@@ -312,7 +312,6 @@ class WheelSpeedPidNativeTest(unittest.TestCase):
                     f"-I{REPO_ROOT / 'include'}",
                     str(REPO_ROOT / "src" / "wheel_speed_pid.c"),
                     str(REPO_ROOT / "src" / "pid.c"),
-                    str(REPO_ROOT / "src" / "motion_primitives.c"),
                     str(REPO_ROOT / "src" / "motion.c"),
                     str(harness_c),
                     "-lm",

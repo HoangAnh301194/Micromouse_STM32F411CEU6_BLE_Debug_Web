@@ -45,12 +45,6 @@ typedef enum {
 
 void Motor_Init(void);
 void Motor_LockOutputs(void);
-#if defined(SYSTEM_TEST_MODE)
-uint8_t Motor_SystemTestUnlockOutputs(void);
-#endif
-#if defined(TURN_PID_DIAG)
-uint8_t Motor_TurnDiagUnlockOutputs(void);
-#endif
 #if defined(WALL_PID_TEST_MODE)
 /* Dedicated PA0-start, single-shot 4-cell wall test only; never production. */
 uint8_t Motor_WallPidTestUnlockOutputs(void);

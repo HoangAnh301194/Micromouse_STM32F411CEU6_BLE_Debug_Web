@@ -9,6 +9,7 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 ACTIVE = (
     "genericSTM32F411CE",
+    "production_oled_status_96m",
     "integration_diag_motor_off_96m",
     "integration_diag_motor_on_96m",
     "flash_map_diag_96m",
@@ -18,8 +19,6 @@ ACTIVE = (
     "ble_profile_motor_on_pid_115200_96m",
     "ble_rx_diag_96m",
     "ir_filter_diag_96m",
-    "system_test_96m",
-    "turn_pid_diag_96m",
     "ir_burst_diag_96m",
     "wall_pid_4cell_96m",
     "maze_sensor_capture_96m",
@@ -34,6 +33,8 @@ RETIRED = (
     "speed_pid_alpha_030_96m",
     "ir_oled_test_96m",
     "oled_mpu_diag_96m",
+    "system_test_96m",
+    "turn_pid_diag_96m",
 )
 
 def read(path):

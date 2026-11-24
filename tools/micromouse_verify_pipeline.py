@@ -87,6 +87,10 @@ def run_regression_tests(out_dir: Path) -> tuple[bool, list[dict[str, Any]]]:
         ROOT_DIR / "tests" / "regression" / "flash_map_protocol_test.py",
         ROOT_DIR / "tests" / "regression" / "ssd1306_native_test.py",
         ROOT_DIR / "tests" / "regression" / "spp_handshake_test.py",
+        ROOT_DIR / "tests" / "regression" / "wheel_speed_pid_native_test.py",
+        ROOT_DIR / "tests" / "regression" / "motor_driver_native_test.py",
+        ROOT_DIR / "tests" / "regression" / "encoder_native_test.py",
+        ROOT_DIR / "tests" / "regression" / "platformio_profile_cleanup_test.py",
     ]
     results: list[dict[str, Any]] = []
     all_ok = True
@@ -225,6 +229,7 @@ def main() -> int:
     parser.add_argument("--skip-tests", action="store_true", help="Skip offline regression tests")
     parser.add_argument("--skip-build", action="store_true", help="Skip PlatformIO build")
     parser.add_argument("--skip-upload", action="store_true", help="Skip ST-Link upload")
+    parser.add_argument("--skip-capture", action="store_true", help="Skip UART capture and online analysis")
     parser.add_argument("--send", action="append", default=[], help="Optional UART command to send after opening port")
     parser.add_argument("--restore-env", default=None, help="Optional PlatformIO env to upload after capture")
     args = parser.parse_args()
@@ -271,6 +276,12 @@ def main() -> int:
             (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
             print(f"[FAIL] ST-Link upload failed. See {out_dir / 'upload.log'}", flush=True)
             return rc
+
+    if args.skip_capture:
+        summary["verdict"] = "PASS_OFFLINE"
+        (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(f"\n[DONE] Verdict={summary['verdict']} (Offline test & build passed) | Results saved in: {out_dir}", flush=True)
+        return 0
 
     port = detect_uart_port(args.port)
     summary["port"] = port

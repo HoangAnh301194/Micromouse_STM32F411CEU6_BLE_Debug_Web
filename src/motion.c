@@ -73,13 +73,6 @@ static float ClampF(float value, float min_value, float max_value)
     return value;
 }
 
-static int16_t ClampPwm(float value)
-{
-    if (value > 100.0f) return 100;
-    if (value < -100.0f) return -100;
-    return (int16_t)value;
-}
-
 static void ClearSpeedDebug(void)
 {
     motion.speed_debug.left_ref_pps = 0;

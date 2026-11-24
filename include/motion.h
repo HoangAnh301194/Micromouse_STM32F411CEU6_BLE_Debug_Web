@@ -34,12 +34,9 @@ typedef struct {
 
 void Motion_Init(void);
 
-/* Default profiles for straight, pivot turns, and clothoid smooth turns. */
+/* Default profiles for straight and pivot turns. */
 void Motion_GetDefaultStraightProfile(Motion_StraightProfile_t *out);
 void Motion_GetDefaultTurnProfile(Motion_TurnProfile_t *out);
-void Motion_GetSmoothTurnPreset(Motion_SmoothTurnKind_t kind,
-                                MotionPrimitiveDirection direction,
-                                Motion_SmoothTurnProfile_t *out);
 
 /* Basic motion commands (backward-compatible). */
 void Motion_CommandStraight(float distance_mm, float current_yaw_deg);
@@ -54,13 +51,6 @@ void Motion_CommandStraightProfile(float distance_mm,
 void Motion_CommandTurnProfile(float angle_deg,
                                float current_yaw_deg,
                                const Motion_TurnProfile_t *profile);
-
-void Motion_CommandSmoothTurn(Motion_SmoothTurnKind_t kind,
-                              MotionPrimitiveDirection direction,
-                              float current_yaw_deg);
-
-void Motion_CommandSmoothTurnProfile(float current_yaw_deg,
-                                     const Motion_SmoothTurnProfile_t *profile);
 
 /* Continuous chassis velocity command (v_mm_s, w_dps) for wall-following,
  * smooth clothoid curves, or high-level maze controllers. Calling repeatedly
@@ -103,7 +93,6 @@ typedef struct {
 
 uint8_t Motion_IsDone(void);
 Motion_State_t Motion_GetState(void);
-Motion_SmoothTurnPhase_t Motion_GetSmoothTurnPhase(void);
 float Motion_GetDistanceMm(void);
 float Motion_GetRemainingDistanceMm(void);
 float Motion_GetAngleErrorDeg(void);

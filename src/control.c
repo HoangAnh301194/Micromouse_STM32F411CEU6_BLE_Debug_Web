@@ -139,11 +139,7 @@ void Control_Stop(void)
      * force the motor command to zero; otherwise the last PWM value could
      * remain latched after TIM11 stops.
      */
-#if defined(SYSTEM_TEST_MODE)
-    SystemTest_Stop(1U);
-#elif defined(TURN_PID_DIAG)
-    TurnPidDiag_Stop(7U);
-#elif defined(WALL_PID_TEST_MODE)
+#if defined(WALL_PID_TEST_MODE)
     WallPidTest_Stop(WP_TIMEOUT);
 #endif
     Motion_Stop();
@@ -266,14 +262,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             di_seen_valid = 1U;
             di_stats.gyro_valid_ticks++;
 #endif
-#if defined(SYSTEM_TEST_MODE)
-            SystemTest_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
-                                   gyro.yaw_deg,gyro.gyro_z_dps);
-#elif defined(TURN_PID_DIAG)
-            TurnPidDiag_ControlTick(Encoder_GetLeftCount(),Encoder_GetRightCount(),
-                                    gyro.yaw_deg,gyro.gyro_z_dps,
-                                    (uint32_t)(micros()-gyro.completed_us));
-#elif defined(WALL_PID_TEST_MODE)
+#if defined(WALL_PID_TEST_MODE)
             {
                 IR_WallSnapshot ir_frame;
                 (void)IR_WallSignal_Read(&wall_ir_ema10,micros(),&ir_frame);
@@ -291,11 +280,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
             Sweep_ImuFaultFromISR();
 #endif
 #endif
-#if defined(SYSTEM_TEST_MODE)
-            SystemTest_Stop(3U);
-#elif defined(TURN_PID_DIAG)
-            TurnPidDiag_Stop(3U);
-#elif defined(WALL_PID_TEST_MODE)
+#if defined(WALL_PID_TEST_MODE)
             WallPidTest_Stop(WP_IMU_STALE);
 #else
             Motion_SensorFault(); /* Invalid, uncalibrated or stale gyro. */

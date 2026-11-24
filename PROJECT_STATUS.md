@@ -1,10 +1,29 @@
 # PROJECT_STATUS — Micromouse STM32F411CEU6
 
-**Ngày cập nhật:** 27/10/2026 (UTC+7). **Nhánh làm việc:** `giomuadongbac`. **Mã nguồn nền đã rà soát:** `d90d5c10def6ff2a7c4f98174f738e233741cef7`; IR diagnostic/tooling và evidence được cập nhật sau revision này. Đây là hồ sơ ngữ cảnh dự án để agent/chat mới tiếp tục mà không cần đọc toàn bộ lịch sử.
+**Ngày cập nhật:** 24/11/2026 (UTC+7). **Nhánh làm việc:** `giomuadongbac`. **Mã nguồn nền đã rà soát:** Commit `140ecc0` (và các bản sửa audit/dọn dẹp). Đây là hồ sơ ngữ cảnh dự án để agent/chat mới tiếp tục mà không cần đọc toàn bộ lịch sử.
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
-## Cập nhật Module PID vận tốc 2 bánh & Motion API mở rộng — 24/11/2026 (`giomuadongbac`)
+## Cập nhật Dọn dẹp Kiến trúc Motion & Pipeline Kiểm chứng (Mức 2) — 24/11/2026 (`giomuadongbac`)
+
+- **Xử lý toàn diện Audit Firmware (CRIT-04 -> CRIT-09):**
+  - `src/i2c.c`: Chuyển bus recovery sang `GPIOB->BSRR` nguyên tử, đồng bộ cờ OLED DMA/I2C.
+  - `src/flash_storage.c`: Xóa D-Cache (`DCEN`/`DCRST`) và đồng bộ `__DSB()` trước/sau ghi Flash sector 6/7.
+  - `include/pinout.h`: Đồng bộ thống nhất hình học bánh xe `WHEEL_DIAMETER_MM = 34.0f` trên toàn bộ firmware và script test.
+  - `src/maze_sensor_capture.c`: Sửa lỗi format string 15 tham số snprintf.
+  - `src/system_timer.c`: Viết lại `millis()` bằng bộ tích lũy delta 64-bit tránh lỗi tràn sau 71.58 phút.
+  - `platformio.ini`: Bổ sung `-Wl,-u,_printf_float` định dạng chuẩn số thực telemetry qua USART2/JDY-33 BLE.
+  - `tools/classic_spp_dashboard.py`: Sửa write timeout RFCOMM tránh văng kết nối SPP trên Windows.
+- **Dọn dẹp Kiến trúc Motion (Mức 2 đã hoàn tất):**
+  - Đã loại bỏ hoàn toàn các module/test độc lập rải rác cũ không còn dùng: `motion_primitives.c/h`, `speed_pid_diag.c/h`, `turn_pid_diag.c/h`, `system_test.c/h`.
+  - Thu gọn trạng thái `motion.c` về đúng 4 state chuẩn: `MOTION_IDLE`, `MOTION_STRAIGHT`, `MOTION_VELOCITY`, `MOTION_TURN_PROFILE`.
+  - Quy chuẩn mọi chuyển động xoay (`Motion_CommandTurn`) chạy qua `Motion_CommandTurnProfile` kết hợp Gyro yaw/rate + `WheelSpeedPid` 1 kHz.
+  - Dọn dẹp các macro và hàm unlock dư thừa trong `control.c`, `motor.c`, `main_runtime.c`.
+  - Lưu trữ (retire) các môi trường PIO cũ vào `platformio_legacy.ini`, giữ 14 môi trường active đồng bộ trong `platformio.ini`.
+- **Pipeline kiểm chứng tự động (`tools/micromouse_verify_pipeline.py`):**
+  - Tích hợp tự động 8 bộ test hồi quy C-native & protocol (`ir_sensor`, `flash_map`, `ssd1306`, `spp_handshake`, `wheel_speed_pid`, `motor_driver`, `encoder`, `platformio_profile_cleanup`).
+  - Hỗ trợ cờ `--skip-capture` cho kiểm tra offline và build PlatformIO.
+  - Kết quả kiểm chứng offline tại `results/verify_20261124_234608`: **PASS_OFFLINE** (8/8 test suites PASS, build `genericSTM32F411CE` 100% SUCCESS).
 
 - **Module lõi (`include/wheel_speed_pid.h`, `src/wheel_speed_pid.c`):** Đã tách độc lập thuần C (không phụ thuộc phần cứng ngoài hằng số hình học `include/pinout.h` với `WHEEL_DIAMETER_MM = 34.0f`). Cài đặt Feedforward ($k_s, k_v, k_a$) + PI, *conditional anti-windup*, *steering-priority desaturation*, cấu hình độc lập trái/phải (`WheelSpeedPid_InitConfig`, `WheelSpeedPid_SetGains`/`GetGains` giữ nguyên tích phân khi đổi nóng), động học thuận/nghịch (`CmdVelToWheelPps` / `WheelPpsToCmdVel`) và feedforward gia tốc (`UpdateCmdVelWithAccel`).
 - **Bộ hệ số tầng trong đã chốt (1 kHz):** `kp = 0.090`, `ki = 0.250`, `ks = 80.0‰`, `kv = 0.098‰/PPS`, `ka = 0.0`, trần `1000‰` (100% PWM).
