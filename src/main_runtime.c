@@ -490,8 +490,10 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
-            /* Only IR/MPU selection or Encoder -> Log Receive emits data.
-             * Six encoder movement labels are inert; motor is always locked. */
+            /* Passive telemetry is available for IR Live Data, Encoder Log
+             * Receive, and MPU Gyro/Yaw. Other Mode 9 entries are menu-only
+             * until their diagnostic runners are integrated. The default
+             * mode_menu_96m profile keeps all motor outputs locked. */
             if (active_test_previous != mode_menu.active_test) {
                 active_test_previous = mode_menu.active_test;
                 last_test_ms = now;
