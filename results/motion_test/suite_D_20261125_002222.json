@@ -1,0 +1,185 @@
+[
+  {
+    "test_name": "stage_b_connectivity",
+    "verdict": "PASS",
+    "port": "COM16",
+    "ping": {
+      "kind": "ACK",
+      "cmd_id": 1,
+      "verb": "PING",
+      "status": "READY=1",
+      "fields": {
+        "READY": "1",
+        "STATE": "0",
+        "CAL": "3",
+        "LOCK": "0",
+        "RES": "1"
+      },
+      "raw": "ACK,1,PING,READY=1,STATE=0,CAL=3,LOCK=0,RES=1"
+    },
+    "gains": {
+      "ack": {
+        "kind": "ACK",
+        "cmd_id": 2,
+        "verb": "GET_GAINS",
+        "status": "OK",
+        "fields": {},
+        "raw": "ACK,2,GET_GAINS,OK"
+      },
+      "left": {
+        "kp": 0.09,
+        "ki": 0.25,
+        "ks": 80.0,
+        "kv": 0.098,
+        "ka": 0.0,
+        "integral_limit": 1250.0,
+        "pwm_limit": 1000.0
+      },
+      "right": {
+        "kp": 0.09,
+        "ki": 0.25,
+        "ks": 80.0,
+        "kv": 0.098,
+        "ka": 0.0,
+        "integral_limit": 1250.0,
+        "pwm_limit": 1000.0
+      },
+      "heading": {
+        "kp": 4.0,
+        "ki": 0.0,
+        "kd": 0.05,
+        "max_w_dps": 120.0
+      }
+    },
+    "idle_samples": 100,
+    "idle_rate_hz": 50.0,
+    "nonzero_idle_pwm": 0,
+    "stop_latency_ms": 64.7
+  },
+  {
+    "test_name": "D1_straight_165mm_nolh",
+    "test_id": "D1",
+    "verdict": "FAIL",
+    "finish_result": "SUCCESS",
+    "checks": {
+      "coverage_ge_95": true,
+      "no_fault": true,
+      "clean_finish": true,
+      "zero_pwm_when_ref_zero": true,
+      "left_ss_err_le_5pct": false,
+      "left_overshoot_le_10pct": true,
+      "right_ss_err_le_5pct": false,
+      "right_overshoot_le_10pct": true
+    },
+    "metrics": {
+      "samples_total": 175,
+      "samples_active": 149,
+      "duration_s": 3.48,
+      "telemetry_hz": 50.0,
+      "sample_loss_est": 0,
+      "coverage_pct": 100.0,
+      "fault_count": 0,
+      "stop_latency_ms": "N/A",
+      "finish_result": "SUCCESS",
+      "final_distance_mm": 165.0,
+      "final_yaw_deg": -0.01,
+      "lr_diff_mean_pps": 102.18,
+      "left": {
+        "samples": 135,
+        "mean_ref_pps": 1338.0,
+        "mean_meas_pps": 918.72,
+        "steady_state_error_pps": 419.28,
+        "steady_state_error_pct": 31.34,
+        "mae_pps": 543.46,
+        "rmse_pps": 566.14,
+        "max_abs_error_pps": 926.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 38.57,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      },
+      "right": {
+        "samples": 135,
+        "mean_ref_pps": 1338.0,
+        "mean_meas_pps": 920.89,
+        "steady_state_error_pps": 417.11,
+        "steady_state_error_pct": 31.17,
+        "mae_pps": 617.3,
+        "rmse_pps": 693.8,
+        "max_abs_error_pps": 1338.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 30.49,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      }
+    },
+    "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_002208_D1_straight_165mm_nolh"
+  },
+  {
+    "test_name": "D2_straight_330mm_nolh",
+    "test_id": "D2",
+    "verdict": "FAIL",
+    "finish_result": "SUCCESS",
+    "checks": {
+      "coverage_ge_95": true,
+      "no_fault": true,
+      "clean_finish": true,
+      "zero_pwm_when_ref_zero": true,
+      "left_ss_err_le_5pct": false,
+      "left_overshoot_le_10pct": true,
+      "right_ss_err_le_5pct": false,
+      "right_overshoot_le_10pct": true
+    },
+    "metrics": {
+      "samples_total": 294,
+      "samples_active": 269,
+      "duration_s": 5.86,
+      "telemetry_hz": 50.0,
+      "sample_loss_est": 0,
+      "coverage_pct": 100.0,
+      "fault_count": 0,
+      "stop_latency_ms": "N/A",
+      "finish_result": "SUCCESS",
+      "final_distance_mm": 330.0,
+      "final_yaw_deg": -0.01,
+      "lr_diff_mean_pps": 15.63,
+      "left": {
+        "samples": 256,
+        "mean_ref_pps": 1337.86,
+        "mean_meas_pps": 930.03,
+        "steady_state_error_pps": 407.83,
+        "steady_state_error_pct": 30.48,
+        "mae_pps": 498.45,
+        "rmse_pps": 546.26,
+        "max_abs_error_pps": 1338.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 31.26,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      },
+      "right": {
+        "samples": 256,
+        "mean_ref_pps": 1337.86,
+        "mean_meas_pps": 930.27,
+        "steady_state_error_pps": 407.59,
+        "steady_state_error_pct": 30.47,
+        "mae_pps": 506.43,
+        "rmse_pps": 560.49,
+        "max_abs_error_pps": 1338.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 29.83,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      }
+    },
+    "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_002214_D2_straight_330mm_nolh"
+  }
+]

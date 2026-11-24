@@ -1,0 +1,59 @@
+[
+  {
+    "test_name": "stage_b_connectivity",
+    "verdict": "PASS",
+    "port": "COM16",
+    "ping": {
+      "kind": "ACK",
+      "cmd_id": 1,
+      "verb": "PING",
+      "status": "READY=1",
+      "fields": {
+        "READY": "1",
+        "STATE": "0",
+        "CAL": "3",
+        "LOCK": "0",
+        "RES": "0"
+      },
+      "raw": "ACK,1,PING,READY=1,STATE=0,CAL=3,LOCK=0,RES=0"
+    },
+    "gains": {
+      "ack": {
+        "kind": "ACK",
+        "cmd_id": 2,
+        "verb": "GET_GAINS",
+        "status": "OK",
+        "fields": {},
+        "raw": "ACK,2,GET_GAINS,OK"
+      },
+      "left": {
+        "kp": 0.09,
+        "ki": 0.25,
+        "ks": 80.0,
+        "kv": 0.098,
+        "ka": 0.0,
+        "integral_limit": 3000.0,
+        "pwm_limit": 1000.0
+      },
+      "right": {
+        "kp": 0.09,
+        "ki": 0.25,
+        "ks": 80.0,
+        "kv": 0.098,
+        "ka": 0.0,
+        "integral_limit": 3000.0,
+        "pwm_limit": 1000.0
+      },
+      "heading": {
+        "kp": 4.0,
+        "ki": 0.0,
+        "kd": 0.05,
+        "max_w_dps": 120.0
+      }
+    },
+    "idle_samples": 100,
+    "idle_rate_hz": 50.0,
+    "nonzero_idle_pwm": 0,
+    "stop_latency_ms": 29.8
+  }
+]

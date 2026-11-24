@@ -1,0 +1,185 @@
+[
+  {
+    "test_name": "stage_b_connectivity",
+    "verdict": "PASS",
+    "port": "COM16",
+    "ping": {
+      "kind": "ACK",
+      "cmd_id": 1,
+      "verb": "PING",
+      "status": "READY=1",
+      "fields": {
+        "READY": "1",
+        "STATE": "0",
+        "CAL": "3",
+        "LOCK": "0",
+        "RES": "1"
+      },
+      "raw": "ACK,1,PING,READY=1,STATE=0,CAL=3,LOCK=0,RES=1"
+    },
+    "gains": {
+      "ack": {
+        "kind": "ACK",
+        "cmd_id": 2,
+        "verb": "GET_GAINS",
+        "status": "OK",
+        "fields": {},
+        "raw": "ACK,2,GET_GAINS,OK"
+      },
+      "left": {
+        "kp": 0.09,
+        "ki": 0.25,
+        "ks": 80.0,
+        "kv": 0.098,
+        "ka": 0.0,
+        "integral_limit": 1250.0,
+        "pwm_limit": 1000.0
+      },
+      "right": {
+        "kp": 0.09,
+        "ki": 0.25,
+        "ks": 80.0,
+        "kv": 0.098,
+        "ka": 0.0,
+        "integral_limit": 1250.0,
+        "pwm_limit": 1000.0
+      },
+      "heading": {
+        "kp": 4.0,
+        "ki": 0.0,
+        "kd": 0.05,
+        "max_w_dps": 120.0
+      }
+    },
+    "idle_samples": 100,
+    "idle_rate_hz": 50.0,
+    "nonzero_idle_pwm": 0,
+    "stop_latency_ms": 32.5
+  },
+  {
+    "test_name": "E1_vel_arc_left_low",
+    "test_id": "E1",
+    "verdict": "FAIL",
+    "finish_result": "SUCCESS",
+    "checks": {
+      "coverage_ge_95": true,
+      "no_fault": true,
+      "clean_finish": true,
+      "zero_pwm_when_ref_zero": true,
+      "left_ss_err_le_5pct": false,
+      "left_overshoot_le_10pct": true,
+      "right_ss_err_le_5pct": false,
+      "right_overshoot_le_10pct": true
+    },
+    "metrics": {
+      "samples_total": 100,
+      "samples_active": 75,
+      "duration_s": 1.98,
+      "telemetry_hz": 50.0,
+      "sample_loss_est": 0,
+      "coverage_pct": 100.0,
+      "fault_count": 0,
+      "stop_latency_ms": "N/A",
+      "finish_result": "SUCCESS",
+      "final_distance_mm": 56.1,
+      "final_yaw_deg": -0.01,
+      "lr_diff_mean_pps": "N/A (different wheel references)",
+      "left": {
+        "samples": 75,
+        "mean_ref_pps": 455.0,
+        "mean_meas_pps": 0.0,
+        "steady_state_error_pps": 455.0,
+        "steady_state_error_pct": 100.0,
+        "mae_pps": 454.76,
+        "rmse_pps": 454.76,
+        "max_abs_error_pps": 455.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 0.0,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      },
+      "right": {
+        "samples": 75,
+        "mean_ref_pps": 2222.0,
+        "mean_meas_pps": 1157.21,
+        "steady_state_error_pps": 1064.79,
+        "steady_state_error_pct": 47.92,
+        "mae_pps": 1238.67,
+        "rmse_pps": 1263.17,
+        "max_abs_error_pps": 2222.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 33.58,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      }
+    },
+    "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_002301_E1_vel_arc_left_low"
+  },
+  {
+    "test_name": "E2_qstep_low",
+    "test_id": "E2",
+    "verdict": "FAIL",
+    "finish_result": "SUCCESS",
+    "checks": {
+      "coverage_ge_95": true,
+      "no_fault": true,
+      "clean_finish": true,
+      "zero_pwm_when_ref_zero": true,
+      "left_ss_err_le_5pct": false,
+      "left_overshoot_le_10pct": true,
+      "right_ss_err_le_5pct": false,
+      "right_overshoot_le_10pct": true
+    },
+    "metrics": {
+      "samples_total": 267,
+      "samples_active": 240,
+      "duration_s": 5.32,
+      "telemetry_hz": 50.0,
+      "sample_loss_est": 0,
+      "coverage_pct": 100.0,
+      "fault_count": 0,
+      "stop_latency_ms": "N/A",
+      "finish_result": "SUCCESS",
+      "final_distance_mm": 288.4,
+      "final_yaw_deg": -0.01,
+      "lr_diff_mean_pps": 233.28,
+      "left": {
+        "samples": 40,
+        "mean_ref_pps": 2409.0,
+        "mean_meas_pps": 1112.67,
+        "steady_state_error_pps": 1296.33,
+        "steady_state_error_pct": 53.81,
+        "mae_pps": 1478.12,
+        "rmse_pps": 1500.8,
+        "max_abs_error_pps": 2350.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 53.92,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      },
+      "right": {
+        "samples": 40,
+        "mean_ref_pps": 2409.0,
+        "mean_meas_pps": 1111.67,
+        "steady_state_error_pps": 1297.33,
+        "steady_state_error_pct": 53.85,
+        "mae_pps": 1483.6,
+        "rmse_pps": 1507.56,
+        "max_abs_error_pps": 2409.0,
+        "rise_time_10_90_ms": "N/A (did not reach 90%)",
+        "overshoot_pct": 0.0,
+        "settling_time_5pct_ms": "N/A (not settled within \u00b15%)",
+        "steady_std_pps": 59.56,
+        "pwm_sat_pct": 0.0,
+        "nonzero_pwm_when_ref_zero": 0
+      }
+    },
+    "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_002306_E2_qstep_low"
+  }
+]

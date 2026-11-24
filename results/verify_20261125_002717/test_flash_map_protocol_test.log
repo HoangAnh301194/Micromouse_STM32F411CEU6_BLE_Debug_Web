@@ -1,0 +1,3 @@
+PASS: C-generated map 5 x 5 payload 33 CRC 1323C17D
+PASS: C-generated map 16 x 16 payload 264 CRC 933A97B3
+PASS: UART frame parser rejects corrupt map and accepts 5/16

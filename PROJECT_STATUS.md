@@ -20,9 +20,17 @@
 - **Trạng thái xác minh tách bạch (25/11/2026):**
   - *Native C & Protocol Regression (PASS):* 10/10 bộ test PASS (`verify_20261125_001528`, `classic_spp_protocol_test.py`, `spp_motion_protocol_test.py`, `wheel_speed_pid_native_test.py`).
   - *Biên dịch PlatformIO (PASS):* `genericSTM32F411CE` (RAM 5.6%, Flash 18.3%) và `production_oled_status_96m` (RAM 8.1%, Flash 20.4%) SUCCESS.
-  - *Hardware No-Load Stage B (PASS):* `results/motion_test/suite_B_20261125_001135.json` — Flash ST-Link OK, `COM16` đạt `49.5 Hz` (và `50.5 Hz` ở lần chạy sau), `READY=1`, `idle_pwm=0`, `stop_latency_ms=37.0 ms` (`20.5 ms` ở lần 2).
-  - *Hardware No-Load Stage C @ 30% PWM ceiling (FAIL do giới hạn vật lý dead-zone):* `results/motion_test/suite_C_20261125_001449.json` — Toàn bộ `C1–C9` hoàn tất sạch `RES=SUCCESS`, `0` lỗi EMI, `0` fault; tuy nhiên ở giới hạn `PWM ≤ 300‰` (30%), motor nằm đúng ngưỡng ma sát tĩnh (~`295–330‰`) nên không tự quay đều được (`sat_flags=3`, anti-windup giữ tích phân đúng thiết kế). Cần người dùng xác nhận nếu muốn nâng trần PWM thử nghiệm không tải lên `40–50%` ở bước tiếp theo.
-  - *Chưa thực hiện:* Stage D/E motor runs (dừng tại Stage C theo quy tắc an toàn), chạy có tải trên mặt đất, bám tường IR/quay góc thực tế trên sa bàn.
+  - *Hardware No-Load Stage B (PASS):* `results/motion_test/suite_B_20261125_002756.json` — Flash ST-Link OK (`integral_limit=3000.0`), `COM16` đạt `50.0 Hz`, `READY=1`, `idle_pwm=0`.
+  - *Hardware No-Load Stage C/D/E & Tuning thực nghiệm (25/11/2026):*
+    - Phát hiện hai nguyên nhân vật lý khiến sai số xác lập lớn ở gain mặc định cũ: (1) ở điện áp pin hiện tại, ngưỡng dead-zone ma sát tĩnh ~`295–300‰` và tốc độ tối đa không tải tại `1000‰` (100% PWM) là ~`1770 PPS` (~`132 mm/s`), và (2) `integral_limit = 1250.0` (`0.25 * 1250 = 312.5‰`) bóp nghẹt tích phân khiến PWM dừng ở `~561‰` dù `saturation = 0%`.
+    - Đã nâng `integral_limit = 3000.0f` trong `src/wheel_speed_pid.c` (và host defaults).
+    - Khi thử nghiệm runtime `SET_GAINS` với `kp=0.090, ki=0.65, ks=120.0, kv=0.36, integral_limit=3000.0`:
+      - `C2 (Right 500 PPS @ 45% PWM)`: **PASS** (sai số `1.49%`, overshoot `7.4%`).
+      - `C1 (Left 500 PPS @ 45% PWM)`: sai số xác lập `0.71%`, overshoot `14.0%` (vượt nhẹ ngưỡng 10%).
+      - `D1 (165 mm @ 100 mm/s, hold=0)`: **PASS** (`165.0 mm`, sai số `4.79%` L / `4.64%` R, overshoot `0.07%` / `0.30%`).
+      - `D2 (330 mm @ 100 mm/s, hold=0)`: **PASS** (`330.0 mm`, sai số `1.18%` L / `1.24%` R, overshoot `2.32%`).
+      - `E1 (VEL arc)` & `E2 (QSTEP LOW 2409 PPS)`: hoàn tất `RES=SUCCESS`, không fault; phần `2222–2409 PPS` chạm trần vật lý pin hiện tại (`~1770 PPS` @ `1000‰` PWM).
+  - *Chưa thực hiện:* Chạy có tải trên mặt đất, bám tường IR/quay góc thực tế trên sa bàn (cần sạc đầy pin 2S để mở lại trần > `1800 PPS`).
 
 ## Cập nhật Dọn dẹp Kiến trúc Motion & Pipeline Kiểm chứng (Mức 2) — 24/11/2026 (`giomuadongbac`)
 

@@ -158,7 +158,7 @@ void WheelSpeedPid_GetDefaultConfig(WheelSpeedConfig_t *out)
     out->kv_permille_per_pps = 0.098f;
     out->ka_permille_per_pps2 = 0.0f;
     out->max_output_pm = WSP_ABS_MAX_PM;
-    out->integral_limit = 1250.0f;
+    out->integral_limit = 3000.0f;
 }
 
 void WheelSpeedPid_Init(WheelSpeedController_t *ctrl,

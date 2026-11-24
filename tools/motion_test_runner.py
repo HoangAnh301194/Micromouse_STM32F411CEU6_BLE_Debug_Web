@@ -212,32 +212,28 @@ def run_suite_b_connectivity(client: MotionSppClient, port: str) -> dict[str, An
     }
 
 
-def run_suite_c_wheel_pi(client: MotionSppClient, port: str) -> list[dict[str, Any]]:
-    """Stage C: No-load Wheel PI experiments C1-C9 (PWM <= 300 permille = 30%)."""
+def run_suite_c_wheel_pi(client: MotionSppClient, port: str, pwm_limit: float = 300.0) -> list[dict[str, Any]]:
+    """Stage C: No-load Wheel PI experiments C1-C9."""
+    pmax = max(50.0, min(550.0, float(pwm_limit)))
     cases = [
-        ("C1_left_500pps", "C1", "WTEST", (500, 0, 1.5, 300, 0), 3.0, 300.0),
-        ("C2_right_500pps", "C2", "WTEST", (0, 500, 1.5, 300, 0), 3.0, 300.0),
-        ("C3_both_1000pps", "C3", "WTEST", (1000, 1000, 1.5, 300, 0), 3.0, 300.0),
-        ("C4_both_1500pps", "C4", "WTEST", (1500, 1500, 1.5, 300, 0), 3.0, 300.0),
-        ("C5_both_2000pps", "C5", "WTEST", (2000, 2000, 1.5, 300, 0), 3.0, 300.0),
-        ("C7_ramp_1200pps", "C7", "WTEST", (1200, 1200, 1.8, 300, 1), 3.5, 300.0),
-        ("C8_diff_800_1600pps", "C8", "WTEST", (800, 1600, 1.5, 300, 0), 3.0, 300.0),
+        ("C1_left_500pps", "C1", "WTEST", (500, 0, 1.5, pmax, 0), 3.0, pmax),
+        ("C2_right_500pps", "C2", "WTEST", (0, 500, 1.5, pmax, 0), 3.0, pmax),
+        ("C3_both_1000pps", "C3", "WTEST", (1000, 1000, 1.5, pmax, 0), 3.0, pmax),
+        ("C4_both_1500pps", "C4", "WTEST", (1500, 1500, 1.5, pmax, 0), 3.0, pmax),
+        ("C5_both_2000pps", "C5", "WTEST", (2000, 2000, 1.5, pmax, 0), 3.0, pmax),
+        ("C7_ramp_1200pps", "C7", "WTEST", (1200, 1200, 1.8, pmax, 1), 3.5, pmax),
+        ("C8_diff_800_1600pps", "C8", "WTEST", (800, 1600, 1.5, pmax, 0), 3.0, pmax),
     ]
     results: list[dict[str, Any]] = []
-    for name, tid, verb, args, tout, pmax in cases:
-        res = run_single_experiment(client, port, name, tid, verb, args, tout, pwm_max_pm=pmax)
+    for name, tid, verb, args, tout, pm in cases:
+        res = run_single_experiment(client, port, name, tid, verb, args, tout, pwm_max_pm=pm)
         results.append(res)
         time.sleep(0.5)
-        # Abort suite on safety fault or complete motor non-response
         if res.get("finish_result") == "FAULT":
             break
 
-    # C6: Step response 1000 -> 1500 -> 1000 via VEL (or chained WTEST)
-    # Use WTEST 1000 then immediately WTEST 1500? WTEST rejects when BUSY, so use QSTEP_LOW or VEL!
-    # Wait: VEL allows seamless setpoint update without resetting PID!
-    # Let's run C6 using VEL (v=134.5mm/s ~ 1000pps -> 201.8mm/s ~ 1500pps -> 134.5mm/s) or keep separate!
-    # Actually let's run C9: Start -> Stop -> Start test!
-    res_c9 = run_single_experiment(client, port, "C9_start_stop_start", "C9", "WTEST", (1000, 1000, 1.2, 300, 0), 2.5, pwm_max_pm=300.0)
+    # C9: Start -> Stop -> Start test
+    res_c9 = run_single_experiment(client, port, "C9_start_stop_start", "C9", "WTEST", (1000, 1000, 1.2, pmax, 0), 2.5, pwm_max_pm=pmax)
     results.append(res_c9)
     return results
 
@@ -280,6 +276,7 @@ def main() -> int:
     parser.add_argument("--port", default=None, help="Bluetooth Outgoing COM port (auto-detect if omitted)")
     parser.add_argument("--baud", type=int, default=115200, help="Baudrate (default: 115200)")
     parser.add_argument("--suite", choices=["B", "C", "D", "E", "all"], default="B", help="Experiment suite to run")
+    parser.add_argument("--pwm-limit", type=float, default=300.0, help="PWM ceiling in permille for Stage C (default: 300, max 550)")
     parser.add_argument("--report", default=None, help="Optional JSON report output path")
     args = parser.parse_args()
 
@@ -318,7 +315,7 @@ def main() -> int:
             return 1
 
         if args.suite in ("C", "all"):
-            for r in run_suite_c_wheel_pi(client, port):
+            for r in run_suite_c_wheel_pi(client, port, pwm_limit=args.pwm_limit):
                 all_results.append(r)
                 print(f"[{r.get('test_id')}] {r['verdict']} -> {r.get('run_dir', '')}", flush=True)
 

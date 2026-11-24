@@ -44,7 +44,7 @@ DEFAULT_WHEEL_GAINS = {
     "ks": 80.0,
     "kv": 0.098,
     "ka": 0.0,
-    "integral_limit": 1250.0,
+    "integral_limit": 3000.0,
     "pwm_limit": 1000.0,
 }
 

@@ -157,7 +157,7 @@ class MotionControlTab(ttk.Frame):
             ("ks", "Ks (‰)", "80.0"),
             ("kv", "Kv (‰/PPS)", "0.098"),
             ("ka", "Ka", "0.0"),
-            ("integral_limit", "I-Limit", "1250.0"),
+            ("integral_limit", "I-Limit", "3000.0"),
             ("pwm_limit", "PWM Limit", "1000.0"),
         ]
         ttk.Label(ws_frame, text="Param").grid(row=0, column=0, sticky="w")
