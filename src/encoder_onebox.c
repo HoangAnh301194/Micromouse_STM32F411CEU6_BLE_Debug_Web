@@ -1,6 +1,6 @@
 /* Opt-in one-cell encoder motion, never compiled into mode_menu_96m.
  * Physical PA0 abort is checked at TIM11/1kHz; no UART/I2C in ISR.
- * Motor PWM is capped at 26%, guarded by a 350ms SPP host heartbeat,
+ * Motor PWM is capped at 20%, guarded by a 350ms SPP host heartbeat,
  * 300ms motor driver command lease and 6.5s run timeout.
  */
 #if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
