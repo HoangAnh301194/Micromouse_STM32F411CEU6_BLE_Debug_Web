@@ -82,7 +82,7 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
     }
 
     remaining = ((ONEBOX_TARGET_L + ONEBOX_TARGET_R) / 2L) - average;
-    /* Taper from 26% toward 13% in the last ~800 counts (real vehicle
+    /* Taper from 20% toward 12% in the last ~800 counts (real vehicle
      * must validate minimum moving PWM; a stalled wheel times out).
      */
     base = Clamp32(remaining / 6L, ONEBOX_MIN_PWM, ONEBOX_MAX_PWM);
