@@ -930,7 +930,10 @@ class Dashboard:
                 with open(path, "r", encoding="utf-8-sig", newline="") as file:
                     reader = csv.DictReader(file)
                     columns = set(reader.fieldnames or [])
-                    if {"timestamp", "ENC_L", "ENC_R"} <= columns:
+                    if {"timestamp", "ENC_L", "ENC_R", "ir_valid",
+                            "mpu_valid", "L0", "R0"} <= columns:
+                        mode = "ALL"
+                    elif {"timestamp", "ENC_L", "ENC_R"} <= columns:
                         mode = "ENC"
                     elif {"valid", "L0", "L45", "L90", "R0", "R45", "R90"} <= columns:
                         mode = "IR"
@@ -944,7 +947,14 @@ class Dashboard:
                     self.clear_data()
                     for row in reader:
                         try:
-                            if mode == "ENC":
+                            if mode == "ALL":
+                                keys = ("ir_valid", "L0", "L45", "L90",
+                                        "R0", "R45", "R90", "mpu_valid",
+                                        "yaw_cd", "gz_cd")
+                                line = ("ALL,enc_l=%d,enc_r=%d," %
+                                        (int(row["ENC_L"]), int(row["ENC_R"])))
+                                line += ",".join(f"{key}={int(row[key])}" for key in keys)
+                            elif mode == "ENC":
                                 line = f"ENC,{int(row['ENC_L'])},{int(row['ENC_R'])}"
                             elif mode == "IR":
                                 keys = ("valid", "L0", "L45", "L90", "R0", "R45", "R90")
