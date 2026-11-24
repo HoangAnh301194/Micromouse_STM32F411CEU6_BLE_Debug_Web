@@ -1,9 +1,9 @@
-/* Opt-in one-cell encoder motion, never compiled into mode_menu_96m.
- * Physical PA0 abort is checked at TIM11/1kHz; no UART/I2C in ISR.
- * Motor PWM is capped at 20%, guarded by a 350ms SPP host heartbeat,
- * 300ms motor driver command lease and 6.5s run timeout.
+/* Unified menu: one-cell motion ONLY when Encoder / 1 Box Forward is
+ * active AND the GUI sends Start. The control loop uses encoder feedback
+ * only; it never reads MPU or IR. PA0 abort, host lease, direction,
+ * divergence, stall, deadline and motor watchdog remain independent guards.
  */
-#if defined(ENCODER_1BOX_TEST_MODE) && defined(MODE_MENU_ONLY)
+#if defined(MODE_MENU_ONLY)
 #include "encoder_onebox.h"
 #include "board.h"
 #include "control.h"
@@ -12,14 +12,12 @@
 #include "system_timer.h"
 #include "stm32f4xx.h"
 
-static MPU6050_Handle_t *imu_ref;
 static OneBoxCore core;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
 static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
 static uint8_t physical_stop_latched; /* suppress PA0 key event after abort */
 static uint16_t brake_ticks;
-static float yaw_zero;
 static EncoderOneBoxResult result;
 
 static uint32_t Lock(void)
@@ -54,35 +52,28 @@ static void Finish(uint8_t reason)
     result.motor_locked = Motor_OutputsLocked();
     result_pending = 1U; /* main emits exactly once, no USART in TIM11 */
 }
-void EncoderOneBox_Init(MPU6050_Handle_t *mpu)
+void EncoderOneBox_Init(void)
 {
     uint32_t irq = Lock();
-    imu_ref = mpu;
     phase = 0U;
     result_pending = 0U;
     fault_latched = 0U;
     physical_stop_latched = 0U;
     brake_ticks = 0U;
     core.running = 0U;
-    yaw_zero = 0.0f;
     Unlock(irq);
 }
 uint8_t EncoderOneBox_Start(void)
 {
-    MPU6050_Snapshot_t snap;
     uint32_t irq;
-    if (!imu_ref || fault_latched || Board_GetClockFault() || !Control_IsRunning() ||
-        Board_ButtonPressed() || !imu_ref->calibrated ||
-        !MPU6050_GetSnapshot(imu_ref, &snap) ||
-        !snap.valid || (uint32_t)(micros() - snap.completed_us) > 5000U)
-        return 0U;
+    if (fault_latched || Board_GetClockFault() || !Control_IsRunning() ||
+        Board_ButtonPressed()) return 0U;
     irq = Lock();
     if (phase != 0U || result_pending || !Motor_OneBoxUnlockOutputs()) {
         Unlock(irq);
         return 0U;
     }
     Motor_Stop();
-    yaw_zero = snap.yaw_deg;
     OneBoxCore_Start(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
     result_pending = 0U;
     phase = 1U;
@@ -122,21 +113,7 @@ void EncoderOneBox_ControlTick(void)
         Finish(ONEBOX_REASON_MOTOR);
         return;
     }
-    /* Safety yaw/freshness guard. Snapshot copy is IRQ-safe, no I2C here. */
-    if ((core.ticks % 10U) == 0U) {
-        MPU6050_Snapshot_t snap;
-        float dyaw;
-        if (!imu_ref || !MPU6050_GetSnapshot(imu_ref, &snap) ||
-            !snap.valid || (uint32_t)(micros() - snap.completed_us) > 10000U) {
-            Finish(ONEBOX_REASON_IMU);
-            return;
-        }
-        dyaw = snap.yaw_deg - yaw_zero;
-        if (!(dyaw > -12.0f && dyaw < 12.0f)) {
-            Finish(ONEBOX_REASON_IMU);
-            return;
-        }
-    }
+    /* Encoder-only test: no IMU/IR samples consumed here. */
     cmd = OneBoxCore_Step(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
     if (cmd.reason != ONEBOX_REASON_NONE) {
         Finish(cmd.reason);
