@@ -44,13 +44,14 @@ static void Finish(uint8_t reason)
         fault_latched = 1U;
         Motor_LockOutputs(); /* fault latch: reboot needed to re-arm */
         phase = 0U;
+        result.motor_locked = 1U;
+        result_pending = 1U; /* severe fault: report immediately */
     } else {
-        Motor_Brake(); /* short brake 100ms, then coast */
+        Motor_Brake(); /* 100 ms bounded braking interval */
         brake_ticks = 100U;
         phase = 2U;
+        result_pending = 0U; /* report only AFTER the driver re-locks */
     }
-    result.motor_locked = Motor_OutputsLocked();
-    result_pending = 1U; /* main emits exactly once, no USART in TIM11 */
 }
 void EncoderOneBox_Init(void)
 {
@@ -97,11 +98,14 @@ void EncoderOneBox_ControlTick(void)
     OneBoxOutput cmd;
     if (phase == 2U) {
         if (brake_ticks > 0U) --brake_ticks;
+        if (Board_ButtonPressed()) brake_ticks = 0U;
         if (brake_ticks == 0U) {
-            /* Every one-shot ends in a driver LOCK. Re-arming is only
-             * permitted by the next guarded Start in 1 Box Forward. */
+            /* Report the FINAL lock state after braking, not the transient
+             * unlocked braking phase. Physical PA0 can shorten braking. */
             Motor_LockOutputs();
             phase = 0U;
+            result.motor_locked = 1U;
+            result_pending = 1U;
         }
         return;
     }
