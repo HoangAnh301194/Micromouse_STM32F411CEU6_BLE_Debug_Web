@@ -32,6 +32,13 @@ def main():
     assert sensor_test_csv("ENC,0,-5", host_time=t0)[2] == (t0, "0", "-5")
     assert TEST_CSV_COLUMNS["ENC"] == ("timestamp", "ENC_L", "ENC_R")
     assert sensor_test_csv("ENC,bad,1") is None
+    onebox_frame = "ONEBOX_CSV,ms=500,left=2400,right=2390,pwm_l=175,pwm_r=160"
+    assert classify_spp_line(onebox_frame) == "data"
+    assert classify_spp_line("ONEBOX,START,target_l=2400") == "status"
+    assert sensor_test_csv(onebox_frame, host_time=t0) == (
+        "ONEBOX", ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"),
+        (t0, "500", "2400", "2390", "175", "160"))
+    assert sensor_test_csv("ONEBOX_CSV,ms=bad,left=1,right=2,pwm_l=3,pwm_r=4") is None
 
     with TemporaryDirectory() as temp:
         root = Path(temp) / "logs" / "spp_runs"
@@ -109,6 +116,52 @@ def main():
         log.write("Selected encoder option 3: 5 Box Forward (NOT IMPLEMENTED; MOTOR LOCKED)")
         assert log.write("ENC,100,100", host_time=t2) is None
         assert len(list(folder.glob("*.csv"))) == 3
+        # A one-box selection is idle; no file until an MCU START ACK.
+        log.write("Encoder Test option 2: 1 Box Forward")
+        log.write("Selected encoder option 2: 1 Box Forward (ARMED; press Start)")
+        assert log.write(onebox_frame, host_time=t0) is None
+        assert log.write("ONEBOX,REJECT,reason=MOTOR_NOT_READY", host_time=t0) is None
+        motion_dir = root / "mode 7 - encoder test - 1 box forward"
+        assert not motion_dir.exists()
+        log.write("ONEBOX,START,target_l=2400,target_r=2390,pwm_max=200",
+                  host_time=t0)
+        motion1 = motion_dir / "20261123_153340_852000_COM16.csv"
+        assert motion1.exists()
+        assert read_csv(motion1) == [
+            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"]]
+        assert log.write("ONEBOX_CSV,ms=0,left=100,right=150,pwm_l=0,pwm_r=0",
+                         host_time=t0) == motion1
+        assert log.write(onebox_frame, host_time=t1) == motion1
+        assert log.write("ENC,999,999", host_time=t1) is None
+        assert log.write("MPU,valid=0", host_time=t1) is None
+        assert log.write("ONEBOX_CSV,ms=601,left=2501,right=2491,pwm_l=0,pwm_r=0",
+                         host_time=t2) == motion1
+        log.write("ONEBOX,RESULT,reason=DONE,L=2401,R=2391,ms=501,locked=1",
+                  host_time=t2)
+        assert log.last_saved_path == motion1 and log._active_file is None
+        assert log.write(onebox_frame, host_time=t2) is None
+        assert read_csv(motion1) == [
+            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"],
+            [t0, "0", "100", "150", "0", "0"],
+            [t1, "500", "2400", "2390", "175", "160"],
+            [t2, "601", "2501", "2491", "0", "0"]]
+
+        # Second motor Start must produce ANOTHER file in the same folder,
+        # even when the previous take ended due to emergency Stop.
+        log.write("ONEBOX,START,target_l=2400,target_r=2390,pwm_max=200",
+                  host_time=t3)
+        motion2 = motion_dir / "20261123_153420_123000_COM16.csv"
+        assert motion2.is_file() and motion2 != motion1
+        log.write("ONEBOX_CSV,ms=15,left=-5,right=-9,pwm_l=120,pwm_r=125",
+                  host_time=t3)
+        log.write("ONEBOX,RESULT,reason=STOP,L=-5,R=-9,ms=15,locked=1",
+                  host_time=t3)
+        assert log.last_saved_path == motion2
+        assert read_csv(motion2) == [
+            ["timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R"],
+            [t3, "15", "-5", "-9", "120", "125"]]
+        assert read_csv(motion1)[-1][-2:] == ["0", "0"]
+        assert len(list(motion_dir.glob("*.csv"))) == 2
         log.write("Encoder Test: back to System Test")
 
         # IR/MPU retained their original, isolated per-test folder behavior.
