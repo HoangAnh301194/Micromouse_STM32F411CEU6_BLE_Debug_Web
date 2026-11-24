@@ -5,6 +5,8 @@ on:
     paths:
       - 'src/mode_menu.c'
       - 'include/mode_menu.h'
+      - 'include/mode_test_resources.h'
+      - 'src/mode_test_resources.c'
       - 'src/main_runtime.c'
       - 'src/encoder_onebox.c'
       - 'src/encoder_onebox_core.c'
@@ -47,13 +49,13 @@ jobs:
           python -m py_compile tools/classic_spp_dashboard.py tools/classic_spp_handshake.py tools/spp_dual_log.py tools/classic_spp_smoke_probe.py
       - name: Install PlatformIO
         run: python -m pip install --disable-pip-version-check platformio
-      - name: Compile motor-locked menu firmware
+      - name: Compile unified menu firmware with guarded one-box
         run: python -m platformio run -e mode_menu_96m
-      - name: Compile default VS Code Upload image (guarded 1-box)
+      - name: Compile default VS Code Upload image (unified firmware)
         run: |
-          python -c "import configparser; c=configparser.ConfigParser(interpolation=None); c.read('platformio.ini'); assert c['platformio']['default_envs'].strip() == 'encoder_1box_96m'"
+          python -c "import configparser; c=configparser.ConfigParser(interpolation=None); c.read('platformio.ini'); assert c['platformio']['default_envs'].strip() == 'mode_menu_96m'"
           python -m platformio run
-      - name: Compile explicit 1-box motor-capable firmware
+      - name: Compile compatible legacy 1-box profile alias
         run: python -m platformio run -e encoder_1box_96m
       - name: Compile isolated motor-locked SPP smoke firmware
         run: python -m platformio run -e spp_smoke_96m
