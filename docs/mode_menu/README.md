@@ -536,3 +536,6 @@ Kiểm thử no-radio: `py tests/regression/spp_handshake_test.py`.
 Chọn PID để GUI hiện sáu ô (P_L/I_L/D_L, P_R/I_R/D_R); bấm Áp dụng PID và chờ PID,APPLIED từ STM32. Chỉ ghi RAM khi motor khóa và đúng mode; reset MCU khôi phục mặc định. Chuyển sang 1 Box Forward, Start để chạy với setpoint cố định 1100 PPS mỗi bánh, PWM 0..200, dừng/phanh theo encoder. PWM thay đổi để bám vận tốc; không còn giảm setpoint gần đích. Tối đa bốn chữ số thập phân, P 0..1, I 0..2, D 0..0.1. Kiểm tra build và thử nâng bánh, có ngắt VM độc lập trước thử trên sàn. Chưa nghiệm thu thực địa.
 
 CSV 1 Box Forward giữ sáu cột cũ và thêm REF_L_PPS, REF_R_PPS, SPEED_L_PPS, SPEED_R_PPS; firmware cũ để trống bốn cột mới. Tần số SPP 20 Hz, không thay đổi PID 100 Hz.
+
+### Live wheel plots
+Encoder Log Receive / 1 Box Forward divides the left terminal into top CSV and two lower wheel plots. PPS (reference, measured, error), PWM permille and relative count use separate scales; missing signals are not fabricated. OneBox uses MCU elapsed ms, passive ENC uses host receive timestamps. Start clears previous plots, Stop preserves them. CSV replay also plots without writing files. No firmware change.

@@ -4,6 +4,10 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Dashboard live wheel plots — 24/11/2026
+
+- Terminal trái chia trên log, dưới hai đồ thị L/R khi Encoder Log Receive hoặc 1 Box Forward. Dùng MCU elapsed time cho ONEBOX, host timestamp cho ENC; dữ liệu thiếu không giả lập. Tách trục PPS/PWM/count, hỗ trợ replay CSV. Chưa xác nhận GUI thực tế.
+
 ## Cập nhật PID vận tốc hai bánh — 24/11/2026, giomuadongbacv2
 
 - Mode 7 / Encoder Test / PID: sáu hệ số độc lập P/I/D trái phải, truyền SPP dạng số nguyên scale 10000, đọc lại và ACK, chỉ ghi RAM khi chọn PID và motor khóa. Reset MCU phục hồi mặc định 0.05/0.08/0 từng bên.

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 from decimal import Decimal, InvalidOperation
+from wheel_plot_data import WheelPlotData
 import os
 from collections import defaultdict, deque
 from datetime import datetime
@@ -206,6 +207,9 @@ class Dashboard:
         self.events: queue.Queue = queue.Queue(maxsize=MAX_EVENTS)
         self.reader = SPPReader(self.events)
         self.maze = MazeState()
+        self.wheel_data = WheelPlotData()
+        self.wheel_preview = False
+        self.wheel_dirty = True
         self.metrics = {}
         self.series = defaultdict(lambda: deque(maxlen=400))
         self.samples = 0
@@ -305,7 +309,32 @@ class Dashboard:
                      values=("All", "MPU", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
-        self.data_text = self._make_log_text(left, "none")
+        self.data_split = ttk.PanedWindow(left, orient="vertical")
+        self.data_split.pack(fill="both", expand=True)
+        self.log_pane = ttk.Frame(self.data_split)
+        self.data_split.add(self.log_pane, weight=1)
+        self.data_text = self._make_log_text(self.log_pane, "none")
+        self.data_text.configure(height=6)
+        self.wheel_pane = ttk.Frame(self.data_split)
+        self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
+        self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
+        self.wheel_pane.rowconfigure(1, weight=1)
+        self.wheel_canvases = []
+        self.wheel_checks = {}
+        legend = ttk.Frame(self.wheel_pane)
+        legend.grid(row=0, column=0, columnspan=2, sticky="ew")
+        for key, label in (("ref", "REF"), ("speed", "SPEED"), ("error", "ERROR"), ("pwm", "PWM"), ("count", "ENC")):
+            var = tk.BooleanVar(value=True)
+            self.wheel_checks[key] = var
+            ttk.Checkbutton(legend, text=label, variable=var,
+                            command=self._mark_wheels).pack(side="left")
+        for i, side in enumerate(("L", "R")):
+            frame = ttk.LabelFrame(self.wheel_pane, text="Motor " + ("trái (L)" if i == 0 else "phải (R)"))
+            frame.grid(row=1, column=i, sticky="nsew", padx=2)
+            canvas = tk.Canvas(frame, bg="#101923", highlightthickness=0, width=230, height=180)
+            canvas.pack(fill="both", expand=True)
+            canvas.bind("<Configure>", lambda event: self._mark_wheels())
+            self.wheel_canvases.append(canvas)
         # Header is selected when the first frame identifies ENC/IR/MPU.
 
         controls = ttk.Frame(right)
@@ -470,6 +499,7 @@ class Dashboard:
             self._update_test_controls()
 
     def _update_test_controls(self):
+        self._sync_wheel_panel()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
         if pid_visible:
             if not self.pid_panel.winfo_manager():
@@ -505,6 +535,8 @@ class Dashboard:
         self.next_btn.configure(state=state)
         self.select_btn.configure(state=state)
         if not ready:
+            self.wheel_preview = False
+            self.wheel_data.clear()
             self.active_test_name = None
             self.test_stream_running = False
             self.onebox_start_pending = False
@@ -697,6 +729,7 @@ class Dashboard:
                          line.split(": ", 1)[-1].strip() in
                          ("IR Test", "MPU Test", "All Sensors Test"))
         if line == "Selected encoder option 8: PID":
+            self.wheel_preview = False
             self.active_test_name = "PID"
             self.test_stream_running = False
             self.onebox_start_pending = False
@@ -723,6 +756,9 @@ class Dashboard:
             self.pid_note.set("STM32 từ chối PID: kiểm tra mode, giới hạn hoặc trạng thái motor.")
             self._update_test_controls()
         elif is_encoder_log or is_onebox or is_ir_or_mpu:
+            self.wheel_preview = False
+            self.wheel_data.clear()
+            self.wheel_dirty = True
             self.active_test_name = ("Encoder Test" if is_encoder_log else
                                      "1 Box Forward" if is_onebox else
                                      line.split(": ", 1)[-1].strip())
@@ -765,6 +801,9 @@ class Dashboard:
             self.status.set("Legacy motor-locked firmware detected; update unified mode_menu_96m.")
         elif line.startswith("ONEBOX,START,"):
             if self.active_test_name == "1 Box Forward":
+                self.wheel_data.clear()
+                self.wheel_dirty = True
+                self.clear_data()
                 self.onebox_start_pending = False
                 self.test_stream_running = True
                 self.reader.motion_lease.set()
@@ -823,6 +862,8 @@ class Dashboard:
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
+        if category == "data" and self.wheel_data.add(line, host_time):
+            self.wheel_dirty = True
         self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
         if changed:
@@ -886,7 +927,90 @@ class Dashboard:
             self.draw_plot()
             self.last_plot = now
             self.plot_dirty = False
+        if self.wheel_dirty:
+            self.draw_wheels()
+            self.wheel_dirty = False
         self.root.after(150, self.redraw)
+
+    def _mark_wheels(self):
+        self.wheel_dirty = True
+
+    def _sync_wheel_panel(self):
+        visible = self.wheel_preview or (self.menu_ready and
+                   self.active_test_name in ("Encoder Test", "1 Box Forward"))
+        shown = str(self.wheel_pane) in self.data_split.panes()
+        if visible and not shown:
+            self.data_split.add(self.wheel_pane, weight=1)
+            self.root.after_idle(self._balance_wheel_panes)
+        elif shown and not visible:
+            self.data_split.forget(self.wheel_pane)
+        self.wheel_dirty = True
+
+    def _balance_wheel_panes(self):
+        if str(self.wheel_pane) in self.data_split.panes():
+            self.data_split.sashpos(0, self.data_split.winfo_height() // 2)
+
+    def draw_wheels(self):
+        rows = list(self.wheel_data.rows)
+        colors = {"ref":"#ffcf65", "speed":"#58c9ff", "error":"#ff8181",
+                  "pwm":"#71dfa1", "count":"#c5a1ff"}
+        keys = [k for k, var in self.wheel_checks.items() if var.get()]
+        for c, side in zip(self.wheel_canvases, ("L", "R")):
+            c.delete("all")
+            w, h = c.winfo_width(), c.winfo_height()
+            if w < 100 or h < 90:
+                continue
+            if not rows:
+                c.create_text(w/2,h/2,text="Waiting for encoder data",fill="#91a3b5")
+                continue
+            labels = {"ref": "REF_"+side+"_PPS", "speed":"SPEED_"+side+"_PPS",
+                      "error":"ERR_"+side+"_PPS", "pwm":"PWM_"+side,
+                      "count":"ENC_"+side}
+            groups = [(unit, [k for k in ks if k in keys and
+                        any(row.get(k+"_"+side) is not None for row in rows)])
+                      for unit, ks in (("PPS", ("ref","speed","error")),
+                                       ("PWM ‰", ("pwm",)), ("count", ("count",)))]
+            groups = [(unit,ks) for unit,ks in groups if ks]
+            if not groups:
+                c.create_text(w/2,h/2,text="No selected signals available",fill="#91a3b5")
+                continue
+            t0, t1 = rows[0]["t"], rows[-1]["t"]
+            span = max(0.05, t1-t0)
+            x0, x1 = 46, w-8
+            band = (h-24)/len(groups)
+            for index,(unit,ks) in enumerate(groups):
+                top, bottom = index*band+24, (index+1)*band-4
+                vals = [row[k+"_"+s] for row in rows for k in ks for s in ("L","R")
+                        if row.get(k+"_"+s) is not None]
+                lo, hi = min(0,min(vals)), max(0,max(vals))
+                if hi==lo: hi=lo+1
+                if unit=="PWM ‰": hi=max(200,hi)
+                if unit=="PPS": hi=max(1100,hi)
+                c.create_text(3,top-15,text=unit,anchor="nw",fill="#abc0d0",font=("Consolas",8))
+                c.create_rectangle(x0,top,x1,bottom,outline="#405063")
+                for frac in (0,0.5,1):
+                    y=bottom-frac*(bottom-top)
+                    c.create_line(x0,y,x1,y,fill="#273747",dash=(2,4))
+                    c.create_text(x0-3,y,text="%.0f"%(lo+frac*(hi-lo)),anchor="e",fill="#abc0d0",font=("Consolas",8))
+                for k in ks:
+                    coords=[]
+                    last=None
+                    for row in rows:
+                        v=row.get(k+"_"+side)
+                        if v is None:
+                            if len(coords)>=4: c.create_line(*coords,fill=colors[k],width=2)
+                            coords=[]
+                            continue
+                        x=x0+(row["t"]-t0)/span*(x1-x0)
+                        y=bottom-(v-lo)/(hi-lo)*(bottom-top)
+                        coords.extend((x,y))
+                        last=v
+                    if len(coords)>=4: c.create_line(*coords,fill=colors[k],width=2,dash=(4,3) if k=="ref" else ())
+                    elif len(coords)==2: c.create_oval(coords[0]-2,coords[1]-2,coords[0]+2,coords[1]+2,fill=colors[k],outline="")
+                # Compact color legend, with full signal names available in the CSV.
+                c.create_text(x0,top-3,text=" / ".join(k.upper() for k in ks),anchor="sw",fill="#c6d6e4",font=("Consolas",8))
+            c.create_text(x0,h-8,text=f"{t0:.2f}s",anchor="w",fill="#abc0d0",font=("Consolas",8))
+            c.create_text(x1,h-8,text=f"{t1:.2f}s",anchor="e",fill="#abc0d0",font=("Consolas",8))
 
     def _mark_maze(self):
         self.maze_dirty = True
@@ -996,6 +1120,8 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def clear_data(self):
+        self.wheel_data.clear()
+        self.wheel_dirty = True
         self._clear_log(self.data_text)
         self.active_data_stream = None
 
@@ -1029,6 +1155,11 @@ class Dashboard:
                        ("All files", "*.*")])
         if not path:
             return
+        if self.test_stream_running or self.onebox_start_pending:
+            messagebox.showwarning("Replay", "Stop the live test before replaying CSV.")
+            return
+        self.wheel_preview = False
+        self.clear_data()
         count = 0
         try:
             if Path(path).suffix.lower() == ".csv":
@@ -1083,6 +1214,9 @@ class Dashboard:
                                              f"gz_cd={int(row['gz_cd'])}")
                             timestamp = row.get("timestamp") or datetime.now().isoformat(
                                 timespec="milliseconds")
+                            if self.wheel_data.add(line, timestamp):
+                                self.wheel_preview = True
+                                self.wheel_dirty = True
                             self._append(line, timestamp[11:23], "data", host_time=timestamp)
                             count += 1
                         except (ValueError, TypeError, KeyError):
@@ -1099,6 +1233,7 @@ class Dashboard:
         except OSError as exc:
             messagebox.showerror("Replay", str(exc))
             return
+        self._sync_wheel_panel()
         self.status.set("Replayed %d rows from %s (not saved)" %
                         (count, Path(path).name))
 
