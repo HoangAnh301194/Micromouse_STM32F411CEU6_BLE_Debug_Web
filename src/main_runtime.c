@@ -613,8 +613,8 @@ int Main_Runtime(void)
                                         &test_resource_mask);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
-            /* Only IR/MPU selection or Encoder -> Log Receive emits data.
-             * Six encoder movement labels are inert; motor is always locked. */
+            /* IR, MPU, All, and Encoder Log Receive stream only their
+             * selected telemetry. One-box motor remains guarded by Start. */
             if (active_test_previous != mode_menu.active_test) {
                 active_test_previous = mode_menu.active_test;
                 last_test_ms = now;
@@ -642,7 +642,31 @@ int Main_Runtime(void)
                     int32_t left = Encoder_GetLeftCount();
                     int32_t right = Encoder_GetRightCount();
                     BT_Printf("ENC,%ld,%ld\r\n", (long)left, (long)right);
-                } else if (mode_menu.active_test == 2U) {
+                } else if (mode_menu.active_test == MODE_MENU_TEST_ALL) {
+                    IR_Data_t ir;
+                    MPU6050_Snapshot_t gyro;
+                    uint32_t age_us;
+                    uint8_t imu_valid = 0U;
+                    int32_t yaw_cd = 0, gz_cd = 0;
+                    Control_GetIRSnapshot(&ir);
+                    age_us = ir.scan_count ? (uint32_t)(micros() - ir.completed_us) : 0U;
+                    if (mpu_status == MPU6050_OK &&
+                        MPU6050_GetSnapshot(&mpu, &gyro) && gyro.valid &&
+                        (uint32_t)(micros() - gyro.completed_us) <= 5000U) {
+                        imu_valid = 1U;
+                        yaw_cd = (int32_t)(gyro.yaw_deg * 100.0f);
+                        gz_cd = (int32_t)(gyro.gyro_z_dps * 100.0f);
+                    }
+                    BT_Printf("ALL,ms=%lu,enc_l=%ld,enc_r=%ld,ir_valid=%u,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u,mpu_valid=%u,yaw_cd=%ld,gz_cd=%ld\r\n",
+                              (unsigned long)now,
+                              (long)Encoder_GetLeftCount(),
+                              (long)Encoder_GetRightCount(),
+                              (unsigned)(ir.scan_count != 0U && age_us <= 5000U),
+                              (unsigned)ir.value[IR_L0], (unsigned)ir.value[IR_L45],
+                              (unsigned)ir.value[IR_L90], (unsigned)ir.value[IR_R0],
+                              (unsigned)ir.value[IR_R45], (unsigned)ir.value[IR_R90],
+                              (unsigned)imu_valid, (long)yaw_cd, (long)gz_cd);
+                } else if (mode_menu.active_test == MODE_MENU_TEST_MPU) {
                     MPU6050_Snapshot_t gyro;
                     uint8_t valid = (mpu_status == MPU6050_OK) ?
                                     MPU6050_GetSnapshot(&mpu, &gyro) : 0U;
