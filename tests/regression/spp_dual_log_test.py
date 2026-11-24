@@ -130,6 +130,23 @@ def main():
             ["1", "10", "11", "12", "13", "14", "15"],
         ]
 
+        # Combined sensor stream is allowed only in the All Sensors mode
+        # and is stored as one CSV, never mixed into Encoder/IR/MPU files.
+        log.write("System Test 4: All Sensors Test")
+        log.write("Selected test 4: All Sensors Test")
+        all_line = ("ALL,ms=200,enc_l=2400,enc_r=2390,ir_valid=1,"
+                    "L0=10,L45=11,L90=12,R0=13,R45=14,R90=15,"
+                    "mpu_valid=0,yaw_cd=0,gz_cd=0")
+        combined = log.write(all_line, host_time=t3)
+        assert combined and combined.parent.name.startswith(
+            "Mode 7 - All Sensors Test - ")
+        assert read_csv(combined) == [
+            ["timestamp","ENC_L","ENC_R","ir_valid","L0","L45","L90",
+             "R0","R45","R90","mpu_valid","yaw_cd","gz_cd"],
+            [t3,"2400","2390","1","10","11","12","13","14","15","0","0","0"]]
+        log.write("System Test: back to main menu")
+        assert log.write(all_line, host_time=t3) is None
+
         assert not list(root.rglob("*_status.log"))
         assert not list(root.rglob("connections"))
         log.close()
