@@ -26,6 +26,7 @@ from classic_spp_ports import classify_port
 from spp_dual_log import (DualSessionLog, classify_spp_line,
                           data_to_csv_row, csv_row_text, CSV_COLUMNS,
                           TEST_CSV_COLUMNS, sensor_test_csv)
+from motion_dashboard_tab import MotionControlTab
 
 
 BAUD = 115200
@@ -78,7 +79,9 @@ class SPPReader:
         self.stop = threading.Event()
         # Lease for opt-in 1 Box Forward only: MCU aborts if H stops for 350ms.
         self.motion_lease = threading.Event()
-        self.commands: queue.Queue[bytes] = queue.Queue(maxsize=32)
+        # Watchdog heartbeat for Motion Control Test commands ($0,HB every 0.3s)
+        self.motion_hb = threading.Event()
+        self.commands: queue.Queue[bytes] = queue.Queue(maxsize=64)
         self.thread: threading.Thread | None = None
 
     def _emit(self, kind: str, value):
@@ -104,7 +107,32 @@ class SPPReader:
 
     def close(self):
         self.motion_lease.clear()
+        self.motion_hb.clear()
         self.stop.set()
+
+    def set_motion_hb(self, enabled: bool):
+        if enabled:
+            self.motion_hb.set()
+        else:
+            self.motion_hb.clear()
+
+    def send_raw_line(self, line: str) -> bool:
+        if not self.thread or not self.thread.is_alive():
+            return False
+        try:
+            self.commands.put_nowait(line.encode("ascii"))
+            return True
+        except queue.Full:
+            return False
+
+    def send_emergency_stop(self):
+        self.motion_lease.clear()
+        self.motion_hb.clear()
+        if self.thread and self.thread.is_alive():
+            try:
+                self.commands.put_nowait(b"!\n$0,STOP\n")
+            except queue.Full:
+                pass
 
     def send_menu(self, command: bytes) -> bool:
         if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I") or not self.thread or not self.thread.is_alive():
@@ -128,6 +156,7 @@ class SPPReader:
                 framer = LineFramer()
                 handshake = SPPHandshake()
                 last_motion_ping = 0.0
+                last_hb_ping = 0.0
                 telemetry_only = False
                 while not self.stop.is_set():
                     # The first probe may be lost while Windows/RFCOMM or the
@@ -154,11 +183,24 @@ class SPPReader:
                             command = self.commands.get_nowait()
                         except queue.Empty:
                             break
-                        link.write(command)
+                        try:
+                            link.write(command)
+                        except serial.SerialTimeoutException:
+                            self._emit("warning", "SPP command write timeout")
                     if self.motion_lease.is_set() and (
                             time.monotonic() - last_motion_ping >= 0.1):
-                        link.write(b"H")
+                        try:
+                            link.write(b"H")
+                        except serial.SerialTimeoutException:
+                            pass
                         last_motion_ping = time.monotonic()
+                    if self.motion_hb.is_set() and (
+                            time.monotonic() - last_hb_ping >= 0.30):
+                        try:
+                            link.write(b"$0,HB\n")
+                        except serial.SerialTimeoutException:
+                            pass
+                        last_hb_ping = time.monotonic()
                     chunk = link.read(link.in_waiting or 1)
                     if not chunk:
                         continue
@@ -278,9 +320,17 @@ class Dashboard:
         self.terminal_tab = ttk.Frame(self.tabs, padding=8)
         self.maze_tab = ttk.Frame(self.tabs, padding=8)
         self.telemetry_tab = ttk.Frame(self.tabs, padding=8)
+        self.motion_tab = MotionControlTab(
+            self.tabs,
+            send_cmd_fn=self.reader.send_raw_line,
+            send_stop_fn=self.reader.send_emergency_stop,
+            set_hb_fn=self.reader.set_motion_hb,
+            get_port_fn=lambda: self.port_value.get().strip(),
+        )
         self.tabs.add(self.terminal_tab, text="Terminal")
         self.tabs.add(self.maze_tab, text="Maze viewer")
         self.tabs.add(self.telemetry_tab, text="Telemetry & PID")
+        self.tabs.add(self.motion_tab, text="Motion Control Test")
         self._terminal_widgets()
         self._maze_widgets()
         self._telemetry_widgets()
@@ -738,6 +788,7 @@ class Dashboard:
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
         self._append(line, ts, category, host_time=host_time)
+        self.motion_tab.on_spp_line(line)
         changed = self.maze.apply(line)
         if changed:
             self.map_status.set(changed)

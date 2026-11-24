@@ -33,9 +33,18 @@
 
 #include "stm32f4xx.h"
 
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define DEBUG_PERIOD_MS 20UL
+#define BT_CMD_BUF_MAX  160U
 
 static MPU6050_Handle_t mpu;
+static char bt_cmd_buf[BT_CMD_BUF_MAX];
+static uint16_t bt_cmd_len = 0U;
+static uint8_t bt_cmd_active = 0U;
+static uint8_t prev_motion_active = 0U;
 
 #if defined(OLED_PRODUCTION_STATUS)
 static uint32_t last_oled_draw_ms;
@@ -73,6 +82,10 @@ static void OLED_DrawProductionStatus(uint32_t now)
         SSD1306_WriteString("MOTION: TURN", &Font_7x10, SSD1306_WHITE);
     } else if (motion_state == MOTION_VELOCITY) {
         SSD1306_WriteString("MOTION: VEL", &Font_7x10, SSD1306_WHITE);
+    } else if (motion_state == MOTION_WHEEL_TEST) {
+        SSD1306_WriteString("MOTION: WTEST", &Font_7x10, SSD1306_WHITE);
+    } else if (motion_state == MOTION_QUICK_STEP) {
+        SSD1306_WriteString("MOTION: QSTEP", &Font_7x10, SSD1306_WHITE);
     } else {
         SSD1306_WriteString("MOTION: IDLE", &Font_7x10, SSD1306_WHITE);
     }
@@ -92,6 +105,325 @@ static void OLED_DrawProductionStatus(uint32_t now)
 }
 #endif
 
+static void EmitGainsResponse(void)
+{
+    WheelSpeedConfig_t l_cfg, r_cfg;
+    float h_kp, h_ki, h_kd, h_maxw;
+    Motion_GetWheelSpeedGains(&l_cfg, &r_cfg);
+    Motion_GetHeadingPidGains(&h_kp, &h_ki, &h_kd, &h_maxw);
+    BT_Printf("GAINS,L,%.4f,%.4f,%.2f,%.5f,%.5f,%.1f,%.1f\r\n",
+              l_cfg.kp, l_cfg.ki, l_cfg.ks_permille, l_cfg.kv_permille_per_pps,
+              l_cfg.ka_permille_per_pps2, l_cfg.integral_limit, l_cfg.max_output_pm);
+    BT_Printf("GAINS,R,%.4f,%.4f,%.2f,%.5f,%.5f,%.1f,%.1f\r\n",
+              r_cfg.kp, r_cfg.ki, r_cfg.ks_permille, r_cfg.kv_permille_per_pps,
+              r_cfg.ka_permille_per_pps2, r_cfg.integral_limit, r_cfg.max_output_pm);
+    BT_Printf("HGAINS,%.4f,%.4f,%.4f,%.1f\r\n", h_kp, h_ki, h_kd, h_maxw);
+}
+
+static uint8_t ParseFloatToken(const char *tok, float *out)
+{
+    char *endp = NULL;
+    float v;
+    if (!tok || !*tok || !out) return 0U;
+    v = strtof(tok, &endp);
+    if (endp == tok || *endp != '\0' || !isfinite(v)) return 0U;
+    *out = v;
+    return 1U;
+}
+
+static uint8_t ParseIntToken(const char *tok, long *out)
+{
+    char *endp = NULL;
+    long v;
+    if (!tok || !*tok || !out) return 0U;
+    v = strtol(tok, &endp, 10);
+    if (endp == tok || *endp != '\0') return 0U;
+    *out = v;
+    return 1U;
+}
+
+static void HandleStructuredSppLine(char *line)
+{
+    char *tokens[16];
+    uint8_t ntok = 0U;
+    char *p = line;
+    long cmd_id = 0;
+    const char *verb;
+    MPU6050_Snapshot_t snap;
+    uint8_t ready;
+    float yaw;
+
+    while (*p && ntok < 16U) {
+        tokens[ntok++] = p;
+        while (*p && *p != ',') p++;
+        if (*p == ',') {
+            *p = '\0';
+            p++;
+            if (*p == '\0' && ntok < 16U) {
+                tokens[ntok++] = p;
+            }
+        }
+    }
+
+    if (ntok < 2U || !ParseIntToken(tokens[0], &cmd_id)) {
+        BT_SendString("NACK,0,PARSE,BAD_FORMAT\r\n");
+        return;
+    }
+
+    verb = tokens[1];
+    ready = MPU6050_GetSnapshot(&mpu, &snap) && mpu.calibrated &&
+            (uint32_t)(micros() - snap.completed_us) <= 3000U;
+    yaw = ready ? snap.yaw_deg : 0.0f;
+
+    Motion_RefreshHostHeartbeat();
+
+    if (strcmp(verb, "STOP") == 0) {
+        Motion_Stop();
+        BT_Printf("ACK,%ld,STOP,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "HB") == 0) {
+        BT_Printf("ACK,%ld,HB,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "PING") == 0) {
+        BT_Printf("ACK,%ld,PING,READY=%u,STATE=%u,CAL=%u,LOCK=%u,RES=%u\r\n",
+                  cmd_id,
+                  (unsigned)ready,
+                  (unsigned)Motion_GetState(),
+                  (unsigned)mpu.cal_state,
+                  (unsigned)Motor_OutputsLocked(),
+                  (unsigned)Motion_GetLastResult());
+        return;
+    }
+
+    if (strcmp(verb, "GET_GAINS") == 0) {
+        EmitGainsResponse();
+        BT_Printf("ACK,%ld,GET_GAINS,OK\r\n", cmd_id);
+        return;
+    }
+
+#if defined(INTEGRATION_DIAG)
+    BT_Printf("NACK,%ld,%s,DIAG_MODE\r\n", cmd_id, verb);
+    return;
+#endif
+
+    if (strcmp(verb, "RESET_ENC") == 0) {
+        if (!Motion_IsDone()) {
+            BT_Printf("NACK,%ld,RESET_ENC,BUSY\r\n", cmd_id);
+            return;
+        }
+        Encoder_Reset();
+        BT_Printf("ACK,%ld,RESET_ENC,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "RESET_YAW") == 0) {
+        if (!Motion_IsDone()) {
+            BT_Printf("NACK,%ld,RESET_YAW,BUSY\r\n", cmd_id);
+            return;
+        }
+        if (!ready) {
+            BT_Printf("NACK,%ld,RESET_YAW,NOT_READY\r\n", cmd_id);
+            return;
+        }
+        MPU6050_ResetYaw(&mpu);
+        BT_Printf("ACK,%ld,RESET_YAW,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "RESET_INT") == 0) {
+        Motion_ResetIntegrators();
+        BT_Printf("ACK,%ld,RESET_INT,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "RESTORE_GAINS") == 0) {
+        Motion_RestoreDefaultGains();
+        EmitGainsResponse();
+        BT_Printf("ACK,%ld,RESTORE_GAINS,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "SET_GAINS") == 0) {
+        /* $id,SET_GAINS,L|R|B,kp,ki,ks,kv,ka,ilim,pwm_max */
+        WheelSpeedConfig_t cur_l, cur_r, new_cfg;
+        if (ntok < 10U) {
+            BT_Printf("NACK,%ld,SET_GAINS,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        if (!ParseFloatToken(tokens[3], &new_cfg.kp) ||
+            !ParseFloatToken(tokens[4], &new_cfg.ki) ||
+            !ParseFloatToken(tokens[5], &new_cfg.ks_permille) ||
+            !ParseFloatToken(tokens[6], &new_cfg.kv_permille_per_pps) ||
+            !ParseFloatToken(tokens[7], &new_cfg.ka_permille_per_pps2) ||
+            !ParseFloatToken(tokens[8], &new_cfg.integral_limit) ||
+            !ParseFloatToken(tokens[9], &new_cfg.max_output_pm) ||
+            new_cfg.kp < 0.0f || new_cfg.ki < 0.0f || new_cfg.ks_permille < 0.0f ||
+            new_cfg.kv_permille_per_pps < 0.0f || new_cfg.ka_permille_per_pps2 < 0.0f ||
+            new_cfg.integral_limit < 0.0f || new_cfg.max_output_pm < 0.0f ||
+            new_cfg.max_output_pm > 1000.0f) {
+            BT_Printf("NACK,%ld,SET_GAINS,RANGE\r\n", cmd_id);
+            return;
+        }
+        Motion_GetWheelSpeedGains(&cur_l, &cur_r);
+        if (tokens[2][0] == 'L') {
+            Motion_SetWheelSpeedGains(&new_cfg, &cur_r);
+        } else if (tokens[2][0] == 'R') {
+            Motion_SetWheelSpeedGains(&cur_l, &new_cfg);
+        } else if (tokens[2][0] == 'B') {
+            Motion_SetWheelSpeedGains(&new_cfg, &new_cfg);
+        } else {
+            BT_Printf("NACK,%ld,SET_GAINS,SIDE\r\n", cmd_id);
+            return;
+        }
+        EmitGainsResponse();
+        BT_Printf("ACK,%ld,SET_GAINS,OK\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "SET_HGAINS") == 0) {
+        /* $id,SET_HGAINS,kp,ki,kd,max_w */
+        float kp, ki, kd, max_w;
+        if (ntok < 6U ||
+            !ParseFloatToken(tokens[2], &kp) ||
+            !ParseFloatToken(tokens[3], &ki) ||
+            !ParseFloatToken(tokens[4], &kd) ||
+            !ParseFloatToken(tokens[5], &max_w) ||
+            kp < 0.0f || ki < 0.0f || kd < 0.0f || max_w <= 0.0f || max_w > 900.0f) {
+            BT_Printf("NACK,%ld,SET_HGAINS,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        Motion_SetHeadingPidGains(kp, ki, kd, max_w);
+        EmitGainsResponse();
+        BT_Printf("ACK,%ld,SET_HGAINS,OK\r\n", cmd_id);
+        return;
+    }
+
+    /* Motion-starting commands require IDLE + READY + UNLOCKED */
+    if (!Motion_IsDone()) {
+        BT_Printf("NACK,%ld,%s,BUSY\r\n", cmd_id, verb);
+        return;
+    }
+    if (!ready) {
+        BT_Printf("NACK,%ld,%s,NOT_READY\r\n", cmd_id, verb);
+        return;
+    }
+    if (Motor_OutputsLocked()) {
+        BT_Printf("NACK,%ld,%s,LOCKED\r\n", cmd_id, verb);
+        return;
+    }
+
+    if (strcmp(verb, "WTEST") == 0) {
+        /* $id,WTEST,left_pps,right_pps,duration_s,max_pwm_pm,mode(0|1) */
+        float l_pps, r_pps, dur, max_pm;
+        long mode;
+        if (ntok < 7U ||
+            !ParseFloatToken(tokens[2], &l_pps) ||
+            !ParseFloatToken(tokens[3], &r_pps) ||
+            !ParseFloatToken(tokens[4], &dur) ||
+            !ParseFloatToken(tokens[5], &max_pm) ||
+            !ParseIntToken(tokens[6], &mode) ||
+            dur <= 0.0f || dur > 15.0f || max_pm <= 0.0f || max_pm > 1000.0f ||
+            (mode != 0 && mode != 1)) {
+            BT_Printf("NACK,%ld,WTEST,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        Motion_CommandWheelSpeed(l_pps, r_pps, dur, max_pm,
+                                 (mode == 1) ? MOTION_WTEST_RAMP : MOTION_WTEST_STEP);
+        Motion_EnableHostWatchdog(2.0f);
+        BT_Printf("ACK,%ld,WTEST,STARTED\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "STRAIGHT") == 0) {
+        /* $id,STRAIGHT,dist_mm,max_v,min_v,end_v,accel,decel,max_w,hold_heading(0|1) */
+        float dist;
+        Motion_StraightProfile_t sp;
+        long hold = 1;
+        if (ntok < 10U ||
+            !ParseFloatToken(tokens[2], &dist) ||
+            !ParseFloatToken(tokens[3], &sp.max_speed_mm_s) ||
+            !ParseFloatToken(tokens[4], &sp.min_speed_mm_s) ||
+            !ParseFloatToken(tokens[5], &sp.end_speed_mm_s) ||
+            !ParseFloatToken(tokens[6], &sp.accel_mm_s2) ||
+            !ParseFloatToken(tokens[7], &sp.decel_mm_s2) ||
+            !ParseFloatToken(tokens[8], &sp.max_w_dps) ||
+            !ParseIntToken(tokens[9], &hold) ||
+            dist <= 0.0f || dist > 5000.0f) {
+            BT_Printf("NACK,%ld,STRAIGHT,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        sp.disable_heading_hold = (hold == 0) ? 1U : 0U;
+        Motion_CommandStraightProfile(dist, yaw, &sp);
+        Motion_EnableHostWatchdog(2.0f);
+        BT_Printf("ACK,%ld,STRAIGHT,STARTED\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "TURN") == 0) {
+        /* $id,TURN,angle_deg,max_w,min_w,accel_w,decel_w,ang_kp,rate_kp,ang_tol,rate_tol,timeout */
+        float ang;
+        Motion_TurnProfile_t tp;
+        if (ntok < 12U ||
+            !ParseFloatToken(tokens[2], &ang) ||
+            !ParseFloatToken(tokens[3], &tp.max_w_dps) ||
+            !ParseFloatToken(tokens[4], &tp.min_w_dps) ||
+            !ParseFloatToken(tokens[5], &tp.accel_dps2) ||
+            !ParseFloatToken(tokens[6], &tp.decel_dps2) ||
+            !ParseFloatToken(tokens[7], &tp.angle_kp) ||
+            !ParseFloatToken(tokens[8], &tp.gyro_rate_kp) ||
+            !ParseFloatToken(tokens[9], &tp.tolerance_deg) ||
+            !ParseFloatToken(tokens[10], &tp.rate_tol_dps) ||
+            !ParseFloatToken(tokens[11], &tp.timeout_s) ||
+            fabsf(ang) < 1.0f || fabsf(ang) > 360.0f) {
+            BT_Printf("NACK,%ld,TURN,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        Motion_CommandTurnProfile(ang, yaw, &tp);
+        Motion_EnableHostWatchdog(2.0f);
+        BT_Printf("ACK,%ld,TURN,STARTED\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "VEL") == 0) {
+        /* $id,VEL,v_mm_s,w_dps,hold_heading(0|1),target_yaw,duration_s */
+        float v, w, tyaw, dur;
+        long hold;
+        if (ntok < 7U ||
+            !ParseFloatToken(tokens[2], &v) ||
+            !ParseFloatToken(tokens[3], &w) ||
+            !ParseIntToken(tokens[4], &hold) ||
+            !ParseFloatToken(tokens[5], &tyaw) ||
+            !ParseFloatToken(tokens[6], &dur) ||
+            dur <= 0.0f || dur > 15.0f) {
+            BT_Printf("NACK,%ld,VEL,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        Motion_CommandVelocityTimed(v, w, hold ? 1U : 0U, tyaw, dur);
+        Motion_EnableHostWatchdog(2.0f);
+        BT_Printf("ACK,%ld,VEL,STARTED\r\n", cmd_id);
+        return;
+    }
+
+    if (strcmp(verb, "QSTEP") == 0) {
+        /* $id,QSTEP,level(0|1|2) */
+        long lvl = 0;
+        if (ntok < 3U || !ParseIntToken(tokens[2], &lvl) || lvl < 0 || lvl > 2) {
+            BT_Printf("NACK,%ld,QSTEP,BAD_ARGS\r\n", cmd_id);
+            return;
+        }
+        Motion_CommandQuickStepTestLevel((Motion_QuickStepLevel_t)lvl);
+        Motion_EnableHostWatchdog(2.0f);
+        BT_Printf("ACK,%ld,QSTEP,STARTED\r\n", cmd_id);
+        return;
+    }
+
+    BT_Printf("NACK,%ld,%s,UNKNOWN\r\n", cmd_id, verb);
+}
+
 static void HandleBleCommand(char c)
 {
 #if defined(INTEGRATION_DIAG)
@@ -100,14 +432,14 @@ static void HandleBleCommand(char c)
     Sweep_Abort(SWEEP_STOP_REQUEST);
 #endif
     MPU6050_Snapshot_t snap;
-    uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) &&
+    uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) && mpu.calibrated &&
                     (uint32_t)(micros() - snap.completed_us) <= 3000U;
     float yaw = ready ? snap.yaw_deg : 0.0f;
 
     switch (c) {
     case 'f':
     case 'F':
-        if (ready && Motion_IsDone()) Motion_CommandStraight(180.0f, yaw);
+        if (ready && Motion_IsDone()) Motion_CommandStraight(165.0f, yaw);
         break;
 
     case 't':
@@ -132,7 +464,10 @@ static void HandleBleCommand(char c)
 
     case 's':
     case 'S':
-        Motion_Stop();
+    case '!':
+        if (Motion_IsDone()) {
+            Motion_Stop();
+        }
         break;
 
     case 'z':
@@ -140,8 +475,71 @@ static void HandleBleCommand(char c)
         if (ready && Motion_IsDone()) MPU6050_ResetYaw(&mpu);
         break;
 
+    case '?':
+        if (Motion_IsDone()) {
+            BT_Printf("ACK,0,PING,READY=%u,STATE=%u,CAL=%u,LOCK=%u,RES=%u\r\n",
+                      (unsigned)ready,
+                      (unsigned)Motion_GetState(),
+                      (unsigned)mpu.cal_state,
+                      (unsigned)Motor_OutputsLocked(),
+                      (unsigned)Motion_GetLastResult());
+        }
+        break;
+
     default:
         break;
+    }
+}
+
+static void BlePollCommands(void)
+{
+    static uint8_t stop_armed = 0U;
+    uint8_t budget = 64U;
+    while (budget-- && BT_Available()) {
+        char c = BT_ReceiveChar();
+        if (stop_armed) {
+            stop_armed = 0U;
+            if (c == '\n' || c == '\r' || c == '!') {
+                Motion_Stop();
+                bt_cmd_active = 0U;
+                bt_cmd_len = 0U;
+                BT_SendString("ACK,0,STOP,OK\r\n");
+                continue;
+            }
+        }
+        if (bt_cmd_active) {
+            if (c == '\n' || c == '\r') {
+                if (bt_cmd_len > 0U) {
+                    bt_cmd_buf[bt_cmd_len] = '\0';
+                    HandleStructuredSppLine(bt_cmd_buf);
+                }
+                bt_cmd_active = 0U;
+                bt_cmd_len = 0U;
+            } else if ((unsigned char)c < 0x20U || (unsigned char)c >= 0x7FU) {
+                /* Drop EMI-corrupted structured frame silently */
+                bt_cmd_active = 0U;
+                bt_cmd_len = 0U;
+            } else if (bt_cmd_len + 1U < BT_CMD_BUF_MAX) {
+                bt_cmd_buf[bt_cmd_len++] = c;
+            } else {
+                bt_cmd_active = 0U;
+                bt_cmd_len = 0U;
+                BT_SendString("NACK,0,PARSE,OVERFLOW\r\n");
+            }
+        } else {
+            if (c == '$') {
+                bt_cmd_active = 1U;
+                bt_cmd_len = 0U;
+            } else if (c == '!' || c == 'S' || c == 's') {
+                if (!Motion_IsDone()) {
+                    stop_armed = 1U;
+                } else {
+                    Motion_Stop();
+                }
+            } else if (c != '\r' && c != '\n') {
+                HandleBleCommand(c);
+            }
+        }
     }
 }
 
@@ -351,8 +749,24 @@ int Main_Runtime(void)
         OLED_SharedService(&mpu);
 #endif
 
-        if (BT_Available()) {
-            HandleBleCommand(BT_ReceiveChar());
+        BlePollCommands();
+
+        {
+            uint8_t cur_active = !Motion_IsDone();
+            if (prev_motion_active && !cur_active) {
+                Motion_Result_t res = Motion_GetLastResult();
+                const char *res_str =
+                    (res == MOTION_RES_SUCCESS) ? "SUCCESS" :
+                    (res == MOTION_RES_TIMEOUT) ? "TIMEOUT" :
+                    (res == MOTION_RES_ABORTED) ? "ABORTED" :
+                    (res == MOTION_RES_SENSOR_FAULT) ? "FAULT" : "NONE";
+                BT_Printf("EVENT,DONE,RES=%s,DIST=%.1f,ERR=%.2f,T=%lu\r\n",
+                          res_str,
+                          Motion_GetDistanceMm(),
+                          Motion_GetAngleErrorDeg(),
+                          (unsigned long)now);
+            }
+            prev_motion_active = cur_active;
         }
 #if !defined(INTEGRATION_DIAG)
         {
@@ -795,11 +1209,15 @@ int Main_Runtime(void)
 #endif
 
         if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
+            static uint8_t ext_div = 0U;
             int32_t left_count;
             int32_t right_count;
             int32_t v_left_pps;
             int32_t v_right_pps;
+            int16_t applied_l = 0;
+            int16_t applied_r = 0;
             Motion_SpeedDebug_t speed_dbg;
+            Motion_ExtendedDebug_t ext_dbg;
             float yaw;
             float gyro;
             float distance;
@@ -818,6 +1236,8 @@ int Main_Runtime(void)
             v_left_pps = (int32_t)Encoder_GetLeftSpeedPPS();
             v_right_pps = (int32_t)Encoder_GetRightSpeedPPS();
             Motion_GetSpeedDebug(&speed_dbg);
+            Motion_GetExtendedDebug(&ext_dbg);
+            Motor_GetAppliedPairPermille(&applied_l, &applied_r);
             yaw = MPU6050_GetYaw(&mpu);
             gyro = MPU6050_GetGyroZ(&mpu);
             distance = Motion_GetDistanceMm();
@@ -828,9 +1248,10 @@ int Main_Runtime(void)
                 __enable_irq();
             }
 
-            BT_Printf("t=%lu state=%u encL=%ld encR=%ld vL=%ld vR=%ld vRefL=%ld vRefR=%ld pL=%d pR=%d yaw=%.2f gz=%.2f d=%.1f e=%.2f\r\n",
+            BT_Printf("t=%lu state=%u ph=%u encL=%ld encR=%ld vL=%ld vR=%ld vRefL=%ld vRefR=%ld pL=%d pR=%d aL=%d aR=%d yaw=%.2f gz=%.2f d=%.1f e=%.2f sat=%u\r\n",
                       (unsigned long)now,
                       (unsigned int)state,
+                      (unsigned int)ext_dbg.phase,
                       (long)left_count,
                       (long)right_count,
                       (long)v_left_pps,
@@ -839,10 +1260,27 @@ int Main_Runtime(void)
                       (long)speed_dbg.right_ref_pps,
                       (int)speed_dbg.left_pm,
                       (int)speed_dbg.right_pm,
+                      (int)applied_l,
+                      (int)applied_r,
                       yaw,
                       gyro,
                       distance,
-                      angle_error);
+                      angle_error,
+                      (unsigned int)ext_dbg.sat_flags);
+
+            ext_div++;
+            if (ext_div >= 5U) {
+                ext_div = 0U;
+                BT_Printf("EXT,t=%lu,vR=%.1f,wR=%.1f,vM=%.1f,wM=%.1f,iL=%.1f,iR=%.1f,res=%u\r\n",
+                          (unsigned long)now,
+                          ext_dbg.v_ref_mm_s,
+                          ext_dbg.w_ref_dps,
+                          ext_dbg.v_meas_mm_s,
+                          ext_dbg.w_meas_dps,
+                          ext_dbg.left_integral,
+                          ext_dbg.right_integral,
+                          (unsigned int)ext_dbg.result);
+            }
 #if !defined(INTEGRATION_DIAG)
             UART_Printf("t=%lu state=%u encL=%ld encR=%ld yaw=%.2f gz=%.2f dropped=%lu\r\n",
                         (unsigned long)now,(unsigned int)state,(long)left_count,

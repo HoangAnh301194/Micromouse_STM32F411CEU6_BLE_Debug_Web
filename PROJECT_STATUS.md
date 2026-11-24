@@ -1,8 +1,28 @@
 # PROJECT_STATUS — Micromouse STM32F411CEU6
 
-**Ngày cập nhật:** 24/11/2026 (UTC+7). **Nhánh làm việc:** `giomuadongbac`. **Mã nguồn nền đã rà soát:** Commit `140ecc0` (và các bản sửa audit/dọn dẹp). Đây là hồ sơ ngữ cảnh dự án để agent/chat mới tiếp tục mà không cần đọc toàn bộ lịch sử.
+**Ngày cập nhật:** 25/11/2026 (UTC+7). **Nhánh làm việc:** `giomuadongbac`. **Mã nguồn nền đã rà soát:** Sau commit `ef71b49`. Đây là hồ sơ ngữ cảnh dự án để agent/chat mới tiếp tục mà không cần đọc toàn bộ lịch sử.
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
+
+## Cập nhật Hệ thống Thực nghiệm Motion Control & Classic SPP Dashboard v2 — 25/11/2026 (`giomuadongbac`)
+
+- **Sửa lỗi & Nâng cấp Firmware (`include/motion.h`, `src/motion.c`, `src/main_runtime.c`):**
+  - **Khôi phục Quick Step Test:** Sửa lỗi `Motion_CommandQuickStepTest()` đặt nhầm `motion.state = MOTION_IDLE` (khiến `Q` và nút `PA0` không chạy và khóa các lệnh sau). Bổ sung 3 mức `MOTION_QSTEP_LOW`, `MEDIUM`, `HIGH` chạy ở trạng thái `MOTION_QUICK_STEP`.
+  - **Sửa ô mê cung 165 mm:** Đổi lệnh `F` trong `main_runtime.c` từ `180.0f` sang `165.0f` mm.
+  - **Phân biệt kết quả kết thúc (`Motion_Result_t`):** Tách rõ `SUCCESS`, `TIMEOUT`, `ABORTED`, `SENSOR_FAULT` và phát sự kiện `EVENT,DONE,RES=...` qua SPP.
+  - **Test bánh độc lập (`Motion_CommandWheelSpeed`) & Host Watchdog:** Hỗ trợ step/ramp 2 bánh với trần PWM riêng và tự dừng an toàn (`ABORTED`) nếu mất heartbeat từ host sau `2.0 s`.
+  - **Chống nhiễu EMI trên `USART2 RX (PA3)`:** Phát hiện thực nghiệm nhiễu xung âm khi motor đóng ngắt tạo byte `'?'` (`0x3F`) hoặc byte điều khiển đơn lẻ giả; đã lọc ký tự điều khiển đơn lẻ khi đang chạy (yêu cầu `!\n` / `S\n` / `$0,STOP\n` để dừng khẩn cấp, bỏ `'?'` khi đang chạy).
+  - **Telemetry 50 Hz + `EXT` 10 Hz:** Bổ sung `ph`, PWM thực tế sau ramp `aL/aR`, `sat`, `v_ref/w_ref/v_meas/w_meas` và `integral_l/r`.
+- **Giao thức SPP & Công cụ Host (`docs/classic_spp/MOTION_PROTOCOL.md`, `tools/`):**
+  - `tools/classic_spp_protocol.py` + `tools/motion_experiment.py`: Dùng chung lớp giao tiếp SPP, CSV logger (`results/motion_test/YYYYMMDD_HHMMSS_test_name/`), bộ tính metrics và vẽ đồ thị (`left_motor.png`, `right_motor.png`, `chassis.png`).
+  - `tools/classic_spp_dashboard.py` + `tools/motion_dashboard_tab.py`: Thêm tab `Motion Control Test` (2 cột Wheel Speed L/R, 5 chế độ test, đồ thị 12.5 FPS không block RX 50 Hz, giữ nguyên tab cũ và Web BLE đóng băng).
+  - `tools/motion_test_runner.py`: Headless automated test runner hỗ trợ `--suite B|C|D|E|all`.
+- **Trạng thái xác minh tách bạch (25/11/2026):**
+  - *Native C & Protocol Regression (PASS):* 10/10 bộ test PASS (`verify_20261125_001528`, `classic_spp_protocol_test.py`, `spp_motion_protocol_test.py`, `wheel_speed_pid_native_test.py`).
+  - *Biên dịch PlatformIO (PASS):* `genericSTM32F411CE` (RAM 5.6%, Flash 18.3%) và `production_oled_status_96m` (RAM 8.1%, Flash 20.4%) SUCCESS.
+  - *Hardware No-Load Stage B (PASS):* `results/motion_test/suite_B_20261125_001135.json` — Flash ST-Link OK, `COM16` đạt `49.5 Hz` (và `50.5 Hz` ở lần chạy sau), `READY=1`, `idle_pwm=0`, `stop_latency_ms=37.0 ms` (`20.5 ms` ở lần 2).
+  - *Hardware No-Load Stage C @ 30% PWM ceiling (FAIL do giới hạn vật lý dead-zone):* `results/motion_test/suite_C_20261125_001449.json` — Toàn bộ `C1–C9` hoàn tất sạch `RES=SUCCESS`, `0` lỗi EMI, `0` fault; tuy nhiên ở giới hạn `PWM ≤ 300‰` (30%), motor nằm đúng ngưỡng ma sát tĩnh (~`295–330‰`) nên không tự quay đều được (`sat_flags=3`, anti-windup giữ tích phân đúng thiết kế). Cần người dùng xác nhận nếu muốn nâng trần PWM thử nghiệm không tải lên `40–50%` ở bước tiếp theo.
+  - *Chưa thực hiện:* Stage D/E motor runs (dừng tại Stage C theo quy tắc an toàn), chạy có tải trên mặt đất, bám tường IR/quay góc thực tế trên sa bàn.
 
 ## Cập nhật Dọn dẹp Kiến trúc Motion & Pipeline Kiểm chứng (Mức 2) — 24/11/2026 (`giomuadongbac`)
 

@@ -87,6 +87,7 @@ def run_regression_tests(out_dir: Path) -> tuple[bool, list[dict[str, Any]]]:
         ROOT_DIR / "tests" / "regression" / "flash_map_protocol_test.py",
         ROOT_DIR / "tests" / "regression" / "ssd1306_native_test.py",
         ROOT_DIR / "tests" / "regression" / "spp_handshake_test.py",
+        ROOT_DIR / "tests" / "regression" / "spp_motion_protocol_test.py",
         ROOT_DIR / "tests" / "regression" / "wheel_speed_pid_native_test.py",
         ROOT_DIR / "tests" / "regression" / "motor_driver_native_test.py",
         ROOT_DIR / "tests" / "regression" / "encoder_native_test.py",

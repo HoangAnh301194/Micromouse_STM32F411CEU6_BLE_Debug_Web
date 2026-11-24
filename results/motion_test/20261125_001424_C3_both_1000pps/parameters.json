@@ -1,0 +1,55 @@
+{
+  "test_name": "C3_both_1000pps",
+  "test_id": "C3",
+  "git_commit": "ef71b49",
+  "port": "COM16",
+  "command": [
+    "WTEST",
+    1000,
+    1000,
+    1.5,
+    300,
+    0
+  ],
+  "gains_confirmed": {
+    "ack": {
+      "kind": "ACK",
+      "cmd_id": 24,
+      "verb": "GET_GAINS",
+      "status": "OK",
+      "fields": {},
+      "raw": "ACK,24,GET_GAINS,OK"
+    },
+    "left": {
+      "kp": 0.09,
+      "ki": 0.25,
+      "ks": 80.0,
+      "kv": 0.098,
+      "ka": 0.0,
+      "integral_limit": 1250.0,
+      "pwm_limit": 1000.0
+    },
+    "right": {
+      "kp": 0.09,
+      "ki": 0.25,
+      "ks": 80.0,
+      "kv": 0.098,
+      "ka": 0.0,
+      "integral_limit": 1250.0,
+      "pwm_limit": 1000.0
+    },
+    "heading": {
+      "kp": 4.0,
+      "ki": 0.0,
+      "kd": 0.05,
+      "max_w_dps": 120.0
+    }
+  },
+  "pwm_limit_pm": 300.0,
+  "run_dir": "D:\\Micromouse-EC-PTIT\\results\\motion_test\\20261125_001424_C3_both_1000pps",
+  "started_at": "2026-11-25T00:14:24",
+  "finish_result": "SUCCESS",
+  "finished_at": "2026-11-25T00:14:26",
+  "sample_count": 100,
+  "drop_estimate": 0
+}

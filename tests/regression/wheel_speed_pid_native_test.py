@@ -222,8 +222,9 @@ int main(void) {
     }
     /* Reach target yaw and low gyro rate -> completes cleanly */
     Motion_Update(0.001f, 0, 0, 89.0f, 2.0f);
-    if (!Motion_IsDone() || Motion_GetState() != MOTION_IDLE) {
-        return fail("TurnProfile did not finish within tolerance");
+    if (!Motion_IsDone() || Motion_GetState() != MOTION_IDLE ||
+        Motion_GetLastResult() != MOTION_RES_SUCCESS) {
+        return fail("TurnProfile did not finish with SUCCESS within tolerance");
     }
 
     /* 4. Chassis velocity readout */
@@ -232,6 +233,61 @@ int main(void) {
     Motion_GetChassisVelocity(&v_meas, &w_meas);
     if (!(v_meas > 140.0f && v_meas < 160.0f && fabsf(w_meas) < 0.1f)) {
         return fail("Chassis velocity inverse kinematics readout mismatch");
+    }
+
+    /* 5. Quick Step Test recovery (must NOT stay stuck in MOTION_IDLE) */
+    Motion_CommandQuickStepTest();
+    if (Motion_IsDone() || Motion_GetState() != MOTION_QUICK_STEP) {
+        return fail("QuickStepTest did not enter MOTION_QUICK_STEP");
+    }
+    Motion_Update(0.001f, 0, 0, 0.0f, 0.0f);
+    Motion_GetSpeedDebug(&dbg);
+    if (!(dbg.left_ref_pps > 0 && dbg.right_ref_pps > 0)) {
+        return fail("QuickStepTest phase 0 did not generate forward wheel refs");
+    }
+    for (int i = 0; i < 4900; ++i) {
+        Motion_Update(0.001f, 0, 0, 0.0f, 0.0f);
+        if (Motion_IsDone()) break;
+    }
+    if (!Motion_IsDone() || Motion_GetLastResult() != MOTION_RES_SUCCESS) {
+        return fail("QuickStepTest did not complete with SUCCESS");
+    }
+
+    /* 6. Independent Wheel Speed Test + PWM ceiling + restore */
+    Motion_CommandWheelSpeed(500.0f, 0.0f, 0.20f, 300.0f, MOTION_WTEST_STEP);
+    if (Motion_GetState() != MOTION_WHEEL_TEST) {
+        return fail("WheelSpeedTest did not enter MOTION_WHEEL_TEST");
+    }
+    stub_v_l = 0.0f;
+    stub_v_r = 0.0f;
+    Motion_Update(0.001f, 0, 0, 0.0f, 0.0f);
+    Motion_GetSpeedDebug(&dbg);
+    if (!(dbg.left_ref_pps == 500 && dbg.right_ref_pps == 0 && dbg.left_pm <= 300)) {
+        return fail("WheelSpeedTest left-only ref/limit mismatch");
+    }
+    for (int i = 0; i < 250; ++i) {
+        Motion_Update(0.001f, 0, 0, 0.0f, 0.0f);
+        if (Motion_IsDone()) break;
+    }
+    if (!Motion_IsDone() || Motion_GetLastResult() != MOTION_RES_SUCCESS) {
+        return fail("WheelSpeedTest did not finish with SUCCESS");
+    }
+
+    /* 7. Host Watchdog abort + SensorFault + Stop results */
+    Motion_CommandVelocityTimed(200.0f, 0.0f, 0U, 0.0f, 5.0f);
+    Motion_EnableHostWatchdog(0.25f);
+    for (int i = 0; i < 300; ++i) {
+        Motion_Update(0.001f, 0, 0, 0.0f, 0.0f);
+        if (Motion_IsDone()) break;
+    }
+    if (!Motion_IsDone() || Motion_GetLastResult() != MOTION_RES_ABORTED) {
+        return fail("HostWatchdog did not abort expired host-controlled motion");
+    }
+
+    Motion_CommandTurnProfile(90.0f, 0.0f, &tp);
+    Motion_SensorFault();
+    if (!Motion_IsDone() || Motion_GetLastResult() != MOTION_RES_SENSOR_FAULT) {
+        return fail("SensorFault did not record MOTION_RES_SENSOR_FAULT");
     }
 
     printf("ALL_MOTION_API_TESTS_PASS\n");

@@ -1,0 +1,128 @@
+2026-11-25T00:14:24.455 | t=25253 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.0 e=0.00 sat=0
+2026-11-25T00:14:24.460 | t=25273 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.0 e=0.00 sat=0
+2026-11-25T00:14:24.480 | t=25293 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.0 e=0.00 sat=0
+2026-11-25T00:14:24.480 | ACK,25,WTEST,STARTED
+2026-11-25T00:14:24.504 | t=25313 state=4 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=269 pR=269 aL=60 aR=60 yaw=0.00 gz=0.00 d=0.0 e=0.00 sat=0
+2026-11-25T00:14:24.509 | t=25333 state=4 ph=0 encL=1 encR=1 vL=20 vR=65 vRefL=1000 vRefR=1000 pL=272 pR=268 aL=271 aR=267 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:24.528 | EXT,t=25333,vR=74.7,wR=0.0,vM=3.2,wM=2.3,iL=23.2,iR=23.6,res=0
+2026-11-25T00:14:24.546 | t=25353 state=4 ph=0 encL=2 encR=1 vL=23 vR=7 vRefL=1000 vRefR=1000 pL=276 pR=278 aL=276 aR=278 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:24.565 | t=25373 state=4 ph=0 encL=2 encR=1 vL=2 vR=0 vRefL=1000 vRefR=1000 pL=283 pR=284 aL=283 aR=283 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:24.589 | t=25393 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=288 pR=289 aL=288 aR=288 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:24.608 | t=25413 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=293 pR=294 aL=293 aR=293 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:24.614 | t=25433 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=298 pR=299 aL=298 aR=298 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:24.618 | EXT,t=25433,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=122.0,iR=123.0,res=0
+2026-11-25T00:14:24.636 | t=25453 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.675 | t=25473 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.684 | t=25493 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.706 | t=25513 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.707 | ACK,26,HB,OK
+2026-11-25T00:14:24.715 | t=25533 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.715 | EXT,t=25533,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:24.746 | t=25553 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.780 | t=25573 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.784 | t=25593 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.808 | t=25613 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.811 | t=25633 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.830 | EXT,t=25633,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:24.849 | t=25653 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.869 | t=25673 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.891 | t=25693 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.925 | t=25713 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.929 | t=25733 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.933 | EXT,t=25733,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:24.939 | t=25753 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.958 | t=25773 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:24.985 | t=25793 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.008 | t=25813 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.008 | ACK,27,HB,OK
+2026-11-25T00:14:25.024 | t=25833 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.024 | EXT,t=25833,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.049 | t=25853 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.068 | t=25873 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.088 | t=25893 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.113 | t=25913 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.126 | t=25933 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.130 | EXT,t=25933,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.148 | t=25953 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.169 | t=25973 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.172 | t=25993 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.210 | t=26013 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.215 | t=26033 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.234 | EXT,t=26033,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.237 | t=26053 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.258 | t=26073 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.281 | t=26093 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.301 | t=26113 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.302 | ACK,28,HB,OK
+2026-11-25T00:14:25.324 | t=26133 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.324 | EXT,t=26133,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.348 | t=26153 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.367 | t=26173 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.385 | t=26193 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.389 | t=26213 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.443 | t=26233 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.443 | EXT,t=26233,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.450 | t=26253 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.470 | t=26273 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.489 | t=26293 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.519 | t=26313 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.523 | t=26333 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.529 | EXT,t=26333,vR=74.7,wR=0.0,vM=0.0,wM=-0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.548 | t=26353 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.568 | t=26373 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.590 | t=26393 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.610 | t=26413 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.614 | t=26433 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.617 | EXT,t=26433,vR=74.7,wR=0.0,vM=0.0,wM=0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.618 | NACK,29,H,BUSY
+2026-11-25T00:14:25.630 | t=26453 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.670 | t=26473 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.689 | t=26493 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.708 | t=26513 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.715 | t=26533 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.715 | EXT,t=26533,vR=74.7,wR=0.0,vM=0.0,wM=0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.753 | t=26553 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.773 | t=26573 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.776 | t=26593 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.814 | t=26613 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.817 | t=26633 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.836 | EXT,t=26633,vR=74.7,wR=0.0,vM=0.0,wM=0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.840 | t=26653 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.859 | t=26673 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.883 | t=26693 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.905 | t=26713 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.905 | ACK,30,HB,OK
+2026-11-25T00:14:25.909 | t=26733 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.942 | EXT,t=26733,vR=74.7,wR=0.0,vM=0.0,wM=0.0,iL=128.0,iR=128.0,res=0
+2026-11-25T00:14:25.946 | t=26753 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.969 | t=26773 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.988 | t=26793 state=4 ph=0 encL=2 encR=1 vL=0 vR=0 vRefL=1000 vRefR=1000 pL=300 pR=300 aL=300 aR=300 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=3
+2026-11-25T00:14:25.991 | EVENT,DONE,RES=SUCCESS,DIST=0.1,ERR=0.00,T=26808
+2026-11-25T00:14:26.011 | t=26813 state=0 ph=0 encL=1 encR=1 vL=-89 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.015 | t=26833 state=0 ph=0 encL=0 encR=0 vL=-64 vR=-38 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.034 | EXT,t=26833,vR=0.0,wR=0.0,vM=0.0,wM=0.0,iL=0.0,iR=0.0,res=1
+2026-11-25T00:14:26.041 | t=26853 state=0 ph=0 encL=0 encR=0 vL=-7 vR=-4 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.063 | t=26873 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.081 | t=26893 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.100 | t=26913 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.122 | t=26933 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.123 | EXT,t=26933,vR=0.0,wR=0.0,vM=0.0,wM=0.0,iL=0.0,iR=0.0,res=1
+2026-11-25T00:14:26.141 | t=26953 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.180 | t=26973 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.188 | t=26993 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.208 | t=27013 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.208 | ACK,31,HB,OK
+2026-11-25T00:14:26.211 | t=27033 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.250 | EXT,t=27033,vR=0.0,wR=0.0,vM=0.0,wM=0.0,iL=0.0,iR=0.0,res=1
+2026-11-25T00:14:26.254 | t=27053 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.273 | t=27073 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.291 | t=27093 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.296 | t=27113 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.324 | t=27133 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.324 | EXT,t=27133,vR=0.0,wR=0.0,vM=0.0,wM=0.0,iL=0.0,iR=0.0,res=1
+2026-11-25T00:14:26.324 | ACK,0,STOP,OK
+2026-11-25T00:14:26.348 | t=27153 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.369 | t=27173 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.402 | t=27193 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.406 | t=27213 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0
+2026-11-25T00:14:26.410 | t=27233 state=0 ph=0 encL=0 encR=0 vL=0 vR=0 vRefL=0 vRefR=0 pL=0 pR=0 aL=0 aR=0 yaw=0.00 gz=0.00 d=0.1 e=0.00 sat=0

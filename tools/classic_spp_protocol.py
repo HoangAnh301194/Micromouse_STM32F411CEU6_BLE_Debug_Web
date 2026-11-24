@@ -229,3 +229,150 @@ class MazeState:
                 self.mz_chunks.clear()
                 return self.status
         return None
+
+
+MOTION_STATE_NAMES = {
+    0: "IDLE",
+    1: "STRAIGHT",
+    2: "VELOCITY",
+    3: "TURN_PROFILE",
+    4: "WHEEL_TEST",
+    5: "QUICK_STEP",
+}
+
+MOTION_RESULT_NAMES = {
+    0: "NONE",
+    1: "SUCCESS",
+    2: "TIMEOUT",
+    3: "ABORTED",
+    4: "FAULT",
+}
+
+
+def parse_motion_telemetry_line(line: str) -> dict[str, float | int] | None:
+    """Parse 50Hz space-separated `t=... state=...` telemetry line (v1 & v2)."""
+    s = line.strip()
+    if not s.startswith("t="):
+        return None
+    fields = numeric_fields(s)
+    if "t" not in fields or "state" not in fields or "encL" not in fields:
+        return None
+    v_ref_l = float(fields.get("vRefL", 0.0))
+    v_ref_r = float(fields.get("vRefR", 0.0))
+    v_l = float(fields.get("vL", 0.0))
+    v_r = float(fields.get("vR", 0.0))
+    p_l = int(round(fields.get("pL", 0.0)))
+    p_r = int(round(fields.get("pR", 0.0)))
+    return {
+        "t_ms": int(round(fields["t"])),
+        "state": int(round(fields["state"])),
+        "phase": int(round(fields.get("ph", 0.0))),
+        "enc_l": int(round(fields["encL"])),
+        "enc_r": int(round(fields.get("encR", 0.0))),
+        "meas_l_pps": v_l,
+        "meas_r_pps": v_r,
+        "ref_l_pps": v_ref_l,
+        "ref_r_pps": v_ref_r,
+        "error_l_pps": v_ref_l - v_l,
+        "error_r_pps": v_ref_r - v_r,
+        "pwm_cmd_l_pm": p_l,
+        "pwm_cmd_r_pm": p_r,
+        "pwm_app_l_pm": int(round(fields.get("aL", p_l))),
+        "pwm_app_r_pm": int(round(fields.get("aR", p_r))),
+        "yaw_deg": float(fields.get("yaw", 0.0)),
+        "gyro_z_dps": float(fields.get("gz", 0.0)),
+        "distance_mm": float(fields.get("d", 0.0)),
+        "angle_error_deg": float(fields.get("e", 0.0)),
+        "sat_flags": int(round(fields.get("sat", 0.0))),
+    }
+
+
+def parse_ext_telemetry_line(line: str) -> dict[str, float | int] | None:
+    """Parse 10Hz `EXT,t=...,vR=...,wR=...,vM=...,wM=...,iL=...,iR=...,res=...`."""
+    s = line.strip()
+    if not s.startswith("EXT,"):
+        return None
+    fields = numeric_fields(s)
+    if "t" not in fields:
+        return None
+    return {
+        "t_ms": int(round(fields["t"])),
+        "v_ref_mm_s": float(fields.get("vR", 0.0)),
+        "w_ref_dps": float(fields.get("wR", 0.0)),
+        "v_meas_mm_s": float(fields.get("vM", 0.0)),
+        "w_meas_dps": float(fields.get("wM", 0.0)),
+        "integral_l": float(fields.get("iL", 0.0)),
+        "integral_r": float(fields.get("iR", 0.0)),
+        "result": int(round(fields.get("res", 0.0))),
+    }
+
+
+def parse_spp_control_line(line: str) -> dict | None:
+    """Parse ACK, NACK, GAINS, HGAINS, and EVENT lines from SPP."""
+    s = line.strip()
+    if not s:
+        return None
+    parts = [p.strip() for p in s.split(",")]
+    tag = parts[0]
+
+    if tag in ("ACK", "NACK") and len(parts) >= 4:
+        try:
+            cmd_id = int(parts[1])
+        except ValueError:
+            cmd_id = 0
+        kv = {}
+        for item in parts[3:]:
+            if "=" in item:
+                k, _, v = item.partition("=")
+                kv[k.strip()] = v.strip()
+        return {
+            "kind": tag,
+            "cmd_id": cmd_id,
+            "verb": parts[2],
+            "status": parts[3],
+            "fields": kv,
+            "raw": s,
+        }
+
+    if tag == "GAINS" and len(parts) >= 9:
+        try:
+            return {
+                "kind": "GAINS",
+                "side": parts[1],
+                "kp": float(parts[2]),
+                "ki": float(parts[3]),
+                "ks": float(parts[4]),
+                "kv": float(parts[5]),
+                "ka": float(parts[6]),
+                "integral_limit": float(parts[7]),
+                "pwm_limit": float(parts[8]),
+            }
+        except ValueError:
+            return None
+
+    if tag == "HGAINS" and len(parts) >= 5:
+        try:
+            return {
+                "kind": "HGAINS",
+                "kp": float(parts[1]),
+                "ki": float(parts[2]),
+                "kd": float(parts[3]),
+                "max_w_dps": float(parts[4]),
+            }
+        except ValueError:
+            return None
+
+    if tag == "EVENT" and len(parts) >= 3:
+        kv = {}
+        for item in parts[2:]:
+            if "=" in item:
+                k, _, v = item.partition("=")
+                kv[k.strip()] = v.strip()
+        return {
+            "kind": "EVENT",
+            "event": parts[1],
+            "fields": kv,
+            "raw": s,
+        }
+
+    return None
