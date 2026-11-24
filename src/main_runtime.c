@@ -380,6 +380,7 @@ int Main_Runtime(void)
     MPU6050_Status mpu_status;
 #if defined(MODE_MENU_ONLY)
     uint8_t test_resource_mask = 0U;
+    uint32_t last_onebox_log_ms = 0U;
 #endif
 
     Board_Init();
@@ -684,8 +685,30 @@ int Main_Runtime(void)
                 }
             }
             {
+                EncoderOneBoxTelemetry motion;
                 EncoderOneBoxResult result;
-                if (EncoderOneBox_PopResult(&result)) {
+                uint8_t has_motion = EncoderOneBox_GetTelemetry(&motion);
+                uint8_t has_result = EncoderOneBox_PopResult(&result);
+                /* Only print from MAIN at <=20Hz; no UART in TIM11.
+                 * Emit an additional final zero-PWM sample before RESULT,
+                 * ensuring Stop, done and all faults close a complete CSV. */
+                if (has_result && !has_motion) {
+                    motion.elapsed_ms = result.elapsed_ms;
+                    motion.left = Encoder_GetLeftCount();
+                    motion.right = Encoder_GetRightCount();
+                    motion.pwm_l = 0;
+                    motion.pwm_r = 0;
+                    has_motion = 1U;
+                }
+                if (has_motion && (has_result ||
+                    (uint32_t)(now - last_onebox_log_ms) >= 50U)) {
+                    last_onebox_log_ms = now;
+                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d\r\n",
+                              (unsigned long)motion.elapsed_ms,
+                              (long)motion.left, (long)motion.right,
+                              (int)motion.pwm_l, (int)motion.pwm_r);
+                }
+                if (has_result) {
                     BT_Printf("ONEBOX,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
                               EncoderOneBox_Reason(result.reason),
                               (long)result.count_l, (long)result.count_r,
