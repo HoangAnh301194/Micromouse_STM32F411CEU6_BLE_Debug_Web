@@ -98,7 +98,10 @@ void EncoderOneBox_ControlTick(void)
     OneBoxOutput cmd;
     if (phase == 2U) {
         if (brake_ticks > 0U) --brake_ticks;
-        if (Board_ButtonPressed()) brake_ticks = 0U;
+        if (Board_ButtonPressed()) {
+            physical_stop_latched = 1U;
+            brake_ticks = 0U;
+        }
         if (brake_ticks == 0U) {
             /* Report the FINAL lock state after braking, not the transient
              * unlocked braking phase. Physical PA0 can shorten braking. */
