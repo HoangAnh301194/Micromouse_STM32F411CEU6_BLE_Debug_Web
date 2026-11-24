@@ -154,6 +154,9 @@ void Control_Stop(void)
     WallPidTest_Stop(WP_TIMEOUT);
 #endif
     Motion_Stop();
+#if defined(MICROMOUSE_UNIFIED_RUNTIME)
+    Motor_LockOutputs();
+#endif
     TIM11->CR1 &= ~TIM_CR1_CEN;
     control_running = 0U;
 }

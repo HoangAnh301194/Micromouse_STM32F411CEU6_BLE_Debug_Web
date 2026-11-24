@@ -137,7 +137,7 @@ class DualSessionLog:
     TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
     _SELECT_RE = re.compile(r"^Selected test [13]: (IR Test|MPU Test)$")
     _ENC_LOG_SELECT = "Selected encoder option 1: Log Receive"
-    _MODE_RE = re.compile(r"^Selected mode ([1-7]):")
+    _MODE_RE = re.compile(r"^Selected mode ([1-79]):")
 
     def __init__(self, root):
         self.root = Path(root)
@@ -202,7 +202,9 @@ class DualSessionLog:
             self._streaming = True
             return
 
-        if line.startswith("System Test ") or line.startswith("System Test:"):
+        if (line.startswith("System Test ") or line.startswith("System Test:") or
+                line.endswith(": submenu opened") or
+                (" option " in line and not line.startswith("Selected "))):
             # Browsing to another submenu item or Back invalidates the stream.
             self._has_menu_context = True
             self._deactivate()

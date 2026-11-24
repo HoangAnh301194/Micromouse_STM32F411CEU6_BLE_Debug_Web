@@ -16,7 +16,7 @@ static MPU6050_Handle_t *imu_ref;
 static OneBoxCore core;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
-static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
+static volatile uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
 static uint8_t physical_stop_latched; /* suppress PA0 key event after abort */
 static uint16_t brake_ticks;
 static float yaw_zero;
@@ -51,8 +51,12 @@ static void Finish(uint8_t reason)
         brake_ticks = 100U;
         phase = 2U;
     }
-    result.motor_locked = Motor_OutputsLocked();
-    result_pending = 1U; /* main emits exactly once, no USART in TIM11 */
+    /* Publish completion only after normal braking has ended and outputs
+     * are locked again. Severe faults are locked immediately. */
+    if (phase == 0U) {
+        result.motor_locked = Motor_OutputsLocked();
+        result_pending = 1U;
+    }
 }
 void EncoderOneBox_Init(MPU6050_Handle_t *mpu)
 {
@@ -107,8 +111,10 @@ void EncoderOneBox_ControlTick(void)
     if (phase == 2U) {
         if (brake_ticks > 0U) --brake_ticks;
         if (brake_ticks == 0U) {
-            Motor_Stop();
+            Motor_LockOutputs();
             phase = 0U;
+            result.motor_locked = Motor_OutputsLocked();
+            result_pending = 1U;
         }
         return;
     }
@@ -144,6 +150,12 @@ void EncoderOneBox_ControlTick(void)
     }
     if ((core.ticks % 10U) == 0U)
         Motor_SetPairPermille(cmd.pwm_l, cmd.pwm_r);
+}
+uint8_t EncoderOneBox_State(void)
+{
+    if (fault_latched) return ONEBOX_STATE_FAULT;
+    return phase == 1U ? ONEBOX_STATE_RUNNING :
+           phase == 2U ? ONEBOX_STATE_STOPPING : ONEBOX_STATE_IDLE;
 }
 uint8_t EncoderOneBox_IsRunning(void)
 {

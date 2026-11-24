@@ -457,7 +457,7 @@ class Dashboard:
             return
         if self.active_test_name == "1 Box Forward" and (
                 not self.onebox_capable or not self.mpu_boot_ok):
-            self.status.set("1 Box Forward needs encoder_1box_96m and ready MPU.")
+            self.status.set("1 Box Forward needs motion-enabled firmware and ready MPU.")
             return
         if self.active_test_name == "1 Box Forward":
             if command == b"G":
@@ -641,7 +641,11 @@ class Dashboard:
               line.startswith("Selected encoder option ") or
               line.startswith("Selected test 2: Encoder Test") or
               line.startswith("System Test ") or
-              line.startswith("Selected mode 7: System Test")):
+              line.startswith("Selected mode 7: System Test") or
+              line.startswith("Selected mode 9: System Test") or
+              line.startswith("System Test:") or
+              line.endswith(": submenu opened") or
+              " option " in line and not line.startswith("Selected ")):
             # Browsing or selecting a movement placeholder stops Encoder
             # streaming. Neither status messages nor motion placeholders
             # send any motor commands or create a CSV.
@@ -662,7 +666,7 @@ class Dashboard:
             self.onebox_capable = False
             self.reader.motion_lease.clear()
             self._update_test_controls()
-            self.status.set("Motor-locked menu firmware: flash encoder_1box_96m for 1 Box Forward.")
+            self.status.set("Motor-locked firmware: use the unified micromouse_96m build.")
         elif line.startswith("ONEBOX,START,"):
             if self.active_test_name == "1 Box Forward":
                 self.onebox_start_pending = False

@@ -33,6 +33,7 @@
 #error "MODE_MENU_ONLY requires shared-I2C OLED and cannot combine with motion diagnostics"
 #endif
 #include "mode_menu.h"
+#include "app_mode.h"
 #if defined(ENCODER_1BOX_TEST_MODE)
 #include "encoder_onebox.h"
 #endif
@@ -97,13 +98,18 @@ static void ModeMenu_Report(const ModeMenu *menu,ModeMenuEvent event)
     case MODE_MENU_EVENT_ENCODER_ENTER: BT_Printf("%s: submenu opened\r\n",ModeMenu_TestName(menu->active_group));break;
     case MODE_MENU_EVENT_ENCODER_FOCUS: BT_Printf("%s option %u: %s\r\n",ModeMenu_TestName(menu->active_group),(unsigned)(menu->encoder_focus+1U),ModeMenu_ItemName(menu->active_group,menu->encoder_focus));break;
     case MODE_MENU_EVENT_ENCODER_SELECT:
-        if(menu->active_test!=MODE_MENU_NO_SELECTION)BT_Printf("Selected %s: live telemetry available\r\n",ModeMenu_ItemName(menu->active_group,menu->active_item));
+        if(menu->active_test!=MODE_MENU_NO_SELECTION) {
+            /* Preserve stable host wire protocol across Mode 7 -> Mode 9. */
+            if(menu->active_test==1U) BT_SendString("Selected encoder option 1: Log Receive\r\n");
+            else if(menu->active_test==0U) BT_SendString("Selected test 1: IR Test\r\n");
+            else BT_SendString("Selected test 3: MPU Test\r\n");
+        }
         else{
 #if defined(ENCODER_1BOX_TEST_MODE)
-            if(menu->active_group==1U&&menu->active_item==MODE_MENU_ENCODER_ONE_BOX_FORWARD)BT_SendString("Selected 1 Box Forward (ARMED; send G to start)\r\n");
+            if(menu->active_group==1U&&menu->active_item==MODE_MENU_ENCODER_ONE_BOX_FORWARD)BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
             else
 #endif
-            BT_Printf("Selected %s: MENU ENTRY ONLY; diagnostic runner not integrated; MOTOR LOCKED\r\n",ModeMenu_ItemName(menu->active_group,menu->active_item));
+            BT_Printf("Selected %s: NOT IMPLEMENTED; MOTOR LOCKED\r\n",ModeMenu_ItemName(menu->active_group,menu->active_item));
         }break;
     case MODE_MENU_EVENT_ENCODER_EXIT: BT_SendString("System Test: back to diagnostic groups\r\n");break;
     default: break;
@@ -395,6 +401,10 @@ int Main_Runtime(void)
                               (unsigned)mpu.init_i2c_status);
 #if defined(ENCODER_1BOX_TEST_MODE)
                 BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
+#if defined(MICROMOUSE_UNIFIED_RUNTIME)
+                BT_SendString("APP,PROFILE,UNIFIED_RUNTIME_V1\r\n");
+                BT_Printf("APP,STATE,%s\r\n", AppMode_StateName(AppMode_GetState(&mode_menu)));
+#endif
 #else
                 BT_SendString("ONEBOX,PROFILE,MOTOR_LOCKED\r\n");
 #endif
@@ -419,7 +429,7 @@ int Main_Runtime(void)
 #endif
                 if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
-                              ModeMenu_StreamName(mode_menu.active_test));
+                              AppMode_StreamProtocolName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
@@ -427,7 +437,11 @@ int Main_Runtime(void)
                     mode_menu.active_group == 1U &&
                     mode_menu.active_encoder_option == MODE_MENU_ENCODER_ONE_BOX_FORWARD) {
 #if defined(ENCODER_1BOX_TEST_MODE)
-                    if (mpu_status == MPU6050_OK && EncoderOneBox_Start()) {
+                    if (mpu_status == MPU6050_OK &&
+#if defined(MICROMOUSE_UNIFIED_RUNTIME)
+                        AppMode_GetState(&mode_menu) == APP_ARMED &&
+#endif
+                        EncoderOneBox_Start()) {
                         BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d\r\n",
                                   (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
                                   (int)ONEBOX_MAX_PWM);
@@ -440,7 +454,7 @@ int Main_Runtime(void)
                 } else if (ModeMenu_ResumeTest(&mode_menu)) {
                     last_test_ms = now; /* next measurement in ~50 ms */
                     BT_Printf("TEST STREAM STARTED: %s\r\n",
-                              ModeMenu_StreamName(mode_menu.active_test));
+                              AppMode_StreamProtocolName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
@@ -550,6 +564,16 @@ int Main_Runtime(void)
                 }
             }
 #endif
+            #if defined(MICROMOUSE_UNIFIED_RUNTIME)
+            {
+                static AppState previous = APP_BOOT;
+                AppState state = AppMode_GetState(&mode_menu);
+                if (state != previous) {
+                    previous = state;
+                    BT_Printf("APP,STATE,%s\r\n", AppMode_StateName(state));
+                }
+            }
+            #endif
             OLED_SharedService(&mpu);
             /* Idle menu: no periodic status; active test: 20 Hz CSV data. */
         }

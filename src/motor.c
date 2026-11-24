@@ -171,7 +171,7 @@ void Motor_LockOutputs(void)
 uint8_t Motor_OneBoxUnlockOutputs(void)
 {
     uint32_t irq = LockIRQ();
-    if (command_timeout_latched || Board_GetClockFault() != 0U) {
+    if (!outputs_locked || command_timeout_latched || Board_GetClockFault() != 0U) {
         UnlockIRQ(irq);
         return 0U;
     }
