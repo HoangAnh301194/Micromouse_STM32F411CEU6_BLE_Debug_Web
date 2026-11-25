@@ -17,7 +17,7 @@ void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s)
 int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
                             float reference, float measured)
 {
-    float error, p, d, candidate, output, ki;
+    float error, p, d, candidate, output, ki, ff;
     if (!OneBoxGains_Valid(g) || !(reference > 0.0f) ||
         !(measured >= -100000.0f && measured <= 100000.0f)) {
         OneBoxSpeedPid_Reset(s);
@@ -26,17 +26,18 @@ int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
     error = reference - measured;
     p = (float)g->p / ONEBOX_GAIN_SCALE * error;
     ki = (float)g->i / ONEBOX_GAIN_SCALE;
+    ff = ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * reference;
     d = s->initialized ? -(float)g->d / ONEBOX_GAIN_SCALE *
              (measured - s->previous_speed) / ONEBOX_PID_DT_S : 0.0f;
     s->previous_speed = measured;
     s->initialized = 1U;
-    candidate = ki > 0.0f ? ClampF(s->integral + ki * error * ONEBOX_PID_DT_S,
-                                 -ONEBOX_MAX_PWM, ONEBOX_MAX_PWM) : 0.0f;
-    output = ONEBOX_FEEDFORWARD_PWM + p + candidate + d;
+    candidate = ki > 0.0f ? ClampF(s->integral + error * ONEBOX_PID_DT_S,
+                                 -ONEBOX_INTEGRAL_LIMIT, ONEBOX_INTEGRAL_LIMIT) : 0.0f;
+    output = ff + p + ki * candidate + d;
     /* Conditional integration against the FINAL actuator saturation. */
     if (!((output > ONEBOX_MAX_PWM && error > 0.0f) ||
           (output < 0.0f && error < 0.0f))) s->integral = candidate;
-    output = ONEBOX_FEEDFORWARD_PWM + p + s->integral + d;
+    output = ff + p + ki * s->integral + d;
     return (int16_t)(ClampF(output, 0.0f, ONEBOX_MAX_PWM) + 0.5f);
 }
 
@@ -117,6 +118,6 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
 
     /* Distance core owns only stop/fault decisions. Fixed nominal output
      * is a compatibility indicator; actual PWM is produced by wheel PID. */
-    out.pwm_l = out.pwm_r = ONEBOX_FEEDFORWARD_PWM;
+    out.pwm_l = out.pwm_r = (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
     return out;
 }

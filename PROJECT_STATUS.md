@@ -4,6 +4,11 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Wheel PID baseline alignment — 25/11/2026
+
+- Source giomuadongbac 2d07838: defaults P=0.09, I=0.25, ks=80, kv=0.098, integral limit 3000 PPS*s, PID 1 kHz. Adopted in one-box, retain independently editable D (default zero), forward-only clamp 0..200 and existing guards. No hardware geometry changes. 1100 PPS retained; FF=187.8 leaves little headroom; verify supply and saturation before tuning. OneBox telemetry target 50 Hz, passive ENC unchanged. No evidence of real-time or bench acceptance yet.
+- Metrics adapted from original motion experiment; report active nonzero-reference samples, not braking. 
+
 ## Dashboard live wheel plots — 24/11/2026
 
 - Terminal trái chia trên log, dưới hai đồ thị L/R khi Encoder Log Receive hoặc 1 Box Forward. Dùng MCU elapsed time cho ONEBOX, host timestamp cho ENC; dữ liệu thiếu không giả lập. Tách trục PPS/PWM/count, hỗ trợ replay CSV. Chưa xác nhận GUI thực tế.

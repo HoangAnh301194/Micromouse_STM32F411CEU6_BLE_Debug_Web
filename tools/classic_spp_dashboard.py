@@ -11,6 +11,7 @@ import argparse
 import csv
 from decimal import Decimal, InvalidOperation
 from wheel_plot_data import WheelPlotData
+from wheel_speed_metrics import summarize_wheels, save_wheel_summary
 import os
 from collections import defaultdict, deque
 from datetime import datetime
@@ -372,7 +373,7 @@ class Dashboard:
                                          state="disabled")
         self.restart_ir_btn.pack(side="left")
         self.pid_panel = ttk.LabelFrame(right, text="Wheel PID (RAM) — PPS / permille", padding=6)
-        self.pid_values = [tk.StringVar(value=x) for x in ("0.05", "0.08", "0", "0.05", "0.08", "0")]
+        self.pid_values = [tk.StringVar(value=x) for x in ("0.09", "0.25", "0", "0.09", "0.25", "0")]
         self.pid_ready = False
         self.pid_pending = False
         self.pid_entries = []
@@ -820,6 +821,14 @@ class Dashboard:
                 self.test_stream_running = False
                 self._update_test_controls()
             saved = self.dual_log.last_saved_path
+            if line.startswith("ONEBOX,RESULT,") and self.active_test_name == "1 Box Forward":
+                metrics = summarize_wheels(self.wheel_data.rows, 200)
+                self._append("WHEEL METRICS (applied PWM, sampled): " + str(metrics), ts, "status")
+                if saved and saved.parent.name == "mode 7 - encoder test - 1 box forward":
+                    try:
+                        save_wheel_summary(saved, metrics, line)
+                    except OSError as exc:
+                        self._append("METRICS SAVE ERROR: " + str(exc), ts, "status")
             note = (" | CSV: " + str(saved)
                     if line.startswith("ONEBOX,RESULT,") and saved and
                     saved.parent.name == "mode 7 - encoder test - 1 box forward"

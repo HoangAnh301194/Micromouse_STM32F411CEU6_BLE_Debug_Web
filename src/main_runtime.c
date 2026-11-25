@@ -744,7 +744,7 @@ int Main_Runtime(void)
                 EncoderOneBoxResult result;
                 uint8_t has_motion = EncoderOneBox_GetTelemetry(&motion);
                 uint8_t has_result = EncoderOneBox_PopResult(&result);
-                /* Only print from MAIN at <=20Hz; no UART in TIM11.
+                /* Only print from MAIN at <=50Hz; no UART in TIM11.
                  * Emit an additional final zero-PWM sample before RESULT,
                  * ensuring Stop, done and all faults close a complete CSV. */
                 if (has_result && !has_motion) {
@@ -759,7 +759,7 @@ int Main_Runtime(void)
                     has_motion = 1U;
                 }
                 if (has_motion && (has_result ||
-                    (uint32_t)(now - last_onebox_log_ms) >= 50U)) {
+                    (uint32_t)(now - last_onebox_log_ms) >= 20U)) {
                     last_onebox_log_ms = now;
                     BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,

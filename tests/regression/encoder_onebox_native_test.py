@@ -85,8 +85,12 @@ static void CheckSpeedPid(void) {
     OneBoxSpeedPid a,b;
     OneBoxSpeedPid_Reset(&a);OneBoxSpeedPid_Reset(&b);
     assert(OneBoxGains_Valid(&l) && !OneBoxGains_Valid(&bad));
-    assert(OneBoxSpeedPid_Step(&a,&l,1100,900)>OneBoxSpeedPid_Step(&b,&r,1100,900));
+    assert(OneBoxSpeedPid_Step(&a,&l,1100,1000)>OneBoxSpeedPid_Step(&b,&r,1100,1000));
     assert(OneBoxSpeedPid_Step(&a,&l,1100,0)==ONEBOX_MAX_PWM);
+    OneBoxSpeedPid_Reset(&a);
+    assert(OneBoxSpeedPid_Step(&a,&l,1100,1100)==188);
+    assert(ONEBOX_DEFAULT_P==900U && ONEBOX_DEFAULT_I==2500U);
+    assert(ONEBOX_PID_DT_S==0.001f);
     assert(OneBoxSpeedPid_Step(&a,&l,0,1000)==0 && !a.initialized);
 }
 int main(void) {

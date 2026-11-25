@@ -13,7 +13,8 @@
 #include "stm32f4xx.h"
 
 static OneBoxCore core;
-static OneBoxGains gains_l = {500U, 800U, 0U}, gains_r = {500U, 800U, 0U};
+static OneBoxGains gains_l = {ONEBOX_DEFAULT_P, ONEBOX_DEFAULT_I, ONEBOX_DEFAULT_D},
+                   gains_r = {ONEBOX_DEFAULT_P, ONEBOX_DEFAULT_I, ONEBOX_DEFAULT_D};
 static OneBoxSpeedPid pid_l, pid_r;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
@@ -152,7 +153,7 @@ void EncoderOneBox_ControlTick(void)
         Finish(cmd.reason);
         return;
     }
-    if ((core.ticks % 10U) == 0U) {
+    { /* TIM11: one speed update per 1 ms tick. */
         int16_t left = OneBoxSpeedPid_Step(&pid_l, &gains_l, ONEBOX_SPEED_PPS,
                                            Encoder_GetLeftSpeedPPS());
         int16_t right = OneBoxSpeedPid_Step(&pid_r, &gains_r, ONEBOX_SPEED_PPS,

@@ -15,8 +15,13 @@
  * Do not raise PWM without a supervised lifted-wheel test. */
 #define ONEBOX_MAX_PWM 200
 #define ONEBOX_SPEED_PPS 1100
-#define ONEBOX_FEEDFORWARD_PWM 145
-#define ONEBOX_PID_DT_S 0.010f
+#define ONEBOX_KS_PM 80.0f
+#define ONEBOX_KV_PM_PER_PPS 0.098f
+#define ONEBOX_INTEGRAL_LIMIT 3000.0f
+#define ONEBOX_PID_DT_S 0.001f
+#define ONEBOX_DEFAULT_P 900U
+#define ONEBOX_DEFAULT_I 2500U
+#define ONEBOX_DEFAULT_D 0U
 #define ONEBOX_GAIN_SCALE 10000U
 #define ONEBOX_PID_P_MAX 10000U
 #define ONEBOX_PID_I_MAX 20000U
