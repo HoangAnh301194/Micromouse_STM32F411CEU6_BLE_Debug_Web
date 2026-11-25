@@ -547,3 +547,6 @@ At ONEBOX RESULT, dashboard computes source-derived per-wheel metrics from the c
 
 ### Equal one-cell targets (25/11/2026)
 Both wheel targets are 2400 counts. Each wheel receives zero reference when it first reaches its target; the other continues at 1100 PPS until it reaches its own target. DONE requires both arrival flags; no average-based early completion. Driver ramp/coast can still cause overshoot, and all fault guards remain active. Hardware accuracy unverified.
+
+### Updated encoder calibration candidate (25/11/2026)
+Ten passive Log Receive CSVs 14:54:43–15:02:54, commit 3cd0777: final-minus-first mean L=2413.9, R=2427.4 counts. Shared one-cell target updated to 2414 (rounded L mean) per prior equal-target requirement, conditional on captures covering exactly 165 mm. Independent arrival, gains, PWM limit and guards unchanged. Passive data cannot establish powered stopping overshoot or speed PID performance.

@@ -6,10 +6,12 @@
 /* Empirical one-cell (165 mm center-to-center) wheel increments.
  * Eight manual rolls on 2026-11-23:
  * left mean 2400.375, right mean 2389.625 quadrature counts.
- * Use the left empirical target for both wheels per 2026-11-25 request.
+ * Updated 2026-11-25: 10 passive ENC captures, left mean 2413.9,
+ * right mean 2427.4 (end minus first sample). Use rounded left mean
+ * for both wheels per request; assumes captures span one physical cell.
  * These are only initial travel targets; motor-driven braking needs tuning.
  */
-#define ONEBOX_TARGET_L 2400L
+#define ONEBOX_TARGET_L 2414L
 #define ONEBOX_TARGET_R ONEBOX_TARGET_L
 /* First motor-on one-cell trial: deliberately limited to 20% duty.
  * Duty is NOT wheel speed; a stall at low duty is detected and aborted.

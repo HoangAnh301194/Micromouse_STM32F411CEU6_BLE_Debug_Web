@@ -440,3 +440,6 @@ benchmarks remain unchanged.
 
 ## OneBox equal encoder targets — 25/11/2026
 - L/R targets 2400/2400; independent latched arrival, zero reference per arrived wheel, DONE only after both reach target. Keep PID gains, 1 kHz, PWM cap, watchdogs and final brake. Added native regression for either wheel arriving first. Hardware validation pending.
+
+## Updated equal one-box target — 25/11/2026
+- New passive encoder captures at 3cd0777 (10 files): L mean 2413.9, R mean 2427.4; shared target 2414, rounded left mean. Conditional on 165 mm physical reference; powered validation pending. No PID or safety changes.
