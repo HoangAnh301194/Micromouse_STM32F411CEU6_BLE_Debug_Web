@@ -437,3 +437,6 @@ or >420ms near-target stall. Expanded speed ref 230deg/s under 35% cap;
 not physically qualified. Motor sweep shortened to 100ms on/150ms neutral
 to reduce prior +65deg cumulative-angle aborts. Existing BASE/FAST/TUNED
 benchmarks remain unchanged.
+
+## OneBox equal encoder targets — 25/11/2026
+- L/R targets 2400/2400; independent latched arrival, zero reference per arrived wheel, DONE only after both reach target. Keep PID gains, 1 kHz, PWM cap, watchdogs and final brake. Added native regression for either wheel arriving first. Hardware validation pending.

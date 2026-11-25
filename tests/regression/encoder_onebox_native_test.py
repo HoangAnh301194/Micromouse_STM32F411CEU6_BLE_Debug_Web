@@ -93,9 +93,27 @@ static void CheckSpeedPid(void) {
     assert(ONEBOX_PID_DT_S==0.001f);
     assert(OneBoxSpeedPid_Step(&a,&l,0,1000)==0 && !a.initialized);
 }
+static void CheckIndependentArrival(void) {
+    OneBoxCore s; OneBoxOutput o;
+    OneBoxCore_Start(&s,0,0);
+    o=OneBoxCore_Step(&s,2450,2350);
+    assert(o.reason==ONEBOX_REASON_NONE && s.reached_l && !s.reached_r);
+    assert(o.pwm_l==0 && o.pwm_r>0);
+    o=OneBoxCore_Step(&s,2450,2399);
+    assert(o.reason==ONEBOX_REASON_NONE);
+    o=OneBoxCore_Step(&s,2450,2400);
+    assert(o.reason==ONEBOX_REASON_DONE);
+    OneBoxCore_Start(&s,0,0);
+    o=OneBoxCore_Step(&s,2350,2450);
+    assert(o.reason==ONEBOX_REASON_NONE && !s.reached_l && s.reached_r);
+    assert(o.pwm_l>0 && o.pwm_r==0);
+    o=OneBoxCore_Step(&s,2400,2450);
+    assert(o.reason==ONEBOX_REASON_DONE);
+}
 int main(void) {
+    CheckIndependentArrival();
     CheckSpeedPid();
-    assert(ONEBOX_TARGET_L==2400L && ONEBOX_TARGET_R==2390L);
+    assert(ONEBOX_TARGET_L==2400L && ONEBOX_TARGET_R==2400L);
     CheckTargets();CheckHostLoss();CheckReverse();
     CheckDivergence();CheckStall();CheckTimeout();CheckExternalStop();
     puts("encoder_onebox_native_test: PASS");

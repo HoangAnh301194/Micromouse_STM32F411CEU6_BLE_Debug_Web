@@ -51,6 +51,7 @@ void OneBoxCore_Start(OneBoxCore *s, int32_t left, int32_t right)
     s->stale_ticks = 0U;
     s->host_age_ticks = 0U;
     s->reason = ONEBOX_REASON_NONE;
+    s->reached_l = s->reached_r = 0U;
     s->running = 1U;
 }
 void OneBoxCore_HostPing(OneBoxCore *s)
@@ -102,13 +103,12 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
         Abs32(imbalance) > ONEBOX_DIVERGENCE_COUNT)
         out.reason = ONEBOX_REASON_ENCODER;
 
-    /* Stop both wheels near one-cell distance when neither side is more
-     * than 75 counts behind. A few counts of on-floor coast or wheel slip
-     * remain uncharacterized: do not claim physical mm-level accuracy.
-     */
-    if (!out.reason && average >= (ONEBOX_TARGET_L + ONEBOX_TARGET_R) / 2L &&
-        dl >= ONEBOX_TARGET_L - 75L &&
-        dr >= ONEBOX_TARGET_R - 75L)
+    /* Stop commanding each wheel independently at its target. No early
+     * completion from an average or a 75-count shortfall. Latch arrival
+     * to avoid restarting a wheel because of encoder bounce. */
+    if (dl >= ONEBOX_TARGET_L) s->reached_l = 1U;
+    if (dr >= ONEBOX_TARGET_R) s->reached_r = 1U;
+    if (!out.reason && s->reached_l && s->reached_r)
         out.reason = ONEBOX_REASON_DONE;
 
     if (out.reason) {
@@ -118,6 +118,7 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
 
     /* Distance core owns only stop/fault decisions. Fixed nominal output
      * is a compatibility indicator; actual PWM is produced by wheel PID. */
-    out.pwm_l = out.pwm_r = (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
+    out.pwm_l = s->reached_l ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
+    out.pwm_r = s->reached_r ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
     return out;
 }

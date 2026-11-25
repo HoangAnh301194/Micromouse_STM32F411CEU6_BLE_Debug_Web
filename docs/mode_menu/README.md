@@ -544,3 +544,6 @@ Encoder Log Receive / 1 Box Forward divides the left terminal into top CSV and t
 OneBox adopts P=.09 I=.25 D=0, ks=80 kv=.098, integral limit 3000 PPS*s, PID 1 kHz and 50 Hz target telemetry from giomuadongbac. Keep forward-only PWM cap 200, 1100 PPS, empirical targets, RAM tuning and existing guards. Not a full Motion merge; verify timing and hardware before acceptance.
 
 At ONEBOX RESULT, dashboard computes source-derived per-wheel metrics from the captured samples and writes a sibling .metrics.json. PWM saturation is based on applied PWM, not raw controller output. No data means N/A; 50 Hz observations cannot verify 1 kHz timing.
+
+### Equal one-cell targets (25/11/2026)
+Both wheel targets are 2400 counts. Each wheel receives zero reference when it first reaches its target; the other continues at 1100 PPS until it reaches its own target. DONE requires both arrival flags; no average-based early completion. Driver ramp/coast can still cause overshoot, and all fault guards remain active. Hardware accuracy unverified.

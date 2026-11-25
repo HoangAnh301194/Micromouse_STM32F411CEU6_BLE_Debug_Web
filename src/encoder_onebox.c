@@ -154,9 +154,9 @@ void EncoderOneBox_ControlTick(void)
         return;
     }
     { /* TIM11: one speed update per 1 ms tick. */
-        int16_t left = OneBoxSpeedPid_Step(&pid_l, &gains_l, ONEBOX_SPEED_PPS,
+        int16_t left = OneBoxSpeedPid_Step(&pid_l, &gains_l, core.reached_l ? 0.0f : ONEBOX_SPEED_PPS,
                                            Encoder_GetLeftSpeedPPS());
-        int16_t right = OneBoxSpeedPid_Step(&pid_r, &gains_r, ONEBOX_SPEED_PPS,
+        int16_t right = OneBoxSpeedPid_Step(&pid_r, &gains_r, core.reached_r ? 0.0f : ONEBOX_SPEED_PPS,
                                             Encoder_GetRightSpeedPPS());
         Motor_SetPairPermille(left, right);
     }
@@ -180,7 +180,8 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     out->left = Encoder_GetLeftCount();
     out->right = Encoder_GetRightCount();
     Motor_GetAppliedPairPermille(&out->pwm_l, &out->pwm_r);
-    out->ref_l = out->ref_r = phase == 1U ? ONEBOX_SPEED_PPS : 0;
+    out->ref_l = phase == 1U && !core.reached_l ? ONEBOX_SPEED_PPS : 0;
+    out->ref_r = phase == 1U && !core.reached_r ? ONEBOX_SPEED_PPS : 0;
     out->speed_l = (int32_t)Encoder_GetLeftSpeedPPS();
     out->speed_r = (int32_t)Encoder_GetRightSpeedPPS();
     Unlock(irq);

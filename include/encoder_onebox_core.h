@@ -6,10 +6,11 @@
 /* Empirical one-cell (165 mm center-to-center) wheel increments.
  * Eight manual rolls on 2026-11-23:
  * left mean 2400.375, right mean 2389.625 quadrature counts.
+ * Use the left empirical target for both wheels per 2026-11-25 request.
  * These are only initial travel targets; motor-driven braking needs tuning.
  */
 #define ONEBOX_TARGET_L 2400L
-#define ONEBOX_TARGET_R 2390L
+#define ONEBOX_TARGET_R ONEBOX_TARGET_L
 /* First motor-on one-cell trial: deliberately limited to 20% duty.
  * Duty is NOT wheel speed; a stall at low duty is detected and aborted.
  * Do not raise PWM without a supervised lifted-wheel test. */
@@ -60,6 +61,7 @@ typedef struct {
     uint16_t host_age_ticks;
     uint8_t running;
     uint8_t reason;
+    uint8_t reached_l, reached_r;
 } OneBoxCore;
 
 typedef struct {
