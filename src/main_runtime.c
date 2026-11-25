@@ -236,6 +236,8 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
         BT_Printf("Selected test %u: %s\r\n",
                   (unsigned)(menu->active_test + 1U),
                   ModeMenu_TestName(menu->active_test));
+        if (menu->active_test == MODE_MENU_TEST_MPU)
+            BT_SendString("TEST,MPU,ANGLE_ONLY,MOTOR_LOCKED,KEEP_STILL_FOR_CALIBRATION,START_TO_LOG\r\n");
         break;
     case MODE_MENU_EVENT_TEST_EXIT:
         BT_SendString("System Test: back to main menu\r\n");
@@ -429,6 +431,7 @@ int Main_Runtime(void)
 #if defined(MODE_MENU_ONLY)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
+    uint8_t mpu_ready_reported = 0U;
 #endif
 
     Board_Init();
@@ -626,7 +629,7 @@ int Main_Runtime(void)
                 Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
                 BT_SendString("ENCODER RESET OK\r\n");
             } else if (command == 'Y' && ModeMenu_CanResetSensor(&mode_menu, 2U)) {
-                if (mpu_status == MPU6050_OK) {
+                if (mpu_status == MPU6050_OK && mpu.calibrated) {
                     MPU6050_ResetYaw(&mpu);
                     BT_SendString("MPU YAW RESET OK\r\n");
                 } else {
@@ -674,6 +677,12 @@ int Main_Runtime(void)
             if (active_test_previous != mode_menu.active_test) {
                 active_test_previous = mode_menu.active_test;
                 last_test_ms = now;
+                mpu_ready_reported = 0U;
+            }
+            if (mode_menu.active_test == MODE_MENU_TEST_MPU && !mpu_ready_reported &&
+                mpu_status == MPU6050_OK && mpu.calibrated) {
+                mpu_ready_reported = 1U;
+                BT_SendString("TEST,MPU,READY,ANGLE_ONLY,ZERO_YAW_THEN_START\r\n");
             }
             if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
                 mode_menu.stream_running &&

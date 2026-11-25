@@ -146,7 +146,7 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
             return MODE_MENU_EVENT_ENCODER_ENTER;
         }
         menu->active_test = menu->test_focus;
-        menu->stream_running = 1U; /* IR/MPU streams start immediately */
+        menu->stream_running = (menu->active_test == MODE_MENU_TEST_MPU) ? 0U : 1U; /* MPU angle test arms; Start records. */
         return MODE_MENU_EVENT_TEST_SELECT;
     }
     if (menu->focus == MODE_MENU_NO_SELECTION) return MODE_MENU_EVENT_NONE;

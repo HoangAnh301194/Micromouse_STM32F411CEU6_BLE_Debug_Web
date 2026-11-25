@@ -33,7 +33,7 @@ TEST_CSV_COLUMNS = {
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
                "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
-    "MPU": ("valid", "yaw_cd", "gz_cd"),
+    "MPU": ("timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"),
     "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
             "L0", "L45", "L90", "R0", "R45", "R90",
             "mpu_valid", "yaw_cd", "gz_cd"),
@@ -96,13 +96,16 @@ def sensor_test_csv(line, host_time=None):
         valid = fields.get("valid")
         if valid not in ("0", "1"):
             return None
+        ms, age = fields.get("ms", ""), fields.get("age_us", "")
+        if any(v and not _DECIMAL.fullmatch(v) for v in (ms, age)):
+            return None
         if valid == "0":
-            values = ("0", "", "")
+            values = (ms, "0", "", age)
         else:
-            if not all(_DECIMAL.fullmatch(fields.get(k, "")) for k in ("yaw_cd", "gz_cd")):
+            if not _DECIMAL.fullmatch(fields.get("yaw_cd", "")):
                 return None
-            values = ("1", fields["yaw_cd"], fields["gz_cd"])
-    if sensor in ("ENC", "ALL", "ONEBOX"):
+            values = (ms, "1", f"{int(fields['yaw_cd'])/100:.2f}", age)
+    if sensor in ("ENC", "ALL", "ONEBOX", "MPU"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values
 
@@ -247,7 +250,7 @@ class DualSessionLog:
             self._has_menu_context = True
             self._close_active()
             self.active_sensor = self.TEST_NAME_TO_SENSOR[selected.group(1)]
-            self._streaming = True
+            self._streaming = self.active_sensor != "MPU"
             return
 
         if line.startswith("System Test ") or line.startswith("System Test:"):
@@ -265,17 +268,16 @@ class DualSessionLog:
         if line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
                 self._streaming = False
-                if self.active_sensor == "ENC":
-                    # Encoder Stop = finalize CSV. IR/MPU retain their old
-                    # pause/resume semantics and keep the same open file.
+                if self.active_sensor in ("ENC", "MPU"):
+                    # Each encoder or manual angle take is independent.
                     self._close_active()
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
                 # Only Encoder creates a new file on each acknowledged START.
                 # IR/MPU resume the original file, unchanged.
-                if self.active_sensor == "ENC":
+                if self.active_sensor in ("ENC", "MPU"):
                     self._close_active()
-                    self._open_run("ENC", TEST_CSV_COLUMNS["ENC"], host_time)
+                    self._open_run(self.active_sensor, TEST_CSV_COLUMNS[self.active_sensor], host_time)
                 self._streaming = True
 
     def _open_run(self, sensor, headers, host_time):
@@ -349,8 +351,8 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context or sensor in ("ENC", "ONEBOX"):
-                # Encoder log is STRICTLY opt-in via Log Receive even after
+            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU"):
+                # Encoder and MPU angle log is STRICTLY opt-in via Log Receive even after
                 # reconnect; never infer it from an unsolicited ENC frame.
                 return None
             # Preserve historical IR/MPU reconnect recovery if no menu

@@ -443,3 +443,6 @@ benchmarks remain unchanged.
 
 ## Updated equal one-box target — 25/11/2026
 - New passive encoder captures at 3cd0777 (10 files): L mean 2413.9, R mean 2427.4; shared target 2414, rounded left mean. Conditional on 165 mm physical reference; powered validation pending. No PID or safety changes.
+
+## Manual MPU angle logging — 25/11/2026
+- Existing MPU Test becomes explicitly armed manual yaw capture; motor locked, only MPU capability. READY status, zero only after calibration, explicit Start/Stop, new CSV for each take and degree display. No changes to gyro math or encoder PID. Hardware validation pending.

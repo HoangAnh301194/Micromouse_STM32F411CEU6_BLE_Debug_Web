@@ -764,7 +764,7 @@ class Dashboard:
                                      "1 Box Forward" if is_onebox else
                                      line.split(": ", 1)[-1].strip())
             # Log Receive and 1 Box Forward arm IDLE: no data/motion yet.
-            self.test_stream_running = not (is_encoder_log or is_onebox)
+            self.test_stream_running = not (is_encoder_log or is_onebox or self.active_test_name == "MPU Test")
             self.onebox_start_pending = False
             self.reader.motion_lease.clear()
             self.data_filter.set("All")
@@ -873,7 +873,16 @@ class Dashboard:
             self.status.set(line)
         if category == "data" and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
-        self._append(line, ts, category, host_time=host_time)
+        if category == "data" and line.startswith("MPU,"):
+            rec = sensor_test_csv(line, host_time=host_time)
+            if rec:
+                row = dict(zip(rec[1], rec[2]))
+                display = "MPU ANGLE: " + (row["yaw_deg"] + " deg" if row["valid"] == "1" else "INVALID / CALIBRATING")
+                self._append(display, ts, "data", host_time=host_time)
+            else:
+                self._append(line, ts, category, host_time=host_time)
+        else:
+            self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
         if changed:
             self.map_status.set(changed)
@@ -1185,7 +1194,7 @@ class Dashboard:
                         mode = "ENC"
                     elif {"valid", "L0", "L45", "L90", "R0", "R45", "R90"} <= columns:
                         mode = "IR"
-                    elif {"valid", "yaw_cd", "gz_cd"} <= columns:
+                    elif {"valid", "yaw_deg"} <= columns or {"valid", "yaw_cd", "gz_cd"} <= columns:
                         mode = "MPU"
                     else:
                         messagebox.showerror(
@@ -1219,8 +1228,11 @@ class Dashboard:
                             else:
                                 line = f"MPU,valid={int(row['valid'])}"
                                 if row["valid"] == "1":
-                                    line += (f",yaw_cd={int(row['yaw_cd'])},"
-                                             f"gz_cd={int(row['gz_cd'])}")
+                                    if "yaw_deg" in row:
+                                        line += f",yaw_cd={round(float(row['yaw_deg'])*100)}"
+                                    else:
+                                        line += (f",yaw_cd={int(row['yaw_cd'])},"
+                                                 f"gz_cd={int(row['gz_cd'])}")
                             timestamp = row.get("timestamp") or datetime.now().isoformat(
                                 timespec="milliseconds")
                             if self.wheel_data.add(line, timestamp):

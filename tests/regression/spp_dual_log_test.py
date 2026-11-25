@@ -168,11 +168,19 @@ def main():
         # IR/MPU retained their original, isolated per-test folder behavior.
         log.write("System Test 3: MPU Test")
         log.write("Selected test 3: MPU Test")
+        assert log.write("MPU,valid=1,yaw_cd=9000,gz_cd=0", host_time=t2) is None
+        log.write("TEST STREAM STARTED: MPU Test", host_time=t2)
         m1 = log.write("MPU,ms=50,valid=1,age_us=25,yaw_cd=12,gz_cd=-2", host_time=t2)
         assert m1.parent.name.startswith("Mode 7 - MPU Test - ")
-        assert read_csv(m1) == [["valid", "yaw_cd", "gz_cd"], ["1", "12", "-2"]]
+        assert read_csv(m1) == [["timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"], [t2, "50", "1", "0.12", "25"]]
         log.write("MPU,ms=100,valid=0,age_us=10000")
-        assert read_csv(m1)[-1] == ["0", "", ""]
+        assert read_csv(m1)[-1][1:] == ["100", "0", "", "10000"]
+        log.write("TEST STREAM STOPPED: MPU Test", host_time=t2)
+        assert log.last_saved_path == m1
+        log.write("TEST STREAM STARTED: MPU Test", host_time=t3)
+        m2 = log.write("MPU,ms=200,valid=1,age_us=30,yaw_cd=-9000,gz_cd=0", host_time=t3)
+        assert m2 != m1 and read_csv(m2)[-1][3] == "-90.00"
+        log.write("TEST STREAM STOPPED: MPU Test", host_time=t3)
         log.write("System Test 1: IR Test")
         log.write("Selected test 1: IR Test")
         i1 = log.write(

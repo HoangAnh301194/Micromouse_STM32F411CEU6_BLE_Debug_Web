@@ -550,3 +550,6 @@ Both wheel targets are 2400 counts. Each wheel receives zero reference when it f
 
 ### Updated encoder calibration candidate (25/11/2026)
 Ten passive Log Receive CSVs 14:54:43–15:02:54, commit 3cd0777: final-minus-first mean L=2413.9, R=2427.4 counts. Shared one-cell target updated to 2414 (rounded L mean) per prior equal-target requirement, conditional on captures covering exactly 165 mm. Independent arrival, gains, PWM limit and guards unchanged. Passive data cannot establish powered stopping overshoot or speed PID performance.
+
+### Manual MPU angle test — 25/11/2026
+Mode 7 > MPU Test is the angle-only passive test, no additional submenu. Motor remains locked; selection arms and triggers calibration if required, READY status after calibrated, Zero MPU yaw then Start/Stop for independent CSV takes. CSV timestamp,mcu_ms,valid,yaw_deg,age_us; invalid samples leave yaw blank. Existing centidegree firmware frame retained for compatibility. No changes to gyro filters or PID.
