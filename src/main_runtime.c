@@ -760,6 +760,8 @@ int Main_Runtime(void)
                     motion.elapsed_ms = result.elapsed_ms;
                     motion.left = Encoder_GetLeftCount();
                     motion.right = Encoder_GetRightCount();
+                    motion.rel_l = result.count_l;
+                    motion.rel_r = result.count_r;
                     motion.pwm_l = 0;
                     motion.pwm_r = 0;
                     motion.ref_l = motion.ref_r = 0;
@@ -770,12 +772,22 @@ int Main_Runtime(void)
                 if (has_motion && (has_result ||
                     (uint32_t)(now - last_onebox_log_ms) >= 20U)) {
                     last_onebox_log_ms = now;
-                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                    /* End-of-run uses the controller's exact tick and relative
+                     * counts rather than a later, possibly coasting snapshot. */
+                    if (has_result) {
+                        motion.elapsed_ms = result.elapsed_ms;
+                        motion.rel_l = result.count_l;
+                        motion.rel_r = result.count_r;
+                        motion.pwm_l = motion.pwm_r = 0;
+                        motion.ref_l = motion.ref_r = 0;
+                    }
+                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,rel_l=%ld,rel_r=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
                               (int)motion.pwm_l, (int)motion.pwm_r,
                               (long)motion.ref_l, (long)motion.ref_r,
-                              (long)motion.speed_l, (long)motion.speed_r);
+                              (long)motion.speed_l, (long)motion.speed_r,
+                              (long)motion.rel_l, (long)motion.rel_r);
                 }
                 if (has_result) {
                     BT_Printf("ONEBOX,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",

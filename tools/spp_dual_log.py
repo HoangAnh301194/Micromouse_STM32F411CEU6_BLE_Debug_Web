@@ -31,7 +31,8 @@ def classify_spp_line(line):
 TEST_CSV_COLUMNS = {
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
-               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
+               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS",
+               "REL_L", "REL_R"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "MPU": ("timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"),
     "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
@@ -80,7 +81,13 @@ def sensor_test_csv(line, host_time=None):
         speed_keys = ("ref_l", "ref_r", "speed_l", "speed_r")
         if any(key in fields for key in speed_keys) and not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in speed_keys):
             return None
-        values = tuple(fields[key] for key in keys) + tuple(fields.get(key, "") for key in speed_keys)
+        relative_keys = ("rel_l", "rel_r")
+        if any(k in fields for k in relative_keys) and not all(
+                _DECIMAL.fullmatch(fields.get(k, "")) for k in relative_keys):
+            return None
+        values = (tuple(fields[key] for key in keys)
+                  + tuple(fields.get(key, "") for key in speed_keys)
+                  + tuple(fields.get(key, "") for key in relative_keys))
     elif sensor == "ALL":
         keys = ("enc_l", "enc_r", "ir_valid", "L0", "L45", "L90",
                 "R0", "R45", "R90", "mpu_valid", "yaw_cd", "gz_cd")

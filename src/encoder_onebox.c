@@ -179,6 +179,8 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
      * Query the motor driver for APPLIED PWM (not a PID target). */
     out->left = Encoder_GetLeftCount();
     out->right = Encoder_GetRightCount();
+    out->rel_l = out->left - core.start_l;
+    out->rel_r = out->right - core.start_r;
     Motor_GetAppliedPairPermille(&out->pwm_l, &out->pwm_r);
     out->ref_l = phase == 1U && !core.reached_l ? ONEBOX_SPEED_PPS : 0;
     out->ref_r = phase == 1U && !core.reached_r ? ONEBOX_SPEED_PPS : 0;

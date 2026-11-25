@@ -17,6 +17,7 @@ typedef struct {
 typedef struct {
     uint32_t elapsed_ms;
     int32_t left, right;
+    int32_t rel_l, rel_r; /* signed counts from accepted OneBox Start */
     int16_t pwm_l, pwm_r;
     int32_t ref_l, ref_r, speed_l, speed_r;
 } EncoderOneBoxTelemetry;
