@@ -249,10 +249,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 #endif
     /* Policy B: only notify tick here; never run I2C in TIM11. */
 #if defined(MPU_TIM11_TICK_SCHED)
-#if defined(MODE_MENU_ONLY)
-    if (test_resource_mask & TEST_RES_MPU)
-#endif
-        MPU6050_NotifyControlTick(control_mpu, micros());
+    /* Acquisition clock stays live even while angle logging is paused.
+     * No I2C transaction or motion command is issued here. */
+    MPU6050_NotifyControlTick(control_mpu, micros());
 #endif
 
 #if defined(MODE_MENU_ONLY)

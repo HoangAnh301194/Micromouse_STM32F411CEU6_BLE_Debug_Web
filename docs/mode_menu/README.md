@@ -553,3 +553,6 @@ Ten passive Log Receive CSVs 14:54:43–15:02:54, commit 3cd0777: final-minus-fi
 
 ### Manual MPU angle test — 25/11/2026
 Mode 7 > MPU Test is the angle-only passive test, no additional submenu. Motor remains locked; selection arms and triggers calibration if required, READY status after calibrated, Zero MPU yaw then Start/Stop for independent CSV takes. CSV timestamp,mcu_ms,valid,yaw_deg,age_us; invalid samples leave yaw blank. Existing centidegree firmware frame retained for compatibility. No changes to gyro filters or PID.
+
+### MPU activation fix (25/11/2026)
+Unified firmware starts MPU calibration at boot and services its asynchronous acquisition continuously; TIM11 always supplies sample ticks. MPU Test logging remains opt-in; Start is rejected until calibrated, Start or Zero retries a failed calibration, and 1 Hz status exposes state, sample count, retries and I2C health. Encoder OneBox still uses encoder feedback only. Keep stationary during calibration. Hardware validation pending.

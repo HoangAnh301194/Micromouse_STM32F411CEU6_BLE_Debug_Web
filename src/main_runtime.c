@@ -285,7 +285,7 @@ static void ModeMenu_ApplyResources(const ModeMenu *menu,
     if (next == *last_mask) return;
     Control_SetTestResources(next);
     if ((next & TEST_RES_MPU) && !(*last_mask & TEST_RES_MPU) &&
-        mpu_status == MPU6050_OK && !mpu->calibrated) {
+        mpu_status == MPU6050_OK && !mpu->calibrated && !mpu->calibrating) {
         (void)MPU6050_Calibrate(mpu); /* nonblocking MPU/All test only */
     }
     *last_mask = next;
@@ -432,6 +432,7 @@ int Main_Runtime(void)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
     uint8_t mpu_ready_reported = 0U;
+    uint32_t mpu_health_ms = 0U;
 #endif
 
     Board_Init();
@@ -498,8 +499,11 @@ int Main_Runtime(void)
          * main even when MPU6050 failed. No one-shot boot-only handshake. */
     }
 #endif
-    /* MPU calibration is deferred until MPU Test or All Sensors Test.
-     * Encoder-only motion does not depend on or read the MPU. */
+    /* Start zero-rate calibration at boot, with motor outputs locked.
+     * MPU acquisition stays live; only selected tests consume its data. */
+#if defined(MODE_MENU_ONLY)
+    if (mpu_status == MPU6050_OK) (void)MPU6050_Calibrate(&mpu);
+#endif
 
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
@@ -563,9 +567,8 @@ int Main_Runtime(void)
     while (1) {
         uint32_t now = millis();
 #if defined(MODE_MENU_ONLY)
-        if (mpu_status == MPU6050_OK &&
-            (test_resource_mask & TEST_RES_MPU))
-            MPU6050_Update(&mpu); /* MPU Test / All only */
+        if (mpu_status == MPU6050_OK)
+            MPU6050_Update(&mpu); /* Keep async acquisition alive from boot. */
 #else
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
 #endif
@@ -619,6 +622,14 @@ int Main_Runtime(void)
                     } else {
                         BT_SendString("ONEBOX,REJECT,reason=MOTOR_OR_ENCODER_NOT_READY\r\n");
                     }
+                } else if (mode_menu.active_test == MODE_MENU_TEST_MPU &&
+                           !mpu.calibrated) {
+                    if (mpu_status == MPU6050_OK && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported = 0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
+                    BT_SendString("TEST,MPU,START_REJECTED,WAIT_FOR_READY\r\n");
                 } else if (ModeMenu_ResumeTest(&mode_menu)) {
                     last_test_ms = now; /* next measurement in ~50 ms */
                     BT_Printf("TEST STREAM STARTED: %s\r\n",
@@ -633,6 +644,11 @@ int Main_Runtime(void)
                     MPU6050_ResetYaw(&mpu);
                     BT_SendString("MPU YAW RESET OK\r\n");
                 } else {
+                    if (mpu_status == MPU6050_OK && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported = 0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
                     BT_SendString("MPU YAW RESET REJECTED: NOT READY\r\n");
                 }
             } else if (command == 'I' && ModeMenu_CanResetSensor(&mode_menu, 0U)) {
@@ -678,6 +694,15 @@ int Main_Runtime(void)
                 active_test_previous = mode_menu.active_test;
                 last_test_ms = now;
                 mpu_ready_reported = 0U;
+            }
+            if (mode_menu.active_test == MODE_MENU_TEST_MPU &&
+                !mpu.calibrated && (uint32_t)(now - mpu_health_ms) >= 1000U) {
+                mpu_health_ms = now;
+                BT_Printf("TEST,MPU,CAL,state=%u,samples=%u,retries=%u,reason=%u,fresh=%lu,errors=%lu,timeouts=%lu,busy=%lu\r\n",
+                          (unsigned)mpu.cal_state, (unsigned)mpu.calibration_count,
+                          (unsigned)mpu.cal_retries, (unsigned)mpu.cal_failure_reason,
+                          (unsigned long)mpu.fresh_gyro_reads, (unsigned long)mpu.error_reads,
+                          (unsigned long)mpu.timeout_reads, (unsigned long)mpu.busy_retries);
             }
             if (mode_menu.active_test == MODE_MENU_TEST_MPU && !mpu_ready_reported &&
                 mpu_status == MPU6050_OK && mpu.calibrated) {

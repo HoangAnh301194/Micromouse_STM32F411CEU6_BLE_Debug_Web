@@ -446,3 +446,6 @@ benchmarks remain unchanged.
 
 ## Manual MPU angle logging — 25/11/2026
 - Existing MPU Test becomes explicitly armed manual yaw capture; motor locked, only MPU capability. READY status, zero only after calibration, explicit Start/Stop, new CSV for each take and degree display. No changes to gyro math or encoder PID. Hardware validation pending.
+
+## MPU activation — 25/11/2026
+- Screenshot showed boot init OK but valid=0 and zero rejected. Enable boot calibration and continuous async MPU sampling in unified firmware, preserve validity checks. Add calibration progress and deliberate retry on Start/Zero after failure. No motor permission or PID changes; actual cause of prior failure not yet verified on hardware.
