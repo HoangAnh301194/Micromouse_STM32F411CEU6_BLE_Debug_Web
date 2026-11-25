@@ -873,9 +873,11 @@ class Dashboard:
                     else "")
             if line.startswith("PIVOT,RESULT,") and saved:
                 note = " | CSV: " + str(saved)
+                if self.angle_sample.valid:
+                    note += f" | Relative yaw: {self.angle_sample.yaw:+.2f} deg"
             self.status.set(
                 line + note + (" — reset STM32 before another motor test"
-                               if line.startswith("ONEBOX,RESULT,") and
+                               if line.startswith(("ONEBOX,RESULT,","PIVOT,RESULT,")) and
                                not self.onebox_capable else ""))
         elif line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:

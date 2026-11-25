@@ -457,3 +457,5 @@ benchmarks remain unchanged.
 
 ## MPU pivot submenu — 25/11/2026
 - Added four guarded pivot tests and MPU Log submenu, shared wheel PID, relative gyro target and mixed CSV/radar. No angle PID or deceleration profile. Validate gyro sign and lifted-wheel directions before floor testing; no hardware acceptance yet.
+
+- Pivot follow-up: explicit resource check, calibration retry/readiness in pivot selection, signed target mapping tests, and relative yaw on pivot result in dashboard. No changes to PWM cap or brake policy.

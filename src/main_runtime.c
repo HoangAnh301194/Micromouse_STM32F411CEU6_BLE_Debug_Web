@@ -630,7 +630,15 @@ int Main_Runtime(void)
             } else if (command == 'G') {
                 if (ModeMenu_PivotTarget(&mode_menu)) {
                     int16_t target=ModeMenu_PivotTarget(&mode_menu);
-                    if (mpu_status==MPU6050_OK && EncoderOneBox_StartPivot(&mpu,target))
+                    if (mpu_status==MPU6050_OK && !mpu.calibrated && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported=0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
+                    if (mpu_status==MPU6050_OK && mpu.calibrated &&
+                        (test_resource_mask & (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)) ==
+                        (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR) &&
+                        EncoderOneBox_StartPivot(&mpu,target))
                         BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,ONEBOX_SPEED_PPS,ONEBOX_MAX_PWM);
                     else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");
                 } else if (ModeTest_OneBoxArmed(&mode_menu) &&
@@ -684,6 +692,7 @@ int Main_Runtime(void)
                     (remote == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
+                if (remote==MODE_MENU_EVENT_MPU_SELECT) mpu_ready_reported=0U;
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
@@ -704,6 +713,7 @@ int Main_Runtime(void)
                     (event == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
+                if (event==MODE_MENU_EVENT_MPU_SELECT) mpu_ready_reported=0U;
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
@@ -716,7 +726,7 @@ int Main_Runtime(void)
                 last_test_ms = now;
                 mpu_ready_reported = 0U;
             }
-            if (mode_menu.active_test == MODE_MENU_TEST_MPU &&
+            if ((mode_menu.active_test == MODE_MENU_TEST_MPU || ModeMenu_PivotTarget(&mode_menu)) &&
                 !mpu.calibrated && (uint32_t)(now - mpu_health_ms) >= 1000U) {
                 mpu_health_ms = now;
                 BT_Printf("TEST,MPU,CAL,state=%u,samples=%u,retries=%u,reason=%u,fresh=%lu,errors=%lu,timeouts=%lu,busy=%lu\r\n",
@@ -725,10 +735,10 @@ int Main_Runtime(void)
                           (unsigned long)mpu.fresh_gyro_reads, (unsigned long)mpu.error_reads,
                           (unsigned long)mpu.timeout_reads, (unsigned long)mpu.busy_retries);
             }
-            if (mode_menu.active_test == MODE_MENU_TEST_MPU && !mpu_ready_reported &&
+            if ((mode_menu.active_test == MODE_MENU_TEST_MPU || ModeMenu_PivotTarget(&mode_menu)) && !mpu_ready_reported &&
                 mpu_status == MPU6050_OK && mpu.calibrated) {
                 mpu_ready_reported = 1U;
-                BT_SendString("TEST,MPU,READY,ANGLE_ONLY,ZERO_YAW_THEN_START\r\n");
+                BT_SendString(ModeMenu_PivotTarget(&mode_menu) ? "TEST,MPU,READY,PIVOT,START_ON_PC\r\n" : "TEST,MPU,READY,ANGLE_ONLY,ZERO_YAW_THEN_START\r\n");
             }
             if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
                 mode_menu.stream_running &&

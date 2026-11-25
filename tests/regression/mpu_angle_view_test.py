@@ -24,3 +24,8 @@ redraw=next(n for n in ast.walk(module) if isinstance(n,ast.FunctionDef) and n.n
 assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr=="_draw_angle_panel" for n in ast.walk(redraw))
 render=next(n for n in ast.walk(module) if isinstance(n,ast.FunctionDef) and n.name=="_draw_angle_panel")
 assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=="draw_angle" for n in ast.walk(render))
+
+# Pivot radar uses relative angle, not accumulated MPU yaw.
+s = AngleSample()
+assert s.consume("PIVOT_CSV,ms=100,valid=1,age_us=850,yaw_cd=12500,angle_cd=9000,gz_cd=0,target=90,left=-985,right=991,pwm_l=0,pwm_r=0,ref_l=0,ref_r=0,speed_l=0,speed_r=0")
+assert s.valid and s.yaw == 90.0

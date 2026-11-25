@@ -564,3 +564,5 @@ Radar rendering fix: call the polar renderer in recurring redraw, pane insertion
 
 ### MPU pivot tests (25/11/2026)
 MPU submenu: MPU Log, Pivot 90 Left/Right, Pivot 180 Left/Right, Back. Pivot reuses one-box motor ownership, 1kHz speed PID with signed 1100 PPS, 200 permille cap, 350ms lease, fresh gyro <=3ms, direction/stall/encoder and 6.5s guards. Stops at relative yaw target crossing, brakes 100ms; final angle overshoot is not corrected. CSV includes MPU and wheel readings. Positive yaw assumed left, verify with manual log before motor test. Hardware validation pending.
+
+Pivot readiness: requires MPU calibrated and fresh, exact resource mask, retries failed calibration on deliberate Start. READY is reported for pivot selection too. Final radar angle is the last sampled relative yaw, not proof of physical heading accuracy.
