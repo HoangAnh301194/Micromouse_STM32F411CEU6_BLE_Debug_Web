@@ -100,6 +100,12 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     if (!menu) return;
 
     SSD1306_Fill(SSD1306_BLACK);
+    if (menu->page == MODE_MENU_PAGE_MPU) {
+        SSD1306_SetCursor(0U,0U); SSD1306_WriteString("MPU TEST", &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U,20U); SSD1306_WriteString((char *)ModeMenu_MpuName(menu->encoder_focus), &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U,40U); SSD1306_WriteString("Next / Select", &Font_7x10, SSD1306_WHITE);
+        return;
+    }
     if (menu->page == MODE_MENU_PAGE_ENCODER) {
         /* Scroll four visible options for 128x64 OLED; OLED remains
          * optional/off by default in the motor-locked SPP profile. */
@@ -242,6 +248,16 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
     case MODE_MENU_EVENT_TEST_EXIT:
         BT_SendString("System Test: back to main menu\r\n");
         break;
+    case MODE_MENU_EVENT_MPU_ENTER:
+        BT_SendString("MPU Test: choose MPU Log / Pivot / Back\r\n"); break;
+    case MODE_MENU_EVENT_MPU_FOCUS:
+        BT_Printf("MPU Test option %u: %s\r\n",(unsigned)(menu->encoder_focus+1U),ModeMenu_MpuName(menu->encoder_focus)); break;
+    case MODE_MENU_EVENT_MPU_SELECT:
+        BT_Printf("Selected mpu option %u: %s\r\n",(unsigned)(menu->active_encoder_option+1U),ModeMenu_MpuName(menu->active_encoder_option));
+        if (menu->active_encoder_option==0U) BT_SendString("Selected test 3: MPU Test\r\n");
+        break;
+    case MODE_MENU_EVENT_MPU_EXIT:
+        BT_SendString("MPU Test: back to System Test\r\n"); break;
     case MODE_MENU_EVENT_ENCODER_ENTER:
         BT_SendString("Encoder Test: choose Log Receive / motion tests / Back\r\n");
         break;
@@ -612,7 +628,12 @@ int Main_Runtime(void)
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
-                if (ModeTest_OneBoxArmed(&mode_menu) &&
+                if (ModeMenu_PivotTarget(&mode_menu)) {
+                    int16_t target=ModeMenu_PivotTarget(&mode_menu);
+                    if (mpu_status==MPU6050_OK && EncoderOneBox_StartPivot(&mpu,target))
+                        BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,ONEBOX_SPEED_PPS,ONEBOX_MAX_PWM);
+                    else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");
+                } else if (ModeTest_OneBoxArmed(&mode_menu) &&
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
                     (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
                     if (EncoderOneBox_Start()) {
@@ -782,6 +803,8 @@ int Main_Runtime(void)
                  * Emit an additional final zero-PWM sample before RESULT,
                  * ensuring Stop, done and all faults close a complete CSV. */
                 if (has_result && !has_motion) {
+                    motion.pivot_target = result.pivot_target;
+                    motion.imu_valid=0U; motion.age_us=0U; motion.yaw=motion.angle=motion.gz=0.0f;
                     motion.elapsed_ms = result.elapsed_ms;
                     motion.left = Encoder_GetLeftCount();
                     motion.right = Encoder_GetRightCount();
@@ -795,7 +818,13 @@ int Main_Runtime(void)
                 if (has_motion && (has_result ||
                     (uint32_t)(now - last_onebox_log_ms) >= 20U)) {
                     last_onebox_log_ms = now;
-                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                    if (motion.pivot_target) {
+                        BT_Printf("PIVOT_CSV,ms=%lu,valid=%u,age_us=%lu,yaw_cd=%ld,angle_cd=%ld,gz_cd=%ld,target=%d,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                            (unsigned long)now,(unsigned)motion.imu_valid,(unsigned long)motion.age_us,
+                            (long)(motion.yaw*100),(long)(motion.angle*100),(long)(motion.gz*100),(int)motion.pivot_target,
+                            (long)motion.left,(long)motion.right,(int)motion.pwm_l,(int)motion.pwm_r,
+                            (long)motion.ref_l,(long)motion.ref_r,(long)motion.speed_l,(long)motion.speed_r);
+                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
                               (int)motion.pwm_l, (int)motion.pwm_r,
@@ -803,7 +832,8 @@ int Main_Runtime(void)
                               (long)motion.speed_l, (long)motion.speed_r);
                 }
                 if (has_result) {
-                    BT_Printf("ONEBOX,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
+                    BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
+                              result.pivot_target ? "PIVOT" : "ONEBOX",
                               EncoderOneBox_Reason(result.reason),
                               (long)result.count_l, (long)result.count_r,
                               (unsigned long)result.elapsed_ms,

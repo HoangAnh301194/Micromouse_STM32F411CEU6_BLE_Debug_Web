@@ -202,13 +202,20 @@ int main(void) {
     assert(m.active_test == MODE_MENU_NO_SELECTION && !m.stream_running);
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 2 && m.active_test == MODE_MENU_NO_SELECTION);
-    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_MPU_ENTER);
+    assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_MPU_FOCUS);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_MPU_SELECT);
     assert(m.active_test == 2 && !m.stream_running);
     assert(ModeTest_Resources(&m) == TEST_RES_MPU);
     assert(ModeMenu_ResumeTest(&m) && m.stream_running);
     assert(ModeMenu_PauseTest(&m) && !m.stream_running);
     assert(ModeMenu_CanResetSensor(&m, 2));
     assert(!ModeMenu_CanResetSensor(&m, 1));
+    for (int k=1;k<=5;k++) {
+        assert(ModeMenu_Next(&m)==MODE_MENU_EVENT_MPU_FOCUS);
+        if(k<5) { assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_MPU_SELECT); assert(ModeMenu_PivotTarget(&m)!=0); assert(ModeTest_Resources(&m)==(TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)); }
+    }
+    assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_MPU_EXIT);
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == MODE_MENU_TEST_ALL);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);

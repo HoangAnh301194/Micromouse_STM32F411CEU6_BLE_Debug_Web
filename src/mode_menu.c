@@ -24,6 +24,18 @@ static const char *const encoder_names[MODE_MENU_ENCODER_COUNT] = {
     "Pivot 180 Left", "Pivot 180 Right", "PID", "Back"
 };
 
+const char *ModeMenu_MpuName(uint8_t index)
+{
+    static const char *const names[] = {"MPU Log","Pivot 90 Left","Pivot 90 Right","Pivot 180 Left","Pivot 180 Right","Back"};
+    return index < MODE_MENU_MPU_COUNT ? names[index] : "INVALID";
+}
+int16_t ModeMenu_PivotTarget(const ModeMenu *menu)
+{
+    static const int16_t angles[] = {0,90,-90,180,-180,0};
+    return menu && menu->page == MODE_MENU_PAGE_MPU &&
+           menu->active_encoder_option < MODE_MENU_MPU_COUNT ?
+           angles[menu->active_encoder_option] : 0;
+}
 const char *ModeMenu_EncoderName(uint8_t index)
 {
     return index < MODE_MENU_ENCODER_COUNT ? encoder_names[index] : "INVALID";
@@ -78,6 +90,13 @@ void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms)
 ModeMenuEvent ModeMenu_Next(ModeMenu *menu)
 {
     if (!menu) return MODE_MENU_EVENT_NONE;
+    if (menu->page == MODE_MENU_PAGE_MPU) {
+        menu->active_test = menu->active_encoder_option = MODE_MENU_NO_SELECTION;
+        menu->stream_running = 0U;
+        menu->encoder_focus = menu->encoder_focus == MODE_MENU_NO_SELECTION ? 0U :
+            (uint8_t)((menu->encoder_focus + 1U) % MODE_MENU_MPU_COUNT);
+        return MODE_MENU_EVENT_MPU_FOCUS;
+    }
     if (menu->page == MODE_MENU_PAGE_ENCODER) {
         /* Any browse action exits Log Receive and stops telemetry. */
         menu->active_test = MODE_MENU_NO_SELECTION;
@@ -103,6 +122,19 @@ ModeMenuEvent ModeMenu_Next(ModeMenu *menu)
 ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
 {
     if (!menu) return MODE_MENU_EVENT_NONE;
+    if (menu->page == MODE_MENU_PAGE_MPU) {
+        if (menu->encoder_focus == MODE_MENU_NO_SELECTION) return MODE_MENU_EVENT_NONE;
+        menu->stream_running = 0U;
+        menu->active_test = menu->active_encoder_option = MODE_MENU_NO_SELECTION;
+        if (menu->encoder_focus == MODE_MENU_MPU_BACK) {
+            menu->page = MODE_MENU_PAGE_TEST;
+            menu->encoder_focus = MODE_MENU_NO_SELECTION;
+            return MODE_MENU_EVENT_MPU_EXIT;
+        }
+        menu->active_encoder_option = menu->encoder_focus;
+        if (menu->encoder_focus == 0U) menu->active_test = MODE_MENU_TEST_MPU;
+        return MODE_MENU_EVENT_MPU_SELECT;
+    }
     if (menu->page == MODE_MENU_PAGE_ENCODER) {
         if (menu->encoder_focus == MODE_MENU_NO_SELECTION)
             return MODE_MENU_EVENT_NONE;
@@ -145,6 +177,13 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
             menu->stream_running = 0U;
             return MODE_MENU_EVENT_ENCODER_ENTER;
         }
+        if (menu->test_focus == MODE_MENU_TEST_MPU) {
+            menu->page = MODE_MENU_PAGE_MPU;
+            menu->encoder_focus = menu->active_encoder_option = MODE_MENU_NO_SELECTION;
+            menu->active_test = MODE_MENU_NO_SELECTION;
+            menu->stream_running = 0U;
+            return MODE_MENU_EVENT_MPU_ENTER;
+        }
         menu->active_test = menu->test_focus;
         menu->stream_running = (menu->active_test == MODE_MENU_TEST_MPU) ? 0U : 1U; /* MPU angle test arms; Start records. */
         return MODE_MENU_EVENT_TEST_SELECT;
@@ -166,7 +205,7 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
 uint8_t ModeMenu_PauseTest(ModeMenu *menu)
 {
     if (!menu || (menu->page != MODE_MENU_PAGE_TEST &&
-                  menu->page != MODE_MENU_PAGE_ENCODER) ||
+                  menu->page != MODE_MENU_PAGE_ENCODER && menu->page != MODE_MENU_PAGE_MPU) ||
         menu->active_test == MODE_MENU_NO_SELECTION ||
         (menu->page == MODE_MENU_PAGE_ENCODER &&
          menu->active_encoder_option != MODE_MENU_ENCODER_LOG_RECEIVE) ||
@@ -179,7 +218,7 @@ uint8_t ModeMenu_PauseTest(ModeMenu *menu)
 uint8_t ModeMenu_ResumeTest(ModeMenu *menu)
 {
     if (!menu || (menu->page != MODE_MENU_PAGE_TEST &&
-                  menu->page != MODE_MENU_PAGE_ENCODER) ||
+                  menu->page != MODE_MENU_PAGE_ENCODER && menu->page != MODE_MENU_PAGE_MPU) ||
         menu->active_test == MODE_MENU_NO_SELECTION ||
         (menu->page == MODE_MENU_PAGE_ENCODER &&
          menu->active_encoder_option != MODE_MENU_ENCODER_LOG_RECEIVE) ||
@@ -194,6 +233,8 @@ uint8_t ModeMenu_CanResetSensor(const ModeMenu *menu, uint8_t test_index)
     if (!menu || test_index >= MODE_MENU_TEST_BACK)
         return 0U;
     if (menu->active_test != test_index) return 0U;
+    if (menu->page == MODE_MENU_PAGE_MPU)
+        return test_index == MODE_MENU_TEST_MPU && menu->active_encoder_option == 0U;
     if (menu->page == MODE_MENU_PAGE_TEST)
         return test_index != 1U; /* IR and MPU only on System Test page */
     return (menu->page == MODE_MENU_PAGE_ENCODER &&

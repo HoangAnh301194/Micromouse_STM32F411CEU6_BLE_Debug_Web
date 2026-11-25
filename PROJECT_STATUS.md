@@ -454,3 +454,6 @@ benchmarks remain unchanged.
 - Added passive Tk Canvas polar yaw visualization and parser regression; MPU mode only, retains CSV terminal, signed unwrapped yaw label, invalid/stale state and paused/replay distinction. No firmware or motor changes. Windows UI verification pending.
 
 - Radar blank-screen fix: recurring redraw now calls _draw_angle_panel; also render on Canvas resize and pane insertion. Added AST regression for periodic callback. Windows UI confirmation pending.
+
+## MPU pivot submenu — 25/11/2026
+- Added four guarded pivot tests and MPU Log submenu, shared wheel PID, relative gyro target and mixed CSV/radar. No angle PID or deceleration profile. Validate gyro sign and lifted-wheel directions before floor testing; no hardware acceptance yet.

@@ -561,3 +561,6 @@ Unified firmware starts MPU calibration at boot and services its asynchronous ac
 Classic SPP Terminal shows a lower polar Canvas only for MPU Test or MPU CSV replay. Zero points up, positive yaw drawn CCW, raw accumulated degrees retained in numeric label, arrow wraps modulo 360. Invalid/missing samples do not become zero; live data stale after 0.5s host silence, Stop retains final valid sample, Zero clears until next measurement. Replay shows final CSV sample (not animated). No firmware or logging schema changes.
 
 Radar rendering fix: call the polar renderer in recurring redraw, pane insertion and Canvas resize rather than only at application initialization.
+
+### MPU pivot tests (25/11/2026)
+MPU submenu: MPU Log, Pivot 90 Left/Right, Pivot 180 Left/Right, Back. Pivot reuses one-box motor ownership, 1kHz speed PID with signed 1100 PPS, 200 permille cap, 350ms lease, fresh gyro <=3ms, direction/stall/encoder and 6.5s guards. Stops at relative yaw target crossing, brakes 100ms; final angle overshoot is not corrected. CSV includes MPU and wheel readings. Positive yaw assumed left, verify with manual log before motor test. Hardware validation pending.

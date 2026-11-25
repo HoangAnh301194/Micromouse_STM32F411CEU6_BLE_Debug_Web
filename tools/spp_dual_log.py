@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-DATA_PREFIXES = ("MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
+DATA_PREFIXES = ("PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
 STATUS_PREFIXES = ("STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
@@ -33,6 +33,7 @@ TEST_CSV_COLUMNS = {
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
                "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
+    "PIVOT": ("timestamp","mcu_ms","valid","yaw_deg","age_us","angle_deg","gz_dps","target_deg","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS"),
     "MPU": ("timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"),
     "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
             "L0", "L45", "L90", "R0", "R45", "R90",
@@ -54,7 +55,7 @@ def sensor_test_csv(line, host_time=None):
     parts = line.strip().split(",")
     if not parts:
         return None
-    sensor = "ONEBOX" if parts[0] == "ONEBOX_CSV" else parts[0]
+    sensor = {"ONEBOX_CSV":"ONEBOX","PIVOT_CSV":"PIVOT"}.get(parts[0],parts[0])
     if sensor not in TEST_CSV_COLUMNS:
         return None
     fields = {}
@@ -71,6 +72,11 @@ def sensor_test_csv(line, host_time=None):
             values = (fields["left"], fields["right"])
         else:
             return None
+    elif sensor == "PIVOT":
+        keys=("ms","valid","age_us","yaw_cd","angle_cd","gz_cd","target","left","right","pwm_l","pwm_r","ref_l","ref_r","speed_l","speed_r")
+        if not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in keys) or fields["valid"] not in ("0","1"): return None
+        deg=lambda k: f"{int(fields[k])/100:.2f}" if fields["valid"]=="1" else ""
+        values=(fields["ms"],fields["valid"],deg("yaw_cd"),fields["age_us"],deg("angle_cd"),deg("gz_cd"))+tuple(fields[k] for k in keys[6:])
     elif sensor == "ONEBOX":
         # Absolute encoder totals from the same hardware reader as
         # Log Receive, plus motor driver APPLIED permille PWM, not targets.
@@ -105,7 +111,7 @@ def sensor_test_csv(line, host_time=None):
             if not _DECIMAL.fullmatch(fields.get("yaw_cd", "")):
                 return None
             values = (ms, "1", f"{int(fields['yaw_cd'])/100:.2f}", age)
-    if sensor in ("ENC", "ALL", "ONEBOX", "MPU"):
+    if sensor in ("ENC", "ALL", "ONEBOX", "MPU", "PIVOT"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values
 
@@ -161,7 +167,7 @@ class DualSessionLog:
 
     SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test",
                          "MPU": "MPU Test", "ALL": "All Sensors Test",
-                         "ONEBOX": "1 Box Forward"}
+                         "ONEBOX": "1 Box Forward", "PIVOT": "MPU Pivot"}
     TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
     _SELECT_RE = re.compile(r"^Selected test (?:1|3|4): (IR Test|MPU Test|All Sensors Test)$")
     _ENC_LOG_SELECT = "Selected encoder option 1: Log Receive"
@@ -207,6 +213,29 @@ class DualSessionLog:
 
     def _observe_status(self, line, host_time=None):
         """Status is used ONLY as in-memory routing metadata, never logged."""
+        if line.startswith("Selected mpu option "):
+            self._has_menu_context=True
+            self._deactivate()
+            name=line.partition(": ")[2]
+            if name.startswith("Pivot "):
+                self.active_sensor="PIVOT"
+                self.pivot_name=name
+            return
+        if line.startswith("MPU Test:") or line.startswith("MPU Test option "):
+            self._has_menu_context=True
+            self._deactivate()
+            return
+        if line.startswith("PIVOT,START,"):
+            if self.active_sensor=="PIVOT" and not self._streaming:
+                self._close_active()
+                self._streaming=True
+                self._open_run("PIVOT",TEST_CSV_COLUMNS["PIVOT"],host_time)
+            return
+        if line.startswith(("PIVOT,RESULT,","PIVOT,REJECT,")):
+            if self.active_sensor=="PIVOT":
+                self._streaming=False
+                self._close_active()
+            return
         if line == self._ENC_LOG_SELECT:
             # Selecting Log Receive only ARMS the mode. Neither the firmware
             # nor the host should create an encoder CSV before Start.
@@ -306,7 +335,7 @@ class DualSessionLog:
             else:
                 raise FileExistsError("Cannot allocate unique Encoder CSV filename")
         else:
-            test = self.SENSOR_TEST_NAMES[sensor]
+            test = ("MPU Test - "+self.pivot_name) if sensor=="PIVOT" else self.SENSOR_TEST_NAMES[sensor]
             label = f"Mode 7 - {test} - {stamp}_{self.port or 'COM'}"
             for attempt in range(100):
                 name = label if attempt == 0 else f"{label}_{attempt:02d}"
@@ -351,7 +380,7 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU"):
+            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU", "PIVOT"):
                 # Encoder and MPU angle log is STRICTLY opt-in via Log Receive even after
                 # reconnect; never infer it from an unsolicited ENC frame.
                 return None
