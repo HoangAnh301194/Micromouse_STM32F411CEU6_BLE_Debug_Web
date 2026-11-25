@@ -203,8 +203,10 @@ int main(void) {
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 2 && m.active_test == MODE_MENU_NO_SELECTION);
     assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
-    assert(m.active_test == 2);
+    assert(m.active_test == 2 && !m.stream_running);
     assert(ModeTest_Resources(&m) == TEST_RES_MPU);
+    assert(ModeMenu_ResumeTest(&m) && m.stream_running);
+    assert(ModeMenu_PauseTest(&m) && !m.stream_running);
     assert(ModeMenu_CanResetSensor(&m, 2));
     assert(!ModeMenu_CanResetSensor(&m, 1));
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);

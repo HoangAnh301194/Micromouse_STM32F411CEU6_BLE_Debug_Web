@@ -704,6 +704,9 @@ class Dashboard:
         category = classify_spp_line(line)
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
+        if category == "data" and line.startswith("MPU,") and (
+                self.active_test_name != "MPU Test" or not self.test_stream_running):
+            return
         if category == "data" and line.startswith("ENC,") and (
                 self.active_test_name != "Encoder Test" or
                 not self.test_stream_running):
@@ -873,16 +876,7 @@ class Dashboard:
             self.status.set(line)
         if category == "data" and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
-        if category == "data" and line.startswith("MPU,"):
-            rec = sensor_test_csv(line, host_time=host_time)
-            if rec:
-                row = dict(zip(rec[1], rec[2]))
-                display = "MPU ANGLE: " + (row["yaw_deg"] + " deg" if row["valid"] == "1" else "INVALID / CALIBRATING")
-                self._append(display, ts, "data", host_time=host_time)
-            else:
-                self._append(line, ts, category, host_time=host_time)
-        else:
-            self._append(line, ts, category, host_time=host_time)
+        self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
         if changed:
             self.map_status.set(changed)
@@ -1227,6 +1221,9 @@ class Dashboard:
                                 line = "IR," + ",".join(f"{key}={int(row[key])}" for key in keys)
                             else:
                                 line = f"MPU,valid={int(row['valid'])}"
+                                for key, col in (("ms", "mcu_ms"), ("age_us", "age_us")):
+                                    if row.get(col):
+                                        line += f",{key}={int(row[col])}"
                                 if row["valid"] == "1":
                                     if "yaw_deg" in row:
                                         line += f",yaw_cd={round(float(row['yaw_deg'])*100)}"
