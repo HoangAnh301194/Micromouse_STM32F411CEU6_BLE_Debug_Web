@@ -449,3 +449,6 @@ benchmarks remain unchanged.
 
 ## MPU activation — 25/11/2026
 - Screenshot showed boot init OK but valid=0 and zero rejected. Enable boot calibration and continuous async MPU sampling in unified firmware, preserve validity checks. Add calibration progress and deliberate retry on Start/Zero after failure. No motor permission or PID changes; actual cause of prior failure not yet verified on hardware.
+
+## MPU angle radar dashboard — 25/11/2026
+- Added passive Tk Canvas polar yaw visualization and parser regression; MPU mode only, retains CSV terminal, signed unwrapped yaw label, invalid/stale state and paused/replay distinction. No firmware or motor changes. Windows UI verification pending.

@@ -11,6 +11,7 @@ import argparse
 import csv
 from decimal import Decimal, InvalidOperation
 from wheel_plot_data import WheelPlotData
+from mpu_angle_view import AngleSample, draw_angle
 from wheel_speed_metrics import summarize_wheels, save_wheel_summary
 import os
 from collections import defaultdict, deque
@@ -209,6 +210,10 @@ class Dashboard:
         self.reader = SPPReader(self.events)
         self.maze = MazeState()
         self.wheel_data = WheelPlotData()
+        self.angle_sample = AngleSample()
+        self.angle_preview = False
+        self.angle_last_rx = None
+        self.angle_ready = False
         self.wheel_preview = False
         self.wheel_dirty = True
         self.metrics = {}
@@ -249,6 +254,17 @@ class Dashboard:
         self._build()
         self.refresh_ports()
         self.root.after(40, self.poll)
+        if str(self.angle_pane) in self.data_split.panes():
+            if self.angle_preview:
+                state = "REPLAY"
+            elif not self.test_stream_running:
+                state = "PAUSED" if self.angle_sample.valid else ("READY — START" if self.angle_ready else "WAIT FOR MPU")
+            elif self.angle_last_rx is None or now - self.angle_last_rx > .5:
+                state = "NO FRESH TELEMETRY"
+                self.angle_sample.clear()
+            else:
+                state = "LIVE" if self.angle_sample.valid else "INVALID SAMPLE"
+            draw_angle(self.angle_canvas, self.angle_sample, state)
         self.root.after(150, self.redraw)
 
     def _build(self):
@@ -336,6 +352,9 @@ class Dashboard:
             canvas.pack(fill="both", expand=True)
             canvas.bind("<Configure>", lambda event: self._mark_wheels())
             self.wheel_canvases.append(canvas)
+        self.angle_pane = ttk.LabelFrame(self.data_split, text="MPU — Yaw / góc quay Micromouse")
+        self.angle_canvas = tk.Canvas(self.angle_pane, bg="#081722", highlightthickness=0, height=260)
+        self.angle_canvas.pack(fill="both", expand=True)
         # Header is selected when the first frame identifies ENC/IR/MPU.
 
         controls = ttk.Frame(right)
@@ -501,6 +520,7 @@ class Dashboard:
 
     def _update_test_controls(self):
         self._sync_wheel_panel()
+        self._sync_angle_panel()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
         if pid_visible:
             if not self.pid_panel.winfo_manager():
@@ -537,6 +557,10 @@ class Dashboard:
         self.select_btn.configure(state=state)
         if not ready:
             self.wheel_preview = False
+            self.angle_preview = False
+            self.angle_sample.clear()
+            self.angle_last_rx = None
+            self.angle_ready = False
             self.wheel_data.clear()
             self.active_test_name = None
             self.test_stream_running = False
@@ -733,6 +757,7 @@ class Dashboard:
                          line.split(": ", 1)[-1].strip() in
                          ("IR Test", "MPU Test", "All Sensors Test"))
         if line == "Selected encoder option 8: PID":
+            self.angle_preview = False
             self.wheel_preview = False
             self.active_test_name = "PID"
             self.test_stream_running = False
@@ -760,6 +785,10 @@ class Dashboard:
             self.pid_note.set("STM32 từ chối PID: kiểm tra mode, giới hạn hoặc trạng thái motor.")
             self._update_test_controls()
         elif is_encoder_log or is_onebox or is_ir_or_mpu:
+            self.angle_preview = False
+            self.angle_sample.clear()
+            self.angle_last_rx = None
+            self.angle_ready = False
             self.wheel_preview = False
             self.wheel_data.clear()
             self.wheel_dirty = True
@@ -785,6 +814,7 @@ class Dashboard:
             # Browsing or selecting a movement placeholder stops Encoder
             # streaming. Neither status messages nor motion placeholders
             # send any motor commands or create a CSV.
+            self.angle_preview = False
             self.active_test_name = None
             self.test_stream_running = False
             self.onebox_start_pending = False
@@ -853,6 +883,9 @@ class Dashboard:
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = True
+                if self.active_test_name == "MPU Test":
+                    self.angle_preview = False
+                    self.clear_data()
                 self._update_test_controls()
                 if self.active_test_name == "Encoder Test":
                     # A Start creates a new take, never appends to the last CSV.
@@ -870,10 +903,20 @@ class Dashboard:
         elif line.startswith("BOOT,READY,"):
             self.mpu_boot_ok = True
             self._update_test_controls()
+        elif line.startswith("TEST,MPU,READY,"):
+            self.angle_ready = True
+        elif line.startswith(("TEST,MPU,CALIB_RESTART", "TEST,MPU,CAL,")):
+            self.angle_ready = False
+        elif line == "MPU YAW RESET OK":
+            self.angle_sample.clear()  # wait for the next measured sample
+            self.angle_last_rx = None
+            self.status.set(line)
         elif (line.startswith("ENCODER RESET OK") or
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
+        if category == "data" and self.active_test_name == "MPU Test" and self.angle_sample.consume(line):
+            self.angle_last_rx = time.monotonic()
         if category == "data" and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
         self._append(line, ts, category, host_time=host_time)
@@ -948,8 +991,8 @@ class Dashboard:
         self.wheel_dirty = True
 
     def _sync_wheel_panel(self):
-        visible = self.wheel_preview or (self.menu_ready and
-                   self.active_test_name in ("Encoder Test", "1 Box Forward"))
+        visible = not self.angle_preview and (self.wheel_preview or (self.menu_ready and
+                   self.active_test_name in ("Encoder Test", "1 Box Forward")))
         shown = str(self.wheel_pane) in self.data_split.panes()
         if visible and not shown:
             self.data_split.add(self.wheel_pane, weight=1)
@@ -957,6 +1000,19 @@ class Dashboard:
         elif shown and not visible:
             self.data_split.forget(self.wheel_pane)
         self.wheel_dirty = True
+
+    def _sync_angle_panel(self):
+        visible = self.angle_preview or (not self.wheel_preview and self.menu_ready and self.active_test_name == "MPU Test")
+        shown = str(self.angle_pane) in self.data_split.panes()
+        if visible and not shown:
+            self.data_split.add(self.angle_pane, weight=1)
+            self.root.after_idle(self._balance_angle_panes)
+        elif shown and not visible:
+            self.data_split.forget(self.angle_pane)
+
+    def _balance_angle_panes(self):
+        if str(self.angle_pane) in self.data_split.panes():
+            self.data_split.sashpos(0, self.data_split.winfo_height() // 2)
 
     def _balance_wheel_panes(self):
         if str(self.wheel_pane) in self.data_split.panes():
@@ -1132,6 +1188,8 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def clear_data(self):
+        self.angle_sample.clear()
+        self.angle_last_rx = None
         self.wheel_data.clear()
         self.wheel_dirty = True
         self._clear_log(self.data_text)
@@ -1171,6 +1229,7 @@ class Dashboard:
             messagebox.showwarning("Replay", "Stop the live test before replaying CSV.")
             return
         self.wheel_preview = False
+        self.angle_preview = False
         self.clear_data()
         count = 0
         try:
@@ -1232,6 +1291,8 @@ class Dashboard:
                                                  f"gz_cd={int(row['gz_cd'])}")
                             timestamp = row.get("timestamp") or datetime.now().isoformat(
                                 timespec="milliseconds")
+                            if mode == "MPU" and self.angle_sample.consume(line):
+                                self.angle_preview = True
                             if self.wheel_data.add(line, timestamp):
                                 self.wheel_preview = True
                                 self.wheel_dirty = True
@@ -1252,6 +1313,7 @@ class Dashboard:
             messagebox.showerror("Replay", str(exc))
             return
         self._sync_wheel_panel()
+        self._sync_angle_panel()
         self.status.set("Replayed %d rows from %s (not saved)" %
                         (count, Path(path).name))
 
