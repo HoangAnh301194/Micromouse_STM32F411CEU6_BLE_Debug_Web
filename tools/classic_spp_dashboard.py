@@ -254,17 +254,6 @@ class Dashboard:
         self._build()
         self.refresh_ports()
         self.root.after(40, self.poll)
-        if str(self.angle_pane) in self.data_split.panes():
-            if self.angle_preview:
-                state = "REPLAY"
-            elif not self.test_stream_running:
-                state = "PAUSED" if self.angle_sample.valid else ("READY — START" if self.angle_ready else "WAIT FOR MPU")
-            elif self.angle_last_rx is None or now - self.angle_last_rx > .5:
-                state = "NO FRESH TELEMETRY"
-                self.angle_sample.clear()
-            else:
-                state = "LIVE" if self.angle_sample.valid else "INVALID SAMPLE"
-            draw_angle(self.angle_canvas, self.angle_sample, state)
         self.root.after(150, self.redraw)
 
     def _build(self):
@@ -355,6 +344,7 @@ class Dashboard:
         self.angle_pane = ttk.LabelFrame(self.data_split, text="MPU — Yaw / góc quay Micromouse")
         self.angle_canvas = tk.Canvas(self.angle_pane, bg="#081722", highlightthickness=0, height=260)
         self.angle_canvas.pack(fill="both", expand=True)
+        self.angle_canvas.bind("<Configure>", lambda event: self._draw_angle_panel())
         # Header is selected when the first frame identifies ENC/IR/MPU.
 
         controls = ttk.Frame(right)
@@ -985,6 +975,7 @@ class Dashboard:
         if self.wheel_dirty:
             self.draw_wheels()
             self.wheel_dirty = False
+        self._draw_angle_panel()
         self.root.after(150, self.redraw)
 
     def _mark_wheels(self):
@@ -1001,12 +992,27 @@ class Dashboard:
             self.data_split.forget(self.wheel_pane)
         self.wheel_dirty = True
 
+    def _draw_angle_panel(self):
+        now = time.monotonic()
+        if str(self.angle_pane) in self.data_split.panes():
+            if self.angle_preview:
+                state = "REPLAY"
+            elif not self.test_stream_running:
+                state = "PAUSED" if self.angle_sample.valid else ("READY — START" if self.angle_ready else "WAIT FOR MPU")
+            elif self.angle_last_rx is None or now - self.angle_last_rx > .5:
+                state = "NO FRESH TELEMETRY"
+                self.angle_sample.clear()
+            else:
+                state = "LIVE" if self.angle_sample.valid else "INVALID SAMPLE"
+            draw_angle(self.angle_canvas, self.angle_sample, state)
+
     def _sync_angle_panel(self):
         visible = self.angle_preview or (not self.wheel_preview and self.menu_ready and self.active_test_name == "MPU Test")
         shown = str(self.angle_pane) in self.data_split.panes()
         if visible and not shown:
             self.data_split.add(self.angle_pane, weight=1)
             self.root.after_idle(self._balance_angle_panes)
+            self.root.after_idle(self._draw_angle_panel)
         elif shown and not visible:
             self.data_split.forget(self.angle_pane)
 

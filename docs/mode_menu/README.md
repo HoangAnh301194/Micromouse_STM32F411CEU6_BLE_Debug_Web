@@ -559,3 +559,5 @@ Unified firmware starts MPU calibration at boot and services its asynchronous ac
 
 ### MPU angle radar panel (25/11/2026)
 Classic SPP Terminal shows a lower polar Canvas only for MPU Test or MPU CSV replay. Zero points up, positive yaw drawn CCW, raw accumulated degrees retained in numeric label, arrow wraps modulo 360. Invalid/missing samples do not become zero; live data stale after 0.5s host silence, Stop retains final valid sample, Zero clears until next measurement. Replay shows final CSV sample (not animated). No firmware or logging schema changes.
+
+Radar rendering fix: call the polar renderer in recurring redraw, pane insertion and Canvas resize rather than only at application initialization.

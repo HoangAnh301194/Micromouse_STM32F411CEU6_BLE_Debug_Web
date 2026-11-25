@@ -452,3 +452,5 @@ benchmarks remain unchanged.
 
 ## MPU angle radar dashboard — 25/11/2026
 - Added passive Tk Canvas polar yaw visualization and parser regression; MPU mode only, retains CSV terminal, signed unwrapped yaw label, invalid/stale state and paused/replay distinction. No firmware or motor changes. Windows UI verification pending.
+
+- Radar blank-screen fix: recurring redraw now calls _draw_angle_panel; also render on Canvas resize and pane insertion. Added AST regression for periodic callback. Windows UI confirmation pending.
