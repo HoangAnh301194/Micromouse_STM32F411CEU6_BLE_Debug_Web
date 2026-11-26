@@ -238,6 +238,8 @@ class Dashboard:
         self.test_stream_running = False
         self.onebox_start_pending = False
         self.active_data_stream = None
+        self.sensor_mask = dict.fromkeys(("IR", "MPU", "ENC", "MOTOR"), False)
+        self.sensor_live = {}
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
 
@@ -296,8 +298,27 @@ class Dashboard:
         self._telemetry_widgets()
 
     def _terminal_widgets(self):
-        panes = ttk.PanedWindow(self.terminal_tab, orient="horizontal")
-        panes.pack(fill="both", expand=True)
+        self.main_split = ttk.PanedWindow(self.terminal_tab, orient="vertical")
+        self.main_split.pack(fill="both", expand=True)
+        panes = ttk.PanedWindow(self.main_split, orient="horizontal")
+        self.main_split.add(panes, weight=3)
+        dashboard = ttk.LabelFrame(self.main_split, text="Sensor Dashboard", padding=4)
+        self.main_split.add(dashboard, weight=2)
+        dashboard.columnconfigure(0, weight=2, uniform="sensors")
+        dashboard.columnconfigure(1, weight=2, uniform="sensors")
+        dashboard.columnconfigure(2, weight=3, uniform="sensors")
+        dashboard.rowconfigure(0, weight=1)
+        self.sensor_canvases = {}
+        for col, key, title in ((0,"IR","IR Sensors (ADC)"),(1,"MPU","MPU6050 - Yaw")):
+            frame = ttk.LabelFrame(dashboard, text=title)
+            frame.grid(row=0, column=col, sticky="nsew", padx=3)
+            canvas = tk.Canvas(frame, bg="#101923", highlightthickness=0, width=250, height=190)
+            canvas.pack(fill="both", expand=True)
+            self.sensor_canvases[key] = canvas
+        self.encoder_panel = ttk.LabelFrame(dashboard, text="Encoder / Motion")
+        self.encoder_panel.grid(row=0, column=2, sticky="nsew", padx=3)
+        self.encoder_summary = ttk.Label(self.encoder_panel, text="ENC DISABLED", justify="left")
+        self.encoder_summary.pack(fill="x", padx=4, pady=2)
         left = ttk.LabelFrame(panes, text="Continuous data - MPU / IR / Encoder", padding=5)
         right = ttk.LabelFrame(panes, text="Micromouse status - modes / events", padding=5)
         panes.add(left, weight=3)
@@ -316,7 +337,8 @@ class Dashboard:
         self.data_split.add(self.log_pane, weight=1)
         self.data_text = self._make_log_text(self.log_pane, "none")
         self.data_text.configure(height=6)
-        self.wheel_pane = ttk.Frame(self.data_split)
+        self.wheel_pane = ttk.Frame(self.encoder_panel)
+        self.wheel_pane.pack(fill="both", expand=True)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
         self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
         self.wheel_pane.rowconfigure(1, weight=1)
@@ -394,6 +416,7 @@ class Dashboard:
         ttk.Entry(status_bar, textvariable=self.filter_text, width=15).pack(side="left", padx=5)
         ttk.Button(status_bar, text="Clear status", command=self.clear_status).pack(side="right")
         self.status_text = self._make_log_text(right, "word")
+        self.status_text.configure(height=6)
 
     def _data_header(self, stream=None):
         columns = TEST_CSV_COLUMNS.get(stream, CSV_COLUMNS)
@@ -536,6 +559,8 @@ class Dashboard:
         self.next_btn.configure(state=state)
         self.select_btn.configure(state=state)
         if not ready:
+            self.sensor_mask = dict.fromkeys(self.sensor_mask, False)
+            self.sensor_live.clear()
             self.wheel_preview = False
             self.wheel_data.clear()
             self.active_test_name = None
@@ -702,6 +727,7 @@ class Dashboard:
         self.total_lines += 1
         self.rx_count.set("%d lines" % self.total_lines)
         category = classify_spp_line(line)
+        self._sensor_receive(line)
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
         if category == "data" and line.startswith("MPU,") and (
@@ -874,7 +900,7 @@ class Dashboard:
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
-        if category == "data" and self.wheel_data.add(line, host_time):
+        if category == "data" and self.sensor_mask["ENC"] and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
         self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
@@ -942,25 +968,123 @@ class Dashboard:
         if self.wheel_dirty:
             self.draw_wheels()
             self.wheel_dirty = False
+        self._draw_sensor_dashboard(now)
         self.root.after(150, self.redraw)
 
     def _mark_wheels(self):
         self.wheel_dirty = True
 
     def _sync_wheel_panel(self):
-        visible = self.wheel_preview or (self.menu_ready and
-                   self.active_test_name in ("Encoder Test", "1 Box Forward"))
-        shown = str(self.wheel_pane) in self.data_split.panes()
-        if visible and not shown:
-            self.data_split.add(self.wheel_pane, weight=1)
-            self.root.after_idle(self._balance_wheel_panes)
-        elif shown and not visible:
-            self.data_split.forget(self.wheel_pane)
+        # All three panels remain mounted; inactive sensors display DISABLED.
         self.wheel_dirty = True
 
-    def _balance_wheel_panes(self):
-        if str(self.wheel_pane) in self.data_split.panes():
-            self.data_split.sashpos(0, self.data_split.winfo_height() // 2)
+    def _sensor_receive(self, line):
+        if line.startswith("TEST,RESOURCES,"):
+            fields = numeric_fields(line)
+            new = {k: fields.get(k) == 1 for k in self.sensor_mask}
+            for k in ("IR", "MPU", "ENC"):
+                if new[k] != self.sensor_mask[k]:
+                    self.sensor_live.pop(k, None)
+                    if k == "ENC":
+                        self.wheel_data.clear()
+            self.sensor_mask = new
+            self.wheel_dirty = True
+            return
+        if line.startswith(("Mode ", "Selected mode ", "Selected test ",
+                            "Selected encoder option ", "System Test ", "CAL,EXIT",
+                            "TEST STREAM STOPPED:", "TEST STREAM STARTED:")):
+            self.sensor_live.clear()
+            self.wheel_data.clear()
+            self.wheel_dirty = True
+        fields = numeric_fields(line)
+        now = time.monotonic()
+        tag = line.split(",", 1)[0]
+        def put(key, values, valid=True):
+            if self.sensor_mask[key]:
+                self.sensor_live[key] = (now, valid, values)
+        if tag in ("IR", "ALL", "CAL_IR"):
+            names = ("L90","L45","L0","R0","R45","R90")
+            if all(k in fields for k in names):
+                put("IR", fields, fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
+        if tag in ("MPU", "ALL"):
+            put("MPU", fields, fields.get("mpu_valid" if tag == "ALL" else "valid") == 1
+                and "yaw_cd" in fields)
+        if tag == "ENC":
+            record = sensor_test_csv(line)
+            if record and record[0] == "ENC":
+                put("ENC", {"left": int(record[2][1]), "right": int(record[2][2])})
+        elif tag == "ONEBOX_CSV":
+            put("ENC", fields, "left" in fields and "right" in fields)
+        elif tag == "ALL":
+            put("ENC", {"left": fields.get("enc_l"), "right": fields.get("enc_r")},
+                "enc_l" in fields and "enc_r" in fields)
+        elif tag == "ENC_LIVE":
+            put("ENC", fields, "left" in fields and "right" in fields)
+
+    def _sensor_state(self, key, now):
+        if not self.sensor_mask[key]:
+            return "DISABLED", {}
+        item = self.sensor_live.get(key)
+        if not item:
+            return "WAITING", {}
+        when, valid, fields = item
+        if not valid:
+            return "INVALID", {}
+        if now - when > 1.5:
+            return "STALE", {}
+        return "ACTIVE", fields
+
+    def _draw_sensor_dashboard(self, now):
+        import math
+        for key, c in self.sensor_canvases.items():
+            state, fields = self._sensor_state(key, now)
+            c.delete("all")
+            w, h = c.winfo_width(), c.winfo_height()
+            if w < 80 or h < 80:
+                continue
+            color = "#71dfa1" if state == "ACTIVE" else "#91a3b5"
+            c.create_text(8, 8, anchor="nw", text=key+" "+state, fill=color)
+            if state != "ACTIVE":
+                c.create_text(w/2,h/2,text=state,fill=color)
+                continue
+            if key == "IR":
+                x0, x1, y0, y1 = 35, w-8, 29, h-33
+                if y1 <= y0: continue
+                for v in (0,1024,2048,3072,4095):
+                    y = y1-v/4095*(y1-y0)
+                    c.create_line(x0,y,x1,y,fill="#405063")
+                    c.create_text(x0-3,y,text=str(v),anchor="e",fill="#abc0d0",font=("Consolas",8))
+                step=(x1-x0)/6
+                for i,k in enumerate(("L90","L45","L0","R0","R45","R90")):
+                    v=int(fields[k]); x=x0+(i+.5)*step
+                    y=y1-max(0,min(4095,v))/4095*(y1-y0)
+                    c.create_rectangle(x-step*.32,y,x+step*.32,y1,fill="#58c9ff" if i<3 else "#71dfa1",outline="")
+                    c.create_text(x,y1+9,text=k,fill="#d5e2ef",font=("Consolas",8))
+                    c.create_text(x,y1+22,text=str(v),fill="#d5e2ef",font=("Consolas",8))
+            else:
+                yaw=fields["yaw_cd"]/100
+                cx,cy=w/2,(h+10)/2
+                r=max(10,min(w-50,h-65)/2)
+                c.create_oval(cx-r,cy-r,cx+r,cy+r,outline="#607487")
+                c.create_line(cx-r,cy,cx+r,cy,fill="#405063")
+                c.create_line(cx,cy-r,cx,cy+r,fill="#405063")
+                for a,label in ((0,"0"),(90,"+90"),(180,"180"),(270,"-90")):
+                    rad=math.radians(a)
+                    c.create_text(cx-(r+12)*math.sin(rad),cy-(r+12)*math.cos(rad),text=label,fill="#abc0d0")
+                rad=math.radians(yaw)
+                c.create_line(cx,cy,cx-r*.85*math.sin(rad),cy-r*.85*math.cos(rad),arrow="last",width=3,fill="#58c9ff")
+                c.create_text(cx,h-10,text=f"Yaw {yaw:.2f} deg",fill="#d5e2ef")
+        state, f = self._sensor_state("ENC", now)
+        def val(k):
+            v=f.get(k)
+            return str(int(v)) if v is not None else "--"
+        self.encoder_summary.configure(text=(
+            f"ENC {state} | L {val('left')} / R {val('right')} counts\n"
+            f"Speed L {val('speed_l')} / R {val('speed_r')} pps | PWM L {val('pwm_l')} / R {val('pwm_r')}"))
+        if state != "ACTIVE" and not self.wheel_preview:
+            for c in self.wheel_canvases:
+                c.delete("all")
+                c.create_text(c.winfo_width()/2,c.winfo_height()/2,text=state,fill="#91a3b5")
 
     def draw_wheels(self):
         rows = list(self.wheel_data.rows)
