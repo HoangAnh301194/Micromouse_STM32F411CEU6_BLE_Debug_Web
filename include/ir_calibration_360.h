@@ -15,6 +15,7 @@ typedef struct {
     uint8_t segment, start_seen, valid, sample_count[6];
     uint32_t started_ms, last_sample_ms, dwell_started_ms, last_ready_ms;
     uint16_t low[6], high[6], wall_on[6], wall_off[6];
+    uint16_t histogram[6][32]; /* 128-count ADC bins, for robust quantiles */
     uint16_t center_l0, center_r0;
     float session_origin_yaw, segment_origin_yaw;
     uint8_t have_origin;

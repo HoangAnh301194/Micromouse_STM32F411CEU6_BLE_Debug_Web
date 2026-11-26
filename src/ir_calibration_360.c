@@ -20,6 +20,17 @@
 #define IRC_SAMPLE_PERIOD_MS 20U
 #define IRC_MIN_SAMPLES 100UL
 #define IRC_MIN_SPAN_ADC 40U
+/* Approximate 10th/90th percentiles from 128-count bins.
+ * Unlike min/max, isolated ADC spikes cannot dominate the thresholds. */
+static uint16_t IRC_Quantile(const uint16_t hist[32],uint32_t count,uint32_t numerator) {
+    uint32_t goal=(count*numerator+99U)/100U, seen=0U;
+    uint8_t k;
+    for(k=0;k<32U;k++){
+        seen+=hist[k];
+        if(seen>=goal)return (uint16_t)((uint32_t)k*128U+64U);
+    }
+    return 4095U;
+}
 #define IRC_SENSOR_MAX_AGE_US 5000UL
 
 static float IRC_YawDiff(float now,float old) {
@@ -79,6 +90,7 @@ static void IRC_Sample(IRC_Context *c,uint32_t now) {
     for(i=0;i<6;i++){
         if(a[i]<c->low[i])c->low[i]=a[i];
         if(a[i]>c->high[i])c->high[i]=a[i];
+        if(c->histogram[i][a[i]/128U]<65535U)++c->histogram[i][a[i]/128U];
     }
     if(c->samples==0U){c->center_l0=a[0];c->center_r0=a[3];}
     ++c->samples;
@@ -132,10 +144,12 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
         if(c->samples<IRC_MIN_SAMPLES){IRC_Abort(c,"SAMPLES");return;}
         c->valid=1U;
         for(i=0;i<6U;i++){
-            uint16_t span=(uint16_t)(c->high[i]-c->low[i]);
+            uint16_t p10=IRC_Quantile(c->histogram[i],c->samples,10U);
+            uint16_t p90=IRC_Quantile(c->histogram[i],c->samples,90U);
+            uint16_t span=p90>p10?(uint16_t)(p90-p10):0U;
             if(span<IRC_MIN_SPAN_ADC)c->valid=0U;
-            c->wall_off[i]=(uint16_t)(c->low[i]+(uint32_t)span*30U/100U);
-            c->wall_on[i]=(uint16_t)(c->low[i]+(uint32_t)span*70U/100U);
+            c->wall_off[i]=(uint16_t)(p10+(uint32_t)span*30U/100U);
+            c->wall_on[i]=(uint16_t)(p10+(uint32_t)span*70U/100U);
         }
         c->state=IRC_REVIEW;
         BT_Printf("CAL,REVIEW,samples=%lu,quality=%s,save=V\r\n",
@@ -183,8 +197,17 @@ uint8_t IRC_Save(IRC_Context *c) {
     data.wall_on_r45=c->wall_on[4];data.wall_off_r45=c->wall_off[4];
     data.wall_on_r90=c->wall_on[5];data.wall_off_r90=c->wall_off[5];
     data.center_l0=c->center_l0;data.center_r0=c->center_r0;
-    data.open_l0=c->low[0];data.open_l45=c->low[1];data.open_l90=c->low[2];
-    data.open_r0=c->low[3];data.open_r45=c->low[4];data.open_r90=c->low[5];
+    /* No geometry-labelled no-wall evidence: do not claim open calibration. */
+    data.has_open_calib=0U;
+    data.wall_threshold_left=data.wall_on_l90;
+    data.wall_threshold_right=data.wall_on_r90;
+    data.wall_threshold_front_left=data.wall_on_l0;
+    data.wall_threshold_front_right=data.wall_on_r0;
+    data.wall_threshold_l45=data.wall_on_l45;
+    data.wall_threshold_r45=data.wall_on_r45;
+    data.gain_l0=data.gain_r0=1.0f;
+    data.gain_l45=data.gain_r45=1.0f;
+    data.gain_l90=data.gain_r90=1.0f;
     data.l0_min=c->low[0];data.l0_max=c->high[0];
     data.r0_min=c->low[3];data.r0_max=c->high[3];
     data.l45_min=c->low[1];data.l45_max=c->high[1];
