@@ -35,6 +35,7 @@
 #include "mode_menu.h"
 #include "mode_test_resources.h"
 #include "encoder_onebox.h"
+#include "ir_calibration_360.h"
 #include "oled_shared.h"
 #include "ssd1306.h"
 #endif
@@ -447,6 +448,7 @@ int Main_Runtime(void)
 #if defined(MODE_MENU_ONLY)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
+    IRC_Context ir_calibration;
     uint8_t mpu_ready_reported = 0U;
     uint32_t mpu_health_ms = 0U;
 #endif
@@ -562,6 +564,7 @@ int Main_Runtime(void)
     Control_Init(&mpu);
 #if defined(MODE_MENU_ONLY)
     EncoderOneBox_Init(); /* motor remains locked until guarded Start */
+    IRC_Init(&ir_calibration);
 #endif
     Control_Start();
 
@@ -613,15 +616,22 @@ int Main_Runtime(void)
                     PidMenu_ReportGains("VALUES");
                 }
             } else if (command == 'N') {
-                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
-                remote = ModeMenu_Next(&mode_menu);
+                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
+                else {
+                    if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                    remote = ModeMenu_Next(&mode_menu);
+                }
             } else if (command == 'K') {
-                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
-                remote = ModeMenu_Select(&mode_menu);
+                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
+                else {
+                    if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                    remote = ModeMenu_Select(&mode_menu);
+                }
             } else if (command == 'H') {
                 EncoderOneBox_HostPing(); /* lease only */
             } else if (command == 'P') {
-                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"USER_STOP");
+                else if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 else if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
@@ -665,6 +675,9 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
+            } else if (command == 'V') {
+                if (!IRC_Save(&ir_calibration))
+                    BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
                 Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
                 BT_SendString("ENCODER RESET OK\r\n");
@@ -696,6 +709,8 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
+                if (remote == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
+                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
 #else
@@ -717,6 +732,8 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
+                if (event == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
+                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
             /* IR, MPU, All, and Encoder Log Receive stream only their
@@ -804,6 +821,7 @@ int Main_Runtime(void)
                     }
                 }
             }
+            IRC_Update(&ir_calibration,&mpu,now);
             {
                 EncoderOneBoxTelemetry motion;
                 EncoderOneBoxResult result;
@@ -842,6 +860,7 @@ int Main_Runtime(void)
                               (long)motion.speed_l, (long)motion.speed_r);
                 }
                 if (has_result) {
+                    IRC_OnPivotResult(&ir_calibration,&result,now);
                     BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
                               result.pivot_target ? "PIVOT" : "ONEBOX",
                               EncoderOneBox_Reason(result.reason),

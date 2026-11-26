@@ -1,0 +1,23 @@
+name: v3 IR calibration smoke build
+on:
+  push:
+    branches: [giomuadongbacv3]
+    paths: ["src/**","include/**","tools/**","tests/**","platformio.ini",".github/workflows/v3-ir-calibration.yml"]
+  workflow_dispatch:
+jobs:
+  mode-menu:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Python parser regression
+        run: |
+          python -m py_compile tools/classic_spp_dashboard.py tools/spp_dual_log.py
+          python tests/regression/ir_calibration_spp_test.py
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Build mode menu (no motor hardware)
+        run: python -m platformio run -e mode_menu_96m

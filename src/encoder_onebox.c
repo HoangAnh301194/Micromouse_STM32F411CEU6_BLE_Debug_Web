@@ -27,6 +27,14 @@ static MPU6050_Handle_t *pivot_mpu;
 static int16_t pivot_target;
 static float pivot_origin;
 static uint16_t stall_l, stall_r;
+/* Relative 90-degree turns must remain valid at +/-180 yaw wrap. */
+static float RelativeYaw(float now, float origin)
+{
+    float d = now-origin;
+    while (d > 180.0f) d -= 360.0f;
+    while (d < -180.0f) d += 360.0f;
+    return d;
+}
 
 static uint32_t Lock(void)
 {
@@ -181,7 +189,7 @@ void EncoderOneBox_ControlTick(void)
         if (dl < -30 || dr < -30 || dl > 3000 || dr > 3000 ||
             (dl+dr>600 && (dl-dr>250 || dr-dl>250))) { Finish(ONEBOX_REASON_ENCODER); return; }
         if (stall_l>=ONEBOX_STALL_TICKS || stall_r>=ONEBOX_STALL_TICKS) { Finish(ONEBOX_REASON_STALL); return; }
-        float angle=(snap.yaw_deg-pivot_origin)*sign;
+        float angle=RelativeYaw(snap.yaw_deg,pivot_origin)*sign;
         if (angle < -5.0f) { Finish(ONEBOX_REASON_IMU); return; }
         if (angle >= pivot_target*sign) { Finish(ONEBOX_REASON_DONE); return; }
         int16_t pl=OneBoxSpeedPid_Step(&pid_l,&gains_l,ONEBOX_SPEED_PPS,sl*Encoder_GetLeftSpeedPPS());
@@ -233,7 +241,7 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
         out->ref_r=-out->ref_l;
         if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {
             out->age_us=micros()-snap.completed_us;
-            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=snap.yaw_deg-pivot_origin; out->gz=snap.gyro_z_dps; }
+            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=RelativeYaw(snap.yaw_deg,pivot_origin); out->gz=snap.gyro_z_dps; }
         }
     }
     out->speed_l = (int32_t)Encoder_GetLeftSpeedPPS();

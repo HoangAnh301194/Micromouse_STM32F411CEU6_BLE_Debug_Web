@@ -10,6 +10,10 @@ uint8_t ModeTest_OneBoxArmed(const ModeMenu *menu)
 uint8_t ModeTest_Resources(const ModeMenu *menu)
 {
     if (!menu) return 0U;
+    /* Main mode 1 explicitly grants IR/MPU/encoder sampling and motor
+     * capability; the calibration FSM is the sole actuator authorizer. */
+    if (menu->page == MODE_MENU_PAGE_MAIN && menu->selected == 0U)
+        return TEST_RES_IR | TEST_RES_MPU | TEST_RES_ENCODER | TEST_RES_MOTOR;
     if (menu->page == MODE_MENU_PAGE_TEST) {
         switch (menu->active_test) {
         case MODE_MENU_TEST_IR:  return TEST_RES_IR;
