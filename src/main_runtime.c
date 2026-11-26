@@ -625,6 +625,7 @@ int Main_Runtime(void)
 #if defined(MODE_MENU_ONLY)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
+    uint32_t last_dashboard_ms = 0U;
     uint8_t mpu_ready_reported = 0U;
 #endif
 
@@ -774,6 +775,11 @@ int Main_Runtime(void)
                 /* gain configuration never enters the single-byte command dispatcher */
             } else if (command == '?') {
                 BT_SendString("SPP CONNECTED\r\n");
+                BT_Printf("TEST,RESOURCES,IR=%u,MPU=%u,ENC=%u,MOTOR=%u\r\n",
+                    (unsigned)!!(test_resource_mask & TEST_RES_IR),
+                    (unsigned)!!(test_resource_mask & TEST_RES_MPU),
+                    (unsigned)!!(test_resource_mask & TEST_RES_ENCODER),
+                    (unsigned)!!(test_resource_mask & TEST_RES_MOTOR));
                 if (mpu_status == MPU6050_OK)
                     BT_SendString("BOOT,READY,MPU=OK\r\n");
                 else
@@ -985,6 +991,28 @@ int Main_Runtime(void)
                 }
             }
             Cal_Poll(now);
+            /* Dashboard-only frames: do not alter existing CSV schemas. */
+            if ((uint32_t)(now-last_dashboard_ms)>=100U) {
+                last_dashboard_ms=now;
+                if (cal_active && (test_resource_mask & TEST_RES_IR)) {
+                    IR_Data_t ir;
+                    Control_GetIRSnapshot(&ir);
+                    BT_Printf("CAL_IR,valid=%u,L90=%u,L45=%u,L0=%u,R0=%u,R45=%u,R90=%u\r\n",
+                        (unsigned)(ir.scan_count && (uint32_t)(micros()-ir.completed_us)<=5000U),
+                        (unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_L45],
+                        (unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_R0],
+                        (unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90]);
+                }
+                if ((test_resource_mask & TEST_RES_ENCODER) &&
+                    mode_menu.stream_running && !EncoderOneBox_IsRunning()) {
+                    int16_t pl=0,pr=0;
+                    Motor_GetAppliedPairPermille(&pl,&pr);
+                    BT_Printf("ENC_LIVE,left=%ld,right=%ld,speed_l=%ld,speed_r=%ld,pwm_l=%d,pwm_r=%d\r\n",
+                        (long)Encoder_GetLeftCount(),(long)Encoder_GetRightCount(),
+                        (long)Encoder_GetLeftSpeedPPS(),(long)Encoder_GetRightSpeedPPS(),
+                        (int)pl,(int)pr);
+                }
+            }
             OLED_SharedService(&mpu);
             /* Idle menu: no periodic status; active test: 20 Hz CSV data. */
         }
