@@ -813,6 +813,12 @@ class Dashboard:
         if line.startswith("CAL_IR,") and self.active_test_name=="Calibration":
             rec=sensor_test_csv(line,host_time=host_time)
             if rec:self.cal_rows.append(tuple(map(int,rec[2])))
+        if line.startswith("Selected mode ") and not line.startswith("Selected mode 1:"):
+            self.cal_visible=False
+            self.cal_review=False
+            if self.active_test_name=="Calibration":
+                self.active_test_name=None
+                self._update_test_controls()
         is_encoder_log = line == "Selected encoder option 1: Log Receive"
         is_onebox = line.startswith("Selected encoder option 2: 1 Box Forward")
         is_ir_or_mpu = (line.startswith("Selected test ") and
@@ -918,7 +924,7 @@ class Dashboard:
                 self.reader.motion_lease.set()
                 self._update_test_controls()
                 self.status.set(self.active_test_name + " running (fixed speed PID, max 20% PWM).")
-        elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,", "PIVOT,RESULT,", "PIVOT,REJECT,")):
+        elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,", "PIVOT,RESULT,", "PIVOT,REJECT,")) and not (self.active_test_name == "Calibration" and line.startswith(("PIVOT,RESULT,", "PIVOT,REJECT,"))):
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
             # Driver is fail-locked on severe faults until STM32 reset.
