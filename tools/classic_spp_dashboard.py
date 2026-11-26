@@ -728,6 +728,8 @@ class Dashboard:
         self.rx_count.set("%d lines" % self.total_lines)
         category = classify_spp_line(line)
         self._sensor_receive(line)
+        if line.startswith(("CAL_IR,", "ENC_LIVE,")):
+            return  # Dashboard-only; no status spam or CSV schema changes.
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
         if category == "data" and line.startswith("MPU,") and (
@@ -900,7 +902,7 @@ class Dashboard:
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
-        if category == "data" and self.sensor_mask["ENC"] and self.wheel_data.add(line, host_time):
+        if category == "data" and self.sensor_mask["ENC"] and (self.wheel_data.kind != "LIVE" or line.startswith("ONEBOX_CSV,")) and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
         self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
@@ -1012,14 +1014,30 @@ class Dashboard:
         if tag == "ENC":
             record = sensor_test_csv(line)
             if record and record[0] == "ENC":
-                put("ENC", {"left": int(record[2][1]), "right": int(record[2][2])})
+                old = self.sensor_live.get("ENC")
+                extra = dict(old[2]) if old and now-old[0]<0.3 else {}
+                extra.update(left=int(record[2][1]), right=int(record[2][2]))
+                put("ENC", extra)
         elif tag == "ONEBOX_CSV":
             put("ENC", fields, "left" in fields and "right" in fields)
         elif tag == "ALL":
-            put("ENC", {"left": fields.get("enc_l"), "right": fields.get("enc_r")},
-                "enc_l" in fields and "enc_r" in fields)
+            old = self.sensor_live.get("ENC")
+            extra = dict(old[2]) if old and now-old[0]<0.3 else {}
+            extra.update(left=fields.get("enc_l"), right=fields.get("enc_r"))
+            put("ENC", extra, "enc_l" in fields and "enc_r" in fields)
         elif tag == "ENC_LIVE":
             put("ENC", fields, "left" in fields and "right" in fields)
+            if self.sensor_mask["ENC"] and self.active_test_name != "1 Box Forward":
+                row = {"t": now, "count_L": fields.get("left"), "count_R": fields.get("right"),
+                       "speed_L": fields.get("speed_l"), "speed_R": fields.get("speed_r"),
+                       "pwm_L": fields.get("pwm_l"), "pwm_R": fields.get("pwm_r")}
+                if not self.wheel_data.rows or self.wheel_data.kind != "LIVE":
+                    self.wheel_data.clear()
+                    self.wheel_data.origin = now
+                    self.wheel_data.kind = "LIVE"
+                row["t"] -= self.wheel_data.origin
+                self.wheel_data.rows.append(row)
+                self.wheel_dirty = True
 
     def _sensor_state(self, key, now):
         if not self.sensor_mask[key]:
