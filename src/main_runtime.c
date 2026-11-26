@@ -710,7 +710,7 @@ int Main_Runtime(void)
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
                 if (remote == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
-                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now);
+                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now,0U);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
 #else
@@ -733,7 +733,7 @@ int Main_Runtime(void)
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
                 if (event == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
-                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now);
+                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now,1U);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
             /* IR, MPU, All, and Encoder Log Receive stream only their

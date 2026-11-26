@@ -51,12 +51,13 @@ void IRC_Init(IRC_Context *c) { if(c) memset(c,0,sizeof(*c)); }
 uint8_t IRC_IsMotionActive(const IRC_Context *c) {
     return c && (c->state==IRC_ARMED || c->state==IRC_PIVOT || c->state==IRC_DWELL);
 }
-void IRC_Arm(IRC_Context *c,uint32_t now) {
+void IRC_Arm(IRC_Context *c,uint32_t now,uint8_t physical_start) {
     uint8_t i;
     if(!c)return;
     if(IRC_IsMotionActive(c)) return;
     IRC_Init(c);
     c->state=IRC_ARMED; c->started_ms=now;
+    c->physical_start=physical_start?1U:0U;
     for(i=0;i<6;i++)c->low[i]=4095U;
     BT_SendString("CAL,START,mode=1,segments=4,dwell_min_ms=120,save=MANUAL\r\n");
 }
@@ -116,7 +117,7 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
     }
     /* Use the existing lease guard, but service it locally for autonomous
      * physical-KEY calibration: no mandatory PC heartbeat while turning. */
-    if(c->state==IRC_PIVOT)EncoderOneBox_HostPing();
+    if(c->state==IRC_PIVOT && c->physical_start)EncoderOneBox_HostPing();
     /* While key is held during initial long-select, do not release motors. */
     if(c->state==IRC_ARMED && Board_ButtonPressed())return;
     IRC_Sample(c,now);

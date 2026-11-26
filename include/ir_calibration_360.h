@@ -13,6 +13,7 @@ typedef enum {
 typedef struct {
     IRC_State state;
     uint8_t segment, start_seen, valid, sample_count[6];
+    uint8_t physical_start;
     uint32_t started_ms, last_sample_ms, dwell_started_ms, last_ready_ms;
     uint16_t low[6], high[6], wall_on[6], wall_off[6];
     uint16_t histogram[6][32]; /* 128-count ADC bins, for robust quantiles */
@@ -23,7 +24,7 @@ typedef struct {
     char fault[24];
 } IRC_Context;
 void IRC_Init(IRC_Context *c);
-void IRC_Arm(IRC_Context *c, uint32_t now);
+void IRC_Arm(IRC_Context *c, uint32_t now, uint8_t physical_start);
 void IRC_Update(IRC_Context *c, MPU6050_Handle_t *mpu, uint32_t now);
 void IRC_OnPivotResult(IRC_Context *c, const EncoderOneBoxResult *result, uint32_t now);
 void IRC_Abort(IRC_Context *c, const char *reason);

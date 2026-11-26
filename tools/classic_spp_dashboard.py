@@ -780,6 +780,7 @@ class Dashboard:
             self.cal_rows.clear()
             self.cal_note.set("Đang ghi IR · 4 × 90°")
             self.test_stream_running=True
+            self.reader.motion_lease.set()
             self._update_test_controls()
         elif line.startswith("CAL,PIVOT_START,"):
             self.cal_note.set("Đang quay: pivot "+line.split("segment=")[-1].split(",")[0]+"/4")
@@ -792,11 +793,13 @@ class Dashboard:
                 if 0<=i<6:self.cal_thresholds[i]=(int(f["off"]),int(f["on"]))
             except (KeyError,ValueError):pass
         elif line.startswith("CAL,REVIEW,"):
+            self.reader.motion_lease.clear()
             self.test_stream_running=False
             self.cal_review="quality=CANDIDATE_ONLY" in line
             self.cal_note.set(line)
             self._update_test_controls()
         elif line.startswith(("CAL,FAULT,","CAL,SAVED,","CAL,SAVE_REJECT,")):
+            self.reader.motion_lease.clear()
             self.test_stream_running=False
             if line.startswith(("CAL,FAULT,","CAL,SAVED,")):self.cal_review=False
             self.cal_note.set(line)
