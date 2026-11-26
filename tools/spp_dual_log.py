@@ -146,7 +146,7 @@ def csv_row_text(row):
     return output.getvalue()
 
 class DualSessionLog:
-    """Automatic DATA-ONLY logger with explicit Encoder Start/Stop sessions.
+    """Automatic DATA-ONLY logger with explicit Encoder and MPU Start/Stop sessions.
 
     Encoder -> Log Receive is armed but idle until STM32 acknowledges Start.
     Each Start creates a new timestamp-named CSV in the SAME stable folder:
@@ -155,8 +155,9 @@ class DualSessionLog:
             YYYYMMDD_HHMMSS_ffffff_COM16.csv
 
     Every acknowledged Stop flushes/closes that file. The next Start always
-    opens another; files are never appended across separate runs. IR/MPU keep
-    their existing per-test folder behavior. Status remains in memory only.
+    opens another; files are never appended across separate runs. MPU uses
+    the same naming rule in 'mode 7 - mpu test - log receiver'. IR/ALL
+    retain per-run folders. Status remains in memory only.
     """
 
     SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test",
@@ -273,24 +274,26 @@ class DualSessionLog:
                     self._close_active()
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2] == self.SENSOR_TEST_NAMES.get(self.active_sensor):
-                # Only Encoder creates a new file on each acknowledged START.
-                # IR/MPU resume the original file, unchanged.
+                # Encoder and MPU create a fresh file on acknowledged START.
+                # IR/ALL resume the original file.
                 if self.active_sensor in ("ENC", "MPU"):
                     self._close_active()
                     self._open_run(self.active_sensor, TEST_CSV_COLUMNS[self.active_sensor], host_time)
                 self._streaming = True
 
     def _open_run(self, sensor, headers, host_time):
-        """Open a fresh file; Encoder uses a stable folder and timestamp file."""
+        """Encoder and MPU use stable folders and timestamp filenames."""
         try:
             sample = datetime.fromisoformat(host_time) if host_time else datetime.now()
         except ValueError:
             sample = datetime.now()
         stamp = sample.strftime("%Y%m%d_%H%M%S_%f")
 
-        if sensor in ("ENC", "ONEBOX"):
-            name = ("log receiver" if sensor == "ENC" else "1 box forward")
-            folder = self.root / ("mode 7 - encoder test - " + name)
+        if sensor in ("ENC", "ONEBOX", "MPU"):
+            name = {"ENC": "mode 7 - encoder test - log receiver",
+                    "ONEBOX": "mode 7 - encoder test - 1 box forward",
+                    "MPU": "mode 7 - mpu test - log receiver"}[sensor]
+            folder = self.root / name
             folder.mkdir(parents=True, exist_ok=True)
             # Keep timestamp-first filenames readable and sortable. The COM
             # suffix distinguishes devices; an index handles clock collision.
@@ -304,7 +307,7 @@ class DualSessionLog:
                 except FileExistsError:
                     continue
             else:
-                raise FileExistsError("Cannot allocate unique Encoder CSV filename")
+                raise FileExistsError("Cannot allocate unique test CSV filename")
         else:
             test = self.SENSOR_TEST_NAMES[sensor]
             label = f"Mode 7 - {test} - {stamp}_{self.port or 'COM'}"
@@ -326,7 +329,7 @@ class DualSessionLog:
         except OSError:
             handle.close()
             path.unlink(missing_ok=True)
-            if sensor not in ("ENC", "ONEBOX"):
+            if sensor not in ("ENC", "ONEBOX", "MPU"):
                 folder.rmdir()
             raise
 
