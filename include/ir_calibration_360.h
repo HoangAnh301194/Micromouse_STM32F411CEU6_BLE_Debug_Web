@@ -16,6 +16,8 @@ typedef struct {
     uint32_t started_ms, last_sample_ms, dwell_started_ms, last_ready_ms;
     uint16_t low[6], high[6], wall_on[6], wall_off[6];
     uint16_t center_l0, center_r0;
+    float session_origin_yaw, segment_origin_yaw;
+    uint8_t have_origin;
     uint32_t samples;
     char fault[24];
 } IRC_Context;

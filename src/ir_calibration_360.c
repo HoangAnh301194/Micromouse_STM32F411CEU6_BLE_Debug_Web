@@ -9,6 +9,7 @@
 #include "bt_debug.h"
 #include "flash_storage.h"
 #include <string.h>
+#include <math.h>
 
 /* Existing pivot guarantees a 100ms braking interval. The additional dwell
  * is deliberately nonblocking and waits for a stable gyro measurement. */
@@ -21,6 +22,12 @@
 #define IRC_MIN_SPAN_ADC 40U
 #define IRC_SENSOR_MAX_AGE_US 5000UL
 
+static float IRC_YawDiff(float now,float old) {
+    float d=now-old;
+    while(d>180.0f)d-=360.0f;
+    while(d< -180.0f)d+=360.0f;
+    return d;
+}
 static const char * IRC_StateName(IRC_State s) {
     switch(s) {
         case IRC_ARMED: return "ARMED"; case IRC_PIVOT: return "PIVOT";
@@ -108,6 +115,19 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
     if((uint32_t)(now-c->last_ready_ms)<IRC_STABLE_MS)return;
     if(c->state==IRC_DWELL &&
        (uint32_t)(now-c->dwell_started_ms)<IRC_DWELL_MIN_MS)return;
+    if(c->state==IRC_DWELL){
+        MPU6050_Snapshot_t s;
+        if(!MPU6050_GetSnapshot(mpu,&s) || !s.valid){
+            IRC_Abort(c,"IMU_STALE");return;
+        }
+        if(fabsf(IRC_YawDiff(s.yaw_deg,c->segment_origin_yaw)-90.0f)>8.0f){
+            IRC_Abort(c,"PIVOT_ANGLE");return;
+        }
+        if(c->segment>=4U &&
+           fabsf(IRC_YawDiff(s.yaw_deg,c->session_origin_yaw))>8.0f){
+            IRC_Abort(c,"ROUND_TRIP");return;
+        }
+    }
     if(c->state==IRC_DWELL && c->segment>=4U){
         if(c->samples<IRC_MIN_SAMPLES){IRC_Abort(c,"SAMPLES");return;}
         c->valid=1U;
@@ -130,6 +150,17 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
         /* On completion the previous pivot has emitted its result and the
          * driver has returned to locked-idle before the next Start. */
         if(!Motor_OutputsLocked() || EncoderOneBox_IsRunning())return;
+        {
+            MPU6050_Snapshot_t s;
+            if(!MPU6050_GetSnapshot(mpu,&s) || !s.valid){
+                IRC_Abort(c,"IMU_STALE");return;
+            }
+            c->segment_origin_yaw=s.yaw_deg;
+            if(!c->have_origin) {
+                c->session_origin_yaw=s.yaw_deg;
+                c->have_origin=1U;
+            }
+        }
         if(EncoderOneBox_StartPivot(mpu,90)) {
             ++c->segment;c->state=IRC_PIVOT;c->last_ready_ms=0U;
             BT_Printf("CAL,PIVOT_START,segment=%u,target=90\r\n",(unsigned)c->segment);
