@@ -2,7 +2,7 @@
 """JDY-33 Classic SPP dashboard with safe menu Next/Select commands.
 
 Guarded menu commands, one-box test and RAM-only wheel PID tuning.
-No Flash commands. Web BLE remains untouched.
+Flash calibration confirmation (V) is user-gated. Web BLE remains untouched.
 Run: python tools/classic_spp_dashboard.py --port COM37
 """
 from __future__ import annotations
@@ -111,7 +111,7 @@ class SPPReader:
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
-        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I") or not self.thread or not self.thread.is_alive():
+        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I", b"V") or not self.thread or not self.thread.is_alive():
             return False
         return self._enqueue(command)
 
