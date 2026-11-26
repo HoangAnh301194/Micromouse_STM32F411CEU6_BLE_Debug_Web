@@ -34,6 +34,7 @@
 #endif
 #include "mode_menu.h"
 #include "mode_test_resources.h"
+#include "flash_storage.h"
 #include "encoder_onebox.h"
 #include "oled_shared.h"
 #include "ssd1306.h"
@@ -92,6 +93,199 @@ static uint8_t PidMenu_Consume(char c, const ModeMenu *menu, uint32_t now)
     } else pid_rx_bad = 1U;
     return 1U;
 }
+
+/* Static three-placement IR calibration. Main context only; TIM11 owns
+ * acquisition. No motor unlock, heap, blocking delays or ISR logging. */
+#define CAL_N 200U
+#define CAL_SETTLE_MS 250U
+#define CAL_INTERVAL_MS 10U
+#define CAL_TIMEOUT_MS 5000U
+#define CAL_MIN_SPAN 50U
+static uint8_t cal_active, cal_stage, cal_busy, cal_saved;
+static uint16_t cal_count;
+static uint32_t cal_started, cal_last_ms, cal_last_scan;
+static uint16_t cal_samples[IR_SENSOR_COUNT][CAL_N];
+static uint16_t cal_ref[3][IR_SENSOR_COUNT], cal_lo[3][IR_SENSOR_COUNT],
+                cal_hi[3][IR_SENSOR_COUNT];
+static const char *const cal_names[IR_SENSOR_COUNT] =
+    {"L90","L45","L0","R0","R45","R90"};
+static const char *const cal_placements[3] =
+    {"FRONT_AND_BOTH_SIDES","BOTH_SIDES_NO_FRONT","OPEN_SPACE"};
+static void Cal_Draw(void)
+{
+    SSD1306_Fill(SSD1306_BLACK);
+    SSD1306_SetCursor(0U,0U);
+    SSD1306_WriteString("IR CALIBRATION", &Font_7x10, SSD1306_WHITE);
+    SSD1306_SetCursor(0U,16U);
+    SSD1306_WriteString(cal_stage==0U ? "1: THREE WALLS" :
+                       cal_stage==1U ? "2: SIDE WALLS" :
+                       cal_stage==2U ? "3: OPEN SPACE" : "SAVED OK",
+                       &Font_7x10, SSD1306_WHITE);
+    SSD1306_SetCursor(0U,32U);
+    SSD1306_WriteString(cal_busy ? "KEEP STILL" :
+                       cal_saved ? "CALIB COMPLETE" : "Short: capture",
+                       &Font_7x10, SSD1306_WHITE);
+    SSD1306_SetCursor(0U,48U);
+    SSD1306_WriteString("Hold: exit", &Font_7x10, SSD1306_WHITE);
+}
+static void Cal_Status(void)
+{
+    if (cal_saved) BT_SendString("CAL,COMPLETE,SAVED\r\n");
+    else BT_Printf("CAL,WAIT,stage=%u,placement=%s,KEY_SHORT_OR_N\r\n",
+                   (unsigned)(cal_stage+1U),cal_placements[cal_stage]);
+    Cal_Draw();
+}
+static void Cal_Begin(uint32_t now)
+{
+    if (cal_busy || cal_saved || !cal_active) return;
+    if (!Motor_OutputsLocked()) {
+        BT_SendString("CAL,REJECT,MOTOR_NOT_LOCKED\r\n"); return;
+    }
+    cal_count=0U; cal_last_scan=0U; cal_started=cal_last_ms=now;
+    cal_busy=1U;
+    BT_Printf("CAL,START,stage=%u,samples=%u\r\n",
+              (unsigned)(cal_stage+1U),(unsigned)CAL_N);
+    Cal_Draw();
+}
+static void Cal_Cancel(void)
+{
+    if (cal_busy) {cal_busy=0U; cal_count=0U;
+        BT_SendString("CAL,ABORT,CAPTURE_CANCELLED\r\n");}
+    Cal_Status();
+}
+static uint16_t Cal_Max(uint16_t a,uint16_t b) {return a>b?a:b;}
+static uint16_t Cal_Min(uint16_t a,uint16_t b) {return a<b?a:b;}
+static void Cal_Sort(uint16_t *v)
+{
+    uint16_t i,j,k;
+    for(i=1U;i<CAL_N;++i) {
+        k=v[i]; j=i;
+        while(j && v[j-1U]>k) {v[j]=v[j-1U]; --j;}
+        v[j]=k;
+    }
+}
+/* Front/diagonal negative reference uses the greater of the two
+ * no-front observations. Side positive reference uses the weaker of
+ * the two centered wall observations. Keep thresholds in raw ADC units. */
+static uint8_t Cal_ValidateAndSave(void)
+{
+    IR_Simple_Calib_t out={0};
+    uint16_t base[6],wall[6],on[6],off[6];
+    uint8_t i, good=1U;
+    Flash_Status_t fs;
+    for(i=0U;i<IR_SENSOR_COUNT;++i) {
+        uint8_t side=(i==IR_L0 || i==IR_R0);
+        uint16_t neg_hi,pos_lo;
+        base[i]=side?cal_ref[2][i]:Cal_Max(cal_ref[1][i],cal_ref[2][i]);
+        wall[i]=side?Cal_Min(cal_ref[0][i],cal_ref[1][i]):cal_ref[0][i];
+        neg_hi=side?cal_hi[2][i]:Cal_Max(cal_hi[1][i],cal_hi[2][i]);
+        pos_lo=side?Cal_Min(cal_lo[0][i],cal_lo[1][i]):cal_lo[0][i];
+        if (wall[i]<=base[i] || wall[i]-base[i]<CAL_MIN_SPAN) {
+            good=0U; on[i]=off[i]=0U;
+        } else {
+            uint32_t span=(uint32_t)wall[i]-base[i];
+            on[i]=(uint16_t)(base[i]+6U*span/10U);
+            off[i]=(uint16_t)(base[i]+3U*span/10U);
+            if(neg_hi>=off[i] || pos_lo<=on[i] || wall[i]>=4090U) good=0U;
+        }
+        BT_Printf("CAL,RESULT,%s,A=%u,B=%u,ON=%u,OFF=%u,P95_OPEN=%u,P05_WALL=%u\r\n",
+                  cal_names[i],(unsigned)base[i],(unsigned)wall[i],
+                  (unsigned)on[i],(unsigned)off[i],(unsigned)neg_hi,(unsigned)pos_lo);
+    }
+    if(!good) {
+        BT_SendString("CAL,REJECT,LOW_SPAN_OR_OVERLAP_OR_SATURATION,REPEAT_ALL\r\n");
+        return 0U;
+    }
+    /* Legacy storage format, basic mode only; no fabricated distance,
+     * derivative, post or interference thresholds. */
+#define CAL_ASSIGN(n,id) out.open_##n=base[id]; out.wall_on_##n=on[id]; out.wall_off_##n=off[id]
+    CAL_ASSIGN(l90,IR_L90); CAL_ASSIGN(l45,IR_L45); CAL_ASSIGN(l0,IR_L0);
+    CAL_ASSIGN(r0,IR_R0); CAL_ASSIGN(r45,IR_R45); CAL_ASSIGN(r90,IR_R90);
+#undef CAL_ASSIGN
+    out.wall_threshold_left=on[IR_L90]; out.wall_threshold_right=on[IR_R90];
+    out.wall_threshold_front_left=on[IR_L0]; out.wall_threshold_front_right=on[IR_R0];
+    out.wall_threshold_l45=on[IR_L45]; out.wall_threshold_r45=on[IR_R45];
+    out.center_l90=cal_ref[0][IR_L90]; out.center_r90=cal_ref[0][IR_R90];
+    out.front_fsum_target=(uint32_t)out.center_l90+out.center_r90;
+    out.center_l0=cal_ref[1][IR_L0]; out.center_r0=cal_ref[1][IR_R0];
+    out.gain_l0=out.gain_l45=out.gain_l90=1.0f;
+    out.gain_r0=(float)out.center_l0/out.center_r0;
+    out.gain_r45=(float)cal_ref[0][IR_L45]/cal_ref[0][IR_R45];
+    out.gain_r90=(float)out.center_l90/out.center_r90;
+    out.front_diff_zero=0; out.has_front_diff=1U;
+    out.calib_mode=1U; out.has_open_calib=1U;
+    BT_Printf("CAL,CENTER,L0=%u,R0=%u,L90=%u,R90=%u\r\n",
+              (unsigned)out.center_l0,(unsigned)out.center_r0,
+              (unsigned)out.center_l90,(unsigned)out.center_r90);
+    Motor_LockOutputs();
+    Control_Stop(); IR_Stop();
+    fs=Flash_SaveIRCalibChecked(&out);
+    Control_Start(); IR_StartScan();
+    if(fs!=FLASH_OK) {
+        BT_Printf("CAL,FLASH_ERROR,status=%u,REPEAT_ALL\r\n",(unsigned)fs);
+        return 0U;
+    }
+    return 1U;
+}
+static void Cal_Poll(uint32_t now)
+{
+    IR_Data_t sample;
+    uint8_t i;
+    if(!cal_active || !cal_busy) return;
+    if(!Motor_OutputsLocked() || (uint32_t)(now-cal_started)>=CAL_TIMEOUT_MS) {
+        cal_busy=0U; cal_count=0U;
+        BT_SendString("CAL,REJECT,TIMEOUT_OR_MOTOR_STATE,RETRY_STAGE\r\n");
+        Cal_Status(); return;
+    }
+    if((uint32_t)(now-cal_started)<CAL_SETTLE_MS ||
+       (uint32_t)(now-cal_last_ms)<CAL_INTERVAL_MS) return;
+    Control_GetIRSnapshot(&sample);
+    if(!sample.scan_count || sample.scan_count==cal_last_scan ||
+       (uint32_t)(micros()-sample.completed_us)>3000U) return;
+    cal_last_scan=sample.scan_count; cal_last_ms=now;
+    for(i=0U;i<IR_SENSOR_COUNT;++i) cal_samples[i][cal_count]=sample.value[i];
+    if(++cal_count<CAL_N) return;
+    cal_busy=0U;
+    for(i=0U;i<IR_SENSOR_COUNT;++i) {
+        Cal_Sort(cal_samples[i]);
+        cal_ref[cal_stage][i]=(uint16_t)(((uint32_t)cal_samples[i][99]+cal_samples[i][100])/2U);
+        cal_lo[cal_stage][i]=cal_samples[i][10];
+        cal_hi[cal_stage][i]=cal_samples[i][189];
+    }
+    BT_Printf("CAL,STAGE_OK,stage=%u,L90=%u,L45=%u,L0=%u,R0=%u,R45=%u,R90=%u\r\n",
+              (unsigned)(cal_stage+1U),(unsigned)cal_ref[cal_stage][IR_L90],
+              (unsigned)cal_ref[cal_stage][IR_L45],(unsigned)cal_ref[cal_stage][IR_L0],
+              (unsigned)cal_ref[cal_stage][IR_R0],(unsigned)cal_ref[cal_stage][IR_R45],
+              (unsigned)cal_ref[cal_stage][IR_R90]);
+    if(++cal_stage==3U) {
+        cal_saved=Cal_ValidateAndSave();
+        if(!cal_saved) cal_stage=0U;
+    }
+    Cal_Status();
+}
+/* Keep the established menu state machine and its KEY debounce unchanged.
+ * Within selected Mode 1, Next is capture and Select is exit. */
+static uint8_t Cal_MenuEvent(ModeMenu *menu,ModeMenuEvent event,uint32_t now)
+{
+    if(cal_active) {
+        if(event==MODE_MENU_EVENT_FOCUS) {
+            menu->focus=0U; Cal_Begin(now); return 1U;
+        }
+        if(event==MODE_MENU_EVENT_SELECT) {
+            cal_active=cal_busy=0U;
+            menu->selected=MODE_MENU_NO_SELECTION;
+            BT_SendString("CAL,EXIT\r\n");
+            return 0U;
+        }
+    } else if(event==MODE_MENU_EVENT_SELECT && menu->selected==0U) {
+        cal_active=1U; cal_stage=cal_busy=cal_saved=0U;
+        Motor_LockOutputs();
+        BT_SendString("Selected mode 1: Calibration\r\n");
+        Cal_Status(); return 1U;
+    }
+    return 0U;
+}
+
 /* Main-context framebuffer edits only. I2C transfers are owned by the
  * admission-controlled OLED_SharedService, never by TIM11 or USART2 IRQ. */
 static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
@@ -281,7 +475,7 @@ static void ModeMenu_ApplyResources(const ModeMenu *menu,
                                     MPU6050_Status mpu_status,
                                     uint8_t *last_mask)
 {
-    uint8_t next = ModeTest_Resources(menu);
+    uint8_t next = cal_active ? TEST_RES_IR : ModeTest_Resources(menu);
     if (next == *last_mask) return;
     Control_SetTestResources(next);
     if ((next & TEST_RES_MPU) && !(*last_mask & TEST_RES_MPU) &&
@@ -602,14 +796,16 @@ int Main_Runtime(void)
             } else if (command == 'H') {
                 EncoderOneBox_HostPing(); /* lease only */
             } else if (command == 'P') {
-                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                if (cal_active) Cal_Cancel();
+                else if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 else if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
-                if (ModeTest_OneBoxArmed(&mode_menu) &&
+                if (cal_active) Cal_Begin(now);
+                else if (ModeTest_OneBoxArmed(&mode_menu) &&
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
                     (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
                     if (EncoderOneBox_Start()) {
@@ -647,10 +843,12 @@ int Main_Runtime(void)
                     (remote == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
-                ModeMenu_Report(&mode_menu, remote);
+                uint8_t handled=Cal_MenuEvent(&mode_menu,remote,now);
+                if(!handled && remote != MODE_MENU_EVENT_SELECT) ModeMenu_Report(&mode_menu, remote);
+                else if(!handled && mode_menu.selected!=MODE_MENU_NO_SELECTION) ModeMenu_Report(&mode_menu,remote);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
-                ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
+                if(!handled) ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
 #else
             HandleBleCommand(BT_ReceiveChar());
@@ -667,10 +865,11 @@ int Main_Runtime(void)
                     (event == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
-                ModeMenu_Report(&mode_menu, event);
+                uint8_t handled=Cal_MenuEvent(&mode_menu,event,now);
+                if(!handled && (event!=MODE_MENU_EVENT_SELECT || mode_menu.selected!=MODE_MENU_NO_SELECTION)) ModeMenu_Report(&mode_menu,event);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
-                ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
+                if(!handled) ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
             /* IR, MPU, All, and Encoder Log Receive stream only their
              * selected telemetry. One-box motor remains guarded by Start. */
@@ -785,6 +984,7 @@ int Main_Runtime(void)
                               (unsigned)result.motor_locked);
                 }
             }
+            Cal_Poll(now);
             OLED_SharedService(&mpu);
             /* Idle menu: no periodic status; active test: 20 Hz CSV data. */
         }
