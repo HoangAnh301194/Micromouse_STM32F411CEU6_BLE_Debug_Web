@@ -79,12 +79,10 @@ jobs:
         run: python -m pip install --disable-pip-version-check platformio
       - name: Build production firmware (no hardware)
         run: python -m platformio run -e genericSTM32F411CE
-<<<<<<< HEAD
       - name: Build production OLED status firmware (no hardware)
         run: python -m platformio run -e production_oled_status_96m
       - name: Build six-sensor IR OLED test firmware (no hardware)
         run: python -m platformio run -e ir_oled_test_96m
-=======
       - name: Build isolated motor-locked IR filter capture firmware (no hardware)
         run: python -m platformio run -e ir_filter_diag_96m
       - name: Build PA0 motor-locked rolling IR burst firmware (no hardware)
@@ -93,7 +91,6 @@ jobs:
         run: python -m platformio run -e wall_pid_4cell_96m
       - name: Build motor-locked six-IR 200Hz BLE logger firmware (no hardware)
         run: python -m platformio run -e maze_sensor_capture_96m
->>>>>>> e41c1a1f73c3c25492cf61c7dede937855026fcc
       - name: Test OLED-MPU host parser and verdict (synthetic)
         run: python tools/oled_mpu_pipeline.py --self-test
       - name: Build optional motor-locked Flash-map firmware (no hardware)

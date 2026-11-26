@@ -164,6 +164,7 @@ uint8_t IRC_Save(IRC_Context *c) {
     IR_Stop();Control_Stop();Motor_LockOutputs();
     status=Flash_SaveIRCalibChecked(&data);
     Control_Start();
+    IR_StartScan(); /* restart acquisition after temporary Flash-safe stop */
     if(status==FLASH_OK) {c->state=IRC_SAVED;BT_SendString("CAL,SAVED,flash=OK,auto_apply=0\r\n");return 1U;}
     BT_Printf("CAL,SAVE_REJECT,flash_status=%u\r\n",(unsigned)status);
     return 0U;
