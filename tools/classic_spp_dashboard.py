@@ -790,8 +790,14 @@ class Dashboard:
             try:
                 f=dict(item.split("=",1) for item in line.split(",")[2:] if "=" in item)
                 i=int(f["index"])
-                if 0<=i<6:self.cal_thresholds[i]=(int(f["off"]),int(f["on"]))
-            except (KeyError,ValueError):pass
+                if 0<=i<6:
+                    self.cal_thresholds[i]=(int(f["off"]),int(f["on"]))
+                if len(self.cal_thresholds)==6 and self.dual_log.last_saved_path:
+                    from ir_calibration_report import write_ir_report
+                    report=write_ir_report(self.dual_log.last_saved_path,self.cal_thresholds)
+                    self.status.set("Calibration plots and summary: "+str(report))
+            except (KeyError,ValueError,OSError) as exc:
+                self.status.set("Calibration report error: "+str(exc))
         elif line.startswith("CAL,REVIEW,"):
             self.reader.motion_lease.clear()
             self.test_stream_running=False
