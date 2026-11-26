@@ -23,5 +23,17 @@ def main():
         s.write("Selected mode 1: Calibration");s.write("CAL,START,mode=1,segments=4")
         p2=s.write(line);assert p2 and p2!=p
         s.write("CAL,FAULT,reason=KEY_STOP");assert s.write(line) is None
+    # The Mode 1 review button must actually reach the serial command queue.
+    # No hardware is opened; the fake thread only advertises an active reader.
+    import queue
+    from classic_spp_dashboard import SPPReader
+    class ActiveThread:
+        def is_alive(self):
+            return True
+    reader=SPPReader(queue.Queue())
+    reader.thread=ActiveThread()
+    assert reader.send_menu(b"V") is True
+    assert reader.commands.get_nowait()==b"V"
+    assert reader.send_menu(b"X") is False
     print("ir_calibration_spp_test PASS")
 if __name__=="__main__":main()
