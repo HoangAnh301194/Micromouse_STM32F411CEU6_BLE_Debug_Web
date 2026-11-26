@@ -3,8 +3,8 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-DATA_PREFIXES = ("PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
-STATUS_PREFIXES = ("STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
+DATA_PREFIXES = ("CAL_IR,", "PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
+STATUS_PREFIXES = ("CAL,", "STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
                    "TEST,", "STOP ", "START ", "MAPCFG", "MAPROW", "MAPEND")
@@ -29,6 +29,7 @@ def classify_spp_line(line):
 # Each System Test has its own CSV schema. ENC is exactly two counts;
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
+    "CAL": ("t_ms","L0","L45","L90","R0","R45","R90"),
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
                "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
@@ -55,7 +56,7 @@ def sensor_test_csv(line, host_time=None):
     parts = line.strip().split(",")
     if not parts:
         return None
-    sensor = {"ONEBOX_CSV":"ONEBOX","PIVOT_CSV":"PIVOT"}.get(parts[0],parts[0])
+    sensor = {"ONEBOX_CSV":"ONEBOX","PIVOT_CSV":"PIVOT","CAL_IR":"CAL"}.get(parts[0],parts[0])
     if sensor not in TEST_CSV_COLUMNS:
         return None
     fields = {}
@@ -64,7 +65,12 @@ def sensor_test_csv(line, host_time=None):
         if sep and key:
             fields[key] = value
 
-    if sensor == "ENC":
+    if sensor == "CAL":
+        keys=("ms","L0","L45","L90","R0","R45","R90")
+        if not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in keys): return None
+        if int(fields["ms"])<0 or int(fields["ms"])>60000 or any(int(fields[k])>4095 or int(fields[k])<0 for k in keys[1:]): return None
+        values=tuple(fields[k] for k in keys)
+    elif sensor == "ENC":
         if (len(parts) == 3 and
                 all(_DECIMAL.fullmatch(value) for value in parts[1:])):
             values = tuple(parts[1:])
@@ -167,7 +173,7 @@ class DualSessionLog:
 
     SENSOR_TEST_NAMES = {"IR": "IR Test", "ENC": "Encoder Test",
                          "MPU": "MPU Test", "ALL": "All Sensors Test",
-                         "ONEBOX": "1 Box Forward", "PIVOT": "MPU Pivot"}
+                         "ONEBOX": "1 Box Forward", "PIVOT": "MPU Pivot", "CAL": "Calibration"}
     TEST_NAME_TO_SENSOR = {name: key for key, name in SENSOR_TEST_NAMES.items()}
     _SELECT_RE = re.compile(r"^Selected test (?:1|3|4): (IR Test|MPU Test|All Sensors Test)$")
     _ENC_LOG_SELECT = "Selected encoder option 1: Log Receive"
@@ -213,6 +219,24 @@ class DualSessionLog:
 
     def _observe_status(self, line, host_time=None):
         """Status is used ONLY as in-memory routing metadata, never logged."""
+        if line == "Selected mode 1: Calibration":
+            self._has_menu_context=True
+            self._deactivate()
+            self.active_sensor="CAL"
+            self._streaming=False
+            return
+        if line.startswith("CAL,START,"):
+            if self.active_sensor=="CAL":
+                self._close_active()
+                self._streaming=True
+                self._open_run("CAL",TEST_CSV_COLUMNS["CAL"],host_time)
+            return
+        if line.startswith(("CAL,REVIEW,","CAL,FAULT,")):
+            if self.active_sensor=="CAL":
+                self._streaming=False
+                self._close_active()
+            return
+
         if line.startswith("Selected mpu option "):
             self._has_menu_context=True
             self._deactivate()
@@ -317,9 +341,12 @@ class DualSessionLog:
             sample = datetime.now()
         stamp = sample.strftime("%Y%m%d_%H%M%S_%f")
 
-        if sensor in ("ENC", "ONEBOX"):
-            name = ("log receiver" if sensor == "ENC" else "1 box forward")
-            folder = self.root / ("mode 7 - encoder test - " + name)
+        if sensor in ("ENC", "ONEBOX", "CAL"):
+            if sensor == "CAL":
+                folder = self.root / "mode 1 - ir calibration 360"
+            else:
+                name = ("log receiver" if sensor == "ENC" else "1 box forward")
+                folder = self.root / ("mode 7 - encoder test - " + name)
             folder.mkdir(parents=True, exist_ok=True)
             # Keep timestamp-first filenames readable and sortable. The COM
             # suffix distinguishes devices; an index handles clock collision.
@@ -355,7 +382,7 @@ class DualSessionLog:
         except OSError:
             handle.close()
             path.unlink(missing_ok=True)
-            if sensor not in ("ENC", "ONEBOX"):
+            if sensor not in ("ENC", "ONEBOX", "CAL"):
                 folder.rmdir()
             raise
 
@@ -380,7 +407,7 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU", "PIVOT"):
+            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU", "PIVOT", "CAL"):
                 # Encoder and MPU angle log is STRICTLY opt-in via Log Receive even after
                 # reconnect; never infer it from an unsolicited ENC frame.
                 return None
