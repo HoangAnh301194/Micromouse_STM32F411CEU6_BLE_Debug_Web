@@ -243,6 +243,11 @@ class Dashboard:
         self.test_stream_running = False
         self.onebox_start_pending = False
         self.active_data_stream = None
+        self.cal_rows=deque(maxlen=1000)
+        self.cal_thresholds={}
+        self.cal_review=False
+        self.cal_visible=False
+        self.cal_note=tk.StringVar(value="Mode 1: chọn để bắt đầu")
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
 
@@ -262,7 +267,7 @@ class Dashboard:
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
         ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select. "
-                  "Guarded one-box motion; RAM-only PID; no Flash commands.",
+                  "Guarded motion; calibration requires user review before Flash save.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
         bar.pack(fill="x", pady=(0, 8))
@@ -312,7 +317,7 @@ class Dashboard:
         data_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(data_bar, text="Stream:").pack(side="left")
         ttk.Combobox(data_bar, textvariable=self.data_filter, width=12,
-                     values=("All", "MPU", "PIVOT_CSV", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
+                     values=("All", "CAL_IR", "MPU", "PIVOT_CSV", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_split = ttk.PanedWindow(left, orient="vertical")
@@ -321,6 +326,13 @@ class Dashboard:
         self.data_split.add(self.log_pane, weight=1)
         self.data_text = self._make_log_text(self.log_pane, "none")
         self.data_text.configure(height=6)
+        self.cal_pane=ttk.LabelFrame(self.data_split,text="Mode 1 — IR calibration (6 mắt)")
+        ttk.Label(self.cal_pane,textvariable=self.cal_note).pack(anchor="w")
+        self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=144,highlightthickness=0)
+        self.cal_canvas.pack(fill="both",expand=True)
+        self.cal_canvas.bind("<Configure>",lambda event:self._draw_calibration_panel())
+        self.cal_save_btn=ttk.Button(self.cal_pane,text="Accept & Save Flash (V)",state="disabled",command=lambda:self.send_menu(b"V"))
+        self.cal_save_btn.pack(anchor="e",pady=3)
         self.wheel_pane = ttk.Frame(self.data_split)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
         self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
@@ -509,6 +521,7 @@ class Dashboard:
             self._update_test_controls()
 
     def _update_test_controls(self):
+        self._sync_cal_panel()
         self._sync_wheel_panel()
         self._sync_angle_panel()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
@@ -522,7 +535,7 @@ class Dashboard:
         self.pid_apply_btn.configure(state="normal" if pid_editable else "disabled")
         for entry in self.pid_entries:
             entry.configure(state="normal" if pid_editable else "disabled")
-        can_control = self.menu_ready and self.active_test_name not in (None, "PID")
+        can_control = self.menu_ready and self.active_test_name not in (None, "PID", "Calibration")
         if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
             # This is an encoder + motor test, not an MPU test.
             can_control = can_control and self.onebox_capable
@@ -558,6 +571,9 @@ class Dashboard:
             self.reader.motion_lease.clear()
             self.onebox_capable = False
             self.mpu_boot_ok = True
+            self.cal_review = self.cal_visible = False
+            self.cal_rows.clear()
+            self.cal_thresholds.clear()
         self._update_test_controls()
 
     def send_menu(self, command: bytes):
@@ -569,7 +585,7 @@ class Dashboard:
     def send_test_control(self, command: bytes):
         # MCU acknowledgement is authoritative. For one-box, an in-flight
         # Start disables repeat Start clicks and still permits Stop.
-        if not self.menu_ready or self.active_test_name in (None, "PID"):
+        if not self.menu_ready or self.active_test_name in (None, "PID", "Calibration"):
             self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
             return
         if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")) and not self.onebox_capable:
@@ -718,6 +734,8 @@ class Dashboard:
         category = classify_spp_line(line)
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
+        if category == "data" and line.startswith("CAL_IR,") and self.active_test_name != "Calibration":
+            return
         if category == "data" and line.startswith("PIVOT_CSV,") and (not (self.active_test_name or "").startswith("Pivot ") or not self.test_stream_running):
             return
         if category == "data" and line.startswith("MPU,") and (
@@ -743,6 +761,49 @@ class Dashboard:
                 self._logging_disabled = True
                 self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
         # Encoder parent is navigation only; never turn on logging here.
+        if line == "Selected mode 1: Calibration":
+            self.active_test_name="Calibration"
+            self.cal_visible=True
+            self.cal_review=False
+            self.cal_rows.clear()
+            self.cal_thresholds.clear()
+            self.cal_note.set("ARMED — nhả KEY, chờ MPU/IR ổn định")
+            self.test_stream_running=False
+            self.data_filter.set("CAL_IR")
+            self._clear_log(self.data_text)
+            self.active_data_stream=None
+            self._update_test_controls()
+        elif line.startswith("CAL,START,"):
+            self.active_test_name="Calibration"
+            self.cal_visible=True
+            self.cal_review=False
+            self.cal_rows.clear()
+            self.cal_note.set("Đang ghi IR · 4 × 90°")
+            self.test_stream_running=True
+            self._update_test_controls()
+        elif line.startswith("CAL,PIVOT_START,"):
+            self.cal_note.set("Đang quay: pivot "+line.split("segment=")[-1].split(",")[0]+"/4")
+        elif line.startswith("CAL,PIVOT_DONE,"):
+            self.cal_note.set("Pivot "+line.split("segment=")[-1].split(",")[0]+"/4 xong, chờ gyro")
+        elif line.startswith("CAL,THRESH,"):
+            try:
+                f=dict(item.split("=",1) for item in line.split(",")[2:] if "=" in item)
+                i=int(f["index"])
+                if 0<=i<6:self.cal_thresholds[i]=(int(f["off"]),int(f["on"]))
+            except (KeyError,ValueError):pass
+        elif line.startswith("CAL,REVIEW,"):
+            self.test_stream_running=False
+            self.cal_review="quality=CANDIDATE_ONLY" in line
+            self.cal_note.set(line)
+            self._update_test_controls()
+        elif line.startswith(("CAL,FAULT,","CAL,SAVED,","CAL,SAVE_REJECT,")):
+            self.test_stream_running=False
+            if line.startswith(("CAL,FAULT,","CAL,SAVED,")):self.cal_review=False
+            self.cal_note.set(line)
+            self._update_test_controls()
+        if line.startswith("CAL_IR,") and self.active_test_name=="Calibration":
+            rec=sensor_test_csv(line,host_time=host_time)
+            if rec:self.cal_rows.append(tuple(map(int,rec[2])))
         is_encoder_log = line == "Selected encoder option 1: Log Receive"
         is_onebox = line.startswith("Selected encoder option 2: 1 Box Forward")
         is_ir_or_mpu = (line.startswith("Selected test ") and
@@ -995,7 +1056,36 @@ class Dashboard:
             self.draw_wheels()
             self.wheel_dirty = False
         self._draw_angle_panel()
+        if self.cal_visible:self._draw_calibration_panel()
         self.root.after(150, self.redraw)
+
+    def _sync_cal_panel(self):
+        show=self.cal_visible and self.menu_ready and self.active_test_name=="Calibration"
+        present=str(self.cal_pane) in self.data_split.panes()
+        if show and not present:self.data_split.add(self.cal_pane,weight=1)
+        elif present and not show:self.data_split.forget(self.cal_pane)
+        self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
+
+    def _draw_calibration_panel(self):
+        c=self.cal_canvas;c.delete("all")
+        w=max(c.winfo_width(),300)
+        names=("L0","L45","L90","R0","R45","R90")
+        colors=("#19b7a6","#59a8ff","#f4b955","#fa8c9e","#be97fa","#9aaec2")
+        last=self.cal_rows[-1][1:] if self.cal_rows else (0,)*6
+        step=(w-24)/6
+        c.create_text(8,8,anchor="nw",text="ADC 0–4095 | vàng=ON  xám=OFF",fill="#cbd5e1",font=("Segoe UI",9))
+        for i,name in enumerate(names):
+            x=12+i*step
+            v=last[i]
+            ht=round(78*v/4095)
+            c.create_rectangle(x+5,99-ht,x+step-7,99,fill=colors[i],outline="")
+            if i in self.cal_thresholds:
+                off,on=self.cal_thresholds[i]
+                for th,col in ((off,"#8792a3"),(on,"#f5b73a")):
+                    y=99-round(78*th/4095)
+                    c.create_line(x+4,y,x+step-5,y,fill=col,width=2)
+            c.create_text(x+step/2,111,text=name,fill="#e2e8f0",font=("Consolas",9))
+            c.create_text(x+step/2,127,text=str(v),fill=colors[i],font=("Consolas",8))
 
     def _mark_wheels(self):
         self.wheel_dirty = True
