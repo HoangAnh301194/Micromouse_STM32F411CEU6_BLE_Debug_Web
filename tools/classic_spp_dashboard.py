@@ -901,6 +901,16 @@ class Dashboard:
             self.cal_monitoring=True
             self.cal_review="quality=CANDIDATE_ONLY" in line
             self.cal_note.set(line)
+            # Firmware emits all six CAL,THRESH frames before REVIEW. The
+            # logger closes the completed two-stage CSV on REVIEW, so write
+            # the report here when last_saved_path becomes available.
+            if len(self.cal_thresholds)==6 and self.dual_log.last_saved_path:
+                try:
+                    from ir_calibration_report import write_ir_report
+                    report=write_ir_report(self.dual_log.last_saved_path,self.cal_thresholds)
+                    self.status.set("Wall/open calibration report: "+str(report))
+                except (ValueError,OSError) as exc:
+                    self.status.set("Calibration report error: "+str(exc))
             self._update_test_controls()
         elif line.startswith("CAL,RESTART_ACCEPTED"):
             self.cal_note.set("RESTART ACCEPTED — chuẩn bị phiên Calibration mới")
