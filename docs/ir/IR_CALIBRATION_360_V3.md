@@ -20,7 +20,8 @@ thresholds from per-channel 10th and 90th percentile approximations using
 by geometric ray-casting, so
 candidate thresholds have not been physically validated. CAL,REVIEW reports
 quality=CANDIDATE_ONLY and auto-apply is always disabled. The user must review
-plots and explicitly send 'V' to persist the candidate to the legacy
+plots; if all six spans pass the quality gate, firmware automatically
+persists the candidate to the legacy
 IR_Simple_Calib_t sector (never while motor/control are running). This is
 NOT a validated mm-distance LUT, nor an automatic Wall PID calibration.
 No Flash write takes place during turning. A failed run never saves.
@@ -40,7 +41,17 @@ the gyro must settle, and a newly added check rejects segment errors >8deg
 or a 360deg round-trip error >8deg. 100ms driver brake plus at least 120ms
 dwell means a few-ms break is **not safe or guaranteed**.
 
-SPP dashboard Mode 1 shows six live bar values and separate OFF/ON markers.
+SPP dashboard Mode 1 shows all six ADC values as blue bars when the
+candidate ON threshold is crossed, grey otherwise, with yellow ON markers.
+After the motor stops, CAL_LIVE,valid=...,L0=...,... is sent every 100ms
+for *display only*. CAL_LIVE is not appended to the completed per-run CSV.
+Invalid scans show an explicit warning rather than meaning NO WALL.
+A short physical KEY press after a completed or failed Mode 1 run arms a
+new 360-degree calibration, clears the previous in-flight capture, and
+creates a fresh host CSV. During motion, KEY still aborts for safety.
+The calibration pivot speed reference is 800 PPS; ordinary pivot remains
+1100 PPS. This is a wheel encoder speed reference, not a guaranteed angular
+velocity or direct PWM target.
 On successful review, the session CSV is closed in the stable folder
 `logs/spp_runs/mode 1 - ir calibration 360/`, with a new timestamp filename
 on each run. It contains exactly `t_ms,L0,L45,L90,R0,R45,R90`.
@@ -50,9 +61,10 @@ When all six threshold messages arrive, Python also writes an adjacent
 the desktop SPP session; a KEY-only physical run without a PC still executes
 but cannot save a CSV until a host captures the serial stream.
 
-Only after CAL,REVIEW quality=CANDIDATE_ONLY is the dashboard
-`Accept & Save Flash (V)` control enabled. If quality is INSUFFICIENT,
-the write is disabled. Flash save uses the legacy struct with
+After CAL,REVIEW quality=CANDIDATE_ONLY, firmware attempts the safe
+Flash save automatically and emits CAL,SAVED,flash=OK,auto_apply=0.
+If quality is INSUFFICIENT, Flash is not written. If Flash fails,
+the candidate stays in REVIEW and the manual V retry is available. Flash save uses the legacy struct with
 `has_open_calib=0`; no production Wall PID automatically imports the saved
 candidate. STOP/P aborts motion and never commits Flash.
 
