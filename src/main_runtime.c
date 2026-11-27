@@ -36,6 +36,7 @@
 #include "mode_test_resources.h"
 #include "encoder_onebox.h"
 #include "ir_calibration_360.h"
+#include "ir_calibration_static.h"
 #include "oled_shared.h"
 #include "ssd1306.h"
 #endif
@@ -565,6 +566,7 @@ int Main_Runtime(void)
 #if defined(MODE_MENU_ONLY)
     EncoderOneBox_Init(); /* motor remains locked until guarded Start */
     IRC_Init(&ir_calibration);
+    IRStatic_Init();
 #endif
     Control_Start();
 
@@ -615,14 +617,36 @@ int Main_Runtime(void)
                     BT_SendString("Selected encoder option 8: PID\r\n");
                     PidMenu_ReportGains("VALUES");
                 }
+            } else if (command == 'C') {
+                /* Opt-in v2 static calibration only from Mode 1 focus.
+                 * It NEVER unlocks motors or starts a pivot. */
+                if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                    mode_menu.focus == 0U &&
+                    !IRStatic_Active() && !IRC_IsMotionActive(&ir_calibration) &&
+                    !EncoderOneBox_IsRunning() && Motor_OutputsLocked()) {
+                    if (mode_menu.selected == MODE_MENU_NO_SELECTION) {
+                        remote = ModeMenu_Select(&mode_menu);
+                        ModeMenu_Report(&mode_menu,remote);
+                        ModeMenu_ApplyResources(&mode_menu,&mpu,mpu_status,
+                                                &test_resource_mask);
+                        remote=MODE_MENU_EVENT_NONE;
+                    }
+                    if(mode_menu.selected==0U)IRStatic_Start();
+                    else BT_SendString("CAL_STATIC,REJECT,reason=MENU_NOT_IDLE\\r\\n");
+                } else BT_SendString("CAL_STATIC,REJECT,reason=NOT_MODE_1_OR_MOTOR_UNSAFE\\r\\n");
             } else if (command == 'N') {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
+                if(IRStatic_Active())IRStatic_Capture(now);
+                else if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
                 else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Next(&mode_menu);
                 }
             } else if (command == 'K') {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
+                if(IRStatic_Active()) {
+                    IRStatic_Exit();
+                    mode_menu.selected=MODE_MENU_NO_SELECTION;
+                }
+                else if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
                 else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Select(&mode_menu);
@@ -630,7 +654,8 @@ int Main_Runtime(void)
             } else if (command == 'H') {
                 EncoderOneBox_HostPing(); /* lease only */
             } else if (command == 'P') {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"USER_STOP");
+                if(IRStatic_Active())IRStatic_Cancel();
+                else if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"USER_STOP");
                 else if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 else if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
@@ -638,7 +663,8 @@ int Main_Runtime(void)
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'G') {
-                if (ModeMenu_PivotTarget(&mode_menu)) {
+                if(IRStatic_Active())IRStatic_Capture(now);
+                else if (ModeMenu_PivotTarget(&mode_menu)) {
                     int16_t target=ModeMenu_PivotTarget(&mode_menu);
                     if (mpu_status==MPU6050_OK && !mpu.calibrated && !mpu.calibrating) {
                         (void)MPU6050_Calibrate(&mpu);
@@ -676,7 +702,9 @@ int Main_Runtime(void)
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'V') {
-                if (!IRC_Save(&ir_calibration))
+                if(IRStatic_Active()) {
+                    if(!IRStatic_Save())BT_SendString("CAL_STATIC,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\\r\\n");
+                } else if (!IRC_Save(&ir_calibration))
                     BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
                 Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
@@ -729,10 +757,18 @@ int Main_Runtime(void)
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
                 if (event==MODE_MENU_EVENT_MPU_SELECT) mpu_ready_reported=0U;
-                ModeMenu_Report(&mode_menu, event);
+                if (IRStatic_Active()) {
+                    if(event==MODE_MENU_EVENT_FOCUS){
+                        mode_menu.focus=0U;IRStatic_Capture(now);
+                    }else if(event==MODE_MENU_EVENT_SELECT){
+                        IRStatic_Exit();
+                        mode_menu.selected=MODE_MENU_NO_SELECTION;
+                    }
+                }
+                else ModeMenu_Report(&mode_menu, event);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
-                if (event == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
+                if (!IRStatic_Active() && event == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
                     mode_menu.selected==0U) IRC_Arm(&ir_calibration,now,1U);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
@@ -821,6 +857,7 @@ int Main_Runtime(void)
                     }
                 }
             }
+            IRStatic_Poll(now);
             IRC_Update(&ir_calibration,&mpu,now);
             {
                 EncoderOneBoxTelemetry motion;
