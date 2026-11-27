@@ -29,8 +29,7 @@ from classic_spp_handshake import SPPHandshake
 from classic_spp_ports import classify_port
 from spp_dual_log import (DualSessionLog, classify_spp_line,
                           data_to_csv_row, csv_row_text, CSV_COLUMNS,
-                          TEST_CSV_COLUMNS, sensor_test_csv, is_menu_navigation_line,
-                          provisional_wall_threshold)
+                          TEST_CSV_COLUMNS, sensor_test_csv, is_menu_navigation_line)
 
 
 BAUD = 115200
