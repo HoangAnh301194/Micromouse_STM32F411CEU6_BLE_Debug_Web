@@ -102,7 +102,7 @@ void EncoderOneBox_Init(void)
     core.running = 0U;
     Unlock(irq);
 }
-static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
+static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, int32_t speed_pps)
 {
     MPU6050_Snapshot_t snap = {0};
     if (target && (!mpu || !MPU6050_GetSnapshot(mpu,&snap) || !snap.valid ||
@@ -116,7 +116,7 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
         return 0U;
     }
     pivot_mpu = mpu; pivot_target = target;
-    pivot_ref_pps = ONEBOX_SPEED_PPS;
+    pivot_ref_pps = speed_pps;
     pivot_origin = target ? snap.yaw_deg : 0.0f;
     stall_l = stall_r = 0U;
     Motor_Stop();
@@ -128,16 +128,14 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
     Unlock(irq);
     return 1U;
 }
-uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0); }
+uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0,ONEBOX_SPEED_PPS); }
 uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target) {
     if (target!=90 && target!=-90 && target!=180 && target!=-180) return 0U;
-    return StartMotion(mpu,target);
+    return StartMotion(mpu,target,ONEBOX_SPEED_PPS);
 }
 uint8_t EncoderOneBox_StartCalibrationPivot(MPU6050_Handle_t *mpu, int16_t target) {
     if (target!=90 && target!=-90) return 0U;
-    if (!StartMotion(mpu,target)) return 0U;
-    pivot_ref_pps=CAL_PIVOT_SPEED_PPS;
-    return 1U;
+    return StartMotion(mpu,target,CAL_PIVOT_SPEED_PPS);
 }
 void EncoderOneBox_HostPing(void)
 {
