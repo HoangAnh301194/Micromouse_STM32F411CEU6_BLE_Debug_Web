@@ -616,6 +616,8 @@ int Main_Runtime(void)
                     BT_SendString("Selected encoder option 8: PID\r\n");
                     PidMenu_ReportGains("VALUES");
                 }
+            } else if (command == 'O') {
+                (void)IRC_ConfirmOpen(&ir_calibration, now);
             } else if (command == 'N') {
                 if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
                 else {
@@ -623,8 +625,11 @@ int Main_Runtime(void)
                     remote = ModeMenu_Next(&mode_menu);
                 }
             } else if (command == 'K') {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
-                else {
+                if (ir_calibration.state == IRC_WAIT_OPEN) {
+                    (void)IRC_ConfirmOpen(&ir_calibration, now);
+                } else if (IRC_IsMotionActive(&ir_calibration)) {
+                    IRC_Abort(&ir_calibration,"MENU_STOP");
+                } else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Select(&mode_menu);
                 }
@@ -739,9 +744,17 @@ int Main_Runtime(void)
             uint8_t menu_key = Board_ButtonPressed();
             if (EncoderOneBox_SuppressMenuButton()) menu_key = 0U;
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
-            /* Short KEY on completed Mode 1 re-arms a fresh 360-degree
-             * capture without changing the selected menu item. While moving,
-             * KEY remains a safety stop, never a restart request. */
+            /* In WAIT_OPEN, a short or long physical KEY confirms that the
+             * operator has moved the stationary robot into open space. Do not
+             * let this confirmation advance the main menu focus. */
+            if (ir_calibration.state == IRC_WAIT_OPEN &&
+                (event == MODE_MENU_EVENT_FOCUS || event == MODE_MENU_EVENT_SELECT)) {
+                mode_menu.focus = mode_menu.selected;
+                (void)IRC_ConfirmOpen(&ir_calibration, now);
+                event = MODE_MENU_EVENT_NONE;
+            }
+            /* Short KEY after a completed/failed Mode 1 run starts a fresh
+             * two-stage capture. During capture/wait, KEY never restarts. */
             if (event == MODE_MENU_EVENT_FOCUS &&
                 mode_menu.page == MODE_MENU_PAGE_MAIN &&
                 mode_menu.selected == 0U &&
@@ -853,7 +866,7 @@ int Main_Runtime(void)
                     }
                 }
             }
-            IRC_Update(&ir_calibration,&mpu,now);
+            IRC_Update(&ir_calibration,now);
             /* Live dashboard after completed run: no CSV write, does not
              * change the per-run CAL_IR capture or its START/STOP lifetime. */
             if (mode_menu.page==MODE_MENU_PAGE_MAIN &&
@@ -912,7 +925,6 @@ int Main_Runtime(void)
                               (long)motion.speed_l, (long)motion.speed_r);
                 }
                 if (has_result) {
-                    IRC_OnPivotResult(&ir_calibration,&result,now);
                     BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
                               result.pivot_target ? "PIVOT" : "ONEBOX",
                               EncoderOneBox_Reason(result.reason),
