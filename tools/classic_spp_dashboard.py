@@ -112,7 +112,7 @@ class SPPReader:
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
-        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I", b"V", b"R") or not self.thread or not self.thread.is_alive():
+        if command not in (b"N", b"K", b"O", b"P", b"G", b"E", b"Y", b"I", b"V", b"R") or not self.thread or not self.thread.is_alive():
             return False
         return self._enqueue(command)
 
