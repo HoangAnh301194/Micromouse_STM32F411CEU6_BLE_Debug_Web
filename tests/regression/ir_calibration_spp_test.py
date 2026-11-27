@@ -22,7 +22,19 @@ def main():
         assert s.write(line) is None
         s.write("Selected mode 1: Calibration");s.write("CAL,START,mode=1,segments=4")
         p2=s.write(line);assert p2 and p2!=p
-        s.write("CAL,FAULT,reason=KEY_STOP");assert s.write(line) is None
+        s.write("CAL,FAULT,reason=KEY_STOP")
+        s.write("CAL,END,result=FAILED,reason=KEY_STOP")
+        assert s.write(line) is None
+        # A legacy static CAL,START must never open a v3 360-degree CSV.
+        s.write("Selected mode 1: Calibration")
+        s.write("CAL,START,stage=1,samples=200")
+        assert s.write(line) is None
+        # KEY-short retry is another canonical v3 START, producing a new file.
+        s.write("CAL,START,mode=1,segments=4,save=AUTO_IF_VALID")
+        p3=s.write(line)
+        assert p3 and p3 not in (p,p2)
+        s.write("CAL,END,result=SUCCESS,quality=CANDIDATE_ONLY,flash=SAVED")
+        assert s.write(line) is None
     # The Mode 1 review button must actually reach the serial command queue.
     # No hardware is opened; the fake thread only advertises an active reader.
     import queue
