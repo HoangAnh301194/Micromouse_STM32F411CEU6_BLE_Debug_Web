@@ -4,6 +4,16 @@ from pathlib import Path
 import re
 
 DATA_PREFIXES = ("CAL_IR,", "PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
+MENU_NAVIGATION_PREFIXES = (
+    "Mode ", "Selected mode ", "System Test ", "System Test:",
+    "Selected test ", "Selected encoder option ", "Selected mpu option ",
+)
+
+def is_menu_navigation_line(line):
+    """True only for menu focus/selection events shown in the right terminal."""
+    return line.startswith(MENU_NAVIGATION_PREFIXES)
+
+
 STATUS_PREFIXES = ("CAL,", "STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
