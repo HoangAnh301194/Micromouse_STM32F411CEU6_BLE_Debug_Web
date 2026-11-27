@@ -912,8 +912,9 @@ class Dashboard:
             self.reader.motion_lease.clear()
             self.test_stream_running=False
             self.cal_phase="END"
+            self.cal_stage="END"
             self.cal_monitoring=True
-            self.cal_review=False
+            self.cal_review="result=SAVE_FAILED" in line
             self.cal_note.set("END — "+line.partition("CAL,END,")[2]+" · IR LIVE")
             self._update_test_controls()
         elif line.startswith(("CAL,FAULT,","CAL,SAVED,","CAL,SAVE_REJECT,")):
@@ -1224,7 +1225,7 @@ class Dashboard:
         names=("L0","L45","L90","R0","R45","R90")
         current=self.cal_live
         if not self.cal_monitoring and self.cal_rows:
-            current=self.cal_rows[-1][1:]
+            current=self.cal_rows[-1][2:]
         invalid=self.cal_monitoring and not self.cal_live_valid
         top=47
         bottom=max(top+80,h-48)
