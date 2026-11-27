@@ -159,6 +159,11 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
             BT_Printf("CAL,THRESH,index=%u,lo=%u,hi=%u,off=%u,on=%u\r\n",
                (unsigned)i,(unsigned)c->low[i],(unsigned)c->high[i],
                (unsigned)c->wall_off[i],(unsigned)c->wall_on[i]);
+        /* Preserve the existing quality gate. Save the completed candidate
+         * automatically only if valid and motor locked. Never auto-apply
+         * an unlabelled P10/P90 threshold to wall following. */
+        if(c->valid && !IRC_Save(c))
+            BT_SendString("CAL,AUTO_SAVE_FAILED,review=AVAILABLE\r\n");
         return;
     }
     if(c->state==IRC_ARMED || c->state==IRC_DWELL) {
