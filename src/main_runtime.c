@@ -676,6 +676,22 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
+            } else if (command == 'R') {
+                /* Explicit SPP retry is permitted only after a completed or
+                 * failed Mode-1 session. Never restart an active pivot. */
+                if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                    mode_menu.selected == 0U &&
+                    !IRC_IsMotionActive(&ir_calibration) &&
+                    !EncoderOneBox_IsRunning() &&
+                    (ir_calibration.state == IRC_REVIEW ||
+                     ir_calibration.state == IRC_SAVED ||
+                     ir_calibration.state == IRC_FAULT)) {
+                    BT_SendString("CAL,RESTART_ACCEPTED\r\n");
+                    IRC_Arm(&ir_calibration, now, 0U);
+                } else {
+                    BT_Printf("CAL,RESTART_REJECTED,reason=NOT_READY,state=%u\r\n",
+                              (unsigned)ir_calibration.state);
+                }
             } else if (command == 'V') {
                 if (!IRC_Save(&ir_calibration))
                     BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
