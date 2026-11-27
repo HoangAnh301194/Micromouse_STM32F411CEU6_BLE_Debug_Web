@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""JDY-33 Classic SPP dashboard with safe menu Next/Select commands.
+"""JDY-33 Classic SPP dashboard with menu-only status and sensor data views.
 
-Guarded menu commands, one-box test and RAM-only wheel PID tuning.
-Flash calibration confirmation (V) is user-gated. Web BLE remains untouched.
+Guarded menu commands, Mode-1 CAL_IR view, 6-channel wall bars and retry.
+Flash calibration confirmation (V) remains user-gated. Web BLE is untouched.
 Run: python tools/classic_spp_dashboard.py --port COM37
 """
 from __future__ import annotations
