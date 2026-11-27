@@ -261,7 +261,6 @@ uint8_t IRC_Save(IRC_Context *c)
 {
     IR_Simple_Calib_t data;
     Flash_Status_t status;
-    uint8_t i;
     if (!c || c->state != IRC_REVIEW || !c->valid || !Motor_OutputsLocked())
         return 0U;
 
