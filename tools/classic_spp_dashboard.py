@@ -29,7 +29,7 @@ from classic_spp_handshake import SPPHandshake
 from classic_spp_ports import classify_port
 from spp_dual_log import (DualSessionLog, classify_spp_line,
                           data_to_csv_row, csv_row_text, CSV_COLUMNS,
-                          TEST_CSV_COLUMNS, sensor_test_csv, is_menu_navigation_line)
+                          TEST_CSV_COLUMNS, sensor_test_csv, is_menu_navigation_line,\n                          provisional_wall_threshold)
 
 
 BAUD = 115200
@@ -1227,16 +1227,10 @@ class Dashboard:
             x=34+i*step
             value=int(current[i])
             threshold=self.cal_thresholds.get(i)
-            if threshold is None and len(self.cal_rows)>=20:
-                # UI-only provisional threshold while the 360-degree session
-                # is collecting. Final firmware CAL,THRESH always overrides it.
-                ordered=sorted(row[i+1] for row in self.cal_rows)
-                p10=ordered[((len(ordered)-1)*10)//100]
-                p90=ordered[((len(ordered)-1)*90)//100]
-                sample_span=p90-p10
-                if sample_span>=40:
-                    threshold=(p10+sample_span*30//100,
-                               p10+sample_span*70//100)
+            if threshold is None:
+                # UI-only estimate while the 360-degree session is collecting.
+                # Final firmware CAL,THRESH always overrides this estimate.
+                threshold = provisional_wall_threshold(row[i+1] for row in self.cal_rows)
             if threshold and not invalid:
                 off,on=threshold
                 if value>=on:self.cal_wall_state[i]=True
