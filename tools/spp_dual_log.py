@@ -225,13 +225,13 @@ class DualSessionLog:
             self.active_sensor="CAL"
             self._streaming=False
             return
-        if line.startswith("CAL,START,"):
+        if line.startswith("CAL,START,mode=1,segments=4"):
             if self.active_sensor=="CAL":
                 self._close_active()
                 self._streaming=True
                 self._open_run("CAL",TEST_CSV_COLUMNS["CAL"],host_time)
             return
-        if line.startswith(("CAL,REVIEW,","CAL,FAULT,")):
+        if line.startswith(("CAL,REVIEW,","CAL,FAULT,","CAL,END,")):
             if self.active_sensor=="CAL":
                 self._streaming=False
                 self._close_active()
