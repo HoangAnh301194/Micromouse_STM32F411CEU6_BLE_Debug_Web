@@ -249,6 +249,7 @@ class Dashboard:
         self.cal_live_valid=False
         self.cal_monitoring=False
         self.cal_phase="IDLE"
+        self.cal_stage="IDLE"
         self.cal_protocol_error=False
         self.cal_wall_state=[False]*6
         self.cal_thresholds={}
@@ -273,8 +274,8 @@ class Dashboard:
         outer.pack(fill="both", expand=True)
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select. "
-                  "Guarded motion; valid IR candidates are saved after 360° but not auto-applied.",
+        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select, O=confirm open-space capture. "
+                  "Mode 1 is stationary: wall capture → open-space capture; motors remain locked.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
         bar.pack(fill="x", pady=(0, 8))
@@ -348,6 +349,10 @@ class Dashboard:
             cal_actions, text="Calibrate Again", state="disabled",
             command=self.request_calibration_again)
         self.cal_again_btn.pack(side="left")
+        self.cal_open_btn = ttk.Button(
+            cal_actions, text="Confirm open-space capture (O)", state="disabled",
+            command=lambda: self.send_menu(b"O"))
+        self.cal_open_btn.pack(side="left", padx=(6, 0))
         self.cal_save_btn = ttk.Button(
             cal_actions, text="Save Flash manually (V)", state="disabled",
             command=lambda: self.send_menu(b"V"))
@@ -591,6 +596,7 @@ class Dashboard:
             self.onebox_capable = False
             self.mpu_boot_ok = True
             self.cal_review = self.cal_visible = False
+            self.cal_phase = self.cal_stage = "IDLE"
             self.cal_rows.clear()
             self.cal_thresholds.clear()
             self.data_filter_combo.configure(state="readonly")
@@ -779,11 +785,11 @@ class Dashboard:
             # silently displaying them as a 360-degree capture.
             if sensor_test_csv(line,host_time=host_time) is None:
                 self.cal_protocol_error=True
-                self.cal_note.set("PROTOCOL ERROR: expected CAL_IR,ms=...,L0=...,...")
-                self.status.set("CAL_IR protocol mismatch: check STM32 firmware build (v3 360).")
+                self.cal_note.set("PROTOCOL ERROR: expected CAL_IR,stage=0|1,ms=...,L0=...,...")
+                self.status.set("CAL_IR protocol mismatch: check stationary wall-open firmware.")
                 self.reader.motion_lease.clear()
                 return
-            if self.active_test_name != "Calibration" or self.cal_phase!="START":
+            if self.active_test_name != "Calibration" or self.cal_phase not in ("WALL", "OPEN"):
                 return
         if category == "data" and line.startswith("PIVOT_CSV,") and (not (self.active_test_name or "").startswith("Pivot ") or not self.test_stream_running):
             return
@@ -829,8 +835,9 @@ class Dashboard:
             self._clear_log(self.data_text)
             self.active_data_stream=None
             self._update_test_controls()
-        elif line.startswith("CAL,START,mode=1,segments=4"):
-            self.cal_phase="START"
+        elif line.startswith("CAL,START,mode=1,stages=2"):
+            self.cal_phase="WALL"
+            self.cal_stage="WALL"
             self.cal_protocol_error=False
             self.active_test_name="Calibration"
             self.cal_visible=True
@@ -845,29 +852,37 @@ class Dashboard:
             self.data_filter_combo.configure(state="disabled")
             self._clear_log(self.data_text)
             self.active_data_stream=None
-            self.left_log_frame.configure(text="Mode 1 — CAL_IR / t_ms + 6 IR channels")
-            self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
+            self.left_log_frame.configure(text="Mode 1 — wall/open CAL_IR / t_ms, stage + 6 IR channels")
+            self.cal_note.set("WALL CAPTURE — đặt xe đứng yên, tường trước + trái + phải, không có tường phía sau.")
             self.test_stream_running=True
-            self.reader.motion_lease.set()
+            self.reader.motion_lease.clear()
             self._update_test_controls()
         elif line.startswith("CAL,START,"):
-            # A different firmware variant has no permission to masquerade
-            # as the v3 360-degree motion controller.
             self.cal_protocol_error=True
             self.cal_phase="MISMATCH"
-            self.cal_note.set("PROTOCOL MISMATCH — Calibration khác v3 360°")
-            self.status.set("CAL START protocol mismatch: expected mode=1,segments=4.")
+            self.cal_note.set("PROTOCOL MISMATCH — cần firmware stationary wall/open calibration")
+            self.status.set("CAL START protocol mismatch: expected mode=1,stages=2.")
             self.reader.motion_lease.clear()
-        elif line.startswith("CAL,WAIT,stage="):
+        elif line.startswith("CAL,STAGE,WALL,"):
+            self.cal_phase=self.cal_stage="WALL"
+            self.cal_note.set("WALL CAPTURE — giữ xe đứng yên trong bố trí 3 mặt tường (trước/trái/phải), phía sau mở.")
+        elif line.startswith("CAL,STAGE,OPEN,"):
+            self.cal_phase=self.cal_stage="OPEN"
+            self.cal_note.set("OPEN CAPTURE — đặt xe ở vùng trống, không có tường xung quanh; giữ xe đứng yên.")
+        elif line.startswith("CAL,STAGE_DONE,stage=WALL"):
+            self.cal_note.set("Đã thu đủ mẫu WALL. Di chuyển xe sang vùng trống, sau đó bấm Confirm open-space capture hoặc KEY.")
+        elif line.startswith("CAL,WAIT,stage=OPEN"):
+            self.cal_phase="WAIT_OPEN"
+            self.cal_stage="WAIT_OPEN"
+            self.cal_note.set("WALL DONE — di chuyển xe đến vùng không có tường. Đặt xe đứng yên rồi bấm O / nút xác nhận.")
+            self._update_test_controls()
+        elif line.startswith("CAL,STAGE_DONE,stage=OPEN"):
+            self.cal_note.set("Đã thu đủ mẫu OPEN. STM32 đang tính ngưỡng WALL_ON / WALL_OFF cho 6 mắt.")
+        elif line.startswith("CAL,STAGE,"):
             self.cal_protocol_error=True
             self.cal_phase="MISMATCH"
+            self.cal_note.set("UNKNOWN CALIBRATION STAGE — kiểm tra firmware.")
             self.reader.motion_lease.clear()
-            self.cal_note.set("INCOMPATIBLE FIRMWARE — CAL,WAIT is static calibration")
-            self.status.set("Firmware is running legacy three-placement Calibration, not v3 360.")
-        elif line.startswith("CAL,PIVOT_START,"):
-            self.cal_note.set("Đang quay: pivot "+line.split("segment=")[-1].split(",")[0]+"/4")
-        elif line.startswith("CAL,PIVOT_DONE,"):
-            self.cal_note.set("Pivot "+line.split("segment=")[-1].split(",")[0]+"/4 xong, chờ gyro")
         elif line.startswith("CAL,THRESH,"):
             try:
                 f=dict(item.split("=",1) for item in line.split(",")[2:] if "=" in item)
@@ -912,7 +927,7 @@ class Dashboard:
             rec=sensor_test_csv(line,host_time=host_time)
             if rec:
                 self.cal_rows.append(tuple(map(int,rec[2])))
-                self.cal_live=tuple(map(int,rec[2][1:]))
+                self.cal_live=tuple(map(int,rec[2][2:]))
                 self.cal_live_valid=True
         if line.startswith("Selected mode ") and not line.startswith("Selected mode 1:"):
             self.left_log_frame.configure(text="Continuous data — sensor samples")
@@ -1188,6 +1203,8 @@ class Dashboard:
         self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
         self.cal_again_btn.configure(
             state="normal" if show and self.cal_phase == "END" else "disabled")
+        self.cal_open_btn.configure(
+            state="normal" if show and self.cal_phase == "WAIT_OPEN" else "disabled")
 
     def request_calibration_again(self):
         if (self.cal_phase != "END" or not self.menu_ready or
@@ -1213,7 +1230,10 @@ class Dashboard:
         bottom=max(top+80,h-48)
         span=bottom-top
         step=(w-38)/6
-        status=("END · LIVE ADC" if self.cal_phase=="END" else "START · CALIBRATING" if self.cal_phase=="START" else "WAITING")
+        status=("END · LIVE ADC" if self.cal_phase=="END" else
+                "WALL · CAPTURING" if self.cal_phase=="WALL" else
+                "OPEN · CAPTURING" if self.cal_phase=="OPEN" else
+                "WAIT · MOVE TO OPEN SPACE" if self.cal_phase=="WAIT_OPEN" else "WAITING")
         c.create_text(12,8,anchor="nw",text="6 IR CHANNELS · LIVE ADC (0–4095)",
                       fill="#d9e9f6",font=("Segoe UI",10,"bold"))
         c.create_text(w-12,9,anchor="ne",text=status,
@@ -1231,10 +1251,8 @@ class Dashboard:
             x=34+i*step
             value=int(current[i])
             threshold=self.cal_thresholds.get(i)
-            if threshold is None:
-                # UI-only estimate while the 360-degree session is collecting.
-                # Final firmware CAL,THRESH always overrides this estimate.
-                threshold = provisional_wall_threshold(row[i+1] for row in self.cal_rows)
+            # Thresholds are calculated by firmware only after both labelled
+            # placements have completed. Never infer a threshold from one stage.
             if threshold and not invalid:
                 off,on=threshold
                 if value>=on:self.cal_wall_state[i]=True
