@@ -1,3 +1,18 @@
+# Deprecated: former Mode 1 four-pivot calibration
+
+This procedure has been superseded on `giomuadongbacv3` by the stationary
+wall/open two-condition calibration. The firmware no longer commands four
+90-degree pivots during Mode 1.
+
+Use [IR_CALIBRATION_WALL_OPEN_V1.md](IR_CALIBRATION_WALL_OPEN_V1.md) for the
+current physical setup, SPP sequence, threshold calculation, Flash semantics,
+and test procedure.
+
+The historical implementation notes below are retained only for provenance;
+they do not describe the current firmware.
+
+---
+
 # Mode 1 — IR 360-degree calibration (v3 opt-in)
 Mode 1 select by physical KEY long-press or SPP 'K' after focus (SPP 'N').
 Selecting Mode 1 immediately arms a 360-degree session; no three-placement
