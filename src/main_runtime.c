@@ -631,7 +631,7 @@ int Main_Runtime(void)
                                                 &test_resource_mask);
                         remote=MODE_MENU_EVENT_NONE;
                     }
-                    if(mode_menu.selected==0U)IRStatic_Start();
+                    if(mode_menu.selected==0U){IRC_Init(&ir_calibration);IRStatic_Start();}
                     else BT_SendString("CAL_STATIC,REJECT,reason=MENU_NOT_IDLE\r\n");
                 } else BT_SendString("CAL_STATIC,REJECT,reason=NOT_MODE_1_OR_MOTOR_UNSAFE\r\n");
             } else if (command == 'N') {
