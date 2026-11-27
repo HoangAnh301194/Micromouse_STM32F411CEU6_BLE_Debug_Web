@@ -752,6 +752,12 @@ int Main_Runtime(void)
                 mode_menu.focus = mode_menu.selected;
                 (void)IRC_ConfirmOpen(&ir_calibration, now);
                 event = MODE_MENU_EVENT_NONE;
+            } else if (IRC_IsMotionActive(&ir_calibration) &&
+                       event != MODE_MENU_EVENT_NONE) {
+                /* During either capture phase, physical KEY aborts the
+                 * acquisition instead of silently navigating away. */
+                IRC_Abort(&ir_calibration,"KEY_ABORT");
+                event = MODE_MENU_EVENT_NONE;
             }
             /* Short KEY after a completed/failed Mode 1 run starts a fresh
              * two-stage capture. During capture/wait, KEY never restarts. */
