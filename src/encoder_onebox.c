@@ -25,6 +25,8 @@ static uint32_t started_at_ms;
 static EncoderOneBoxResult result;
 static MPU6050_Handle_t *pivot_mpu;
 static int16_t pivot_target;
+static int32_t pivot_ref_pps;
+#define CAL_PIVOT_SPEED_PPS 800
 static float pivot_origin;
 static uint16_t stall_l, stall_r;
 /* Relative 90-degree turns must remain valid at +/-180 yaw wrap. */
@@ -114,6 +116,7 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
         return 0U;
     }
     pivot_mpu = mpu; pivot_target = target;
+    pivot_ref_pps = ONEBOX_SPEED_PPS;
     pivot_origin = target ? snap.yaw_deg : 0.0f;
     stall_l = stall_r = 0U;
     Motor_Stop();
@@ -129,6 +132,12 @@ uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0); }
 uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target) {
     if (target!=90 && target!=-90 && target!=180 && target!=-180) return 0U;
     return StartMotion(mpu,target);
+}
+uint8_t EncoderOneBox_StartCalibrationPivot(MPU6050_Handle_t *mpu, int16_t target) {
+    if (target!=90 && target!=-90) return 0U;
+    if (!StartMotion(mpu,target)) return 0U;
+    pivot_ref_pps=CAL_PIVOT_SPEED_PPS;
+    return 1U;
 }
 void EncoderOneBox_HostPing(void)
 {
@@ -192,8 +201,8 @@ void EncoderOneBox_ControlTick(void)
         float angle=RelativeYaw(snap.yaw_deg,pivot_origin)*sign;
         if (angle < -5.0f) { Finish(ONEBOX_REASON_IMU); return; }
         if (angle >= pivot_target*sign) { Finish(ONEBOX_REASON_DONE); return; }
-        int16_t pl=OneBoxSpeedPid_Step(&pid_l,&gains_l,ONEBOX_SPEED_PPS,sl*Encoder_GetLeftSpeedPPS());
-        int16_t pr=OneBoxSpeedPid_Step(&pid_r,&gains_r,ONEBOX_SPEED_PPS,sr*Encoder_GetRightSpeedPPS());
+        int16_t pl=OneBoxSpeedPid_Step(&pid_l,&gains_l,pivot_ref_pps,sl*Encoder_GetLeftSpeedPPS());
+        int16_t pr=OneBoxSpeedPid_Step(&pid_r,&gains_r,pivot_ref_pps,sr*Encoder_GetRightSpeedPPS());
         Motor_SetPairPermille(sl*pl,sr*pr);
         return;
     }
@@ -237,7 +246,7 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     if (pivot_target) {
         MPU6050_Snapshot_t snap;
         int sl=pivot_target>0?-1:1;
-        out->ref_l=phase==1U?sl*ONEBOX_SPEED_PPS:0;
+        out->ref_l=phase==1U?sl*pivot_ref_pps:0;
         out->ref_r=-out->ref_l;
         if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {
             out->age_us=micros()-snap.completed_us;
