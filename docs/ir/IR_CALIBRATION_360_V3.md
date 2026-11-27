@@ -51,14 +51,26 @@ the gyro must settle, and a newly added check rejects segment errors >8deg
 or a 360deg round-trip error >8deg. 100ms driver brake plus at least 120ms
 dwell means a few-ms break is **not safe or guaranteed**.
 
-SPP dashboard Mode 1 shows all six ADC values as blue bars when the
-candidate ON threshold is crossed, grey otherwise, with yellow ON markers.
+SPP dashboard Mode 1 shows six ADC bars: blue means the current value
+crosses that channel's ON threshold; grey means it does not. During capture,
+before firmware CAL,THRESH is available, the UI derives a provisional
+p10/p90-based hysteresis threshold from the current session samples. This
+estimate is display-only; the final firmware CAL,THRESH replaces it.
+The left upper terminal is locked to CAL_IR and shows
+t_ms,L0,L45,L90,R0,R45,R90. The right terminal shows only menu focus and
+selection steps (Mode / Selected mode / selected test submenu); it does not
+duplicate CAL, pivot, boot, or test runtime logs.
 After the motor stops, CAL_LIVE,valid=...,L0=...,... is sent every 100ms
 for *display only*. CAL_LIVE is not appended to the completed per-run CSV.
 Invalid scans show an explicit warning rather than meaning NO WALL.
 A short physical KEY press after a completed or failed Mode 1 run arms a
 new 360-degree calibration, clears the previous in-flight capture, and
 creates a fresh host CSV. During motion, KEY still aborts for safety.
+After END, the SPP dashboard's Calibrate Again button sends the dedicated
+single-byte command R. Firmware accepts R only when Mode 1 remains selected,
+the previous run is in REVIEW/SAVED/FAULT, and no pivot/motor motion is active;
+otherwise it replies CAL,RESTART_REJECTED. A successful request replies
+CAL,RESTART_ACCEPTED and begins a new CAL,START session.
 The Tkinter dashboard rejects CAL,WAIT,stage=... (legacy static method)
 and CAL_IR,valid=... as an incompatible v3 protocol, rather than
 mistaking these packets for 360-degree acquisition.
