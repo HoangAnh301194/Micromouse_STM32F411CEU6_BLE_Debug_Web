@@ -39,9 +39,12 @@ dashboard=(ROOT/"tools/classic_spp_dashboard.py").read_text(encoding="utf-8")
 assert "CAL_PIVOT_SPEED_PPS 800" in driver
 assert "StartMotion(mpu,target,CAL_PIVOT_SPEED_PPS)" in driver
 assert "EncoderOneBox_StartCalibrationPivot(mpu,90)" in cal
-assert "if(c->valid && !IRC_Save(c))" in cal
+assert "if(!c->valid)" in cal
+assert "IRC_Save(c)" in cal
 assert "event == MODE_MENU_EVENT_FOCUS" in runtime
 assert "IRC_Arm(&ir_calibration,now,1U)" in runtime
+assert "command == 'R'" in runtime
+assert "CAL,RESTART_ACCEPTED" in runtime
 assert "CAL_LIVE,valid=%u" in runtime
 assert "CAL,END,result=FAILED,reason=%s" in cal
 assert "CAL,END,result=SUCCESS,quality=CANDIDATE_ONLY,flash=SAVED" in cal
@@ -53,4 +56,7 @@ assert 'self.cal_phase="END"' in dashboard
 assert "if line.startswith(\"CAL_LIVE,\"):" in dashboard
 assert "self.cal_wall_state=[False]*6" in dashboard
 assert "self.cal_live_valid" in dashboard
+assert "self.cal_again_btn" in dashboard
+assert "is_menu_navigation_line(line)" in dashboard
+assert "provisional_wall_threshold" in dashboard
 print("ir_calibration_live_test PASS")
