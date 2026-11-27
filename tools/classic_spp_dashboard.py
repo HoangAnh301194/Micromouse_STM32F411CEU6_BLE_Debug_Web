@@ -817,6 +817,9 @@ class Dashboard:
             self.cal_thresholds.clear()
             self.cal_wall_state=[False]*6
             self.cal_monitoring=False
+            self.data_filter.set("CAL_IR")
+            self._clear_log(self.data_text)
+            self.active_data_stream=None
             self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
             self.test_stream_running=True
             self.reader.motion_lease.set()
