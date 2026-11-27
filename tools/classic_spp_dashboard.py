@@ -247,6 +247,8 @@ class Dashboard:
         self.cal_live=(0,)*6
         self.cal_live_valid=False
         self.cal_monitoring=False
+        self.cal_phase="IDLE"
+        self.cal_protocol_error=False
         self.cal_wall_state=[False]*6
         self.cal_thresholds={}
         self.cal_review=False
@@ -752,8 +754,17 @@ class Dashboard:
         category = classify_spp_line(line)
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
-        if category == "data" and line.startswith("CAL_IR,") and self.active_test_name != "Calibration":
-            return
+        if category == "data" and line.startswith("CAL_IR,"):
+            # Reject old three-placement CAL_IR,valid=... packets rather than
+            # silently displaying them as a 360-degree capture.
+            if sensor_test_csv(line,host_time=host_time) is None:
+                self.cal_protocol_error=True
+                self.cal_note.set("PROTOCOL ERROR: expected CAL_IR,ms=...,L0=...,...")
+                self.status.set("CAL_IR protocol mismatch: check STM32 firmware build (v3 360).")
+                self.reader.motion_lease.clear()
+                return
+            if self.active_test_name != "Calibration" or self.cal_phase!="START":
+                return
         if category == "data" and line.startswith("PIVOT_CSV,") and (not (self.active_test_name or "").startswith("Pivot ") or not self.test_stream_running):
             return
         if category == "data" and line.startswith("MPU,") and (
@@ -788,13 +799,17 @@ class Dashboard:
             self.cal_wall_state=[False]*6
             self.cal_monitoring=False
             self.cal_live_valid=False
-            self.cal_note.set("ARMED — nhả KEY để quay 360° chậm")
+            self.cal_phase="SELECTED"
+            self.cal_protocol_error=False
+            self.cal_note.set("MODE 1 SELECTED — chờ CAL,START từ STM32")
             self.test_stream_running=False
             self.data_filter.set("CAL_IR")
             self._clear_log(self.data_text)
             self.active_data_stream=None
             self._update_test_controls()
-        elif line.startswith("CAL,START,"):
+        elif line.startswith("CAL,START,mode=1,segments=4"):
+            self.cal_phase="START"
+            self.cal_protocol_error=False
             self.active_test_name="Calibration"
             self.cal_visible=True
             self.cal_review=False
@@ -802,10 +817,24 @@ class Dashboard:
             self.cal_thresholds.clear()
             self.cal_wall_state=[False]*6
             self.cal_monitoring=False
-            self.cal_note.set("Đang ghi IR · 4 × 90° chậm")
+            self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
             self.test_stream_running=True
             self.reader.motion_lease.set()
             self._update_test_controls()
+        elif line.startswith("CAL,START,"):
+            # A different firmware variant has no permission to masquerade
+            # as the v3 360-degree motion controller.
+            self.cal_protocol_error=True
+            self.cal_phase="MISMATCH"
+            self.cal_note.set("PROTOCOL MISMATCH — Calibration khác v3 360°")
+            self.status.set("CAL START protocol mismatch: expected mode=1,segments=4.")
+            self.reader.motion_lease.clear()
+        elif line.startswith("CAL,WAIT,stage="):
+            self.cal_protocol_error=True
+            self.cal_phase="MISMATCH"
+            self.reader.motion_lease.clear()
+            self.cal_note.set("INCOMPATIBLE FIRMWARE — CAL,WAIT is static calibration")
+            self.status.set("Firmware is running legacy three-placement Calibration, not v3 360.")
         elif line.startswith("CAL,PIVOT_START,"):
             self.cal_note.set("Đang quay: pivot "+line.split("segment=")[-1].split(",")[0]+"/4")
         elif line.startswith("CAL,PIVOT_DONE,"):
@@ -829,6 +858,14 @@ class Dashboard:
             self.cal_review="quality=CANDIDATE_ONLY" in line
             self.cal_note.set(line)
             self._update_test_controls()
+        elif line.startswith("CAL,END,"):
+            self.reader.motion_lease.clear()
+            self.test_stream_running=False
+            self.cal_phase="END"
+            self.cal_monitoring=True
+            self.cal_review=False
+            self.cal_note.set("END — "+line.partition("CAL,END,")[2]+" · IR LIVE")
+            self._update_test_controls()
         elif line.startswith(("CAL,FAULT,","CAL,SAVED,","CAL,SAVE_REJECT,")):
             self.reader.motion_lease.clear()
             self.test_stream_running=False
@@ -846,6 +883,7 @@ class Dashboard:
             self.cal_visible=False
             self.cal_review=False
             self.cal_monitoring=False
+            self.cal_phase="IDLE"
             if self.active_test_name=="Calibration":
                 self.active_test_name=None
                 self._update_test_controls()
@@ -1125,7 +1163,7 @@ class Dashboard:
         bottom=max(top+80,h-48)
         span=bottom-top
         step=(w-38)/6
-        status=("LIVE · MOTOR STOPPED" if self.cal_monitoring else "CAPTURING 360°" if self.cal_rows else "WAITING")
+        status=("END · LIVE ADC" if self.cal_phase=="END" else "START · CALIBRATING" if self.cal_phase=="START" else "WAITING")
         c.create_text(12,8,anchor="nw",text="6 IR CHANNELS · LIVE ADC (0–4095)",
                       fill="#d9e9f6",font=("Segoe UI",10,"bold"))
         c.create_text(w-12,9,anchor="ne",text=status,
