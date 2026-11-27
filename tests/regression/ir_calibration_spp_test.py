@@ -10,6 +10,7 @@ from spp_dual_log import (
     sensor_test_csv,
     classify_spp_line,
     is_menu_navigation_line,
+    provisional_wall_threshold,
 )
 from classic_spp_dashboard import SPPReader
 
