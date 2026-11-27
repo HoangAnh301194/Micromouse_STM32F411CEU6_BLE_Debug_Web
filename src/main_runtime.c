@@ -632,8 +632,8 @@ int Main_Runtime(void)
                         remote=MODE_MENU_EVENT_NONE;
                     }
                     if(mode_menu.selected==0U)IRStatic_Start();
-                    else BT_SendString("CAL_STATIC,REJECT,reason=MENU_NOT_IDLE\\r\\n");
-                } else BT_SendString("CAL_STATIC,REJECT,reason=NOT_MODE_1_OR_MOTOR_UNSAFE\\r\\n");
+                    else BT_SendString("CAL_STATIC,REJECT,reason=MENU_NOT_IDLE\r\n");
+                } else BT_SendString("CAL_STATIC,REJECT,reason=NOT_MODE_1_OR_MOTOR_UNSAFE\r\n");
             } else if (command == 'N') {
                 if(IRStatic_Active())IRStatic_Capture(now);
                 else if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
@@ -703,7 +703,7 @@ int Main_Runtime(void)
                 }
             } else if (command == 'V') {
                 if(IRStatic_Active()) {
-                    if(!IRStatic_Save())BT_SendString("CAL_STATIC,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\\r\\n");
+                    if(!IRStatic_Save())BT_SendString("CAL_STATIC,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
                 } else if (!IRC_Save(&ir_calibration))
                     BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
