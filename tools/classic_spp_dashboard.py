@@ -1216,7 +1216,7 @@ class Dashboard:
                       fill="#4ee2ad" if self.cal_monitoring else "#f2c66d",
                       font=("Segoe UI",9,"bold"))
         c.create_text(12,26,anchor="nw",
-                      text="BLUE = WALL  |  GREY = NO WALL  |  YELLOW = ON threshold",
+                      text="BLUE = WALL  |  GREY = NO WALL  |  YELLOW = ON threshold (estimated until END)",
                       fill="#9babc1",font=("Segoe UI",8))
         for value in (0,1024,2048,3072,4095):
             y=bottom-(value/4095)*span
@@ -1227,7 +1227,6 @@ class Dashboard:
             x=34+i*step
             value=int(current[i])
             threshold=self.cal_thresholds.get(i)
-            threshold_kind="CALIBRATED"
             if threshold is None and len(self.cal_rows)>=20:
                 # UI-only provisional threshold while the 360-degree session
                 # is collecting. Final firmware CAL,THRESH always overrides it.
@@ -1238,7 +1237,6 @@ class Dashboard:
                 if sample_span>=40:
                     threshold=(p10+sample_span*30//100,
                                p10+sample_span*70//100)
-                    threshold_kind="PROVISIONAL"
             if threshold and not invalid:
                 off,on=threshold
                 if value>=on:self.cal_wall_state[i]=True
