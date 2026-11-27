@@ -111,7 +111,7 @@ class SPPReader:
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
-        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I", b"V") or not self.thread or not self.thread.is_alive():
+        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I", b"V", b"C") or not self.thread or not self.thread.is_alive():
             return False
         return self._enqueue(command)
 
@@ -247,6 +247,8 @@ class Dashboard:
         self.cal_thresholds={}
         self.cal_review=False
         self.cal_visible=False
+        self.static_cal=False
+        self.static_review=False
         self.cal_note=tk.StringVar(value="Mode 1: chọn để bắt đầu")
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
@@ -367,6 +369,17 @@ class Dashboard:
         self.select_btn = ttk.Button(controls, text="Chọn (KEY giữ)",
                                      command=lambda: self.send_menu(b"K"), state="disabled")
         self.select_btn.pack(side="left")
+        self.static_btn=ttk.Button(controls,text="Calib 3 vị trí (C)",
+                                   command=lambda:self.send_menu(b"C"),state="disabled")
+        self.static_btn.pack(side="left",padx=(6,0))
+        static_bar=ttk.Frame(right)
+        static_bar.pack(fill="x",pady=(0,6))
+        self.static_capture_btn=ttk.Button(static_bar,text="Đo vị trí (G)",
+                                           command=lambda:self.send_menu(b"G"),state="disabled")
+        self.static_capture_btn.pack(side="left",padx=(0,6))
+        self.static_save_btn=ttk.Button(static_bar,text="Review → Save Flash (V)",
+                                        command=lambda:self.send_menu(b"V"),state="disabled")
+        self.static_save_btn.pack(side="left")
         stream_bar = ttk.Frame(right)
         stream_bar.pack(fill="x", pady=(0, 6))
         self.start_test_btn = ttk.Button(stream_bar, text="Start test",
@@ -535,7 +548,13 @@ class Dashboard:
         self.pid_apply_btn.configure(state="normal" if pid_editable else "disabled")
         for entry in self.pid_entries:
             entry.configure(state="normal" if pid_editable else "disabled")
-        can_control = self.menu_ready and self.active_test_name not in (None, "PID", "Calibration")
+        self.static_btn.configure(state="normal" if self.menu_ready and not self.static_cal
+                                  and not self.cal_visible else "disabled")
+        self.static_capture_btn.configure(state="normal" if self.menu_ready and self.static_cal
+                                          and not self.static_review else "disabled")
+        self.static_save_btn.configure(state="normal" if self.menu_ready and self.static_cal
+                                       and self.static_review else "disabled")
+        can_control = self.menu_ready and self.active_test_name not in (None, "PID", "Calibration", "Calibration Static")
         if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
             # This is an encoder + motor test, not an MPU test.
             can_control = can_control and self.onebox_capable
@@ -572,12 +591,13 @@ class Dashboard:
             self.onebox_capable = False
             self.mpu_boot_ok = True
             self.cal_review = self.cal_visible = False
+            self.static_cal = self.static_review = False
             self.cal_rows.clear()
             self.cal_thresholds.clear()
         self._update_test_controls()
 
     def send_menu(self, command: bytes):
-        if command in (b"N", b"K"):
+        if command in (b"N", b"K", b"C"):
             self.reader.motion_lease.clear()
         if not self.menu_ready or not self.reader.send_menu(command):
             self.status.set("SPP menu unavailable: wait for SPP CONNECTED")
@@ -585,7 +605,7 @@ class Dashboard:
     def send_test_control(self, command: bytes):
         # MCU acknowledgement is authoritative. For one-box, an in-flight
         # Start disables repeat Start clicks and still permits Stop.
-        if not self.menu_ready or self.active_test_name in (None, "PID", "Calibration"):
+        if not self.menu_ready or self.active_test_name in (None, "PID", "Calibration", "Calibration Static"):
             self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
             return
         if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")) and not self.onebox_capable:
@@ -761,6 +781,32 @@ class Dashboard:
                 self._logging_disabled = True
                 self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
         # Encoder parent is navigation only; never turn on logging here.
+        if line.startswith("CAL_STATIC,"):
+            fields=line.split(",")
+            kind=fields[1] if len(fields)>1 else ""
+            if kind=="ENTER":
+                self.static_cal=True
+                self.static_review=False
+                self.cal_visible=False
+                self.active_test_name="Calibration Static"
+                self.cal_note.set("Static calibration · 3 vị trí, motor khóa")
+            elif kind=="WAIT":
+                self.static_cal=True
+                self.cal_note.set(line)
+            elif kind=="START":
+                self.cal_note.set("Đang đo vị trí "+line.split("stage=")[-1].split(",")[0])
+            elif kind=="REVIEW":
+                self.static_review="quality=VALIDATED_PLACEMENTS" in line
+                self.cal_note.set(line)
+            elif kind=="REJECT":
+                self.static_review=False
+                self.cal_note.set(line)
+            elif kind in ("SAVED","EXIT"):
+                self.static_cal=self.static_review=False
+                self.cal_visible=False
+                self.active_test_name=None
+                self.cal_note.set(line)
+            self._update_test_controls()
         if line == "Selected mode 1: Calibration":
             self.active_test_name="Calibration"
             self.cal_visible=True
