@@ -796,7 +796,7 @@ class Dashboard:
             elif kind=="START":
                 self.cal_note.set("Đang đo vị trí "+line.split("stage=")[-1].split(",")[0])
             elif kind=="REVIEW":
-                self.static_review="quality=VALIDATED_PLACEMENTS" in line
+                self.static_review="quality=STATIC_CANDIDATE" in line
                 self.cal_note.set(line)
             elif kind=="REJECT":
                 self.static_review=False
