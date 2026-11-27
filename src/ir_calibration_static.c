@@ -40,7 +40,7 @@ void IRStatic_Init(void){active=stage=busy=review=0U;count=0U;}
 uint8_t IRStatic_Active(void){return active;}
 void IRStatic_Status(void){
     if(!active)return;
-    if(review)BT_SendString("CAL_STATIC,REVIEW,quality=VALIDATED_PLACEMENTS,save=V\r\n");
+    if(review)BT_SendString("CAL_STATIC,REVIEW,quality=STATIC_CANDIDATE,save=V\r\n");
     else BT_Printf("CAL_STATIC,WAIT,stage=%u,placement=%s,action=G_OR_KEY_SHORT\r\n",
         (unsigned)(stage+1U),places[stage]);
 }
