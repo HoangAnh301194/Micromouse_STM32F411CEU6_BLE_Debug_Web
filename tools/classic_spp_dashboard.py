@@ -271,7 +271,7 @@ class Dashboard:
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
         ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select. "
-                  "Guarded motion; calibration requires user review before Flash save.",
+                  "Guarded motion; valid IR candidates are saved after 360° but not auto-applied.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
         bar.pack(fill="x", pady=(0, 8))
