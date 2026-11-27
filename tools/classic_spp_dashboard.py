@@ -838,6 +838,8 @@ class Dashboard:
             self.cal_thresholds.clear()
             self.cal_wall_state=[False]*6
             self.cal_monitoring=False
+            self.cal_live=(0,)*6
+            self.cal_live_valid=False
             self.data_filter.set("CAL_IR")
             self.data_filter_combo.configure(state="disabled")
             self._clear_log(self.data_text)
