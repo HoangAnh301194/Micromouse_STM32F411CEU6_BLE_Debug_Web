@@ -59,7 +59,7 @@ void IRC_Arm(IRC_Context *c,uint32_t now,uint8_t physical_start) {
     c->state=IRC_ARMED; c->started_ms=now;
     c->physical_start=physical_start?1U:0U;
     for(i=0;i<6;i++)c->low[i]=4095U;
-    BT_SendString("CAL,START,mode=1,segments=4,dwell_min_ms=120,save=MANUAL\r\n");
+    BT_SendString("CAL,START,mode=1,segments=4,dwell_min_ms=120,save=AUTO_IF_VALID\r\n");
 }
 void IRC_Abort(IRC_Context *c,const char *why) {
     if(!c || !IRC_IsMotionActive(c))return;
@@ -68,6 +68,7 @@ void IRC_Abort(IRC_Context *c,const char *why) {
     strncpy(c->fault,why?why:"ABORT",sizeof(c->fault)-1U);
     c->fault[sizeof(c->fault)-1U]=0;
     BT_Printf("CAL,FAULT,reason=%s\r\n",c->fault);
+    BT_Printf("CAL,END,result=FAILED,reason=%s\r\n",c->fault);
 }
 static uint8_t IRC_GyroReady(MPU6050_Handle_t *mpu) {
     MPU6050_Snapshot_t s;
@@ -153,7 +154,7 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
             c->wall_on[i]=(uint16_t)(p10+(uint32_t)span*70U/100U);
         }
         c->state=IRC_REVIEW;
-        BT_Printf("CAL,REVIEW,samples=%lu,quality=%s,save=V\r\n",
+        BT_Printf("CAL,REVIEW,samples=%lu,quality=%s,save=AUTO_IF_VALID\r\n",
               (unsigned long)c->samples,c->valid?"CANDIDATE_ONLY":"INSUFFICIENT");
         for(i=0;i<6U;i++)
             BT_Printf("CAL,THRESH,index=%u,lo=%u,hi=%u,off=%u,on=%u\r\n",
@@ -162,8 +163,14 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
         /* Preserve the existing quality gate. Save the completed candidate
          * automatically only if valid and motor locked. Never auto-apply
          * an unlabelled P10/P90 threshold to wall following. */
-        if(c->valid && !IRC_Save(c))
+        if(!c->valid) {
+            BT_SendString("CAL,END,result=INSUFFICIENT,quality=INSUFFICIENT,flash=SKIPPED\r\n");
+        }else if(IRC_Save(c)){
+            BT_SendString("CAL,END,result=SUCCESS,quality=CANDIDATE_ONLY,flash=SAVED\r\n");
+        }else{
             BT_SendString("CAL,AUTO_SAVE_FAILED,review=AVAILABLE\r\n");
+            BT_SendString("CAL,END,result=SAVE_FAILED,quality=CANDIDATE_ONLY,flash=FAILED\r\n");
+        }
         return;
     }
     if(c->state==IRC_ARMED || c->state==IRC_DWELL) {
