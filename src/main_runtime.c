@@ -595,7 +595,7 @@ int Main_Runtime(void)
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* Safe SPP commands: ?, N/K, P/G, E/Y/I for sensor diagnostics.
+            /* Safe SPP commands: ?, N/K, P/G, E/Y/I, V save, R calibration retry.
              * Motors remain locked regardless of Bluetooth traffic. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
