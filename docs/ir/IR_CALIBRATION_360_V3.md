@@ -19,9 +19,9 @@ thresholds from per-channel 10th and 90th percentile approximations using
 32 histogram bins (128 ADC per bin). These samples are *not labelled WALL/OPEN*
 by geometric ray-casting, so
 candidate thresholds have not been physically validated. CAL,REVIEW reports
-quality=CANDIDATE_ONLY and auto-apply is always disabled. The user must review
-plots; if all six spans pass the quality gate, firmware automatically
-persists the candidate to the legacy
+quality=CANDIDATE_ONLY and auto-apply is always disabled. The user should
+review the saved plots; if all six spans pass the quality gate, firmware
+persists the candidate automatically to the legacy
 IR_Simple_Calib_t sector (never while motor/control are running). This is
 NOT a validated mm-distance LUT, nor an automatic Wall PID calibration.
 No Flash write takes place during turning. A failed run never saves.
