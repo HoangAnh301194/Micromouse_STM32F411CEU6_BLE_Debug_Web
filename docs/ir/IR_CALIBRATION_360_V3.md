@@ -1,5 +1,9 @@
 # Mode 1 — IR 360-degree calibration (v3 opt-in)
-Mode 1 select by a physical KEY long-press or SPP 'K' after focus (SPP 'N').
+Mode 1 select by physical KEY long-press or SPP 'K' after focus (SPP 'N').
+Selecting Mode 1 immediately arms a 360-degree session; no three-placement
+operator input is required. The app displays START only upon firmware
+CAL,START,mode=1,segments=4 and END only upon firmware CAL,END.
+Motors begin movement at PIVOT_START, after all guards pass.
 Selection arms the run; motors unlock ONLY once KEY released, fresh MPU gyro
 stable, IR fresh, and the existing one-box motor guards accept a pivot.
 
@@ -9,8 +13,14 @@ the gyro is within +/-2 deg/s for 50ms. No fixed millisecond sleep in TIM11.
 Physical KEY during motion, SPP 'P', bad encoder/IMU, and watchdog faults abort.
 
 Firmware produces CAL,START; CAL,PIVOT_START; CAL_IR,ms=...,L0=...,...;
-CAL,PIVOT_DONE; CAL,REVIEW; CAL,THRESH; CAL,SAVED or CAL,FAULT.
-CAL_IR carries exactly t_ms,L0,L45,L90,R0,R45,R90 in its dedicated host CSV.
+CAL,PIVOT_DONE; CAL,REVIEW; CAL,THRESH; CAL,SAVED; CAL,END.
+Faults emit CAL,FAULT,reason=... followed by CAL,END,result=FAILED.
+Successful completed-and-saved session emits CAL,END,result=SUCCESS.
+Rejected low-signal sessions emit CAL,END,result=INSUFFICIENT;
+Flash failures emit CAL,END,result=SAVE_FAILED.
+MCU packet format is exactly:
+CAL_IR,ms=123,L0=120,L45=230,L90=340,R0=450,R45=560,R90=670
+The dedicated host CSV has t_ms,L0,L45,L90,R0,R45,R90 columns.
 At 20Hz log rate this is NOT a full-rate raw IR scan. MPU/encoder diagnostics
 remain in the existing PIVOT_CSV stream, NOT inside the CAL_IR CSV file.
 
@@ -49,6 +59,9 @@ Invalid scans show an explicit warning rather than meaning NO WALL.
 A short physical KEY press after a completed or failed Mode 1 run arms a
 new 360-degree calibration, clears the previous in-flight capture, and
 creates a fresh host CSV. During motion, KEY still aborts for safety.
+The Tkinter dashboard rejects CAL,WAIT,stage=... (legacy static method)
+and CAL_IR,valid=... as an incompatible v3 protocol, rather than
+mistaking these packets for 360-degree acquisition.
 The calibration pivot speed reference is 800 PPS; ordinary pivot remains
 1100 PPS. This is a wheel encoder speed reference, not a guaranteed angular
 velocity or direct PWM target.
