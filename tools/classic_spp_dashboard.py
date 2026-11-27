@@ -29,7 +29,7 @@ from classic_spp_handshake import SPPHandshake
 from classic_spp_ports import classify_port
 from spp_dual_log import (DualSessionLog, classify_spp_line,
                           data_to_csv_row, csv_row_text, CSV_COLUMNS,
-                          TEST_CSV_COLUMNS, sensor_test_csv)
+                          TEST_CSV_COLUMNS, sensor_test_csv, is_menu_navigation_line)
 
 
 BAUD = 115200
@@ -111,7 +111,7 @@ class SPPReader:
         self.stop.set()
 
     def send_menu(self, command: bytes) -> bool:
-        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I", b"V") or not self.thread or not self.thread.is_alive():
+        if command not in (b"N", b"K", b"P", b"G", b"E", b"Y", b"I", b"V", b"R") or not self.thread or not self.thread.is_alive():
             return False
         return self._enqueue(command)
 
@@ -314,8 +314,9 @@ class Dashboard:
     def _terminal_widgets(self):
         panes = ttk.PanedWindow(self.terminal_tab, orient="horizontal")
         panes.pack(fill="both", expand=True)
-        left = ttk.LabelFrame(panes, text="Continuous data - MPU / IR / Encoder", padding=5)
-        right = ttk.LabelFrame(panes, text="Micromouse status - modes / events", padding=5)
+        left = ttk.LabelFrame(panes, text="Continuous data — sensor samples", padding=5)
+        right = ttk.LabelFrame(panes, text="Mode selection", padding=5)
+        self.left_log_frame = left
         panes.add(left, weight=3)
         panes.add(right, weight=2)
 
@@ -820,7 +821,7 @@ class Dashboard:
             self.data_filter.set("CAL_IR")
             self._clear_log(self.data_text)
             self.active_data_stream=None
-            self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
+            self.left_log_frame.configure(text="Mode 1 — CAL_IR / t_ms + 6 IR channels")\n            self.data_filter.set("CAL_IR")\n            self.data_filter_combo.configure(state="disabled")\n            self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
             self.test_stream_running=True
             self.reader.motion_lease.set()
             self._update_test_controls()
@@ -1150,7 +1151,7 @@ class Dashboard:
         present=str(self.cal_pane) in self.data_split.panes()
         if show and not present:self.data_split.add(self.cal_pane,weight=1)
         elif present and not show:self.data_split.forget(self.cal_pane)
-        self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
+        self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")\n        self.cal_again_btn.configure(state="normal" if show and self.cal_phase=="END" else "disabled")
 
     def _draw_calibration_panel(self):
         c=self.cal_canvas
@@ -1184,13 +1185,25 @@ class Dashboard:
             x=34+i*step
             value=int(current[i])
             threshold=self.cal_thresholds.get(i)
+            threshold_kind="CALIBRATED"
+            if threshold is None and len(self.cal_rows)>=20:
+                # UI-only provisional threshold while the 360-degree session
+                # is collecting. Final firmware CAL,THRESH always overrides it.
+                ordered=sorted(row[i+1] for row in self.cal_rows)
+                p10=ordered[((len(ordered)-1)*10)//100]
+                p90=ordered[((len(ordered)-1)*90)//100]
+                sample_span=p90-p10
+                if sample_span>=40:
+                    threshold=(p10+sample_span*30//100,
+                               p10+sample_span*70//100)
+                    threshold_kind="PROVISIONAL"
             if threshold and not invalid:
                 off,on=threshold
                 if value>=on:self.cal_wall_state[i]=True
                 elif value<=off:self.cal_wall_state[i]=False
             if invalid:self.cal_wall_state[i]=False
             detected=bool(threshold and self.cal_wall_state[i] and not invalid)
-            color="#18c7f0" if detected else "#788696"
+            color="#2196F3" if detected else "#788696"
             if invalid:
                 color="#465364"
             bar_width=max(13,step-14)
