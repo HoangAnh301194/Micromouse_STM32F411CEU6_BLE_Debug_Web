@@ -244,6 +244,9 @@ class Dashboard:
         self.onebox_start_pending = False
         self.active_data_stream = None
         self.cal_rows=deque(maxlen=1000)
+        self.cal_live=(0,)*6
+        self.cal_live_valid=False
+        self.cal_monitoring=False
         self.cal_thresholds={}
         self.cal_review=False
         self.cal_visible=False
@@ -328,10 +331,10 @@ class Dashboard:
         self.data_text.configure(height=6)
         self.cal_pane=ttk.LabelFrame(self.data_split,text="Mode 1 — IR calibration (6 mắt)")
         ttk.Label(self.cal_pane,textvariable=self.cal_note).pack(anchor="w")
-        self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=144,highlightthickness=0)
+        self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=230,highlightthickness=0)
         self.cal_canvas.pack(fill="both",expand=True)
         self.cal_canvas.bind("<Configure>",lambda event:self._draw_calibration_panel())
-        self.cal_save_btn=ttk.Button(self.cal_pane,text="Accept & Save Flash (V)",state="disabled",command=lambda:self.send_menu(b"V"))
+        self.cal_save_btn=ttk.Button(self.cal_pane,text="Save Flash manually (V)",state="disabled",command=lambda:self.send_menu(b"V"))
         self.cal_save_btn.pack(anchor="e",pady=3)
         self.wheel_pane = ttk.Frame(self.data_split)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
@@ -723,6 +726,20 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def handle_line(self, line: str):
+        # Unlogged post-calibration dashboard frame. Ignore when another
+        # mode owns the screen; never append to a finished calibration CSV.
+        if line.startswith("CAL_LIVE,"):
+            if self.active_test_name == "Calibration" and self.cal_visible:
+                try:
+                    fields=dict(part.split("=",1) for part in line.split(",")[1:] if "=" in part)
+                    values=tuple(int(fields[k]) for k in ("L0","L45","L90","R0","R45","R90"))
+                    if all(0<=v<=4095 for v in values):
+                        self.cal_live=values
+                        self.cal_live_valid=fields.get("valid")=="1"
+                        self.cal_monitoring=True
+                except (KeyError,ValueError):
+                    self.cal_live_valid=False
+            return
         # Retried '?' probes can produce multiple acknowledgements if the
         # firmware was briefly busy. Keep only the first status log entry.
         if line.strip() == "SPP CONNECTED" and self.menu_ready:
@@ -767,7 +784,9 @@ class Dashboard:
             self.cal_review=False
             self.cal_rows.clear()
             self.cal_thresholds.clear()
-            self.cal_note.set("ARMED — nhả KEY, chờ MPU/IR ổn định")
+            self.cal_monitoring=False
+            self.cal_live_valid=False
+            self.cal_note.set("ARMED — nhả KEY để quay 360° chậm")
             self.test_stream_running=False
             self.data_filter.set("CAL_IR")
             self._clear_log(self.data_text)
@@ -778,7 +797,8 @@ class Dashboard:
             self.cal_visible=True
             self.cal_review=False
             self.cal_rows.clear()
-            self.cal_note.set("Đang ghi IR · 4 × 90°")
+            self.cal_monitoring=False
+            self.cal_note.set("Đang ghi IR · 4 × 90° chậm")
             self.test_stream_running=True
             self.reader.motion_lease.set()
             self._update_test_controls()
@@ -801,21 +821,27 @@ class Dashboard:
         elif line.startswith("CAL,REVIEW,"):
             self.reader.motion_lease.clear()
             self.test_stream_running=False
+            self.cal_monitoring=True
             self.cal_review="quality=CANDIDATE_ONLY" in line
             self.cal_note.set(line)
             self._update_test_controls()
         elif line.startswith(("CAL,FAULT,","CAL,SAVED,","CAL,SAVE_REJECT,")):
             self.reader.motion_lease.clear()
             self.test_stream_running=False
+            self.cal_monitoring=True
             if line.startswith(("CAL,FAULT,","CAL,SAVED,")):self.cal_review=False
             self.cal_note.set(line)
             self._update_test_controls()
         if line.startswith("CAL_IR,") and self.active_test_name=="Calibration":
             rec=sensor_test_csv(line,host_time=host_time)
-            if rec:self.cal_rows.append(tuple(map(int,rec[2])))
+            if rec:
+                self.cal_rows.append(tuple(map(int,rec[2])))
+                self.cal_live=tuple(map(int,rec[2][1:]))
+                self.cal_live_valid=True
         if line.startswith("Selected mode ") and not line.startswith("Selected mode 1:"):
             self.cal_visible=False
             self.cal_review=False
+            self.cal_monitoring=False
             if self.active_test_name=="Calibration":
                 self.active_test_name=None
                 self._update_test_controls()
@@ -1082,25 +1108,56 @@ class Dashboard:
         self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
 
     def _draw_calibration_panel(self):
-        c=self.cal_canvas;c.delete("all")
-        w=max(c.winfo_width(),300)
+        c=self.cal_canvas
+        c.delete("all")
+        w=max(c.winfo_width(),340)
+        h=max(c.winfo_height(),230)
         names=("L0","L45","L90","R0","R45","R90")
-        colors=("#19b7a6","#59a8ff","#f4b955","#fa8c9e","#be97fa","#9aaec2")
-        last=self.cal_rows[-1][1:] if self.cal_rows else (0,)*6
-        step=(w-24)/6
-        c.create_text(8,8,anchor="nw",text="ADC 0–4095 | vàng=ON  xám=OFF",fill="#cbd5e1",font=("Segoe UI",9))
+        current=self.cal_live
+        if not self.cal_monitoring and self.cal_rows:
+            current=self.cal_rows[-1][1:]
+        invalid=self.cal_monitoring and not self.cal_live_valid
+        top=47
+        bottom=max(top+80,h-48)
+        span=bottom-top
+        step=(w-38)/6
+        status=("LIVE · MOTOR STOPPED" if self.cal_monitoring else "CAPTURING 360°" if self.cal_rows else "WAITING")
+        c.create_text(12,8,anchor="nw",text="6 IR CHANNELS · LIVE ADC (0–4095)",
+                      fill="#d9e9f6",font=("Segoe UI",10,"bold"))
+        c.create_text(w-12,9,anchor="ne",text=status,
+                      fill="#4ee2ad" if self.cal_monitoring else "#f2c66d",
+                      font=("Segoe UI",9,"bold"))
+        c.create_text(12,26,anchor="nw",
+                      text="BLUE = WALL  |  GREY = NO WALL  |  YELLOW = ON threshold",
+                      fill="#9babc1",font=("Segoe UI",8))
+        for value in (0,1024,2048,3072,4095):
+            y=bottom-(value/4095)*span
+            c.create_line(30,y,w-8,y,fill="#29384b",dash=(2,5))
+            c.create_text(27,y,anchor="e",text=str(value),fill="#8397aa",
+                          font=("Consolas",7))
         for i,name in enumerate(names):
-            x=12+i*step
-            v=last[i]
-            ht=round(78*v/4095)
-            c.create_rectangle(x+5,99-ht,x+step-7,99,fill=colors[i],outline="")
-            if i in self.cal_thresholds:
-                off,on=self.cal_thresholds[i]
-                for th,col in ((off,"#8792a3"),(on,"#f5b73a")):
-                    y=99-round(78*th/4095)
-                    c.create_line(x+4,y,x+step-5,y,fill=col,width=2)
-            c.create_text(x+step/2,111,text=name,fill="#e2e8f0",font=("Consolas",9))
-            c.create_text(x+step/2,127,text=str(v),fill=colors[i],font=("Consolas",8))
+            x=34+i*step
+            value=int(current[i])
+            threshold=self.cal_thresholds.get(i)
+            detected=bool(threshold and value>=threshold[1] and not invalid)
+            color="#18c7f0" if detected else "#788696"
+            if invalid:
+                color="#465364"
+            bar_width=max(13,step-14)
+            bar_height=value/4095*span
+            c.create_rectangle(x+5,bottom-bar_height,x+5+bar_width,bottom,
+                               fill=color,outline="")
+            if threshold:
+                off,on=threshold
+                y=bottom-(on/4095)*span
+                c.create_line(x+3,y,x+7+bar_width,y,fill="#f6c847",width=2)
+            c.create_text(x+5+bar_width/2,bottom+11,text=name,fill="#e9f2ff",
+                          font=("Consolas",9,"bold"))
+            c.create_text(x+5+bar_width/2,bottom+29,text=str(value),fill=color,
+                          font=("Consolas",9))
+        if invalid:
+            c.create_text(w/2,round((top+bottom)/2),text="IR INVALID · CHECK SCAN",
+                          fill="#ffb86c",font=("Segoe UI",12,"bold"))
 
     def _mark_wheels(self):
         self.wheel_dirty = True
