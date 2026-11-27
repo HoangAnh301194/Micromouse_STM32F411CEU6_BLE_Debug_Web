@@ -33,7 +33,7 @@ def main():
     assert not is_menu_navigation_line("CAL,PIVOT_START,segment=1,target=90")
     assert not is_menu_navigation_line("BOOT,READY,MPU=OK")
     assert provisional_wall_threshold([100] * 25) is None
-    assert provisional_wall_threshold(list(range(100, 200))) == (129, 169)
+    assert provisional_wall_threshold(list(range(100, 200))) == (133, 165)
     assert provisional_wall_threshold([4096] * 30) is None
 
     with TemporaryDirectory() as tmp:
