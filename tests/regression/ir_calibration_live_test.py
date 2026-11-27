@@ -24,6 +24,7 @@ with TemporaryDirectory() as d:
     assert first and first.read_text().splitlines()==[HEADER,"123,120,230,340,450,560,670"]
     logger.write("CAL,REVIEW,samples=120,quality=CANDIDATE_ONLY")
     logger.write("CAL,SAVED,flash=OK,auto_apply=0")
+    logger.write("CAL,END,result=SUCCESS,quality=CANDIDATE_ONLY,flash=SAVED")
     assert logger.write(LIVE) is None
     assert first.read_text().splitlines()==[HEADER,"123,120,230,340,450,560,670"]
     logger.write("CAL,START,mode=1,segments=4")
@@ -42,6 +43,13 @@ assert "if(c->valid && !IRC_Save(c))" in cal
 assert "event == MODE_MENU_EVENT_FOCUS" in runtime
 assert "IRC_Arm(&ir_calibration,now,1U)" in runtime
 assert "CAL_LIVE,valid=%u" in runtime
+assert "CAL,END,result=FAILED,reason=%s" in cal
+assert "CAL,END,result=SUCCESS,quality=CANDIDATE_ONLY,flash=SAVED" in cal
+assert "CAL,START,mode=1,segments=4" in cal
+assert 'elif line.startswith("CAL,END,"):' in dashboard
+assert 'elif line.startswith("CAL,WAIT,stage="):' in dashboard
+assert 'self.cal_phase="START"' in dashboard
+assert 'self.cal_phase="END"' in dashboard
 assert "if line.startswith(\"CAL_LIVE,\"):" in dashboard
 assert "self.cal_wall_state=[False]*6" in dashboard
 assert "self.cal_live_valid" in dashboard
