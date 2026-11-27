@@ -449,6 +449,7 @@ int Main_Runtime(void)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
     IRC_Context ir_calibration;
+    uint32_t last_cal_live_ms=0U;
     uint8_t mpu_ready_reported = 0U;
     uint32_t mpu_health_ms = 0U;
 #endif
@@ -722,6 +723,21 @@ int Main_Runtime(void)
             uint8_t menu_key = Board_ButtonPressed();
             if (EncoderOneBox_SuppressMenuButton()) menu_key = 0U;
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
+            /* Short KEY on completed Mode 1 re-arms a fresh 360-degree
+             * capture without changing the selected menu item. While moving,
+             * KEY remains a safety stop, never a restart request. */
+            if (event == MODE_MENU_EVENT_FOCUS &&
+                mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                mode_menu.selected == 0U &&
+                !IRC_IsMotionActive(&ir_calibration) &&
+                !EncoderOneBox_IsRunning() &&
+                (ir_calibration.state == IRC_REVIEW ||
+                 ir_calibration.state == IRC_SAVED ||
+                 ir_calibration.state == IRC_FAULT)) {
+                mode_menu.focus=0U;
+                IRC_Arm(&ir_calibration,now,1U);
+                event=MODE_MENU_EVENT_NONE;
+            }
             if (event != MODE_MENU_EVENT_NONE) {
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 if (event == MODE_MENU_EVENT_TEST_SELECT ||
@@ -822,6 +838,26 @@ int Main_Runtime(void)
                 }
             }
             IRC_Update(&ir_calibration,&mpu,now);
+            /* Live dashboard after completed run: no CSV write, does not
+             * change the per-run CAL_IR capture or its START/STOP lifetime. */
+            if (mode_menu.page==MODE_MENU_PAGE_MAIN &&
+                mode_menu.selected==0U &&
+                !IRC_IsMotionActive(&ir_calibration) &&
+                (ir_calibration.state==IRC_REVIEW ||
+                 ir_calibration.state==IRC_SAVED ||
+                 ir_calibration.state==IRC_FAULT) &&
+                (uint32_t)(now-last_cal_live_ms)>=100U) {
+                IR_Data_t ir;
+                uint32_t age;
+                last_cal_live_ms=now;
+                Control_GetIRSnapshot(&ir);
+                age=ir.scan_count?(uint32_t)(micros()-ir.completed_us):0xFFFFFFFFUL;
+                BT_Printf("CAL_LIVE,valid=%u,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u\r\n",
+                    (unsigned)(age<=5000UL),
+                    (unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_L45],
+                    (unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_R0],
+                    (unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90]);
+            }
             {
                 EncoderOneBoxTelemetry motion;
                 EncoderOneBoxResult result;
