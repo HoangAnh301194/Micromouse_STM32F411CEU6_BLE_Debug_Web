@@ -645,6 +645,8 @@ int Main_Runtime(void)
                 if(IRStatic_Active()) {
                     IRStatic_Exit();
                     mode_menu.selected=MODE_MENU_NO_SELECTION;
+                    ModeMenu_ApplyResources(&mode_menu,&mpu,mpu_status,
+                                            &test_resource_mask);
                 }
                 else if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
                 else {
