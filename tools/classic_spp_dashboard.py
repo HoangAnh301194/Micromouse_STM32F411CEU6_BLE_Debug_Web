@@ -247,6 +247,7 @@ class Dashboard:
         self.cal_live=(0,)*6
         self.cal_live_valid=False
         self.cal_monitoring=False
+        self.cal_wall_state=[False]*6
         self.cal_thresholds={}
         self.cal_review=False
         self.cal_visible=False
@@ -784,6 +785,7 @@ class Dashboard:
             self.cal_review=False
             self.cal_rows.clear()
             self.cal_thresholds.clear()
+            self.cal_wall_state=[False]*6
             self.cal_monitoring=False
             self.cal_live_valid=False
             self.cal_note.set("ARMED — nhả KEY để quay 360° chậm")
@@ -797,6 +799,8 @@ class Dashboard:
             self.cal_visible=True
             self.cal_review=False
             self.cal_rows.clear()
+            self.cal_thresholds.clear()
+            self.cal_wall_state=[False]*6
             self.cal_monitoring=False
             self.cal_note.set("Đang ghi IR · 4 × 90° chậm")
             self.test_stream_running=True
@@ -1139,7 +1143,12 @@ class Dashboard:
             x=34+i*step
             value=int(current[i])
             threshold=self.cal_thresholds.get(i)
-            detected=bool(threshold and value>=threshold[1] and not invalid)
+            if threshold and not invalid:
+                off,on=threshold
+                if value>=on:self.cal_wall_state[i]=True
+                elif value<=off:self.cal_wall_state[i]=False
+            if invalid:self.cal_wall_state[i]=False
+            detected=bool(threshold and self.cal_wall_state[i] and not invalid)
             color="#18c7f0" if detected else "#788696"
             if invalid:
                 color="#465364"
