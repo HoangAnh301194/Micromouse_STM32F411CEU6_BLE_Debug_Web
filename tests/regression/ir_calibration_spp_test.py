@@ -34,6 +34,8 @@ def main():
     reader.thread=ActiveThread()
     assert reader.send_menu(b"V") is True
     assert reader.commands.get_nowait()==b"V"
+    assert reader.send_menu(b"C") is True
+    assert reader.commands.get_nowait()==b"C"
     assert reader.send_menu(b"X") is False
     print("ir_calibration_spp_test PASS")
 if __name__=="__main__":main()
