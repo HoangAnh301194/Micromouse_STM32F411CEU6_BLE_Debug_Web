@@ -52,7 +52,7 @@ def classify_spp_line(line):
 # Each System Test has its own CSV schema. ENC is exactly two counts;
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
-    "CAL": ("t_ms","L0","L45","L90","R0","R45","R90"),
+    "CAL": ("t_ms","stage","L0","L45","L90","R0","R45","R90"),
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
                "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
@@ -89,9 +89,10 @@ def sensor_test_csv(line, host_time=None):
             fields[key] = value
 
     if sensor == "CAL":
-        keys=("ms","L0","L45","L90","R0","R45","R90")
+        keys=("ms","stage","L0","L45","L90","R0","R45","R90")
         if not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in keys): return None
-        if int(fields["ms"])<0 or int(fields["ms"])>60000 or any(int(fields[k])>4095 or int(fields[k])<0 for k in keys[1:]): return None
+        if int(fields["ms"])<0 or int(fields["ms"])>180000 or int(fields["stage"]) not in (0,1): return None
+        if any(int(fields[k])>4095 or int(fields[k])<0 for k in keys[2:]): return None
         values=tuple(fields[k] for k in keys)
     elif sensor == "ENC":
         if (len(parts) == 3 and
@@ -248,7 +249,7 @@ class DualSessionLog:
             self.active_sensor="CAL"
             self._streaming=False
             return
-        if line.startswith("CAL,START,mode=1,segments=4"):
+        if line.startswith("CAL,START,mode=1,stages=2"):
             if self.active_sensor=="CAL":
                 self._close_active()
                 self._streaming=True
@@ -366,7 +367,7 @@ class DualSessionLog:
 
         if sensor in ("ENC", "ONEBOX", "CAL"):
             if sensor == "CAL":
-                folder = self.root / "mode 1 - ir calibration 360"
+                folder = self.root / "mode 1 - ir calibration wall-open"
             else:
                 name = ("log receiver" if sensor == "ENC" else "1 box forward")
                 folder = self.root / ("mode 7 - encoder test - " + name)
