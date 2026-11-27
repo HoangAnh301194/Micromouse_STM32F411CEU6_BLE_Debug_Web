@@ -594,6 +594,7 @@ class Dashboard:
             self.cal_rows.clear()
             self.cal_thresholds.clear()
             self.data_filter_combo.configure(state="readonly")
+            self.data_filter.set("All")
             self.left_log_frame.configure(text="Continuous data — sensor samples")
         self._update_test_controls()
 
