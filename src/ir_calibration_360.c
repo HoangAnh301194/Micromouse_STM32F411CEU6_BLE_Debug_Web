@@ -176,7 +176,7 @@ void IRC_Update(IRC_Context *c,MPU6050_Handle_t *mpu,uint32_t now) {
                 c->have_origin=1U;
             }
         }
-        if(EncoderOneBox_StartPivot(mpu,90)) {
+        if(EncoderOneBox_StartCalibrationPivot(mpu,90)) {
             ++c->segment;c->state=IRC_PIVOT;c->last_ready_ms=0U;
             BT_Printf("CAL,PIVOT_START,segment=%u,target=90\r\n",(unsigned)c->segment);
         }else{
