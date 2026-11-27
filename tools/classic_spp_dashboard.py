@@ -323,9 +323,12 @@ class Dashboard:
         data_bar = ttk.Frame(left)
         data_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(data_bar, text="Stream:").pack(side="left")
-        ttk.Combobox(data_bar, textvariable=self.data_filter, width=12,
-                     values=("All", "CAL_IR", "MPU", "PIVOT_CSV", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
-                     state="readonly").pack(side="left", padx=5)
+        self.data_filter_combo = ttk.Combobox(
+            data_bar, textvariable=self.data_filter, width=12,
+            values=("All", "CAL_IR", "MPU", "PIVOT_CSV", "IR", "ENC",
+                    "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
+            state="readonly")
+        self.data_filter_combo.pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_split = ttk.PanedWindow(left, orient="vertical")
         self.data_split.pack(fill="both", expand=True)
@@ -338,8 +341,16 @@ class Dashboard:
         self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=230,highlightthickness=0)
         self.cal_canvas.pack(fill="both",expand=True)
         self.cal_canvas.bind("<Configure>",lambda event:self._draw_calibration_panel())
-        self.cal_save_btn=ttk.Button(self.cal_pane,text="Save Flash manually (V)",state="disabled",command=lambda:self.send_menu(b"V"))
-        self.cal_save_btn.pack(anchor="e",pady=3)
+        cal_actions = ttk.Frame(self.cal_pane)
+        cal_actions.pack(fill="x", pady=3)
+        self.cal_again_btn = ttk.Button(
+            cal_actions, text="Calibrate Again", state="disabled",
+            command=self.request_calibration_again)
+        self.cal_again_btn.pack(side="left")
+        self.cal_save_btn = ttk.Button(
+            cal_actions, text="Save Flash manually (V)", state="disabled",
+            command=lambda: self.send_menu(b"V"))
+        self.cal_save_btn.pack(side="right")
         self.wheel_pane = ttk.Frame(self.data_split)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
         self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
@@ -418,9 +429,9 @@ class Dashboard:
         ttk.Label(self.pid_panel, textvariable=self.pid_note, wraplength=360).grid(row=5, column=0, columnspan=4, sticky="w")
         status_bar = self.pid_status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
-        ttk.Label(status_bar, text="Filter:").pack(side="left")
-        ttk.Entry(status_bar, textvariable=self.filter_text, width=15).pack(side="left", padx=5)
-        ttk.Button(status_bar, text="Clear status", command=self.clear_status).pack(side="right")
+        ttk.Label(status_bar, text="Chỉ hiển thị thao tác chọn Mode",
+                  style="Muted.TLabel").pack(side="left")
+        ttk.Button(status_bar, text="Clear", command=self.clear_status).pack(side="right")
         self.status_text = self._make_log_text(right, "word")
 
     def _data_header(self, stream=None):
@@ -581,6 +592,8 @@ class Dashboard:
             self.cal_review = self.cal_visible = False
             self.cal_rows.clear()
             self.cal_thresholds.clear()
+            self.data_filter_combo.configure(state="readonly")
+            self.left_log_frame.configure(text="Continuous data — sensor samples")
         self._update_test_controls()
 
     def send_menu(self, command: bytes):
@@ -588,6 +601,8 @@ class Dashboard:
             self.reader.motion_lease.clear()
         if not self.menu_ready or not self.reader.send_menu(command):
             self.status.set("SPP menu unavailable: wait for SPP CONNECTED")
+            return False
+        return True
 
     def send_test_control(self, command: bytes):
         # MCU acknowledgement is authoritative. For one-box, an in-flight
@@ -715,7 +730,9 @@ class Dashboard:
                 self.active_data_stream = stream
                 self._data_header(stream)
         else:
-            if self.filter_text.get().lower() not in line.lower():
+            # Right terminal is only a menu navigator. Runtime CAL/TEST/BOOT
+            # events are shown in the relevant lower-left panel or status strip.
+            if not is_menu_navigation_line(line):
                 return
             widget = self.status_text
         tag = "error" if "FAIL" in line or "ERROR" in line else "normal"
@@ -803,8 +820,10 @@ class Dashboard:
             self.cal_phase="SELECTED"
             self.cal_protocol_error=False
             self.cal_note.set("MODE 1 SELECTED — chờ CAL,START từ STM32")
-            self.test_stream_running=False
+            self.left_log_frame.configure(text="Mode 1 — CAL_IR / t_ms + 6 IR channels")
             self.data_filter.set("CAL_IR")
+            self.data_filter_combo.configure(state="disabled")
+            self.test_stream_running=False
             self._clear_log(self.data_text)
             self.active_data_stream=None
             self._update_test_controls()
@@ -819,9 +838,11 @@ class Dashboard:
             self.cal_wall_state=[False]*6
             self.cal_monitoring=False
             self.data_filter.set("CAL_IR")
+            self.data_filter_combo.configure(state="disabled")
             self._clear_log(self.data_text)
             self.active_data_stream=None
-            self.left_log_frame.configure(text="Mode 1 — CAL_IR / t_ms + 6 IR channels")\n            self.data_filter.set("CAL_IR")\n            self.data_filter_combo.configure(state="disabled")\n            self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
+            self.left_log_frame.configure(text="Mode 1 — CAL_IR / t_ms + 6 IR channels")
+            self.cal_note.set("START — Calib 360° · chờ MPU ổn định / quay 4 × 90° chậm")
             self.test_stream_running=True
             self.reader.motion_lease.set()
             self._update_test_controls()
@@ -862,6 +883,12 @@ class Dashboard:
             self.cal_review="quality=CANDIDATE_ONLY" in line
             self.cal_note.set(line)
             self._update_test_controls()
+        elif line.startswith("CAL,RESTART_ACCEPTED"):
+            self.cal_note.set("RESTART ACCEPTED — chuẩn bị phiên Calibration mới")
+            self.cal_again_btn.configure(state="disabled")
+        elif line.startswith("CAL,RESTART_REJECTED"):
+            self.cal_note.set("RESTART REJECTED — " + line.partition(",")[2])
+            self._update_test_controls()
         elif line.startswith("CAL,END,"):
             self.reader.motion_lease.clear()
             self.test_stream_running=False
@@ -884,6 +911,9 @@ class Dashboard:
                 self.cal_live=tuple(map(int,rec[2][1:]))
                 self.cal_live_valid=True
         if line.startswith("Selected mode ") and not line.startswith("Selected mode 1:"):
+            self.left_log_frame.configure(text="Continuous data — sensor samples")
+            self.data_filter_combo.configure(state="readonly")
+            self.data_filter.set("All")
             self.cal_visible=False
             self.cal_review=False
             self.cal_monitoring=False
@@ -1151,7 +1181,19 @@ class Dashboard:
         present=str(self.cal_pane) in self.data_split.panes()
         if show and not present:self.data_split.add(self.cal_pane,weight=1)
         elif present and not show:self.data_split.forget(self.cal_pane)
-        self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")\n        self.cal_again_btn.configure(state="normal" if show and self.cal_phase=="END" else "disabled")
+        self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
+        self.cal_again_btn.configure(
+            state="normal" if show and self.cal_phase == "END" else "disabled")
+
+    def request_calibration_again(self):
+        if (self.cal_phase != "END" or not self.menu_ready or
+                self.active_test_name != "Calibration"):
+            return
+        self.cal_again_btn.configure(state="disabled")
+        self.cal_note.set("RESTART REQUESTED — chờ STM32 xác nhận")
+        if not self.send_menu(b"R"):
+            self.cal_note.set("Không gửi được lệnh Calibration lại qua SPP")
+            self._update_test_controls()
 
     def _draw_calibration_panel(self):
         c=self.cal_canvas
