@@ -91,7 +91,7 @@ def sensor_test_csv(line, host_time=None):
     if sensor == "CAL":
         keys=("ms","stage","L0","L45","L90","R0","R45","R90")
         if not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in keys): return None
-        if int(fields["ms"])<0 or int(fields["ms"])>180000 or int(fields["stage"]) not in (0,1): return None
+        if int(fields["ms"])<0 or int(fields["ms"])>240000 or int(fields["stage"]) not in (0,1): return None
         if any(int(fields[k])>4095 or int(fields[k])<0 for k in keys[2:]): return None
         values=tuple(fields[k] for k in keys)
     elif sensor == "ENC":
