@@ -14,6 +14,19 @@ def is_menu_navigation_line(line):
     return line.startswith(MENU_NAVIGATION_PREFIXES)
 
 
+def provisional_wall_threshold(samples, min_samples=20, min_span=40):
+    """UI-only p10/p90 hysteresis threshold; never used by firmware control."""
+    values = sorted(int(value) for value in samples)
+    if len(values) < min_samples or any(value < 0 or value > 4095 for value in values):
+        return None
+    p10 = values[((len(values) - 1) * 10) // 100]
+    p90 = values[((len(values) - 1) * 90) // 100]
+    span = p90 - p10
+    if span < min_span:
+        return None
+    return (p10 + span * 30 // 100, p10 + span * 70 // 100)
+
+
 STATUS_PREFIXES = ("CAL,", "STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
