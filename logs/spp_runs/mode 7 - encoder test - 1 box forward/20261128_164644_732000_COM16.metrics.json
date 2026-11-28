@@ -1,0 +1,42 @@
+{
+  "result": "ONEBOX,RESULT,reason=DONE,L=2430,R=2427,ms=2589,locked=1",
+  "metrics": {
+    "L": {
+      "samples": 128,
+      "mean_ref_pps": 900.19,
+      "mean_meas_pps": 951.09,
+      "steady_state_error_pps": -75.26,
+      "steady_state_error_pct": 8.59,
+      "mae_pps": 77.17,
+      "rmse_pps": 118.54,
+      "max_abs_error_pps": 780,
+      "rise_time_10_90_ms": 60.0,
+      "overshoot_pct": 27.08,
+      "settling_time_5pct_ms": "N/A (not settled within ±5%)",
+      "steady_std_pps": 61.93,
+      "pwm_sat_pct": 1.56,
+      "nonzero_pwm_when_ref_zero": 0,
+      "pwm_basis": "applied"
+    },
+    "R": {
+      "samples": 128,
+      "mean_ref_pps": 904.66,
+      "mean_meas_pps": 957.93,
+      "steady_state_error_pps": -28.79,
+      "steady_state_error_pct": 3.1,
+      "mae_pps": 67.61,
+      "rmse_pps": 96.29,
+      "max_abs_error_pps": 618,
+      "rise_time_10_90_ms": 40.0,
+      "overshoot_pct": 16.13,
+      "settling_time_5pct_ms": "N/A (not settled within ±5%)",
+      "steady_std_pps": 48.55,
+      "pwm_sat_pct": 0.78,
+      "nonzero_pwm_when_ref_zero": 0,
+      "pwm_basis": "applied"
+    },
+    "lr_mean_abs_diff_pps": 71.49,
+    "telemetry_hz": 50.22,
+    "samples_total": 136
+  }
+}
