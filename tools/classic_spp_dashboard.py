@@ -434,7 +434,7 @@ class Dashboard:
         ttk.Label(self.pid_panel, textvariable=self.pid_note, wraplength=360).grid(row=5, column=0, columnspan=4, sticky="w")
         status_bar = self.pid_status_bar = ttk.Frame(right)
         status_bar.pack(fill="x", pady=(0, 5))
-        ttk.Label(status_bar, text="Chỉ hiển thị thao tác chọn Mode",
+        ttk.Label(status_bar, text="Menu / Calibration — trạng thái và thao tác",
                   style="Muted.TLabel").pack(side="left")
         ttk.Button(status_bar, text="Clear", command=self.clear_status).pack(side="right")
         self.status_text = self._make_log_text(right, "word")
@@ -737,8 +737,8 @@ class Dashboard:
                 self.active_data_stream = stream
                 self._data_header(stream)
         else:
-            # Right terminal is only a menu navigator. Runtime CAL/TEST/BOOT
-            # events are shown in the relevant lower-left panel or status strip.
+            # Menu navigation and discrete CAL events only; sensor samples
+            # stay in the left terminal. Snapshots are display-only.
             if not is_menu_navigation_line(line):
                 return
             widget = self.status_text

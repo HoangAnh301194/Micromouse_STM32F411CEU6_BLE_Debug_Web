@@ -6,12 +6,16 @@ import re
 DATA_PREFIXES = ("CAL_IR,", "PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
 MENU_NAVIGATION_PREFIXES = (
     "Mode ", "Selected mode ", "System Test ", "System Test:",
-    "Selected test ", "Selected encoder option ", "Selected mpu option ",
+    "Selected test ", "Encoder Test:", "Encoder Test option ",
+    "MPU Test:", "MPU Test option ", "Selected encoder option ", "Selected mpu option ",
+    "Menu snapshot: ", "CAL,START,", "CAL,WAIT,", "CAL,REVIEW,",
+    "CAL,WAIT_SAVE,", "CAL,RESTART_ACCEPTED", "CAL,RESTART_REJECTED",
+    "CAL,SAVED,", "CAL,SAVE_REJECT,", "CAL,END,", "CAL,EXIT", "CAL,FAULT,",
 )
 
 def is_menu_navigation_line(line):
-    """True only for menu focus/selection events shown in the right terminal."""
-    return line.startswith(MENU_NAVIGATION_PREFIXES)
+    """Menu navigation and discrete calibration events; never sensor samples."""
+    return line.strip().startswith(MENU_NAVIGATION_PREFIXES)
 
 
 def provisional_wall_threshold(samples, min_samples=20, min_span=40):

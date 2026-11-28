@@ -28,8 +28,24 @@ def main():
 
     assert is_menu_navigation_line("Mode 1: Calibration")
     assert is_menu_navigation_line("Selected mode 1: Calibration")
-    assert not is_menu_navigation_line("CAL,START,mode=1,stages=2")
-    assert not is_menu_navigation_line("CAL,WAIT,stage=OPEN")
+    for event in (
+        "Encoder Test: choose Log Receive / motion tests / Back",
+        "Encoder Test option 1: Log Receive",
+        "MPU Test: choose MPU Log / Pivot / Back",
+        "MPU Test option 1: MPU Log",
+        "Selected encoder option 1: Log Receive",
+        "Selected mpu option 1: MPU Log",
+        "Menu snapshot: Encoder Test | focus=Log Receive | selected=None | stream=0 | cal=0",
+        "CAL,START,mode=1,stages=2", "CAL,WAIT,stage=OPEN",
+        "CAL,REVIEW,quality=CANDIDATE_ONLY", "CAL,WAIT_SAVE,action=KEY_LONG_OR_V",
+        "CAL,RESTART_ACCEPTED", "CAL,SAVED,flash=OK", "CAL,SAVE_REJECT,reason=NOT_READY",
+        "CAL,END,result=SUCCESS", "CAL,EXIT",
+    ):
+        assert is_menu_navigation_line(event), event
+        assert classify_spp_line(event) == "status", event
+    assert not is_menu_navigation_line(wall)
+    assert not is_menu_navigation_line("CAL_LIVE,valid=1")
+    assert not is_menu_navigation_line("CAL,THRESH,index=0")
     assert not is_menu_navigation_line("CAL,STAGE_DONE,stage=WALL,samples=150")
     assert provisional_wall_threshold([100] * 25) is None
     assert provisional_wall_threshold(list(range(100, 200))) == (133, 165)

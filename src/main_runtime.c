@@ -289,6 +289,40 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
     }
 }
 
+/* Read-only snapshot: never replay selection events or arm a test on reconnect. */
+static void ModeMenu_ReportSnapshot(const ModeMenu *menu, const IRC_Context *cal)
+{
+    const char *focus = "None";
+    const char *active = "None";
+    const char *page = "Main";
+    if (menu->page == MODE_MENU_PAGE_ENCODER) {
+        page = "Encoder Test";
+        if (menu->encoder_focus < MODE_MENU_ENCODER_COUNT)
+            focus = ModeMenu_EncoderName(menu->encoder_focus);
+        if (menu->active_encoder_option < MODE_MENU_ENCODER_COUNT)
+            active = ModeMenu_EncoderName(menu->active_encoder_option);
+    } else if (menu->page == MODE_MENU_PAGE_MPU) {
+        page = "MPU Test";
+        if (menu->encoder_focus < MODE_MENU_MPU_COUNT)
+            focus = ModeMenu_MpuName(menu->encoder_focus);
+        if (menu->active_encoder_option < MODE_MENU_MPU_COUNT)
+            active = ModeMenu_MpuName(menu->active_encoder_option);
+    } else if (menu->page == MODE_MENU_PAGE_TEST) {
+        page = "System Test";
+        if (menu->test_focus < MODE_MENU_TEST_COUNT)
+            focus = ModeMenu_TestName(menu->test_focus);
+        if (menu->active_test < MODE_MENU_TEST_COUNT)
+            active = ModeMenu_TestName(menu->active_test);
+    } else {
+        if (menu->focus < MODE_MENU_ITEM_COUNT)
+            focus = ModeMenu_Name(menu->focus);
+        if (menu->selected < MODE_MENU_ITEM_COUNT)
+            active = ModeMenu_Name(menu->selected);
+    }
+    BT_Printf("Menu snapshot: %s | focus=%s | selected=%s | stream=%u | cal=%u\r\n",
+              page, focus, active, (unsigned)menu->stream_running, (unsigned)cal->state);
+}
+
 /* Runs in main context on every menu state change. Initializes every
  * driver once at boot, but actively samples only the selected sensors.
  * The encoder timers and 1kHz watchdog remain alive for safety.
@@ -611,6 +645,7 @@ int Main_Runtime(void)
                               (unsigned)mpu.init_i2c_status);
                 BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
                 BT_SendString("TEST,PROFILE,UNIFIED,IR,MPU,ENC,MOTOR\r\n");
+                ModeMenu_ReportSnapshot(&mode_menu, &ir_calibration);
                 if (mode_menu.page == MODE_MENU_PAGE_ENCODER &&
                     mode_menu.active_encoder_option == MODE_MENU_ENCODER_PID) {
                     BT_SendString("Selected encoder option 8: PID\r\n");
