@@ -244,6 +244,10 @@ static void Cal_Poll(uint32_t now)
        (uint32_t)(micros()-sample.completed_us)>3000U) return;
     cal_last_scan=sample.scan_count; cal_last_ms=now;
     for(i=0U;i<IR_SENSOR_COUNT;++i) cal_samples[i][cal_count]=sample.value[i];
+    BT_Printf("CAL_SAMPLE,stage=%u,idx=%u,ms=%lu,scan=%lu,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u\r\n",
+        (unsigned)(cal_stage+1U),(unsigned)(cal_count+1U),(unsigned long)now,(unsigned long)sample.scan_count,
+        (unsigned)sample.value[IR_L0],(unsigned)sample.value[IR_L45],(unsigned)sample.value[IR_L90],
+        (unsigned)sample.value[IR_R0],(unsigned)sample.value[IR_R45],(unsigned)sample.value[IR_R90]);
     if(++cal_count<CAL_N) return;
     cal_busy=0U;
     for(i=0U;i<IR_SENSOR_COUNT;++i) {

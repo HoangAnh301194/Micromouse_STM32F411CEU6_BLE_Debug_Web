@@ -3,8 +3,8 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-DATA_PREFIXES = ("PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
-STATUS_PREFIXES = ("STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
+DATA_PREFIXES = ("CAL_SAMPLE,", "PIVOT_CSV,", "MPU,", "IR,", "ENC,", "ALL,", "ONEBOX_CSV,", "ENC_CSV,", "CSV,", "DATA,", "MW,", "WI,", "WS,")
+STATUS_PREFIXES = ("CAL,", "STATUS,", "Mode ", "Selected mode ", "SPP CONNECTED", "W,HELLO",
                    "W,MENU", "W,WAIT", "W,FATAL", "W,START", "W,END",
                    "W,REJECT", "CALIB ", "CALIB...", "READY CAL", "TEST ",
                    "TEST,", "STOP ", "START ", "MAPCFG", "MAPROW", "MAPEND")
@@ -29,6 +29,7 @@ def classify_spp_line(line):
 # Each System Test has its own CSV schema. ENC is exactly two counts;
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
+    "CAL_SAMPLE": ("timestamp","stage","idx","mcu_ms","scan","L0","L45","L90","R0","R45","R90"),
     "ENC": ("timestamp", "ENC_L", "ENC_R", "mpu_valid", "mpu_age_us", "yaw_deg", "gz_dps"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
                "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS", "mpu_valid", "mpu_age_us", "yaw_deg", "gz_dps"),
@@ -64,6 +65,11 @@ def sensor_test_csv(line, host_time=None):
         if sep and key:
             fields[key] = value
 
+    if sensor == "CAL_SAMPLE":
+        keys=("stage","idx","ms","scan","L0","L45","L90","R0","R45","R90")
+        if not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in keys): return None
+        if not 1<=int(fields["stage"])<=3 or not 1<=int(fields["idx"])<=200: return None
+        return sensor, TEST_CSV_COLUMNS[sensor], (host_time or datetime.now().isoformat(timespec="milliseconds"),)+tuple(fields[k] for k in keys)
     if sensor == "ENC":
         if (len(parts) == 3 and
                 all(_DECIMAL.fullmatch(value) for value in parts[1:])):
@@ -225,6 +231,19 @@ class DualSessionLog:
 
     def _observe_status(self, line, host_time=None):
         """Status is used ONLY as in-memory routing metadata, never logged."""
+        if line.startswith("CAL,START,"):
+            match=re.search(r"(?:^|,)stage=([123])(?:,|$)",line)
+            if match:
+                self._has_menu_context=True
+                self._deactivate()
+                self.cal_stage=int(match.group(1))
+                self.active_sensor="CAL_SAMPLE"
+                self._streaming=True
+                self._open_run("CAL_SAMPLE",TEST_CSV_COLUMNS["CAL_SAMPLE"],host_time)
+            return
+        if line.startswith(("CAL,STAGE_OK,","CAL,ABORT,","CAL,REJECT,","CAL,EXIT","CAL,COMPLETE")):
+            if self.active_sensor=="CAL_SAMPLE": self._deactivate()
+            return
         if line.startswith("Selected mpu option "):
             self._has_menu_context=True
             self._deactivate()
@@ -330,8 +349,9 @@ class DualSessionLog:
             sample = datetime.now()
         stamp = sample.strftime("%Y%m%d_%H%M%S_%f")
 
-        if sensor in ("ENC", "ONEBOX", "MPU", "PIVOT"):
-            name = {"ENC": "mode 7 - encoder test - log receiver",
+        if sensor in ("ENC", "ONEBOX", "MPU", "PIVOT", "CAL_SAMPLE"):
+            name = {"CAL_SAMPLE": "mode 1 - calibration - stage " + str(getattr(self,"cal_stage",0)) + " - " + {1:"front and sides",2:"sides only",3:"open space"}.get(getattr(self,"cal_stage",0),"unknown"),
+                    "ENC": "mode 7 - encoder test - log receiver",
                     "ONEBOX": "mode 7 - encoder test - multi box forward" if getattr(self,"multi_forward",False) else "mode 7 - encoder test - 1 box forward",
                     "MPU": "mode 7 - mpu test - log receiver",
                     "PIVOT": "mode 7 - mpu test - " + getattr(self, "pivot_name", "pivot").lower()}[sensor]
@@ -371,7 +391,7 @@ class DualSessionLog:
         except OSError:
             handle.close()
             path.unlink(missing_ok=True)
-            if sensor not in ("ENC", "ONEBOX", "MPU", "PIVOT"):
+            if sensor not in ("ENC", "ONEBOX", "MPU", "PIVOT", "CAL_SAMPLE"):
                 folder.rmdir()
             raise
 
@@ -396,7 +416,7 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU", "PIVOT"):
+            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU", "PIVOT", "CAL_SAMPLE"):
                 # Encoder and MPU angle log is STRICTLY opt-in via Log Receive even after
                 # reconnect; never infer it from an unsolicited ENC frame.
                 return None
@@ -404,6 +424,7 @@ class DualSessionLog:
             # events have been received on this COM session.
             self.active_sensor = sensor
             self._streaming = True
+        if sensor=="CAL_SAMPLE" and int(values[1])!=getattr(self,"cal_stage",0): return None
         if sensor != self.active_sensor or not self._streaming:
             return None
 

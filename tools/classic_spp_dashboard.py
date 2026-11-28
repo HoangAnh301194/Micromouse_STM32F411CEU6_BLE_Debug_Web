@@ -1077,7 +1077,7 @@ class Dashboard:
         tag = line.split(",", 1)[0]
         def put(key, values, valid=True):
             self.sensor_live[key] = (now, valid, values)
-        if tag in ("IR", "ALL", "CAL_IR", "IR_LIVE"):
+        if tag in ("IR", "ALL", "CAL_IR", "IR_LIVE", "CAL_SAMPLE"):
             names = ("L90","L45","L0","R0","R45","R90")
             if all(k in fields for k in names):
                 put("IR", fields, fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
