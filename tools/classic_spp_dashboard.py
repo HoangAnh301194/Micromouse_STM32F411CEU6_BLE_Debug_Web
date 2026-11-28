@@ -7,6 +7,21 @@ Run: python tools/classic_spp_dashboard.py --port COM37
 """
 from __future__ import annotations
 
+def build_display_thresholds(stages, results):
+    """Display only: retain firmware binary ON; diagonal boundaries from three medians."""
+    if not all(i in stages for i in (1,2,3)):
+        return {}
+    out = {k:(int(v),) for k,v in results.items() if k in ("L0","R0","L90","R90")}
+    for k in ("L45","R45"):
+        try:
+            front,side,opened = (int(stages[i][k]) for i in (1,2,3))
+        except (KeyError,ValueError,TypeError):
+            continue
+        if 0 <= opened < side < front <= 4095 and side-opened >= 50 and front-side >= 50:
+            out[k]=((opened+side+1)//2,(side+front+1)//2)
+    return out
+
+
 import argparse
 import csv
 from decimal import Decimal, InvalidOperation
@@ -248,6 +263,10 @@ class Dashboard:
         self.active_data_stream = None
         self.sensor_mask = dict.fromkeys(("IR", "MPU", "ENC", "MOTOR"), False)
         self.sensor_live = {}
+        self.cal_display_stages = {}
+        self.cal_display_thresholds = {}
+        self.cal_display_results = {}
+        self.cal_display_quality = 'UNCALIBRATED'
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
 
@@ -1055,6 +1074,28 @@ class Dashboard:
         self.wheel_dirty = True
 
     def _sensor_receive(self, line):
+        if line.startswith('Selected mode 1: Calibration') or line.startswith('CAL,START,stage=1,'):
+            self.cal_display_stages.clear()
+            self.cal_display_results.clear()
+            self.cal_display_thresholds.clear()
+            self.cal_display_quality = 'COLLECTING'
+        if line.startswith('CAL,STAGE_OK,'):
+            f = numeric_fields(line)
+            stage = f.get('stage')
+            names = ('L90','L45','L0','R0','R45','R90')
+            if stage in (1,2,3) and all(k in f for k in names):
+                self.cal_display_stages[stage] = f
+        if line.startswith('CAL,RESULT,'):
+            f = numeric_fields(line)
+            name = line.split(',')[2]
+            if 'ON' in f and 'OFF' in f and 0 <= f['OFF'] < f['ON'] <= 4095:
+                self.cal_display_results[name] = int(f['ON'])
+        if line.startswith('CAL,COMPLETE,SAVED'):
+            self.cal_display_thresholds = build_display_thresholds(self.cal_display_stages,self.cal_display_results)
+            self.cal_display_quality = 'SAVED' if len(self.cal_display_thresholds)==6 else 'PARTIAL'
+        if line.startswith(('CAL,REJECT,LOW_SPAN','CAL,FLASH_ERROR')):
+            self.cal_display_thresholds.clear()
+            self.cal_display_quality = 'REJECTED'
         if line.startswith("TEST,RESOURCES,"):
             fields = numeric_fields(line)
             new = {k: fields.get(k) == 1 for k in self.sensor_mask}
@@ -1080,7 +1121,7 @@ class Dashboard:
         if tag in ("IR", "ALL", "CAL_IR", "IR_LIVE", "CAL_SAMPLE"):
             names = ("L90","L45","L0","R0","R45","R90")
             if all(k in fields for k in names):
-                put("IR", fields, fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
+                put("IR", fields, tag == "CAL_SAMPLE" or fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
         if tag in ("MPU", "ALL", "MPU_LIVE", "PIVOT_CSV"):
             if tag == "PIVOT_CSV":
                 fields["yaw_cd"] = fields.get("angle_cd", fields.get("yaw_cd"))
@@ -1159,15 +1200,27 @@ class Dashboard:
             if key == "IR":
                 x0, x1, y0, y1 = 35, w-8, 29, h-33
                 if y1 <= y0: continue
-                for v in (0,1024,2048,3072,4095):
-                    y = y1-v/4095*(y1-y0)
+                thresholds = self.cal_display_thresholds
+                peak = max([int(fields[k]) for k in ("L90","L45","L0","R0","R45","R90")] + [v for ts in thresholds.values() for v in ts] + [256])
+                scale = min(4095,max(256,((peak*12//10+255)//256)*256))
+                c.create_text(w-8,8,anchor="ne",text=self.cal_display_quality+" | yellow: wall/side; orange: front",fill="#f6c847",font=("Consolas",8))
+                for v in (0,scale//4,scale//2,scale*3//4,scale):
+                    y = y1-v/scale*(y1-y0)
                     c.create_line(x0,y,x1,y,fill="#405063")
                     c.create_text(x0-3,y,text=str(v),anchor="e",fill="#abc0d0",font=("Consolas",8))
                 step=(x1-x0)/6
                 for i,k in enumerate(("L90","L45","L0","R0","R45","R90")):
                     v=int(fields[k]); x=x0+(i+.5)*step
-                    y=y1-max(0,min(4095,v))/4095*(y1-y0)
-                    c.create_rectangle(x-step*.32,y,x+step*.32,y1,fill="#58c9ff" if i<3 else "#71dfa1",outline="")
+                    y=y1-max(0,min(scale,v))/scale*(y1-y0)
+                    ts=thresholds.get(k,())
+                    bar_color="#788696" if not ts or v<ts[0] else "#2196F3"
+                    if len(ts)==2 and v>=ts[1]: bar_color="#e58c32"
+                    c.create_rectangle(x-step*.32,y,x+step*.32,y1,fill=bar_color,outline="")
+                    for j,t in enumerate(ts):
+                        ty=y1-t/scale*(y1-y0)
+                        tc="#f6c847" if j==0 else "#ff9b43"
+                        c.create_line(x-step*.43,ty,x+step*.43,ty,fill=tc,width=2)
+                        c.create_text(x,ty-6,text=str(t),fill=tc,font=("Consolas",7))
                     c.create_text(x,y1+9,text=k,fill="#d5e2ef",font=("Consolas",8))
                     c.create_text(x,y1+22,text=str(v),fill="#d5e2ef",font=("Consolas",8))
             else:
