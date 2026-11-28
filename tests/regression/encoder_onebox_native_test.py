@@ -105,6 +105,12 @@ static void CheckSharedArrival(void) {
     good.cruise=1200; assert(!MotionConfig_Valid(&good));
     Motion_Sync(600,100,&l,&r); assert(l<r && r==600 && l>0);
     Motion_Sync(600,-100,&l,&r); assert(r<l && l==600 && r>0);
+    Motion_SyncPD(600,0,100,0,&l,&r); assert(l<r && r==600);
+    Motion_SyncPD(600,0,0,-100,&l,&r); assert(r<l && l==600);
+    OneBoxSpeedPid a,b; OneBoxGains g={0,0,0};
+    OneBoxSpeedPid_Reset(&a); OneBoxSpeedPid_Reset(&b);
+    assert(OneBoxSpeedPid_StepFF(&a,&g,&motion_ff_l,850,850)>
+           OneBoxSpeedPid_StepFF(&b,&g,&motion_ff_r,850,850));
     assert(Motion_Base(0,850,850)>0 && Motion_Base(0,850,850)<10);
     assert(Motion_DistanceDesired(10)<Motion_DistanceDesired(450));
     assert(Motion_AngleDesired(5,80)<Motion_AngleDesired(40,0));

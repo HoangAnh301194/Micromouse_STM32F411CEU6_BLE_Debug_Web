@@ -490,3 +490,5 @@ benchmarks remain unchanged.
 
 ## V3 forward heading and pivot balance trial — 28/11/2026
 - Encoder-only and Encoder+MPU one-cell modes; separate conservative forward feedforward estimates from logs, filtered velocity-difference synchronization PD, heading PD, no IR. Existing wheel PID gains retained pending step tests. Pivot center correction uses signed travel and velocity balance, not absolute position feedback. Host odometry to be added separately. No new hardware validation.
+
+- Motion Analysis tab: full-size wheel/angle/sync/center trajectory plots, pause/window/cursor, active tracking RMSE; heading CSV separately routed; odometry computed on PC from signed encoder increments and relative MPU angle, saved as a sidecar and marked estimated. No IR. Hardware tuning pending.

@@ -61,6 +61,7 @@ TEST_CSV_COLUMNS = {
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
                "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS", "DELTA_L","DELTA_R","SYNC_ERROR","REMAIN_COUNTS","PHASE"),
+    "HEADING": ("timestamp","t_ms","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS","DELTA_L","DELTA_R","SYNC_ERROR","REMAIN_COUNTS","PHASE","valid","age_us","angle_deg","gz_dps"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "PIVOT": ("timestamp","mcu_ms","valid","yaw_deg","age_us","angle_deg","gz_dps","target_deg","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS","DELTA_L","DELTA_R","SYNC_ERROR","ANGLE_ERROR_CD","PHASE"),
     "MPU": ("timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"),
@@ -122,6 +123,10 @@ def sensor_test_csv(line, host_time=None):
         if any(key in fields for key in speed_keys) and not all(_DECIMAL.fullmatch(fields.get(key, "")) for key in speed_keys):
             return None
         values = tuple(fields[key] for key in keys) + tuple(fields.get(key, "") for key in speed_keys)
+        if fields.get("heading")=="1":
+            sensor="HEADING"
+            if fields.get("valid") not in ("0","1") or not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in ("age_us","angle_cd","gz_cd")):
+                return None
     elif sensor == "ALL":
         keys = ("enc_l", "enc_r", "ir_valid", "L0", "L45", "L90",
                 "R0", "R45", "R90", "mpu_valid", "yaw_cd", "gz_cd")
@@ -146,12 +151,14 @@ def sensor_test_csv(line, host_time=None):
             if not _DECIMAL.fullmatch(fields.get("yaw_cd", "")):
                 return None
             values = (ms, "1", f"{int(fields['yaw_cd'])/100:.2f}", age)
-    if sensor in ("ONEBOX","PIVOT"):
+    if sensor in ("ONEBOX","PIVOT","HEADING"):
         extra=("dl","dr","sync","remain","phase")
         if any(k in fields for k in extra) and not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in extra):
             return None
         values+=tuple(fields.get(k,"") for k in extra)
-    if sensor in ("ENC", "ALL", "ONEBOX", "MPU", "PIVOT"):
+    if sensor=="HEADING":
+        values+=(fields["valid"],fields["age_us"])+tuple(f"{int(fields[k])/100:.2f}" if fields["valid"]=="1" else "" for k in ("angle_cd","gz_cd"))
+    if sensor in ("ENC", "ALL", "ONEBOX", "MPU", "PIVOT","HEADING"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values
 
@@ -306,24 +313,24 @@ class DualSessionLog:
             self._streaming = False
             return
 
-        if line.startswith(self._ONEBOX_SELECT):
+        if line.startswith((self._ONEBOX_SELECT,"Selected encoder option 9: 1 Box Forward + MPU")):
             # Selection only ARMS 1-box. Never open a motion CSV until the
             # firmware acknowledges a successful ONEBOX,START.
             self._has_menu_context = True
             self._close_active()
-            self.active_sensor = "ONEBOX"
+            self.active_sensor = "HEADING" if line.startswith("Selected encoder option 9:") else "ONEBOX"
             self._streaming = False
             return
 
         if line.startswith("ONEBOX,START,"):
-            if self.active_sensor == "ONEBOX":
+            if self.active_sensor in ("ONEBOX","HEADING"):
                 self._close_active()
                 self._streaming = True
-                self._open_run("ONEBOX", TEST_CSV_COLUMNS["ONEBOX"], host_time)
+                self._open_run(self.active_sensor, TEST_CSV_COLUMNS[self.active_sensor], host_time)
             return
 
         if line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
-            if self.active_sensor == "ONEBOX":
+            if self.active_sensor in ("ONEBOX","HEADING"):
                 self._streaming = False
                 self._close_active()  # Includes DONE, Stop and faults.
             return
@@ -378,11 +385,11 @@ class DualSessionLog:
             sample = datetime.now()
         stamp = sample.strftime("%Y%m%d_%H%M%S_%f")
 
-        if sensor in ("ENC", "ONEBOX", "CAL"):
+        if sensor in ("ENC", "ONEBOX", "HEADING", "CAL"):
             if sensor == "CAL":
                 folder = self.root / "mode 1 - ir calibration wall-open"
             else:
-                name = ("log receiver" if sensor == "ENC" else "1 box forward")
+                name = ("log receiver" if sensor == "ENC" else "1 box forward - heading" if sensor=="HEADING" else "1 box forward")
                 folder = self.root / ("mode 7 - encoder test - " + name)
             folder.mkdir(parents=True, exist_ok=True)
             # Keep timestamp-first filenames readable and sortable. The COM
@@ -419,7 +426,7 @@ class DualSessionLog:
         except OSError:
             handle.close()
             path.unlink(missing_ok=True)
-            if sensor not in ("ENC", "ONEBOX", "CAL"):
+            if sensor not in ("ENC", "ONEBOX", "HEADING", "CAL"):
                 folder.rmdir()
             raise
 
@@ -444,7 +451,7 @@ class DualSessionLog:
             return None
         sensor, headers, values = record
         if self.active_sensor is None:
-            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "MPU", "PIVOT", "CAL"):
+            if self._has_menu_context or sensor in ("ENC", "ONEBOX", "HEADING", "MPU", "PIVOT", "CAL"):
                 # Encoder and MPU angle log is STRICTLY opt-in via Log Receive even after
                 # reconnect; never infer it from an unsolicited ENC frame.
                 return None

@@ -19,12 +19,12 @@ class AngleSample:
 
     def consume(self, line):
         record = sensor_test_csv(line)
-        if not record or record[0] not in ("MPU","PIVOT"):
+        if not record or record[0] not in ("MPU","PIVOT","HEADING"):
             return False
         row = dict(zip(record[1], record[2]))
         self.age = int(row["age_us"]) if row["age_us"] else None
         self.valid = row["valid"] == "1" and (self.age is None or 0 <= self.age <= 3000)
-        self.yaw = float(row["angle_deg"] if record[0]=="PIVOT" else row["yaw_deg"]) if self.valid else None
+        self.yaw = float(row["angle_deg"] if record[0] in ("PIVOT","HEADING") else row["yaw_deg"]) if self.valid else None
         return True
 
 
