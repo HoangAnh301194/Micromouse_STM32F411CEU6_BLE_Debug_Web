@@ -110,10 +110,30 @@ static void CheckIndependentArrival(void) {
     o=OneBoxCore_Step(&s,ONEBOX_TARGET_L,ONEBOX_TARGET_R+50);
     assert(o.reason==ONEBOX_REASON_DONE);
 }
+static void CheckSynchronization(void) {
+    OneBoxCore s; float l,r;
+    OneBoxCore_Start(&s,100,200);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l==900.0f && r>904.0f && r<905.0f);
+    OneBoxCore_Step(&s,600,600);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l<900.0f && r>905.0f);
+    OneBoxCore_Step(&s,600,800);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l>900.0f && r<905.0f);
+    OneBoxCore_Start(&s,0,0);
+    OneBoxCore_Step(&s,ONEBOX_TARGET_L,ONEBOX_TARGET_R-10);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l==0.0f && r>0.0f && r<=450.0f);
+    OneBoxCore_Step(&s,ONEBOX_TARGET_L,ONEBOX_TARGET_R);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l==0.0f && r==0.0f);
+}
 int main(void) {
+    CheckSynchronization();
     CheckIndependentArrival();
     CheckSpeedPid();
-    assert(ONEBOX_TARGET_L==2414L && ONEBOX_TARGET_R==2414L);
+    assert(ONEBOX_TARGET_L==2414L && ONEBOX_TARGET_R==2427L);
     CheckTargets();CheckHostLoss();CheckReverse();
     CheckDivergence();CheckStall();CheckTimeout();CheckExternalStop();
     puts("encoder_onebox_native_test: PASS");

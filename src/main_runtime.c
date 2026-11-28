@@ -843,9 +843,9 @@ int Main_Runtime(void)
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
                     (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
                     if (EncoderOneBox_Start()) {
-                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_pps=%d\r\n",
+                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_l=%d,ref_r=%d\r\n",
                                   (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
-                                  (int)ONEBOX_MAX_PWM, (int)ONEBOX_SPEED_PPS);
+                                  (int)ONEBOX_MAX_PWM, (int)ONEBOX_SPEED_PPS, (int)ONEBOX_SPEED_R_PPS);
                     } else {
                         BT_SendString("ONEBOX,REJECT,reason=MOTOR_OR_ENCODER_NOT_READY\r\n");
                     }

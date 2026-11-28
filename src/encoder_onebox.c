@@ -16,6 +16,7 @@ static OneBoxCore core;
 static OneBoxGains gains_l = {ONEBOX_DEFAULT_P, ONEBOX_DEFAULT_I, ONEBOX_DEFAULT_D},
                    gains_r = {ONEBOX_DEFAULT_P, ONEBOX_DEFAULT_I, ONEBOX_DEFAULT_D};
 static OneBoxSpeedPid pid_l, pid_r;
+static float ref_l_pps, ref_r_pps;
 static volatile uint8_t phase; /* 0 idle, 1 driving, 2 braking */
 static volatile uint8_t result_pending;
 static uint8_t fault_latched; /* severe fault requires MCU reset to re-arm */
@@ -62,6 +63,7 @@ static void Finish(uint8_t reason)
     if (phase != 1U) return;
     OneBoxCore_Stop(&core, reason);
     OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
+    ref_l_pps = ref_r_pps = 0.0f;
     result.reason = reason;
     result.pivot_target = pivot_target;
     result.count_l = core.delta_l;
@@ -113,6 +115,7 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
     OneBoxCore_Start(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
     OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
     result_pending = 0U;
+    ref_l_pps = ref_r_pps = 0.0f;
     phase = 1U;
     Unlock(irq);
     return 1U;
@@ -191,9 +194,10 @@ void EncoderOneBox_ControlTick(void)
         return;
     }
     { /* TIM11: one speed update per 1 ms tick. */
-        int16_t left = OneBoxSpeedPid_Step(&pid_l, &gains_l, core.reached_l ? 0.0f : ONEBOX_SPEED_PPS,
+        OneBoxCore_References(&core, &ref_l_pps, &ref_r_pps);
+        int16_t left = OneBoxSpeedPid_Step(&pid_l, &gains_l, ref_l_pps,
                                            Encoder_GetLeftSpeedPPS());
-        int16_t right = OneBoxSpeedPid_Step(&pid_r, &gains_r, core.reached_r ? 0.0f : ONEBOX_SPEED_PPS,
+        int16_t right = OneBoxSpeedPid_Step(&pid_r, &gains_r, ref_r_pps,
                                             Encoder_GetRightSpeedPPS());
         Motor_SetPairPermille(left, right);
     }
@@ -217,8 +221,8 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     out->left = Encoder_GetLeftCount();
     out->right = Encoder_GetRightCount();
     Motor_GetAppliedPairPermille(&out->pwm_l, &out->pwm_r);
-    out->ref_l = phase == 1U && !core.reached_l ? ONEBOX_SPEED_PPS : 0;
-    out->ref_r = phase == 1U && !core.reached_r ? ONEBOX_SPEED_PPS : 0;
+    out->ref_l = phase == 1U ? (int32_t)(ref_l_pps + 0.5f) : 0;
+    out->ref_r = phase == 1U ? (int32_t)(ref_r_pps + 0.5f) : 0;
     out->pivot_target = pivot_target;
     out->imu_valid = 0U; out->age_us=0U; out->yaw=out->angle=out->gz=0.0f;
     if (pivot_target) {

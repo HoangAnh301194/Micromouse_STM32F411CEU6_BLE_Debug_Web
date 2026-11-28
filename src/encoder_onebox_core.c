@@ -119,6 +119,18 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
     /* Distance core owns only stop/fault decisions. Fixed nominal output
      * is a compatibility indicator; actual PWM is produced by wheel PID. */
     out.pwm_l = s->reached_l ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
-    out.pwm_r = s->reached_r ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
+    out.pwm_r = s->reached_r ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_R_PPS + 0.5f);
     return out;
+}
+
+/* Equal normalized progress is equal estimated physical travel. */
+void OneBoxCore_References(const OneBoxCore *s, float *left, float *right)
+{
+    float error = (float)s->delta_l - (float)s->delta_r * ONEBOX_TARGET_L / ONEBOX_TARGET_R;
+    float correction = ClampF(ONEBOX_SYNC_K * error, -ONEBOX_SYNC_LIMIT, ONEBOX_SYNC_LIMIT);
+    *left = s->running && !s->reached_l ? ONEBOX_SPEED_PPS - correction : 0.0f;
+    *right = s->running && !s->reached_r ? (ONEBOX_SPEED_PPS + correction) * ONEBOX_TARGET_R / ONEBOX_TARGET_L : 0.0f;
+    /* Do not accelerate the remaining wheel once its partner has arrived. */
+    if (s->reached_l && *right > 450.0f) *right = 450.0f;
+    if (s->reached_r && *left > 450.0f) *left = 450.0f;
 }

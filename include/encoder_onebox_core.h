@@ -7,17 +7,20 @@
  * Eight manual rolls on 2026-11-23:
  * left mean 2400.375, right mean 2389.625 quadrature counts.
  * Updated 2026-11-25: 10 passive ENC captures, left mean 2413.9,
- * right mean 2427.4 (end minus first sample). Use rounded left mean
- * for both wheels per request; assumes captures span one physical cell.
+ * right mean 2427.4 (end minus first sample). Use independent rounded
+ * targets; assumes captures span one physical cell.
  * These are only initial travel targets; motor-driven braking needs tuning.
  */
 #define ONEBOX_TARGET_L 2414L
-#define ONEBOX_TARGET_R ONEBOX_TARGET_L
+#define ONEBOX_TARGET_R 2427L
 /* First motor-on one-cell trial: deliberately limited to 20% duty.
  * Duty is NOT wheel speed; a stall at low duty is detected and aborted.
  * Do not raise PWM without a supervised lifted-wheel test. */
 #define ONEBOX_MAX_PWM 200
-#define ONEBOX_SPEED_PPS 1100
+#define ONEBOX_SPEED_PPS 900 /* left baseline; leaves PWM headroom */
+#define ONEBOX_SPEED_R_PPS ((ONEBOX_SPEED_PPS * ONEBOX_TARGET_R + ONEBOX_TARGET_L/2) / ONEBOX_TARGET_L)
+#define ONEBOX_SYNC_K 2.0f /* PPS per normalized count error; provisional */
+#define ONEBOX_SYNC_LIMIT 150.0f
 #define ONEBOX_KS_PM 80.0f
 #define ONEBOX_KV_PM_PER_PPS 0.098f
 #define ONEBOX_INTEGRAL_LIMIT 3000.0f
@@ -75,5 +78,6 @@ void OneBoxCore_Start(OneBoxCore *s, int32_t start_l, int32_t start_r);
 void OneBoxCore_HostPing(OneBoxCore *s);
 OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right);
 void OneBoxCore_Stop(OneBoxCore *s, uint8_t reason);
+void OneBoxCore_References(const OneBoxCore *s, float *left, float *right);
 
 #endif
