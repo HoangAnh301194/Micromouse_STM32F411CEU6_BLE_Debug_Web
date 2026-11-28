@@ -434,7 +434,7 @@ class Dashboard:
         self.irpid_panel=ttk.LabelFrame(right,text='IR PID — base PWM (%) / normalized error',padding=6)
         self.irpid_vars=[tk.StringVar(value=x) for x in ('12','40','0','0')]
         self.irpid_entries=[]
-        for i,(name,var) in enumerate(zip(('Speed PWM %','Kp','Ki','Kd'),self.irpid_vars)):
+        for i,(name,var) in enumerate(zip(('Speed PWM % (5–60)','Kp','Ki','Kd'),self.irpid_vars)):
             ttk.Label(self.irpid_panel,text=name).grid(row=i//2,column=(i%2)*2)
             e=ttk.Entry(self.irpid_panel,textvariable=var,width=9);e.grid(row=i//2,column=(i%2)*2+1);self.irpid_entries.append(e)
         self.multi_panel = ttk.Frame(right)
@@ -653,10 +653,10 @@ class Dashboard:
                 self.reader.motion_lease.clear()
         if command == b'G' and self.active_test_name=='IR PID':
             try:
-                v=[float(x.get()) for x in self.irpid_vars]; limits=[(5,18),(0,100),(0,100),(0,10)]
+                v=[float(x.get()) for x in self.irpid_vars]; limits=[(5,60),(0,100),(0,100),(0,10)]
                 if not all(lo<=x<=hi for x,(lo,hi) in zip(v,limits)):raise ValueError
                 vals=[round(v[0]*10)]+[round(x*100) for x in v[1:]]
-            except (ValueError,OverflowError):self.status.set('PWM 5–18%; Kp/Ki 0–100; Kd 0–10');return
+            except (ValueError,OverflowError):self.status.set('PWM 5–60%; Kp/Ki 0–100; Kd 0–10');return
             self.reader.motion_lease.set();sent=self.reader.send_irpid(vals)
             self.onebox_start_pending=sent
             if not sent:self.reader.motion_lease.clear()

@@ -97,6 +97,9 @@ static uint8_t PidMenu_Consume(char c, const ModeMenu *menu, uint32_t now)
 /* IR-only corridor PID; main-context 5ms nominal update, motor watchdog independent. */
 static uint8_t irpid_running, irpid_rx, irpid_n, irpid_configured;
 static uint32_t irpid_frame[4], irpid_rx_ms, irpid_ping, irpid_last, irpid_log, irpid_start;
+#define IRPID_BASE_MIN_PM 50U
+#define IRPID_BASE_MAX_PM 600U
+#define IRPID_OUTPUT_MAX_PM 800U
 static uint16_t irpid_base;
 static float irpid_kp,irpid_ki,irpid_kd,irpid_i,irpid_prev,irpid_d;
 static IR_Simple_Calib_t irpid_cal;
@@ -118,7 +121,7 @@ static uint8_t IrPidConsume(char c,const ModeMenu *m,uint32_t now){
     if(now-irpid_rx_ms>1000U){irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_TIMEOUT\r\n");return 1U;}
     if(c==';'){
         irpid_rx=0U;
-        if(IrPidArmed(m)&&!irpid_running&&irpid_n==20U&&irpid_frame[0]>=50U&&irpid_frame[0]<=180U&&irpid_frame[1]<=10000U&&irpid_frame[2]<=10000U&&irpid_frame[3]<=1000U){
+        if(IrPidArmed(m)&&!irpid_running&&irpid_n==20U&&irpid_frame[0]>=IRPID_BASE_MIN_PM&&irpid_frame[0]<=IRPID_BASE_MAX_PM&&irpid_frame[1]<=10000U&&irpid_frame[2]<=10000U&&irpid_frame[3]<=1000U){
             irpid_base=(uint16_t)irpid_frame[0];irpid_kp=irpid_frame[1]/100.0f;irpid_ki=irpid_frame[2]/100.0f;irpid_kd=irpid_frame[3]/100.0f;irpid_configured=1U;
             BT_SendString("IRPID,APPLIED\r\n");
         }else{irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG\r\n");}
@@ -139,7 +142,7 @@ static uint8_t IrPidStart(uint32_t now){
     irpid_running=1U;irpid_ping=irpid_last=irpid_log=irpid_start=now;
     irpid_i=irpid_d=0.0f;
     irpid_prev=((float)ir.value[IR_L0]-irpid_cal.open_l0)/(irpid_cal.center_l0-irpid_cal.open_l0)-((float)ir.value[IR_R0]-irpid_cal.open_r0)/(irpid_cal.center_r0-irpid_cal.open_r0);
-    BT_Printf("IRPID,START,base=%u,kp100=%lu,ki100=%lu,kd100=%lu\r\n",(unsigned)irpid_base,(unsigned long)irpid_frame[1],(unsigned long)irpid_frame[2],(unsigned long)irpid_frame[3]);
+    BT_Printf("IRPID,START,base=%u,max_pwm=%u,kp100=%lu,ki100=%lu,kd100=%lu\r\n",(unsigned)irpid_base,(unsigned)IRPID_OUTPUT_MAX_PM,(unsigned long)irpid_frame[1],(unsigned long)irpid_frame[2],(unsigned long)irpid_frame[3]);
     return 1U;
 }
 static void IrPidPoll(const ModeMenu *m,uint32_t now){
@@ -154,7 +157,7 @@ static void IrPidPoll(const ModeMenu *m,uint32_t now){
     if(ir.value[IR_L0]<irpid_cal.wall_off_l0||ir.value[IR_R0]<irpid_cal.wall_off_r0){IrPidStop("SIDE_LOST");return;}
     e=((float)ir.value[IR_L0]-irpid_cal.open_l0)/(irpid_cal.center_l0-irpid_cal.open_l0)-((float)ir.value[IR_R0]-irpid_cal.open_r0)/(irpid_cal.center_r0-irpid_cal.open_r0);
     irpid_d+=0.25f*((e-irpid_prev)/dt-irpid_d);irpid_prev=e;
-    cap=IrPidClip(200.0f-irpid_base,0.0f,irpid_base);
+    cap=IrPidClip((float)IRPID_OUTPUT_MAX_PM-irpid_base,0.0f,irpid_base);
     ni=IrPidClip(irpid_i+e*dt,-2.0f,2.0f);
     u=irpid_kp*e+irpid_ki*ni+irpid_kd*irpid_d;
     if(u<=cap&&u>=-cap)irpid_i=ni;
