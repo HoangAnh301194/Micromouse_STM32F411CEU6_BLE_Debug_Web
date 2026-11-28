@@ -1,0 +1,29 @@
+name: MPU restoration - firmware build
+on:
+  push:
+    branches: [giomuadongbac]
+    paths:
+      - 'src/main_runtime.c'
+      - 'tools/mpu_test_tab.py'
+      - 'tools/classic_spp_dashboard.py'
+      - 'tests/regression/mpu_test_restore_test.py'
+      - '.github/workflows/mpu-restore-build.yml'
+  workflow_dispatch:
+
+jobs:
+  mpu-build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate MPU Test host scripts and integration guards
+        run: |
+          python -m py_compile tools/mpu_test_tab.py tools/classic_spp_dashboard.py
+          python tests/regression/mpu_test_restore_test.py
+      - name: Install PlatformIO
+        run: python -m pip install --disable-pip-version-check platformio
+      - name: Build current Motion Control firmware with MPU Test
+        run: python -m platformio run -e genericSTM32F411CE
