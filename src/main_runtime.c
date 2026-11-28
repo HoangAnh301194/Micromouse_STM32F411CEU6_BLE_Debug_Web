@@ -918,7 +918,7 @@ int Main_Runtime(void)
                     (unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90]);
             }
             {
-                EncoderOneBoxTelemetry motion;
+                EncoderOneBoxTelemetry motion={0};
                 EncoderOneBoxResult result;
                 uint8_t has_motion = EncoderOneBox_GetTelemetry(&motion);
                 uint8_t has_result = EncoderOneBox_PopResult(&result);
@@ -929,6 +929,7 @@ int Main_Runtime(void)
                     motion.pivot_target = result.pivot_target;
                     motion.imu_valid=0U; motion.age_us=0U; motion.yaw=motion.angle=motion.gz=0.0f;
                     motion.elapsed_ms = result.elapsed_ms;
+                    motion.delta_l=result.count_l; motion.delta_r=result.count_r; motion.motion_stage=MOTION_END;
                     motion.left = Encoder_GetLeftCount();
                     motion.right = Encoder_GetRightCount();
                     motion.pwm_l = 0;
@@ -939,20 +940,26 @@ int Main_Runtime(void)
                     has_motion = 1U;
                 }
                 if (has_motion && (has_result ||
-                    (uint32_t)(now - last_onebox_log_ms) >= 20U)) {
+                    (uint32_t)(now - last_onebox_log_ms) >= 25U)) {
                     last_onebox_log_ms = now;
                     if (motion.pivot_target) {
-                        BT_Printf("PIVOT_CSV,ms=%lu,valid=%u,age_us=%lu,yaw_cd=%ld,angle_cd=%ld,gz_cd=%ld,target=%d,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                        BT_Printf("PIVOT_CSV,ms=%lu,valid=%u,age_us=%lu,yaw_cd=%ld,angle_cd=%ld,gz_cd=%ld,target=%d,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,dl=%ld,dr=%ld,sync=%ld,remain=%ld,phase=%u\r\n",
                             (unsigned long)now,(unsigned)motion.imu_valid,(unsigned long)motion.age_us,
                             (long)(motion.yaw*100),(long)(motion.angle*100),(long)(motion.gz*100),(int)motion.pivot_target,
                             (long)motion.left,(long)motion.right,(int)motion.pwm_l,(int)motion.pwm_r,
-                            (long)motion.ref_l,(long)motion.ref_r,(long)motion.speed_l,(long)motion.speed_r);
-                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                            (long)motion.ref_l,(long)motion.ref_r,(long)motion.speed_l,(long)motion.speed_r,
+                            (long)motion.delta_l,(long)motion.delta_r,
+                            (long)(motion.pivot_target>0?-motion.delta_l-motion.delta_r:motion.delta_l+motion.delta_r),
+                            (long)(motion.pivot_target*100-motion.angle*100),(unsigned)motion.motion_stage);
+                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,dl=%ld,dr=%ld,sync=%ld,remain=%ld,phase=%u\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
                               (int)motion.pwm_l, (int)motion.pwm_r,
                               (long)motion.ref_l, (long)motion.ref_r,
-                              (long)motion.speed_l, (long)motion.speed_r);
+                              (long)motion.speed_l, (long)motion.speed_r,
+                            (long)motion.delta_l,(long)motion.delta_r,
+                            (long)(motion.delta_l-motion.delta_r),
+                            (long)(ONEBOX_TARGET_L-(motion.delta_l+motion.delta_r)/2),(unsigned)motion.motion_stage);
                 }
                 if (has_result) {
                     BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",

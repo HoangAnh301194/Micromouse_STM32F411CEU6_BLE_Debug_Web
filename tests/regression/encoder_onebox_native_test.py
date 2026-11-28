@@ -93,25 +93,21 @@ static void CheckSpeedPid(void) {
     assert(ONEBOX_PID_DT_S==0.001f);
     assert(OneBoxSpeedPid_Step(&a,&l,0,1000)==0 && !a.initialized);
 }
-static void CheckIndependentArrival(void) {
-    OneBoxCore s; OneBoxOutput o;
+static void CheckSharedArrival(void) {
+    OneBoxCore s; OneBoxOutput o; float l,r;
     OneBoxCore_Start(&s,0,0);
-    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L+50,ONEBOX_TARGET_R-50);
-    assert(o.reason==ONEBOX_REASON_NONE && s.reached_l && !s.reached_r);
-    assert(o.pwm_l==0 && o.pwm_r>0);
-    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L+50,ONEBOX_TARGET_R-1);
-    assert(o.reason==ONEBOX_REASON_NONE);
-    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L+50,ONEBOX_TARGET_R);
-    assert(o.reason==ONEBOX_REASON_DONE);
-    OneBoxCore_Start(&s,0,0);
-    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L-50,ONEBOX_TARGET_R+50);
-    assert(o.reason==ONEBOX_REASON_NONE && !s.reached_l && s.reached_r);
-    assert(o.pwm_l>0 && o.pwm_r==0);
-    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L,ONEBOX_TARGET_R+50);
-    assert(o.reason==ONEBOX_REASON_DONE);
+    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L,ONEBOX_TARGET_R-50);
+    assert(o.reason==ONEBOX_REASON_NONE && o.pwm_l>0 && o.pwm_r>0);
+    o=OneBoxCore_Step(&s,ONEBOX_TARGET_L+25,ONEBOX_TARGET_R-25);
+    assert(o.reason==ONEBOX_REASON_DONE && o.pwm_l==0 && o.pwm_r==0);
+    Motion_Sync(600,100,&l,&r); assert(l<r && r==600 && l>0);
+    Motion_Sync(600,-100,&l,&r); assert(r<l && l==600 && r>0);
+    assert(Motion_Base(0,850,850)>0 && Motion_Base(0,850,850)<10);
+    assert(Motion_DistanceDesired(10)<Motion_DistanceDesired(450));
+    assert(Motion_AngleDesired(5,80)<Motion_AngleDesired(40,0));
 }
 int main(void) {
-    CheckIndependentArrival();
+    CheckSharedArrival();
     CheckSpeedPid();
     assert(ONEBOX_TARGET_L==2414L && ONEBOX_TARGET_R==2414L);
     CheckTargets();CheckHostLoss();CheckReverse();

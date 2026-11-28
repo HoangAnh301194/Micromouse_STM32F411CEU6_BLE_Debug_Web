@@ -60,9 +60,9 @@ TEST_CSV_COLUMNS = {
     "CAL": ("t_ms","stage","L0","L45","L90","R0","R45","R90"),
     "ENC": ("timestamp", "ENC_L", "ENC_R"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
-               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
+               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS", "DELTA_L","DELTA_R","SYNC_ERROR","REMAIN_COUNTS","PHASE"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
-    "PIVOT": ("timestamp","mcu_ms","valid","yaw_deg","age_us","angle_deg","gz_dps","target_deg","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS"),
+    "PIVOT": ("timestamp","mcu_ms","valid","yaw_deg","age_us","angle_deg","gz_dps","target_deg","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS","DELTA_L","DELTA_R","SYNC_ERROR","ANGLE_ERROR_CD","PHASE"),
     "MPU": ("timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"),
     "ALL": ("timestamp", "ENC_L", "ENC_R", "ir_valid",
             "L0", "L45", "L90", "R0", "R45", "R90",
@@ -146,6 +146,11 @@ def sensor_test_csv(line, host_time=None):
             if not _DECIMAL.fullmatch(fields.get("yaw_cd", "")):
                 return None
             values = (ms, "1", f"{int(fields['yaw_cd'])/100:.2f}", age)
+    if sensor in ("ONEBOX","PIVOT"):
+        extra=("dl","dr","sync","remain","phase")
+        if any(k in fields for k in extra) and not all(_DECIMAL.fullmatch(fields.get(k,"")) for k in extra):
+            return None
+        values+=tuple(fields.get(k,"") for k in extra)
     if sensor in ("ENC", "ALL", "ONEBOX", "MPU", "PIVOT"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values

@@ -50,4 +50,4 @@ assert "if (ModeMenu_PivotTarget(menu)) return TEST_RES_MPU | TEST_RES_ENCODER |
 assert "test_resource_mask == (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)" in main
 dashboard=(Path(__file__).resolve().parents[2]/"tools"/"classic_spp_dashboard.py").read_text()
 assert '("MPU","ENC") if name.startswith("Pivot ") else ()' in dashboard
-assert "self.main_split.forget(self.sensor_dashboard)" in dashboard
+assert "self.sensor_dashboard.pack_forget()" in dashboard

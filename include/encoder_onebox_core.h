@@ -18,6 +18,24 @@
  * Do not raise PWM without a supervised lifted-wheel test. */
 #define ONEBOX_MAX_PWM 200
 #define ONEBOX_SPEED_PPS 1100
+/* Conservative initial tuning, not yet bench validated. PPS, counts, degrees. */
+#define MOTION_CRUISE_PPS 850.0f
+#define MOTION_MIN_PPS 220.0f
+#define MOTION_ACCEL_PPS_S 2200.0f
+#define MOTION_DECEL_COUNTS 450.0f
+#define MOTION_SYNC_KP 3.0f
+#define MOTION_SYNC_MAX_PPS 220.0f
+#define MOTION_ANGLE_KP 40.0f
+#define MOTION_ANGLE_KD 2.0f
+#define MOTION_ANGLE_TOL 1.0f
+#define MOTION_GYRO_TOL 3.0f
+#define MOTION_COUNT_TOL 20L
+#define MOTION_STOP_COUNTS 5L
+enum { MOTION_ACC=1, MOTION_CRUISE=2, MOTION_DEC=3, MOTION_SETTLE=4, MOTION_END=5 };
+float Motion_Base(float previous, float desired, float limit);
+float Motion_DistanceDesired(float remaining);
+float Motion_AngleDesired(float remaining, float gyro);
+void Motion_Sync(float base, int32_t error, float *left, float *right);
 #define ONEBOX_KS_PM 80.0f
 #define ONEBOX_KV_PM_PER_PPS 0.098f
 #define ONEBOX_INTEGRAL_LIMIT 3000.0f
@@ -51,7 +69,8 @@ enum {
     ONEBOX_REASON_ENCODER = 5,
     ONEBOX_REASON_IMU = 6,
     ONEBOX_REASON_MOTOR = 7,
-    ONEBOX_REASON_HOST_LOST = 8
+    ONEBOX_REASON_HOST_LOST = 8,
+    ONEBOX_REASON_TOLERANCE = 9
 };
 
 typedef struct {

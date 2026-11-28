@@ -21,6 +21,8 @@ typedef struct {
     int32_t left, right;
     int16_t pwm_l, pwm_r;
     int32_t ref_l, ref_r, speed_l, speed_r;
+    int32_t delta_l, delta_r;
+    uint8_t motion_stage;
     int16_t pivot_target;
     float yaw, angle, gz;
     uint32_t age_us;

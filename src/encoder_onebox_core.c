@@ -5,6 +5,29 @@ static float ClampF(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
+float Motion_Base(float previous, float desired, float limit)
+{
+    /* Slew only upward; distance/angle braking cap takes precedence. */
+    return ClampF(desired, 0.0f, ClampF(previous+MOTION_ACCEL_PPS_S*ONEBOX_PID_DT_S,0.0f,limit));
+}
+float Motion_DistanceDesired(float remaining)
+{
+    return ClampF(MOTION_CRUISE_PPS*remaining/MOTION_DECEL_COUNTS, MOTION_MIN_PPS, MOTION_CRUISE_PPS);
+}
+float Motion_AngleDesired(float remaining, float gyro)
+{
+    return ClampF(MOTION_ANGLE_KP*remaining-MOTION_ANGLE_KD*gyro, MOTION_MIN_PPS, MOTION_CRUISE_PPS);
+}
+void Motion_Sync(float base, int32_t error, float *left, float *right)
+{
+    /* Slow the leading wheel, do not demand more from a saturated lagging wheel.
+     * Keep both references positive during drive (no one-wheel catch-up stop). */
+    float u=ClampF(MOTION_SYNC_KP*(float)error,-MOTION_SYNC_MAX_PPS,MOTION_SYNC_MAX_PPS);
+    float cap=base*0.45f;
+    u=ClampF(u,-cap,cap);
+    *left=base-(u>0.0f?u:0.0f);
+    *right=base+(u<0.0f?u:0.0f);
+}
 uint8_t OneBoxGains_Valid(const OneBoxGains *g)
 {
     return g && g->p <= ONEBOX_PID_P_MAX && g->i <= ONEBOX_PID_I_MAX &&
@@ -103,12 +126,9 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
         Abs32(imbalance) > ONEBOX_DIVERGENCE_COUNT)
         out.reason = ONEBOX_REASON_ENCODER;
 
-    /* Stop commanding each wheel independently at its target. No early
-     * completion from an average or a 75-count shortfall. Latch arrival
-     * to avoid restarting a wheel because of encoder bounce. */
-    if (dl >= ONEBOX_TARGET_L) s->reached_l = 1U;
-    if (dr >= ONEBOX_TARGET_R) s->reached_r = 1U;
-    if (!out.reason && s->reached_l && s->reached_r)
+    /* A shared endpoint: never drive one wheel alone to make up counts.
+     * Final accuracy is checked after bounded braking in the runtime. */
+    if (!out.reason && average >= (ONEBOX_TARGET_L+ONEBOX_TARGET_R)/2L-MOTION_STOP_COUNTS)
         out.reason = ONEBOX_REASON_DONE;
 
     if (out.reason) {
@@ -118,7 +138,7 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
 
     /* Distance core owns only stop/fault decisions. Fixed nominal output
      * is a compatibility indicator; actual PWM is produced by wheel PID. */
-    out.pwm_l = s->reached_l ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
-    out.pwm_r = s->reached_r ? 0 : (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
+    out.pwm_l = (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
+    out.pwm_r = (int16_t)(ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * ONEBOX_SPEED_PPS + 0.5f);
     return out;
 }

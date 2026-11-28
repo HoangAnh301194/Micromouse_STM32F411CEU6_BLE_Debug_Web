@@ -482,3 +482,6 @@ benchmarks remain unchanged.
 - Added four guarded pivot tests and MPU Log submenu, shared wheel PID, relative gyro target and mixed CSV/radar. No angle PID or deceleration profile. Validate gyro sign and lifted-wheel directions before floor testing; no hardware acceptance yet.
 
 - Pivot follow-up: explicit resource check, calibration retry/readiness in pivot selection, signed target mapping tests, and relative yaw on pivot result in dashboard. No changes to PWM cap or brake policy.
+
+## V3 synchronized motion trial — 28/11/2026
+- Encoder-only shared endpoint, ramped 850 PPS cruise, leading-wheel P correction; MPU pivot PD and signed wheel synchronization, no reverse. 100 ms brake and final tolerance check (TOLERANCE if outside). Safety limits unchanged; tuning constants preliminary. Compact sensor panel under left terminal; CSV extends signed delta, synchronization, remaining distance/angle and phase. CI/hardware pending.

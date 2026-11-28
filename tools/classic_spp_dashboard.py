@@ -321,7 +321,8 @@ class Dashboard:
         self.main_split.pack(fill="both", expand=True)
         panes = ttk.PanedWindow(self.main_split, orient="horizontal")
         self.main_split.add(panes, weight=3)
-        dashboard = self.sensor_dashboard = ttk.LabelFrame(self.main_split, text="Sensor Dashboard", padding=4)
+        left = ttk.LabelFrame(panes, text="Continuous data — sensor samples", padding=5)
+        dashboard = self.sensor_dashboard = ttk.LabelFrame(left, text="Sensor Dashboard", padding=2)
         dashboard.rowconfigure(0, weight=1)
         for col, weight in enumerate((3, 2, 4)):
             dashboard.columnconfigure(col, weight=weight, uniform="sensor")
@@ -333,7 +334,6 @@ class Dashboard:
         self.encoder_panel.grid(row=0, column=2, sticky="nsew", padx=3)
         self.encoder_summary = ttk.Label(self.encoder_panel, text="ENC DISABLED", justify="left")
         self.encoder_summary.pack(fill="x", padx=4, pady=2)
-        left = ttk.LabelFrame(panes, text="Continuous data — sensor samples", padding=5)
         right = ttk.LabelFrame(panes, text="Mode selection", padding=5)
         self.left_log_frame = left
         panes.add(left, weight=3)
@@ -357,7 +357,7 @@ class Dashboard:
         self.data_text.configure(height=6)
         self.cal_pane=ttk.LabelFrame(self.ir_panel,text="Mode 1 — IR calibration (6 mắt)")
         ttk.Label(self.cal_pane,textvariable=self.cal_note).pack(anchor="w")
-        self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=230,highlightthickness=0)
+        self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=180,highlightthickness=0)
         self.cal_canvas.pack(fill="both",expand=True)
         self.cal_canvas.bind("<Configure>",lambda event:self._draw_calibration_panel())
         cal_actions = ttk.Frame(self.cal_pane)
@@ -384,13 +384,13 @@ class Dashboard:
         for i, side in enumerate(("L", "R")):
             frame = ttk.LabelFrame(self.wheel_pane, text="Motor " + ("trái (L)" if i == 0 else "phải (R)"))
             frame.grid(row=1, column=i, sticky="nsew", padx=2)
-            canvas = tk.Canvas(frame, bg="#101923", highlightthickness=0, width=230, height=180)
+            canvas = tk.Canvas(frame, bg="#101923", highlightthickness=0, width=145, height=145)
             canvas.pack(fill="both", expand=True)
             canvas.bind("<Configure>", lambda event: self._mark_wheels())
             self.wheel_canvases.append(canvas)
         self.angle_pane = ttk.LabelFrame(dashboard, text="MPU — Yaw / góc quay Micromouse")
         self.angle_pane.grid(row=0, column=1, sticky="nsew", padx=3)
-        self.angle_canvas = tk.Canvas(self.angle_pane, bg="#081722", highlightthickness=0, height=260)
+        self.angle_canvas = tk.Canvas(self.angle_pane, bg="#081722", highlightthickness=0, height=160)
         self.angle_canvas.pack(fill="both", expand=True)
         self.angle_canvas.bind("<Configure>", lambda event: self._draw_angle_panel())
         # Header is selected when the first frame identifies ENC/IR/MPU.
@@ -502,7 +502,7 @@ class Dashboard:
         self.plot_canvas.bind("<Configure>", lambda event: self._mark_plot())
         fields = ttk.Frame(self.telemetry_tab)
         fields.pack(fill="both", expand=True)
-        ttk.Label(fields, text="Latest decoded numeric fields:").pack(anchor="w")
+        ttk.Label(fields, text="Latest decoded numeric fields: dl/dr, sync, remain (counts or centidegrees), phase 1=ACC 2=CRUISE 3=DEC 4=SETTLE 5=END").pack(anchor="w")
         self.metric_table = ttk.Treeview(fields, columns=("name", "value"),
                                          show="headings", height=9)
         self.metric_table.heading("name", text="Field (units unchanged)")
@@ -1085,13 +1085,13 @@ class Dashboard:
                 self.test_stream_running = True
                 self.reader.motion_lease.set()
                 self._update_test_controls()
-                self.status.set(self.active_test_name + " running (fixed speed PID, max 20% PWM).")
+                self.status.set(self.active_test_name + " running (profile + synchronization, max 20% PWM).")
         elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,", "PIVOT,RESULT,", "PIVOT,REJECT,")) and not (self.active_test_name == "Calibration" and line.startswith(("PIVOT,RESULT,", "PIVOT,REJECT,"))):
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
             # Driver is fail-locked on severe faults until STM32 reset.
             if line.startswith(("ONEBOX,RESULT,","PIVOT,RESULT,")) and not (
-                    "reason=DONE" in line or "reason=STOP" in line):
+                    "reason=DONE" in line or "reason=STOP" in line or "reason=TOLERANCE" in line):
                 self.onebox_capable = False
             if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
                 self.test_stream_running = False
@@ -1268,7 +1268,7 @@ class Dashboard:
         c=self.cal_canvas
         c.delete("all")
         w=max(c.winfo_width(),340)
-        h=max(c.winfo_height(),230)
+        h=max(c.winfo_height(),170)
         names=("L0","L45","L90","R0","R45","R90")
         current=self.cal_live
         if not self.cal_monitoring and self.cal_rows:
@@ -1357,9 +1357,11 @@ class Dashboard:
         for col,k in enumerate(visible):
             self.sensor_dashboard.columnconfigure(col,weight=2 if k=="ENC" else 1,uniform="")
             panels[k].grid(row=0,column=col,sticky="nsew",padx=3)
-        mounted=str(self.sensor_dashboard) in self.main_split.panes()
-        if visible and not mounted: self.main_split.add(self.sensor_dashboard,weight=2)
-        elif mounted and not visible: self.main_split.forget(self.sensor_dashboard)
+        mounted=bool(self.sensor_dashboard.winfo_manager())
+        if visible and not mounted:
+            self.sensor_dashboard.pack(fill="x", side="bottom", before=self.data_split)
+        elif mounted and not visible:
+            self.sensor_dashboard.pack_forget()
         self.wheel_dirty=True
 
     def _sensor_receive(self, line):
@@ -1456,9 +1458,11 @@ class Dashboard:
         state,f=self._sensor_state("ENC",now)
         def val(k):
             return str(int(f[k])) if f.get(k) is not None else "--"
+        phase={1:"ACC",2:"CRUISE",3:"DEC",4:"SETTLE",5:"END"}.get(f.get("phase"),"--")
         self.encoder_summary.configure(text=(
-            f"ENC {state} | L {val('left')} / R {val('right')} counts\n"
-            f"Speed L {val('speed_l')} / R {val('speed_r')} PPS | PWM L {val('pwm_l')} / R {val('pwm_r')}"))
+            f"ENC {state} | L {val('left')} / R {val('right')}\n"
+            f"PPS {val('speed_l')}/{val('speed_r')} | PWM {val('pwm_l')}/{val('pwm_r')}\n"
+            f"Sync {val('sync')} | Rem {val('remain')} | {phase}"))
         if state=="DISABLED" and not self.wheel_preview:
             for c in self.wheel_canvases:
                 c.delete("all")
