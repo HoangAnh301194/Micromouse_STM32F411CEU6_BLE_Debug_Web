@@ -2,6 +2,7 @@
 #define ENCODER_ONEBOX_H
 #include <stdint.h>
 #include "encoder_onebox_core.h"
+#include "mpu6050.h"
 
 #if defined(MODE_MENU_ONLY)
 typedef struct {
@@ -9,6 +10,7 @@ typedef struct {
     int32_t count_l, count_r;
     uint32_t elapsed_ms;
     uint8_t motor_locked;
+    int16_t pivot_target;
 } EncoderOneBoxResult;
 
 /* Real motor telemetry: absolute signed quadrature counts (same as
@@ -19,12 +21,17 @@ typedef struct {
     int32_t left, right;
     int16_t pwm_l, pwm_r;
     int32_t ref_l, ref_r, speed_l, speed_r;
+    int16_t pivot_target;
+    float yaw, angle, gz;
+    uint32_t age_us;
+    uint8_t imu_valid;
 } EncoderOneBoxTelemetry;
 
 uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out);
 uint8_t EncoderOneBox_SetGains(const OneBoxGains *left, const OneBoxGains *right);
 void EncoderOneBox_GetGains(OneBoxGains *left, OneBoxGains *right);
 void EncoderOneBox_Init(void);
+uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target);
 uint8_t EncoderOneBox_Start(void); /* SPP 'G' only, after menu 1 Box Forward */
 void EncoderOneBox_HostPing(void);  /* SPP 'H' <=100ms, 350ms safety lease */
 void EncoderOneBox_Abort(void);     /* SPP 'P' or menu navigation */

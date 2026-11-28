@@ -23,6 +23,8 @@ on:
       - 'include/control.h'
       - 'tools/classic_spp_dashboard.py'
       - 'tools/wheel_plot_data.py'
+      - 'tools/mpu_angle_view.py'
+      - 'tests/regression/mpu_angle_view_test.py'
       - 'tools/wheel_speed_metrics.py'
       - 'tests/regression/wheel_plot_data_test.py'
       - 'tests/regression/wheel_speed_metrics_test.py'
@@ -49,6 +51,7 @@ jobs:
           python tests/regression/spp_dual_log_test.py
           python tests/regression/spp_handshake_test.py
           python tests/regression/wheel_plot_data_test.py
+          python tests/regression/mpu_angle_view_test.py
           python tests/regression/wheel_speed_metrics_test.py
       - name: Python syntax for SPP dashboard
         run: |

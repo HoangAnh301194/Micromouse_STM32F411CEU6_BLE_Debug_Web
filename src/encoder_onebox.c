@@ -23,6 +23,10 @@ static uint8_t physical_stop_latched; /* suppress PA0 key event after abort */
 static uint16_t brake_ticks;
 static uint32_t started_at_ms;
 static EncoderOneBoxResult result;
+static MPU6050_Handle_t *pivot_mpu;
+static int16_t pivot_target;
+static float pivot_origin;
+static uint16_t stall_l, stall_r;
 
 static uint32_t Lock(void)
 {
@@ -59,6 +63,7 @@ static void Finish(uint8_t reason)
     OneBoxCore_Stop(&core, reason);
     OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
     result.reason = reason;
+    result.pivot_target = pivot_target;
     result.count_l = core.delta_l;
     result.count_r = core.delta_r;
     result.elapsed_ms = core.ticks;
@@ -87,8 +92,11 @@ void EncoderOneBox_Init(void)
     core.running = 0U;
     Unlock(irq);
 }
-uint8_t EncoderOneBox_Start(void)
+static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
 {
+    MPU6050_Snapshot_t snap = {0};
+    if (target && (!mpu || !MPU6050_GetSnapshot(mpu,&snap) || !snap.valid ||
+        (uint32_t)(micros()-snap.completed_us)>3000U || snap.gyro_z_dps > 2.0f || snap.gyro_z_dps < -2.0f)) return 0U;
     uint32_t irq;
     if (fault_latched || Board_GetClockFault() || !Control_IsRunning() ||
         Board_ButtonPressed()) return 0U;
@@ -97,6 +105,9 @@ uint8_t EncoderOneBox_Start(void)
         Unlock(irq);
         return 0U;
     }
+    pivot_mpu = mpu; pivot_target = target;
+    pivot_origin = target ? snap.yaw_deg : 0.0f;
+    stall_l = stall_r = 0U;
     Motor_Stop();
     started_at_ms = millis();
     OneBoxCore_Start(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
@@ -105,6 +116,11 @@ uint8_t EncoderOneBox_Start(void)
     phase = 1U;
     Unlock(irq);
     return 1U;
+}
+uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0); }
+uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target) {
+    if (target!=90 && target!=-90 && target!=180 && target!=-180) return 0U;
+    return StartMotion(mpu,target);
 }
 void EncoderOneBox_HostPing(void)
 {
@@ -147,6 +163,32 @@ void EncoderOneBox_ControlTick(void)
         Finish(ONEBOX_REASON_MOTOR);
         return;
     }
+    if (pivot_target) {
+        MPU6050_Snapshot_t snap;
+        int32_t l=Encoder_GetLeftCount(), r=Encoder_GetRightCount();
+        int sl=pivot_target>0?-1:1, sr=-sl;
+        int32_t dl=(l-core.start_l)*sl, dr=(r-core.start_r)*sr;
+        float sign=pivot_target>0?1.0f:-1.0f;
+        core.ticks++; core.host_age_ticks++;
+        core.delta_l=l-core.start_l; core.delta_r=r-core.start_r;
+        stall_l = l==core.last_l ? stall_l+1U : 0U;
+        stall_r = r==core.last_r ? stall_r+1U : 0U;
+        core.last_l=l; core.last_r=r;
+        if (core.host_age_ticks>=ONEBOX_LEASE_TICKS) { Finish(ONEBOX_REASON_HOST_LOST); return; }
+        if (core.ticks>=ONEBOX_MAX_TICKS) { Finish(ONEBOX_REASON_TIMEOUT); return; }
+        if (!MPU6050_GetSnapshot(pivot_mpu,&snap) || !snap.valid ||
+            (uint32_t)(micros()-snap.completed_us)>3000U) { Finish(ONEBOX_REASON_IMU); return; }
+        if (dl < -30 || dr < -30 || dl > 3000 || dr > 3000 ||
+            (dl+dr>600 && (dl-dr>250 || dr-dl>250))) { Finish(ONEBOX_REASON_ENCODER); return; }
+        if (stall_l>=ONEBOX_STALL_TICKS || stall_r>=ONEBOX_STALL_TICKS) { Finish(ONEBOX_REASON_STALL); return; }
+        float angle=(snap.yaw_deg-pivot_origin)*sign;
+        if (angle < -5.0f) { Finish(ONEBOX_REASON_IMU); return; }
+        if (angle >= pivot_target*sign) { Finish(ONEBOX_REASON_DONE); return; }
+        int16_t pl=OneBoxSpeedPid_Step(&pid_l,&gains_l,ONEBOX_SPEED_PPS,sl*Encoder_GetLeftSpeedPPS());
+        int16_t pr=OneBoxSpeedPid_Step(&pid_r,&gains_r,ONEBOX_SPEED_PPS,sr*Encoder_GetRightSpeedPPS());
+        Motor_SetPairPermille(sl*pl,sr*pr);
+        return;
+    }
     /* Encoder-only test: no IMU/IR samples consumed here. */
     cmd = OneBoxCore_Step(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
     if (cmd.reason != ONEBOX_REASON_NONE) {
@@ -182,6 +224,18 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     Motor_GetAppliedPairPermille(&out->pwm_l, &out->pwm_r);
     out->ref_l = phase == 1U && !core.reached_l ? ONEBOX_SPEED_PPS : 0;
     out->ref_r = phase == 1U && !core.reached_r ? ONEBOX_SPEED_PPS : 0;
+    out->pivot_target = pivot_target;
+    out->imu_valid = 0U; out->age_us=0U; out->yaw=out->angle=out->gz=0.0f;
+    if (pivot_target) {
+        MPU6050_Snapshot_t snap;
+        int sl=pivot_target>0?-1:1;
+        out->ref_l=phase==1U?sl*ONEBOX_SPEED_PPS:0;
+        out->ref_r=-out->ref_l;
+        if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {
+            out->age_us=micros()-snap.completed_us;
+            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=snap.yaw_deg-pivot_origin; out->gz=snap.gyro_z_dps; }
+        }
+    }
     out->speed_l = (int32_t)Encoder_GetLeftSpeedPPS();
     out->speed_r = (int32_t)Encoder_GetRightSpeedPPS();
     Unlock(irq);

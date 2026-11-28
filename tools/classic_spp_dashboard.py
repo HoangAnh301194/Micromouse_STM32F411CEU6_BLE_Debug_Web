@@ -11,6 +11,7 @@ import argparse
 import csv
 from decimal import Decimal, InvalidOperation
 from wheel_plot_data import WheelPlotData
+from mpu_angle_view import AngleSample, draw_angle
 from wheel_speed_metrics import summarize_wheels, save_wheel_summary
 import os
 from collections import defaultdict, deque
@@ -209,6 +210,10 @@ class Dashboard:
         self.reader = SPPReader(self.events)
         self.maze = MazeState()
         self.wheel_data = WheelPlotData()
+        self.angle_sample = AngleSample()
+        self.angle_preview = False
+        self.angle_last_rx = None
+        self.angle_ready = False
         self.wheel_preview = False
         self.wheel_dirty = True
         self.metrics = {}
@@ -328,7 +333,7 @@ class Dashboard:
         data_bar.pack(fill="x", pady=(0, 5))
         ttk.Label(data_bar, text="Stream:").pack(side="left")
         ttk.Combobox(data_bar, textvariable=self.data_filter, width=12,
-                     values=("All", "MPU", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
+                     values=("All", "MPU", "PIVOT_CSV", "IR", "ENC", "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
                      state="readonly").pack(side="left", padx=5)
         ttk.Button(data_bar, text="Clear data", command=self.clear_data).pack(side="right")
         self.data_split = ttk.PanedWindow(left, orient="vertical")
@@ -524,6 +529,7 @@ class Dashboard:
 
     def _update_test_controls(self):
         self._sync_wheel_panel()
+        self._sync_angle_panel()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
         if pid_visible:
             if not self.pid_panel.winfo_manager():
@@ -536,7 +542,7 @@ class Dashboard:
         for entry in self.pid_entries:
             entry.configure(state="normal" if pid_editable else "disabled")
         can_control = self.menu_ready and self.active_test_name not in (None, "PID")
-        if self.active_test_name == "1 Box Forward":
+        if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
             # This is an encoder + motor test, not an MPU test.
             can_control = can_control and self.onebox_capable
         self.start_test_btn.configure(
@@ -561,6 +567,10 @@ class Dashboard:
         if not ready:
             self.sensor_mask = dict.fromkeys(self.sensor_mask, False)
             self.sensor_live.clear()
+            self.angle_preview = False
+            self.angle_sample.clear()
+            self.angle_last_rx = None
+            self.angle_ready = False
             self.wheel_preview = False
             self.wheel_data.clear()
             self.active_test_name = None
@@ -583,10 +593,10 @@ class Dashboard:
         if not self.menu_ready or self.active_test_name in (None, "PID"):
             self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
             return
-        if self.active_test_name == "1 Box Forward" and not self.onebox_capable:
+        if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")) and not self.onebox_capable:
             self.status.set("1 Box Forward requires updated unified mode_menu_96m.")
             return
-        if self.active_test_name == "1 Box Forward":
+        if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
             if command == b"G":
                 self.reader.motion_lease.set()
             elif command == b"P":
@@ -595,7 +605,7 @@ class Dashboard:
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
             self.status.set("Could not send test Start/Stop; check the SPP connection.")
-        elif self.active_test_name == "1 Box Forward":
+        elif (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
             self.onebox_start_pending = command == b"G"
             self._update_test_controls()
 
@@ -728,10 +738,12 @@ class Dashboard:
         self.rx_count.set("%d lines" % self.total_lines)
         category = classify_spp_line(line)
         self._sensor_receive(line)
-        if line.startswith(("CAL_IR,", "ENC_LIVE,")):
+        if line.startswith(("CAL_IR,", "ENC_LIVE,", "MPU_LIVE,")):
             return  # Dashboard-only; no status spam or CSV schema changes.
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
+        if category == "data" and line.startswith("PIVOT_CSV,") and (not (self.active_test_name or "").startswith("Pivot ") or not self.test_stream_running):
+            return
         if category == "data" and line.startswith("MPU,") and (
                 self.active_test_name != "MPU Test" or not self.test_stream_running):
             return
@@ -760,7 +772,20 @@ class Dashboard:
         is_ir_or_mpu = (line.startswith("Selected test ") and
                          line.split(": ", 1)[-1].strip() in
                          ("IR Test", "MPU Test", "All Sensors Test"))
-        if line == "Selected encoder option 8: PID":
+        is_pivot = line.startswith("Selected mpu option ") and line.partition(": ")[2].startswith("Pivot ")
+        if is_pivot:
+            self.angle_preview=False
+            self.wheel_preview=False
+            self.active_test_name=line.partition(": ")[2]
+            self.test_stream_running=False
+            self.onebox_start_pending=False
+            self.reader.motion_lease.clear()
+            self.angle_ready=False
+            self.data_filter.set("All")
+            self.clear_data()
+            self._update_test_controls()
+        elif line == "Selected encoder option 8: PID":
+            self.angle_preview = False
             self.wheel_preview = False
             self.active_test_name = "PID"
             self.test_stream_running = False
@@ -788,6 +813,10 @@ class Dashboard:
             self.pid_note.set("STM32 từ chối PID: kiểm tra mode, giới hạn hoặc trạng thái motor.")
             self._update_test_controls()
         elif is_encoder_log or is_onebox or is_ir_or_mpu:
+            self.angle_preview = False
+            self.angle_sample.clear()
+            self.angle_last_rx = None
+            self.angle_ready = False
             self.wheel_preview = False
             self.wheel_data.clear()
             self.wheel_dirty = True
@@ -805,7 +834,8 @@ class Dashboard:
             self.series.clear()
             self.plot_dirty = True
             self._update_test_controls()
-        elif (line.startswith("Encoder Test") or
+        elif (line.startswith("MPU Test:") or line.startswith("MPU Test option ") or
+              line.startswith("Encoder Test") or
               line.startswith("Selected encoder option ") or
               line.startswith("Selected test 2: Encoder Test") or
               line.startswith("System Test ") or
@@ -813,6 +843,7 @@ class Dashboard:
             # Browsing or selecting a movement placeholder stops Encoder
             # streaming. Neither status messages nor motion placeholders
             # send any motor commands or create a CSV.
+            self.angle_preview = False
             self.active_test_name = None
             self.test_stream_running = False
             self.onebox_start_pending = False
@@ -831,8 +862,8 @@ class Dashboard:
             self.reader.motion_lease.clear()
             self._update_test_controls()
             self.status.set("Legacy motor-locked firmware detected; update unified mode_menu_96m.")
-        elif line.startswith("ONEBOX,START,"):
-            if self.active_test_name == "1 Box Forward":
+        elif line.startswith(("ONEBOX,START,","PIVOT,START,")):
+            if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
                 self.wheel_data.clear()
                 self.wheel_dirty = True
                 self.clear_data()
@@ -840,19 +871,19 @@ class Dashboard:
                 self.test_stream_running = True
                 self.reader.motion_lease.set()
                 self._update_test_controls()
-                self.status.set("1 Box Forward running (fixed speed PID, max 20% PWM).")
-        elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,")):
+                self.status.set(self.active_test_name + " running (fixed speed PID, max 20% PWM).")
+        elif line.startswith(("ONEBOX,RESULT,", "ONEBOX,REJECT,", "PIVOT,RESULT,", "PIVOT,REJECT,")):
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
             # Driver is fail-locked on severe faults until STM32 reset.
-            if line.startswith("ONEBOX,RESULT,") and not (
+            if line.startswith(("ONEBOX,RESULT,","PIVOT,RESULT,")) and not (
                     "reason=DONE" in line or "reason=STOP" in line):
                 self.onebox_capable = False
-            if self.active_test_name == "1 Box Forward":
+            if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
                 self.test_stream_running = False
                 self._update_test_controls()
             saved = self.dual_log.last_saved_path
-            if line.startswith("ONEBOX,RESULT,") and self.active_test_name == "1 Box Forward":
+            if line.startswith("ONEBOX,RESULT,") and (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
                 metrics = summarize_wheels(self.wheel_data.rows, 200)
                 self._append("WHEEL METRICS (applied PWM, sampled): " + str(metrics), ts, "status")
                 if saved and saved.parent.name == "mode 7 - encoder test - 1 box forward":
@@ -864,9 +895,13 @@ class Dashboard:
                     if line.startswith("ONEBOX,RESULT,") and saved and
                     saved.parent.name == "mode 7 - encoder test - 1 box forward"
                     else "")
+            if line.startswith("PIVOT,RESULT,") and saved:
+                note = " | CSV: " + str(saved)
+                if self.angle_sample.valid:
+                    note += f" | Relative yaw: {self.angle_sample.yaw:+.2f} deg"
             self.status.set(
                 line + note + (" — reset STM32 before another motor test"
-                               if line.startswith("ONEBOX,RESULT,") and
+                               if line.startswith(("ONEBOX,RESULT,","PIVOT,RESULT,")) and
                                not self.onebox_capable else ""))
         elif line.startswith("TEST STREAM STOPPED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
@@ -881,6 +916,9 @@ class Dashboard:
         elif line.startswith("TEST STREAM STARTED: "):
             if line.partition(": ")[2].strip() == self.active_test_name:
                 self.test_stream_running = True
+                if self.active_test_name == "MPU Test":
+                    self.angle_preview = False
+                    self.clear_data()
                 self._update_test_controls()
                 if self.active_test_name == "Encoder Test":
                     # A Start creates a new take, never appends to the last CSV.
@@ -898,10 +936,20 @@ class Dashboard:
         elif line.startswith("BOOT,READY,"):
             self.mpu_boot_ok = True
             self._update_test_controls()
+        elif line.startswith("TEST,MPU,READY,"):
+            self.angle_ready = True
+        elif line.startswith(("TEST,MPU,CALIB_RESTART", "TEST,MPU,CAL,")):
+            self.angle_ready = False
+        elif line == "MPU YAW RESET OK":
+            self.angle_sample.clear()  # wait for the next measured sample
+            self.angle_last_rx = None
+            self.status.set(line)
         elif (line.startswith("ENCODER RESET OK") or
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
+        if category == "data" and (self.active_test_name == "MPU Test" or (self.active_test_name or "").startswith("Pivot ")) and self.angle_sample.consume(line):
+            self.angle_last_rx = time.monotonic()
         if category == "data" and self.sensor_mask["ENC"] and (self.wheel_data.kind != "LIVE" or line.startswith("ONEBOX_CSV,")) and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
         self._append(line, ts, category, host_time=host_time)
@@ -976,6 +1024,9 @@ class Dashboard:
     def _mark_wheels(self):
         self.wheel_dirty = True
 
+    def _sync_angle_panel(self):
+        pass  # MPU uses the persistent three-panel sensor dashboard.
+
     def _sync_wheel_panel(self):
         # All three panels remain mounted; inactive sensors display DISABLED.
         self.wheel_dirty = True
@@ -1008,7 +1059,9 @@ class Dashboard:
             names = ("L90","L45","L0","R0","R45","R90")
             if all(k in fields for k in names):
                 put("IR", fields, fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
-        if tag in ("MPU", "ALL"):
+        if tag in ("MPU", "ALL", "MPU_LIVE", "PIVOT_CSV"):
+            if tag == "PIVOT_CSV":
+                fields["yaw_cd"] = fields.get("angle_cd", fields.get("yaw_cd"))
             put("MPU", fields, fields.get("mpu_valid" if tag == "ALL" else "valid") == 1
                 and "yaw_cd" in fields)
         if tag == "ENC":
@@ -1018,7 +1071,7 @@ class Dashboard:
                 extra = dict(old[2]) if old and now-old[0]<0.3 else {}
                 extra.update(left=int(record[2][1]), right=int(record[2][2]))
                 put("ENC", extra)
-        elif tag == "ONEBOX_CSV":
+        elif tag in ("ONEBOX_CSV", "PIVOT_CSV"):
             put("ENC", fields, "left" in fields and "right" in fields)
         elif tag == "ALL":
             old = self.sensor_live.get("ENC")
@@ -1056,6 +1109,18 @@ class Dashboard:
         import math
         for key, c in self.sensor_canvases.items():
             state, fields = self._sensor_state(key, now)
+            if key == "MPU":
+                if self.angle_preview:
+                    draw_angle(c, self.angle_sample, "REPLAY")
+                elif state == "ACTIVE":
+                    sample = AngleSample()
+                    sample.yaw = fields["yaw_cd"]/100
+                    sample.valid = True
+                    sample.age = int(fields.get("age_us",0))
+                    draw_angle(c, sample, "LIVE" if self.test_stream_running else "READY")
+                else:
+                    draw_angle(c, AngleSample(), state)
+                continue
             c.delete("all")
             w, h = c.winfo_width(), c.winfo_height()
             if w < 80 or h < 80:
@@ -1274,6 +1339,8 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def clear_data(self):
+        self.angle_sample.clear()
+        self.angle_last_rx = None
         self.wheel_data.clear()
         self.wheel_dirty = True
         self._clear_log(self.data_text)
@@ -1313,6 +1380,7 @@ class Dashboard:
             messagebox.showwarning("Replay", "Stop the live test before replaying CSV.")
             return
         self.wheel_preview = False
+        self.angle_preview = False
         self.clear_data()
         count = 0
         try:
@@ -1320,7 +1388,9 @@ class Dashboard:
                 with open(path, "r", encoding="utf-8-sig", newline="") as file:
                     reader = csv.DictReader(file)
                     columns = set(reader.fieldnames or [])
-                    if {"timestamp", "t_ms", "ENC_L", "ENC_R",
+                    if {"angle_deg","target_deg","yaw_deg","ENC_L","ENC_R"} <= columns:
+                        mode = "PIVOT"
+                    elif {"timestamp", "t_ms", "ENC_L", "ENC_R",
                             "PWM_L", "PWM_R"} <= columns:
                         mode = "ONEBOX"
                     elif {"timestamp", "ENC_L", "ENC_R", "ir_valid",
@@ -1340,7 +1410,13 @@ class Dashboard:
                     self.clear_data()
                     for row in reader:
                         try:
-                            if mode == "ONEBOX":
+                            if mode == "PIVOT":
+                                keys=("mcu_ms","valid","age_us","target_deg","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS")
+                                names=("ms","valid","age_us","target","left","right","pwm_l","pwm_r","ref_l","ref_r","speed_l","speed_r")
+                                line="PIVOT_CSV,"+",".join(f"{k}={int(row[col])}" for k,col in zip(names,keys))
+                                for k,col in (("yaw_cd","yaw_deg"),("angle_cd","angle_deg"),("gz_cd","gz_dps")):
+                                    line+=f",{k}={round(float(row[col])*100) if row.get(col) else 0}"
+                            elif mode == "ONEBOX":
                                 line = ("ONEBOX_CSV,ms=%d,left=%d,right=%d,"
                                         "pwm_l=%d,pwm_r=%d" %
                                         (int(row["t_ms"]), int(row["ENC_L"]),
@@ -1374,6 +1450,8 @@ class Dashboard:
                                                  f"gz_cd={int(row['gz_cd'])}")
                             timestamp = row.get("timestamp") or datetime.now().isoformat(
                                 timespec="milliseconds")
+                            if mode in ("MPU","PIVOT") and self.angle_sample.consume(line):
+                                self.angle_preview = True
                             if self.wheel_data.add(line, timestamp):
                                 self.wheel_preview = True
                                 self.wheel_dirty = True
@@ -1394,6 +1472,7 @@ class Dashboard:
             messagebox.showerror("Replay", str(exc))
             return
         self._sync_wheel_panel()
+        self._sync_angle_panel()
         self.status.set("Replayed %d rows from %s (not saved)" %
                         (count, Path(path).name))
 

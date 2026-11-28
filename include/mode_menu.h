@@ -18,6 +18,9 @@
 #define MODE_MENU_PAGE_MAIN 0U
 #define MODE_MENU_PAGE_TEST 1U
 #define MODE_MENU_PAGE_ENCODER 2U
+#define MODE_MENU_PAGE_MPU 3U
+#define MODE_MENU_MPU_COUNT 6U
+#define MODE_MENU_MPU_BACK 5U
 /* Encoder submenu: PID configuration is motor-locked. */
 #define MODE_MENU_ENCODER_COUNT 9U
 #define MODE_MENU_ENCODER_LOG_RECEIVE 0U
@@ -36,7 +39,9 @@ typedef enum {
     MODE_MENU_EVENT_ENCODER_ENTER = 7,
     MODE_MENU_EVENT_ENCODER_FOCUS = 8,
     MODE_MENU_EVENT_ENCODER_SELECT = 9,
-    MODE_MENU_EVENT_ENCODER_EXIT = 10
+    MODE_MENU_EVENT_ENCODER_EXIT = 10,
+    MODE_MENU_EVENT_MPU_ENTER, MODE_MENU_EVENT_MPU_FOCUS,
+    MODE_MENU_EVENT_MPU_SELECT, MODE_MENU_EVENT_MPU_EXIT
 } ModeMenuEvent;
 
 typedef struct {
@@ -68,6 +73,8 @@ uint8_t ModeMenu_ResumeTest(ModeMenu *menu);
 uint8_t ModeMenu_CanResetSensor(const ModeMenu *menu, uint8_t test_index);
 const char *ModeMenu_TestName(uint8_t index);
 const char *ModeMenu_EncoderName(uint8_t index);
+const char *ModeMenu_MpuName(uint8_t index);
+int16_t ModeMenu_PivotTarget(const ModeMenu *menu);
 const char *ModeMenu_Label(uint8_t index);
 const char *ModeMenu_Code(uint8_t index);
 const char *ModeMenu_Name(uint8_t index);

@@ -192,6 +192,16 @@ def main():
             ["1", "10", "11", "12", "13", "14", "15"],
         ]
 
+        log.write("MPU Test: choose MPU Log / Pivot / Back")
+        log.write("Selected mpu option 2: Pivot 90 Left")
+        pivot="PIVOT_CSV,ms=100,valid=1,age_us=850,yaw_cd=9500,angle_cd=9000,gz_cd=100,target=90,left=-900,right=920,pwm_l=-188,pwm_r=188,ref_l=-1100,ref_r=1100,speed_l=-1050,speed_r=1090"
+        assert log.write(pivot,host_time=t0) is None
+        log.write("PIVOT,START,target=90",host_time=t0)
+        p1=log.write(pivot,host_time=t0)
+        assert p1 and read_csv(p1)[-1][3:10]==["95.00","850","90.00","1.00","90","-900","920"]
+        log.write("PIVOT,RESULT,reason=DONE",host_time=t1)
+        assert log.last_saved_path==p1 and log.write(pivot,host_time=t1) is None
+
         # Combined sensor stream is allowed only in the All Sensors mode
         # and is stored as one CSV, never mixed into Encoder/IR/MPU files.
         log.write("System Test 4: All Sensors Test")

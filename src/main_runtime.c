@@ -294,6 +294,12 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     if (!menu) return;
 
     SSD1306_Fill(SSD1306_BLACK);
+    if (menu->page == MODE_MENU_PAGE_MPU) {
+        SSD1306_SetCursor(0U,0U); SSD1306_WriteString("MPU TEST", &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U,20U); SSD1306_WriteString((char *)ModeMenu_MpuName(menu->encoder_focus), &Font_7x10, SSD1306_WHITE);
+        SSD1306_SetCursor(0U,40U); SSD1306_WriteString("Next / Select", &Font_7x10, SSD1306_WHITE);
+        return;
+    }
     if (menu->page == MODE_MENU_PAGE_ENCODER) {
         /* Scroll four visible options for 128x64 OLED; OLED remains
          * optional/off by default in the motor-locked SPP profile. */
@@ -436,6 +442,16 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
     case MODE_MENU_EVENT_TEST_EXIT:
         BT_SendString("System Test: back to main menu\r\n");
         break;
+    case MODE_MENU_EVENT_MPU_ENTER:
+        BT_SendString("MPU Test: choose MPU Log / Pivot / Back\r\n"); break;
+    case MODE_MENU_EVENT_MPU_FOCUS:
+        BT_Printf("MPU Test option %u: %s\r\n",(unsigned)(menu->encoder_focus+1U),ModeMenu_MpuName(menu->encoder_focus)); break;
+    case MODE_MENU_EVENT_MPU_SELECT:
+        BT_Printf("Selected mpu option %u: %s\r\n",(unsigned)(menu->active_encoder_option+1U),ModeMenu_MpuName(menu->active_encoder_option));
+        if (menu->active_encoder_option==0U) BT_SendString("Selected test 3: MPU Test\r\n");
+        break;
+    case MODE_MENU_EVENT_MPU_EXIT:
+        BT_SendString("MPU Test: back to System Test\r\n"); break;
     case MODE_MENU_EVENT_ENCODER_ENTER:
         BT_SendString("Encoder Test: choose Log Receive / motion tests / Back\r\n");
         break;
@@ -479,7 +495,7 @@ static void ModeMenu_ApplyResources(const ModeMenu *menu,
     if (next == *last_mask) return;
     Control_SetTestResources(next);
     if ((next & TEST_RES_MPU) && !(*last_mask & TEST_RES_MPU) &&
-        mpu_status == MPU6050_OK && !mpu->calibrated) {
+        mpu_status == MPU6050_OK && !mpu->calibrated && !mpu->calibrating) {
         (void)MPU6050_Calibrate(mpu); /* nonblocking MPU/All test only */
     }
     *last_mask = next;
@@ -627,6 +643,7 @@ int Main_Runtime(void)
     uint32_t last_onebox_log_ms = 0U;
     uint32_t last_dashboard_ms = 0U;
     uint8_t mpu_ready_reported = 0U;
+    uint32_t mpu_health_ms = 0U;
 #endif
 
     Board_Init();
@@ -693,8 +710,7 @@ int Main_Runtime(void)
          * main even when MPU6050 failed. No one-shot boot-only handshake. */
     }
 #endif
-    /* MPU calibration is deferred until MPU Test or All Sensors Test.
-     * Encoder-only motion does not depend on or read the MPU. */
+    /* MPU calibration is deferred until MPU Log, Pivot or All Sensors Test. */
 
     Motion_Init();
 #if defined(INTEGRATION_DIAG)
@@ -758,9 +774,8 @@ int Main_Runtime(void)
     while (1) {
         uint32_t now = millis();
 #if defined(MODE_MENU_ONLY)
-        if (mpu_status == MPU6050_OK &&
-            (test_resource_mask & TEST_RES_MPU))
-            MPU6050_Update(&mpu); /* MPU Test / All only */
+        if (mpu_status == MPU6050_OK && (test_resource_mask & TEST_RES_MPU))
+            MPU6050_Update(&mpu);
 #else
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
 #endif
@@ -811,7 +826,20 @@ int Main_Runtime(void)
                 }
             } else if (command == 'G') {
                 if (cal_active) Cal_Begin(now);
-                else if (ModeTest_OneBoxArmed(&mode_menu) &&
+                else if (ModeMenu_PivotTarget(&mode_menu)) {
+                    int16_t target=ModeMenu_PivotTarget(&mode_menu);
+                    if (mpu_status==MPU6050_OK && !mpu.calibrated && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported=0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
+                    if (mpu_status==MPU6050_OK && mpu.calibrated &&
+                        (test_resource_mask & (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)) ==
+                        (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR) &&
+                        EncoderOneBox_StartPivot(&mpu,target))
+                        BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,ONEBOX_SPEED_PPS,ONEBOX_MAX_PWM);
+                    else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");
+                } else if (ModeTest_OneBoxArmed(&mode_menu) &&
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
                     (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
                     if (EncoderOneBox_Start()) {
@@ -821,6 +849,14 @@ int Main_Runtime(void)
                     } else {
                         BT_SendString("ONEBOX,REJECT,reason=MOTOR_OR_ENCODER_NOT_READY\r\n");
                     }
+                } else if (mode_menu.active_test == MODE_MENU_TEST_MPU &&
+                           !mpu.calibrated) {
+                    if (mpu_status == MPU6050_OK && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported = 0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
+                    BT_SendString("TEST,MPU,START_REJECTED,WAIT_FOR_READY\r\n");
                 } else if (ModeMenu_ResumeTest(&mode_menu)) {
                     last_test_ms = now; /* next measurement in ~50 ms */
                     BT_Printf("TEST STREAM STARTED: %s\r\n",
@@ -835,6 +871,11 @@ int Main_Runtime(void)
                     MPU6050_ResetYaw(&mpu);
                     BT_SendString("MPU YAW RESET OK\r\n");
                 } else {
+                    if (mpu_status == MPU6050_OK && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported = 0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
                     BT_SendString("MPU YAW RESET REJECTED: NOT READY\r\n");
                 }
             } else if (command == 'I' && ModeMenu_CanResetSensor(&mode_menu, 0U)) {
@@ -849,6 +890,7 @@ int Main_Runtime(void)
                     (remote == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
+                if (remote==MODE_MENU_EVENT_MPU_SELECT) mpu_ready_reported=0U;
                 uint8_t handled=Cal_MenuEvent(&mode_menu,remote,now);
                 if(!handled && remote != MODE_MENU_EVENT_SELECT) ModeMenu_Report(&mode_menu, remote);
                 else if(!handled && mode_menu.selected!=MODE_MENU_NO_SELECTION) ModeMenu_Report(&mode_menu,remote);
@@ -871,6 +913,7 @@ int Main_Runtime(void)
                     (event == MODE_MENU_EVENT_ENCODER_SELECT &&
                      mode_menu.active_test == MODE_MENU_TEST_ENCODER))
                     last_test_ms = now;
+                if (event==MODE_MENU_EVENT_MPU_SELECT) mpu_ready_reported=0U;
                 uint8_t handled=Cal_MenuEvent(&mode_menu,event,now);
                 if(!handled && (event!=MODE_MENU_EVENT_SELECT || mode_menu.selected!=MODE_MENU_NO_SELECTION)) ModeMenu_Report(&mode_menu,event);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
@@ -884,10 +927,19 @@ int Main_Runtime(void)
                 last_test_ms = now;
                 mpu_ready_reported = 0U;
             }
-            if (mode_menu.active_test == MODE_MENU_TEST_MPU && !mpu_ready_reported &&
+            if ((mode_menu.active_test == MODE_MENU_TEST_MPU || ModeMenu_PivotTarget(&mode_menu)) &&
+                !mpu.calibrated && (uint32_t)(now - mpu_health_ms) >= 1000U) {
+                mpu_health_ms = now;
+                BT_Printf("TEST,MPU,CAL,state=%u,samples=%u,retries=%u,reason=%u,fresh=%lu,errors=%lu,timeouts=%lu,busy=%lu\r\n",
+                          (unsigned)mpu.cal_state, (unsigned)mpu.calibration_count,
+                          (unsigned)mpu.cal_retries, (unsigned)mpu.cal_failure_reason,
+                          (unsigned long)mpu.fresh_gyro_reads, (unsigned long)mpu.error_reads,
+                          (unsigned long)mpu.timeout_reads, (unsigned long)mpu.busy_retries);
+            }
+            if ((mode_menu.active_test == MODE_MENU_TEST_MPU || ModeMenu_PivotTarget(&mode_menu)) && !mpu_ready_reported &&
                 mpu_status == MPU6050_OK && mpu.calibrated) {
                 mpu_ready_reported = 1U;
-                BT_SendString("TEST,MPU,READY,ANGLE_ONLY,ZERO_YAW_THEN_START\r\n");
+                BT_SendString(ModeMenu_PivotTarget(&mode_menu) ? "TEST,MPU,READY,PIVOT,START_ON_PC\r\n" : "TEST,MPU,READY,ANGLE_ONLY,ZERO_YAW_THEN_START\r\n");
             }
             if (mode_menu.active_test != MODE_MENU_NO_SELECTION &&
                 mode_menu.stream_running &&
@@ -962,6 +1014,8 @@ int Main_Runtime(void)
                  * Emit an additional final zero-PWM sample before RESULT,
                  * ensuring Stop, done and all faults close a complete CSV. */
                 if (has_result && !has_motion) {
+                    motion.pivot_target = result.pivot_target;
+                    motion.imu_valid=0U; motion.age_us=0U; motion.yaw=motion.angle=motion.gz=0.0f;
                     motion.elapsed_ms = result.elapsed_ms;
                     motion.left = Encoder_GetLeftCount();
                     motion.right = Encoder_GetRightCount();
@@ -975,7 +1029,13 @@ int Main_Runtime(void)
                 if (has_motion && (has_result ||
                     (uint32_t)(now - last_onebox_log_ms) >= 20U)) {
                     last_onebox_log_ms = now;
-                    BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                    if (motion.pivot_target) {
+                        BT_Printf("PIVOT_CSV,ms=%lu,valid=%u,age_us=%lu,yaw_cd=%ld,angle_cd=%ld,gz_cd=%ld,target=%d,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                            (unsigned long)now,(unsigned)motion.imu_valid,(unsigned long)motion.age_us,
+                            (long)(motion.yaw*100),(long)(motion.angle*100),(long)(motion.gz*100),(int)motion.pivot_target,
+                            (long)motion.left,(long)motion.right,(int)motion.pwm_l,(int)motion.pwm_r,
+                            (long)motion.ref_l,(long)motion.ref_r,(long)motion.speed_l,(long)motion.speed_r);
+                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
                               (int)motion.pwm_l, (int)motion.pwm_r,
@@ -983,7 +1043,8 @@ int Main_Runtime(void)
                               (long)motion.speed_l, (long)motion.speed_r);
                 }
                 if (has_result) {
-                    BT_Printf("ONEBOX,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
+                    BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",
+                              result.pivot_target ? "PIVOT" : "ONEBOX",
                               EncoderOneBox_Reason(result.reason),
                               (long)result.count_l, (long)result.count_r,
                               (unsigned long)result.elapsed_ms,
@@ -1002,6 +1063,13 @@ int Main_Runtime(void)
                         (unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_L45],
                         (unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_R0],
                         (unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90]);
+                }
+                if ((test_resource_mask & TEST_RES_MPU) && !mode_menu.stream_running && !EncoderOneBox_IsRunning()) {
+                    MPU6050_Snapshot_t gyro;
+                    uint8_t valid = mpu_status == MPU6050_OK && mpu.calibrated && MPU6050_GetSnapshot(&mpu, &gyro) && gyro.valid;
+                    uint32_t age = valid ? micros()-gyro.completed_us : 0U;
+                    if (valid && age <= 3000U) BT_Printf("MPU_LIVE,valid=1,age_us=%lu,yaw_cd=%ld,gz_cd=%ld\r\n",(unsigned long)age,(long)(gyro.yaw_deg*100.0f),(long)(gyro.gyro_z_dps*100.0f));
+                    else BT_Printf("MPU_LIVE,valid=0,age_us=%lu\r\n",(unsigned long)age);
                 }
                 if ((test_resource_mask & TEST_RES_ENCODER) &&
                     mode_menu.stream_running && !EncoderOneBox_IsRunning()) {
