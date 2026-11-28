@@ -45,10 +45,6 @@ static char bt_cmd_buf[BT_CMD_BUF_MAX];
 static uint16_t bt_cmd_len = 0U;
 static uint8_t bt_cmd_active = 0U;
 static uint8_t prev_motion_active = 0U;
-/* Read-only MPU Log restored from v2, controlled exclusively in main. */
-static uint8_t mpu_test_active = 0U;
-static uint32_t mpu_test_started_ms = 0U;
-static uint32_t mpu_test_last_ms = 0U;
 
 #if defined(OLED_PRODUCTION_STATUS)
 static uint32_t last_oled_draw_ms;
@@ -184,7 +180,6 @@ static void HandleStructuredSppLine(char *line)
     Motion_RefreshHostHeartbeat();
 
     if (strcmp(verb, "STOP") == 0) {
-        mpu_test_active = 0U;
         Motion_Stop();
         BT_Printf("ACK,%ld,STOP,OK\r\n", cmd_id);
         return;
@@ -217,42 +212,6 @@ static void HandleStructuredSppLine(char *line)
     return;
 #endif
 
-    /* v2 MPU Test: manual yaw log with separate Start/Stop and reset. */
-    if (strcmp(verb, "MPU_TEST_START") == 0) {
-        if (!Motion_IsDone()) {
-            BT_Printf("NACK,%ld,MPU_TEST_START,BUSY\r\n", cmd_id);
-            return;
-        }
-        if (!ready || !snap.valid) {
-            BT_Printf("NACK,%ld,MPU_TEST_START,NOT_READY\r\n", cmd_id);
-            return;
-        }
-        Motion_Stop(); /* PWM zero before any sampling. */
-        mpu_test_active = 1U;
-        mpu_test_started_ms = millis();
-        mpu_test_last_ms = mpu_test_started_ms - 50U;
-        BT_Printf("ACK,%ld,MPU_TEST_START,OK\r\n", cmd_id);
-        return;
-    }
-    if (strcmp(verb, "MPU_TEST_STOP") == 0) {
-        mpu_test_active = 0U;
-        Motion_Stop();
-        BT_Printf("ACK,%ld,MPU_TEST_STOP,OK\r\n", cmd_id);
-        return;
-    }
-    if (strcmp(verb, "MPU_TEST_ZERO") == 0) {
-        if (!mpu_test_active) {
-            BT_Printf("NACK,%ld,MPU_TEST_ZERO,NOT_ACTIVE\r\n", cmd_id);
-            return;
-        }
-        if (!ready || !snap.valid) {
-            BT_Printf("NACK,%ld,MPU_TEST_ZERO,NOT_READY\r\n", cmd_id);
-            return;
-        }
-        MPU6050_ResetYaw(&mpu);
-        BT_Printf("ACK,%ld,MPU_TEST_ZERO,OK\r\n", cmd_id);
-        return;
-    }
     if (strcmp(verb, "RESET_ENC") == 0) {
         if (!Motion_IsDone()) {
             BT_Printf("NACK,%ld,RESET_ENC,BUSY\r\n", cmd_id);
@@ -345,10 +304,6 @@ static void HandleStructuredSppLine(char *line)
         return;
     }
 
-    if (mpu_test_active) {
-        BT_Printf("NACK,%ld,%s,MPU_TEST_ACTIVE\r\n", cmd_id, verb);
-        return;
-    }
     /* Motion-starting commands require IDLE + READY + UNLOCKED */
     if (!Motion_IsDone()) {
         BT_Printf("NACK,%ld,%s,BUSY\r\n", cmd_id, verb);
@@ -508,8 +463,6 @@ static void HandleBleCommand(char c)
     Sweep_Abort(SWEEP_STOP_REQUEST);
 #endif
     MPU6050_Snapshot_t snap;
-    if (mpu_test_active && c != 's' && c != 'S' && c != '!' &&
-        c != '?' && c != 'z' && c != 'Z') return;
     uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) && mpu.calibrated &&
                     (uint32_t)(micros() - snap.completed_us) <= 3000U;
     float yaw = ready ? snap.yaw_deg : 0.0f;
@@ -609,10 +562,6 @@ static void BlePollCommands(void)
                 bt_cmd_active = 1U;
                 bt_cmd_len = 0U;
             } else if (c == '!' || c == 'S' || c == 's') {
-                if (mpu_test_active) {
-                    mpu_test_active = 0U;
-                    BT_SendString("MPU_TEST,STOP,EMERGENCY\r\n");
-                }
                 if (!Motion_IsDone()) {
                     stop_armed = 1U;
                 } else {
@@ -833,28 +782,6 @@ int Main_Runtime(void)
 
         BlePollCommands();
 
-        /* 20Hz snapshot log; never format/transmit inside TIM11 ISR. */
-        if (mpu_test_active &&
-            (uint32_t)(now - mpu_test_last_ms) >= 50U) {
-            MPU6050_Snapshot_t gyro;
-            uint8_t valid;
-            uint32_t age_us;
-            mpu_test_last_ms = now;
-            valid = MPU6050_GetSnapshot(&mpu, &gyro) && mpu.calibrated;
-            age_us = valid ? (uint32_t)(micros() - gyro.completed_us) : 0U;
-            if (valid && gyro.valid && age_us <= 3000U) {
-                BT_Printf("MPU,ms=%lu,valid=1,age_us=%lu,yaw_cd=%ld,gz_cd=%ld\r\n",
-                    (unsigned long)(now - mpu_test_started_ms),
-                    (unsigned long)age_us,
-                    (long)(gyro.yaw_deg * 100.0f),
-                    (long)(gyro.gyro_z_dps * 100.0f));
-            } else {
-                BT_Printf("MPU,ms=%lu,valid=0,age_us=%lu\r\n",
-                    (unsigned long)(now - mpu_test_started_ms),
-                    (unsigned long)age_us);
-            }
-        }
-
         {
             uint8_t cur_active = !Motion_IsDone();
             if (prev_motion_active && !cur_active) {
@@ -898,7 +825,7 @@ int Main_Runtime(void)
                         uint8_t ready = MPU6050_GetSnapshot(&mpu, &snap) &&
                                         (uint32_t)(micros() - snap.completed_us) <= 3000U;
                         btn_armed = 0U;
-                        if (ready && Motion_IsDone() && !mpu_test_active) {
+                        if (ready && Motion_IsDone()) {
                             BT_SendString("BTN,START_Q\r\n");
                             Motion_CommandQuickStepTest();
                         }
@@ -1312,8 +1239,7 @@ int Main_Runtime(void)
 
 #endif
 
-        /* MPU-only tests emit dedicated compact frames, not 50 Hz motion telemetry. */
-        if (!mpu_test_active && (now - last_debug_ms) >= DEBUG_PERIOD_MS) {
+        if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
             static uint8_t ext_div = 0U;
             int32_t left_count;
             int32_t right_count;

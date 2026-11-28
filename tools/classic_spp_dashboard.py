@@ -27,7 +27,6 @@ from spp_dual_log import (DualSessionLog, classify_spp_line,
                           data_to_csv_row, csv_row_text, CSV_COLUMNS,
                           TEST_CSV_COLUMNS, sensor_test_csv)
 from motion_dashboard_tab import MotionControlTab
-from mpu_test_tab import MPUTestTab
 
 
 BAUD = 115200
@@ -332,12 +331,6 @@ class Dashboard:
         self.tabs.add(self.maze_tab, text="Maze viewer")
         self.tabs.add(self.telemetry_tab, text="Telemetry & PID")
         self.tabs.add(self.motion_tab, text="Motion Control Test")
-        self.mpu_test_tab = MPUTestTab(
-            self.tabs,
-            send_cmd_fn=self.reader.send_raw_line,
-            get_port_fn=lambda: self.port_value.get().strip(),
-        )
-        self.tabs.add(self.mpu_test_tab, text="MPU Test")
         self._terminal_widgets()
         self._maze_widgets()
         self._telemetry_widgets()
@@ -551,7 +544,6 @@ class Dashboard:
     def reconnect(self):
         # User-initiated RF/COM cycling. Do not flap COM automatically when
         # MCU is faulted or multiple devices share Windows Bluetooth.
-        self.mpu_test_tab.on_disconnect()
         self.reader.close()
         self._set_menu_ready(False)
         self._reconnect_attempts = 0
@@ -623,7 +615,6 @@ class Dashboard:
 
     def disconnect(self):
         self._set_menu_ready(False)
-        self.mpu_test_tab.on_disconnect()
         self.reader.close()
         self.status.set("Disconnect requested")
 
@@ -659,7 +650,6 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def handle_line(self, line: str):
-        self.mpu_test_tab.on_spp_line(line)
         # Retried '?' probes can produce multiple acknowledgements if the
         # firmware was briefly busy. Keep only the first status log entry.
         if line.strip() == "SPP CONNECTED" and self.menu_ready:
@@ -844,7 +834,6 @@ class Dashboard:
                 self.status.set(value)
                 if kind == "closed":
                     self._set_menu_ready(False)
-                    self.mpu_test_tab.on_disconnect()
                     self.dual_log.close()
                 if kind == "warning":
                     self._append("WARNING: " + value, datetime.now().strftime("%H:%M:%S"), "status")
@@ -1076,7 +1065,6 @@ class Dashboard:
                         (count, Path(path).name))
 
     def quit(self):
-        self.mpu_test_tab.on_disconnect()
         self.reader.close()
         self.dual_log.close()
         self.root.destroy()
