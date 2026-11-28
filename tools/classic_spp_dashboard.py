@@ -551,6 +551,7 @@ class Dashboard:
     def reconnect(self):
         # User-initiated RF/COM cycling. Do not flap COM automatically when
         # MCU is faulted or multiple devices share Windows Bluetooth.
+        self.mpu_test_tab.on_disconnect()
         self.reader.close()
         self._set_menu_ready(False)
         self._reconnect_attempts = 0
@@ -1075,6 +1076,7 @@ class Dashboard:
                         (count, Path(path).name))
 
     def quit(self):
+        self.mpu_test_tab.on_disconnect()
         self.reader.close()
         self.dual_log.close()
         self.root.destroy()
