@@ -4,6 +4,11 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## Mode 1 automatic wall/open — 28/11/2026, giomuadongbacv3
+
+- Short KEY enters Mode 1 when reached, restarts during/after capture; long KEY exits. WALL 150 samples, nonblocking 5-second relocation, OPEN 150 samples, checked auto-save only for valid six-channel result. No motor motion or auto-apply.
+- SPP mirrors countdown, retry and exit; CSV format unchanged. Build/bench acceptance pending; see docs/ir/IR_CALIBRATION_WALL_OPEN_V1.md.
+
 ## Wheel PID baseline alignment — 25/11/2026
 
 - Source giomuadongbac 2d07838: defaults P=0.09, I=0.25, ks=80, kv=0.098, integral limit 3000 PPS*s, PID 1 kHz. Adopted in one-box, retain independently editable D (default zero), forward-only clamp 0..200 and existing guards. No hardware geometry changes. 1100 PPS retained; FF=187.8 leaves little headroom; verify supply and saturation before tuning. OneBox telemetry target 50 Hz, passive ENC unchanged. No evidence of real-time or bench acceptance yet.

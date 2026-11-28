@@ -22,12 +22,12 @@ The six channels are recorded in this order:
 1. Wait for the firmware message \`CAL,WAIT,stage=OPEN\`.
 2. Move the robot to an open area with no walls around it.
 3. Put it down on a flat surface and keep it still.
-4. Press the dashboard button **Confirm open-space capture (O)**, send SPP
-   command \`O\`, or press the physical KEY once.
+4. OPEN starts automatically 5 seconds after WALL finishes; no button press.
 5. Firmware captures another 150 fresh samples per channel.
 
-The KEY during either capture stage aborts the calibration. SPP \`P\` or
-\`N\` also aborts. The robot never pivots or drives itself.
+Short KEY enters Mode 1 when reached in the main menu. Inside Mode 1,
+short KEY / N / R restarts WALL; long KEY / K exits, aborting unfinished capture.
+The next short KEY after exit advances to Mode 2. Motors stay locked.
 
 ## Threshold estimation
 
@@ -67,7 +67,7 @@ against real robot captures.
 - \`CAL_IR,stage=0,ms=...,L0=...,...\`: WALL data row.
 - \`CAL,STAGE_DONE,stage=WALL,...\`: WALL capture completed.
 - \`CAL,WAIT,stage=OPEN,...\`: operator must reposition the robot.
-- \`O\`: confirms open-space placement.
+- `CAL,COUNTDOWN,seconds=...`: remaining transition time.
 - \`CAL,STAGE,OPEN,...\`: second capture begins.
 - \`CAL_IR,stage=1,ms=...,L0=...,...\`: OPEN data row.
 - \`CAL,THRESH,...\`: per-channel quantiles and candidate thresholds.
@@ -82,14 +82,8 @@ traces for the two conditions.
 
 ## Flash and safety semantics
 
-On a valid six-channel result, firmware waits in REVIEW without writing Flash.
-Hold physical KEY (or SPP K / V) to confirm the save. Short KEY (or SPP N / R)
-starts a fresh WALL capture, clearing candidate samples in RAM while retaining
-the previously saved Flash record. After successful save, short KEY starts a
-new capture; another long KEY exits Calibration to the main menu.
-WALL/OPEN capture and confirmation behavior are unchanged.
-Only explicit save attempts write the legacy
-\`IR_Simple_Calib_t\` record using the checked Flash API. It sets
+On a valid six-channel result, firmware automatically writes the legacy
+IR_Simple_Calib_t\` record using the checked Flash API. It sets
 \`has_open_calib=1\`, stores the OPEN p95 baselines, and writes per-channel
 \`wall_on\` / \`wall_off\` thresholds. It leaves center-reference fields
 unset because these two placements do not measure a geometrically centred
@@ -101,5 +95,4 @@ are suitable for wall following at every distance, surface, angle, or ambient
 light condition. Follow with a physical wall-detection test at the actual
 maze wall material and intended sensor distances.
 
-If Flash saving fails, the candidate remains available for a manual retry
-using \`V\`. If the two distributions do not separate, no Flash write occurs.
+If Flash saving fails, short KEY starts a new capture. If distributions do not separate, no Flash write occurs.

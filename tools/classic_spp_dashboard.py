@@ -273,7 +273,7 @@ class Dashboard:
         outer.pack(fill="both", expand=True)
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select, O=confirm open-space capture. "
+        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select, N=Retry / K=Exit in Mode 1. "
                   "Mode 1 is stationary: wall capture → open-space capture; motors remain locked.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
@@ -348,14 +348,7 @@ class Dashboard:
             cal_actions, text="Calibrate Again", state="disabled",
             command=self.request_calibration_again)
         self.cal_again_btn.pack(side="left")
-        self.cal_open_btn = ttk.Button(
-            cal_actions, text="Confirm open-space capture (O)", state="disabled",
-            command=lambda: self.send_menu(b"O"))
-        self.cal_open_btn.pack(side="left", padx=(6, 0))
-        self.cal_save_btn = ttk.Button(
-            cal_actions, text="Save Flash manually (V)", state="disabled",
-            command=lambda: self.send_menu(b"V"))
-        self.cal_save_btn.pack(side="right")
+        ttk.Label(cal_actions, text="KEY ngắn: đo lại | KEY giữ: thoát").pack(side="left", padx=6)
         self.wheel_pane = ttk.Frame(self.data_split)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
         self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
@@ -869,12 +862,15 @@ class Dashboard:
             self.cal_phase=self.cal_stage="OPEN"
             self.cal_note.set("OPEN CAPTURE — đặt xe ở vùng trống, không có tường xung quanh; giữ xe đứng yên.")
         elif line.startswith("CAL,STAGE_DONE,stage=WALL"):
-            self.cal_note.set("Đã thu đủ mẫu WALL. Di chuyển xe sang vùng trống, sau đó bấm Confirm open-space capture hoặc KEY.")
+            self.cal_note.set("Đã thu đủ mẫu WALL. Di chuyển xe sang vùng trống ngay.")
         elif line.startswith("CAL,WAIT,stage=OPEN"):
             self.cal_phase="WAIT_OPEN"
             self.cal_stage="WAIT_OPEN"
-            self.cal_note.set("WALL DONE — di chuyển xe đến vùng không có tường. Đặt xe đứng yên rồi bấm O / nút xác nhận.")
+            self.cal_note.set("WALL DONE — di chuyển xe ra vùng trống trong 5 giây. OPEN tự bắt đầu.")
             self._update_test_controls()
+        elif line.startswith("CAL,COUNTDOWN,seconds="):
+            if self.cal_phase == "WAIT_OPEN":
+                self.cal_note.set("Di chuyển xe ra vùng trống — còn " + line.rsplit("=", 1)[1] + " giây.")
         elif line.startswith("CAL,STAGE_DONE,stage=OPEN"):
             self.cal_note.set("Đã thu đủ mẫu OPEN. STM32 đang tính ngưỡng WALL_ON / WALL_OFF cho 6 mắt.")
         elif line.startswith("CAL,STAGE,"):
@@ -901,7 +897,7 @@ class Dashboard:
             self.cal_review="quality=CANDIDATE_ONLY" in line
             self.cal_phase="REVIEW"
             self.cal_stage="REVIEW"
-            self.cal_note.set("REVIEW — giữ KEY để lưu; KEY ngắn để làm lại. " + line)
+            self.cal_note.set("REVIEW — STM32 tự lưu nếu đạt. " + line)
             # Firmware emits all six CAL,THRESH frames before REVIEW. The
             # logger closes the completed two-stage CSV on REVIEW, so write
             # the report here when last_saved_path becomes available.
@@ -914,7 +910,7 @@ class Dashboard:
                     self.status.set("Calibration report error: "+str(exc))
             self._update_test_controls()
         elif line.startswith("CAL,WAIT_SAVE,"):
-            self.cal_note.set("REVIEW — giữ KEY / Chọn để lưu; KEY ngắn / Chuyển để làm lại.")
+            self.cal_note.set("Firmware cũ: cần cập nhật firmware tự động lưu.")
         elif line == "CAL,EXIT":
             self.cal_visible=False
             self.cal_review=False
@@ -1224,15 +1220,10 @@ class Dashboard:
         present=str(self.cal_pane) in self.data_split.panes()
         if show and not present:self.data_split.add(self.cal_pane,weight=1)
         elif present and not show:self.data_split.forget(self.cal_pane)
-        self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
-        self.cal_again_btn.configure(
-            state="normal" if show and self.cal_phase in ("REVIEW", "END") else "disabled")
-        self.cal_open_btn.configure(
-            state="normal" if show and self.cal_phase == "WAIT_OPEN" else "disabled")
+        self.cal_again_btn.configure(state="normal" if show else "disabled")
 
     def request_calibration_again(self):
-        if (self.cal_phase not in ("REVIEW", "END") or not self.menu_ready or
-                self.active_test_name != "Calibration"):
+        if (not self.menu_ready or self.active_test_name != "Calibration"):
             return
         self.cal_again_btn.configure(state="disabled")
         self.cal_note.set("RESTART REQUESTED — chờ STM32 xác nhận")
@@ -1255,7 +1246,7 @@ class Dashboard:
         span=bottom-top
         step=(w-38)/6
         status=("END · LIVE ADC" if self.cal_phase=="END" else
-                "REVIEW · WAIT SAVE" if self.cal_phase=="REVIEW" else
+                "REVIEW · AUTO SAVE" if self.cal_phase=="REVIEW" else
                 "WALL · CAPTURING" if self.cal_phase=="WALL" else
                 "OPEN · CAPTURING" if self.cal_phase=="OPEN" else
                 "WAIT · MOVE TO OPEN SPACE" if self.cal_phase=="WAIT_OPEN" else "WAITING")

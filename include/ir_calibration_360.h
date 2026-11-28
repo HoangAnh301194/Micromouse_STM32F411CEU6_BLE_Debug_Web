@@ -22,6 +22,7 @@ typedef struct {
     uint8_t valid;
     uint8_t physical_start;
     uint8_t failed_channels;
+    uint8_t wait_seconds;
     uint32_t started_ms;
     uint32_t stage_started_ms;
     uint32_t last_sample_ms;

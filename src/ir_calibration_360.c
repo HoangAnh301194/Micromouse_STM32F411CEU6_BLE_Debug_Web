@@ -11,7 +11,7 @@
 #define IRC_SAMPLE_PERIOD_MS       20U
 #define IRC_REQUIRED_SAMPLES       150U
 #define IRC_CAPTURE_TIMEOUT_MS     20000UL
-#define IRC_OPEN_WAIT_TIMEOUT_MS   180000UL
+#define IRC_OPEN_TRANSITION_MS     5000UL
 #define IRC_MIN_SEPARATION_ADC     96U
 #define IRC_HIST_BINS              64U
 #define IRC_HIST_BIN_SHIFT         6U
@@ -83,7 +83,7 @@ void IRC_Arm(IRC_Context *c, uint32_t now, uint8_t physical_start)
     c->started_ms = now;
     c->physical_start = physical_start ? 1U : 0U;
     IRC_ResetStage(c, 0U, now);
-    BT_SendString("CAL,START,mode=1,stages=2,samples=150,save=USER_CONFIRM\r\n");
+    BT_SendString("CAL,START,mode=1,stages=2,samples=150,save=AUTO_IF_VALID\r\n");
     BT_SendString("CAL,STAGE,WALL,setup=FRONT_LEFT_RIGHT,no_rear=1,action=KEEP_STILL\r\n");
 }
 
@@ -212,7 +212,10 @@ static void IRC_FinishOpenStage(IRC_Context *c)
     if (IRC_ComputeThresholds(c)) {
         BT_Printf("CAL,REVIEW,samples_wall=%lu,samples_open=%lu,failed=0,quality=CANDIDATE_ONLY\r\n",
                   (unsigned long)c->wall_samples, (unsigned long)c->open_samples);
-        BT_SendString("CAL,WAIT_SAVE,action=KEY_LONG_OR_V,retry=KEY_SHORT_OR_R\r\n");
+        if (!IRC_Save(c)) {
+            c->state = IRC_FAULT;
+            BT_SendString("CAL,END,result=SAVE_FAILED,flash=FAILED\r\n");
+        }
     } else {
         BT_Printf("CAL,REVIEW,samples_wall=%lu,samples_open=%lu,failed=%u,quality=INSUFFICIENT\r\n",
                   (unsigned long)c->wall_samples, (unsigned long)c->open_samples,
@@ -226,8 +229,16 @@ void IRC_Update(IRC_Context *c, uint32_t now)
     if (!IRC_IsMotionActive(c)) return;
 
     if (c->state == IRC_WAIT_OPEN) {
-        if ((uint32_t)(now - c->stage_started_ms) > IRC_OPEN_WAIT_TIMEOUT_MS)
-            IRC_Abort(c, "OPEN_STAGE_TIMEOUT");
+        uint32_t elapsed = (uint32_t)(now - c->stage_started_ms);
+        if (elapsed >= IRC_OPEN_TRANSITION_MS) {
+            (void)IRC_ConfirmOpen(c, now);
+        } else {
+            uint8_t seconds = (uint8_t)((IRC_OPEN_TRANSITION_MS - elapsed + 999U) / 1000U);
+            if (seconds != c->wait_seconds) {
+                c->wait_seconds = seconds;
+                BT_Printf("CAL,COUNTDOWN,seconds=%u\r\n", (unsigned)seconds);
+            }
+        }
         return;
     }
 
@@ -243,7 +254,9 @@ void IRC_Update(IRC_Context *c, uint32_t now)
         c->stage_started_ms = now;
         BT_Printf("CAL,STAGE_DONE,stage=WALL,samples=%lu\r\n",
                   (unsigned long)c->wall_samples);
-        BT_SendString("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,confirm=O_OR_KEY\r\n");
+        c->wait_seconds = 5U;
+        BT_SendString("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,delay_ms=5000\r\n");
+        BT_SendString("CAL,COUNTDOWN,seconds=5\r\n");
     } else if (c->state == IRC_CAPTURE_OPEN &&
                c->open_samples >= IRC_REQUIRED_SAMPLES) {
         BT_Printf("CAL,STAGE_DONE,stage=OPEN,samples=%lu\r\n",

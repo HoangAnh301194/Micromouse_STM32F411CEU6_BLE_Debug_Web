@@ -629,7 +629,7 @@ int Main_Runtime(void)
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* Safe SPP commands: ?, N/K, P/G, E/Y/I, V save, R calibration retry.
+            /* Safe SPP commands: ?, N/K, P/G, E/Y/I, R calibration retry.
              * Motors remain locked regardless of Bluetooth traffic. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
@@ -651,36 +651,24 @@ int Main_Runtime(void)
                     BT_SendString("Selected encoder option 8: PID\r\n");
                     PidMenu_ReportGains("VALUES");
                 }
-            } else if (command == 'O') {
-                (void)IRC_ConfirmOpen(&ir_calibration, now);
             } else if (command == 'N') {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
-                else if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
-                         mode_menu.selected == 0U &&
-                         (ir_calibration.state == IRC_REVIEW ||
-                          ir_calibration.state == IRC_SAVED ||
-                          ir_calibration.state == IRC_FAULT)) {
+                if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U) {
+                    if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"RESTART");
                     mode_menu.focus = 0U;
                     BT_SendString("CAL,RESTART_ACCEPTED\r\n");
                     IRC_Arm(&ir_calibration, now, 0U);
                 } else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Next(&mode_menu);
+                    if (remote == MODE_MENU_EVENT_FOCUS && mode_menu.focus == 0U) {
+                        ModeMenu_Report(&mode_menu, remote);
+                        remote = ModeMenu_Select(&mode_menu);
+                    }
                 }
             } else if (command == 'K') {
-                if (ir_calibration.state == IRC_WAIT_OPEN) {
-                    (void)IRC_ConfirmOpen(&ir_calibration, now);
-                } else if (IRC_IsMotionActive(&ir_calibration)) {
-                    IRC_Abort(&ir_calibration,"MENU_STOP");
-                } else if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
-                           mode_menu.selected == 0U &&
-                           (ir_calibration.state == IRC_REVIEW ||
-                            ir_calibration.state == IRC_FAULT)) {
-                    if (!IRC_Save(&ir_calibration))
-                        BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
-                } else if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
-                           mode_menu.selected == 0U &&
-                           ir_calibration.state == IRC_SAVED) {
+                if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U) {
+                    if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"EXIT");
+                    IRC_Init(&ir_calibration);
                     mode_menu.selected = MODE_MENU_NO_SELECTION;
                     mode_menu.focus = 0U;
                     BT_SendString("CAL,EXIT\r\n");
@@ -739,24 +727,16 @@ int Main_Runtime(void)
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command == 'R') {
-                /* Explicit SPP retry is permitted only after a completed or
-                 * failed Mode-1 session. Never restart an active pivot. */
-                if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
-                    mode_menu.selected == 0U &&
-                    !IRC_IsMotionActive(&ir_calibration) &&
-                    !EncoderOneBox_IsRunning() &&
-                    (ir_calibration.state == IRC_REVIEW ||
-                     ir_calibration.state == IRC_SAVED ||
-                     ir_calibration.state == IRC_FAULT)) {
+                if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U &&
+                    !EncoderOneBox_IsRunning()) {
+                    if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"RESTART");
                     BT_SendString("CAL,RESTART_ACCEPTED\r\n");
                     IRC_Arm(&ir_calibration, now, 0U);
                 } else {
-                    BT_Printf("CAL,RESTART_REJECTED,reason=NOT_READY,state=%u\r\n",
-                              (unsigned)ir_calibration.state);
+                    BT_SendString("CAL,RESTART_REJECTED,reason=NOT_IN_MODE1\r\n");
                 }
-            } else if (command == 'V') {
-                if (!IRC_Save(&ir_calibration))
-                    BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
+            } else if (command == 'O' || command == 'V') {
+                BT_SendString("CAL,COMMAND_REJECT,reason=AUTOMATIC_MODE\r\n");
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
                 Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
                 BT_SendString("ENCODER RESET OK\r\n");
@@ -803,51 +783,25 @@ int Main_Runtime(void)
             uint8_t was_calibration = mode_menu.page == MODE_MENU_PAGE_MAIN &&
                                       mode_menu.selected == 0U;
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
-            /* In WAIT_OPEN, a short or long physical KEY confirms that the
-             * operator has moved the stationary robot into open space. Do not
-             * let this confirmation advance the main menu focus. */
-            if (ir_calibration.state == IRC_WAIT_OPEN &&
-                (event == MODE_MENU_EVENT_FOCUS || event == MODE_MENU_EVENT_SELECT)) {
-                mode_menu.focus = mode_menu.selected;
-                (void)IRC_ConfirmOpen(&ir_calibration, now);
-                event = MODE_MENU_EVENT_NONE;
-            } else if (IRC_IsMotionActive(&ir_calibration) &&
-                       event != MODE_MENU_EVENT_NONE) {
-                /* During either capture phase, physical KEY aborts the
-                 * acquisition instead of silently navigating away. */
-                IRC_Abort(&ir_calibration,"KEY_ABORT");
-                event = MODE_MENU_EVENT_NONE;
-            }
-            /* Short KEY after a completed/failed Mode 1 run starts a fresh
-             * two-stage capture. During capture/wait, KEY never restarts. */
-            if (event == MODE_MENU_EVENT_FOCUS &&
-                mode_menu.page == MODE_MENU_PAGE_MAIN &&
-                mode_menu.selected == 0U &&
-                !IRC_IsMotionActive(&ir_calibration) &&
-                !EncoderOneBox_IsRunning() &&
-                (ir_calibration.state == IRC_REVIEW ||
-                 ir_calibration.state == IRC_SAVED ||
-                 ir_calibration.state == IRC_FAULT)) {
-                mode_menu.focus=0U;
+            if (was_calibration && event == MODE_MENU_EVENT_FOCUS) {
+                mode_menu.focus = mode_menu.selected = 0U;
+                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"RESTART");
                 BT_SendString("CAL,RESTART_ACCEPTED\r\n");
-                IRC_Arm(&ir_calibration,now,1U);
-                event=MODE_MENU_EVENT_NONE;
-            }
-            if (was_calibration && event == MODE_MENU_EVENT_SELECT &&
-                (ir_calibration.state == IRC_REVIEW ||
-                 ir_calibration.state == IRC_FAULT ||
-                 ir_calibration.state == IRC_SAVED)) {
-                mode_menu.focus = 0U;
-                mode_menu.selected = 0U;
-                if (ir_calibration.state == IRC_SAVED) {
-                    mode_menu.selected = MODE_MENU_NO_SELECTION;
-                    BT_SendString("CAL,EXIT\r\n");
-                    ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
-                    ModeMenu_Draw(&mode_menu, 0U);
-                } else if (!IRC_Save(&ir_calibration)) {
-                    BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
-                }
+                IRC_Arm(&ir_calibration, now, 1U);
                 event = MODE_MENU_EVENT_NONE;
+            } else if (was_calibration && event == MODE_MENU_EVENT_SELECT) {
+                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"EXIT");
+                IRC_Init(&ir_calibration);
+                mode_menu.selected = MODE_MENU_NO_SELECTION;
+                mode_menu.focus = 0U;
+                BT_SendString("CAL,EXIT\r\n");
+                ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
+                ModeMenu_Draw(&mode_menu, 0U);
+                event = MODE_MENU_EVENT_NONE;
+            } else if (event == MODE_MENU_EVENT_FOCUS &&
+                       mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.focus == 0U) {
+                ModeMenu_Report(&mode_menu, event);
+                event = ModeMenu_Select(&mode_menu);
             }
             if (event != MODE_MENU_EVENT_NONE) {
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();

@@ -22,7 +22,7 @@ with TemporaryDirectory() as d:
     first=logger.write(WALL)
     assert first and first.read_text().splitlines()==[HEADER,"123,0,120,230,340,450,560,670"]
     logger.write("CAL,STAGE_DONE,stage=WALL,samples=150")
-    logger.write("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,confirm=O_OR_KEY")
+    logger.write("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,delay_ms=5000")
     assert logger.write(OPEN)==first
     logger.write("CAL,REVIEW,samples_wall=150,samples_open=150,quality=CANDIDATE_ONLY")
     logger.write("CAL,SAVED,flash=OK,auto_apply=0,has_open_calib=1")
@@ -41,21 +41,25 @@ assert "IRC_ConfirmOpen" in cal and "CAL,WAIT,stage=OPEN" in cal
 assert "IRC_MIN_SEPARATION_ADC" in cal and "wall_p10" in cal and "open_p90" in cal
 assert "data.has_open_calib = 1U" in cal
 finish = cal.split("static void IRC_FinishOpenStage", 1)[1].split("void IRC_Update", 1)[0]
-assert "IRC_Save(" not in finish
-assert "CAL,WAIT_SAVE" in finish
-assert "save=USER_CONFIRM" in cal
+assert "IRC_Save(c)" in finish
+assert "IRC_OPEN_TRANSITION_MS     5000UL" in cal
+assert "elapsed >= IRC_OPEN_TRANSITION_MS" in cal
+assert "save=AUTO_IF_VALID" in cal
 assert "CAL,END,result=SUCCESS" in cal.split("uint8_t IRC_Save(", 1)[1]
 assert 'self.cal_phase="REVIEW"' in dashboard
-assert 'self.cal_phase in ("REVIEW", "END")' in dashboard
+assert "self.cal_again_btn.configure(state=" in dashboard
+assert "was_calibration && event == MODE_MENU_EVENT_FOCUS" in runtime
 assert "was_calibration && event == MODE_MENU_EVENT_SELECT" in runtime
 assert "CAL,RESTART_ACCEPTED" in runtime
 assert "EncoderOneBox_StartCalibrationPivot" not in cal
 assert "MPU6050_GetSnapshot" not in cal
 assert "IRC_Update(&ir_calibration,now)" in runtime
-assert "IRC_ConfirmOpen(&ir_calibration, now)" in runtime
-assert "command == 'O'" in runtime
+assert "IRC_ConfirmOpen(c, now)" in cal
+assert "IRC_ConfirmOpen(&ir_calibration, now)" not in runtime
 assert "return TEST_RES_IR;" in resources
-assert "Confirm open-space capture (O)" in dashboard
+assert "Confirm open-space capture (O)" not in dashboard
+assert "Save Flash manually (V)" not in dashboard
+assert "CAL,COUNTDOWN,seconds=" in dashboard
 assert 'line.startswith("CAL,START,mode=1,stages=2")' in dashboard
 assert 'line.startswith("CAL,WAIT,stage=OPEN")' in dashboard
 assert "self.cal_phase=\"WAIT_OPEN\"" in dashboard

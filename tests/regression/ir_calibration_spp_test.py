@@ -37,7 +37,7 @@ def main():
         "Selected mpu option 1: MPU Log",
         "Menu snapshot: Encoder Test | focus=Log Receive | selected=None | stream=0 | cal=0",
         "CAL,START,mode=1,stages=2", "CAL,WAIT,stage=OPEN",
-        "CAL,REVIEW,quality=CANDIDATE_ONLY", "CAL,WAIT_SAVE,action=KEY_LONG_OR_V",
+        "CAL,REVIEW,quality=CANDIDATE_ONLY", "CAL,COUNTDOWN,seconds=5",
         "CAL,RESTART_ACCEPTED", "CAL,SAVED,flash=OK", "CAL,SAVE_REJECT,reason=NOT_READY",
         "CAL,END,result=SUCCESS", "CAL,EXIT",
     ):
@@ -65,7 +65,7 @@ def main():
         ]
         # WAIT_OPEN is a pause for the operator, not the end of the same run.
         logger.write("CAL,STAGE_DONE,stage=WALL,samples=150")
-        logger.write("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,confirm=O_OR_KEY")
+        logger.write("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,delay_ms=5000")
         assert logger.write(opened) == first
         assert len(first.read_text().splitlines()) == 3
         logger.write("CAL,REVIEW,samples_wall=150,samples_open=150,quality=CANDIDATE_ONLY")

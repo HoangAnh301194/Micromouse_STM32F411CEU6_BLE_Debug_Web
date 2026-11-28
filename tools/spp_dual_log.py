@@ -9,7 +9,7 @@ MENU_NAVIGATION_PREFIXES = (
     "Selected test ", "Encoder Test:", "Encoder Test option ",
     "MPU Test:", "MPU Test option ", "Selected encoder option ", "Selected mpu option ",
     "Menu snapshot: ", "CAL,START,", "CAL,WAIT,", "CAL,REVIEW,",
-    "CAL,WAIT_SAVE,", "CAL,RESTART_ACCEPTED", "CAL,RESTART_REJECTED",
+    "CAL,WAIT_SAVE,", "CAL,COUNTDOWN,", "CAL,RESTART_ACCEPTED", "CAL,RESTART_REJECTED",
     "CAL,SAVED,", "CAL,SAVE_REJECT,", "CAL,END,", "CAL,EXIT", "CAL,FAULT,",
 )
 
@@ -258,6 +258,9 @@ class DualSessionLog:
                 self._close_active()
                 self._streaming=True
                 self._open_run("CAL",TEST_CSV_COLUMNS["CAL"],host_time)
+            return
+        if line == "CAL,EXIT":
+            self._deactivate()
             return
         if line.startswith(("CAL,REVIEW,","CAL,FAULT,","CAL,END,")):
             if self.active_sensor=="CAL":
