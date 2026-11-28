@@ -43,7 +43,13 @@ int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
 
 void OneBoxCore_Start(OneBoxCore *s, int32_t left, int32_t right)
 {
-    if (!s) return;
+    (void)OneBoxCore_StartCells(s,left,right,1U,0U);
+}
+uint8_t OneBoxCore_StartCells(OneBoxCore *s,int32_t left,int32_t right,uint8_t cells,uint8_t fixed_speed)
+{
+    if (!s || cells<1U || cells>ONEBOX_MAX_CELLS) return 0U;
+    s->cells=cells; s->fixed_speed=fixed_speed;
+    s->target_l=ONEBOX_TARGET_L*cells; s->target_r=ONEBOX_TARGET_R*cells;
     s->start_l = s->last_l = left;
     s->start_r = s->last_r = right;
     s->delta_l = s->delta_r = 0;
@@ -53,6 +59,7 @@ void OneBoxCore_Start(OneBoxCore *s, int32_t left, int32_t right)
     s->reason = ONEBOX_REASON_NONE;
     s->reached_l = s->reached_r = 0U;
     s->running = 1U;
+    return 1U;
 }
 void OneBoxCore_HostPing(OneBoxCore *s)
 {
@@ -87,11 +94,11 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
 
     if (s->host_age_ticks >= ONEBOX_LEASE_TICKS)
         out.reason = ONEBOX_REASON_HOST_LOST;
-    else if (s->ticks >= ONEBOX_MAX_TICKS)
+    else if (s->ticks >= ONEBOX_MAX_TICKS * s->cells)
         out.reason = ONEBOX_REASON_TIMEOUT;
     else if (dl < -30L || dr < -30L)
         out.reason = ONEBOX_REASON_ENCODER;
-    else if (dl > ONEBOX_TARGET_L + 170L || dr > ONEBOX_TARGET_R + 170L)
+    else if (dl > s->target_l + 170L || dr > s->target_r + 170L)
         out.reason = ONEBOX_REASON_ENCODER;
     else if (s->stale_ticks >= ONEBOX_STALL_TICKS)
         out.reason = ONEBOX_REASON_STALL;
@@ -106,8 +113,13 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
     /* Stop commanding each wheel independently at its target. No early
      * completion from an average or a 75-count shortfall. Latch arrival
      * to avoid restarting a wheel because of encoder bounce. */
-    if (dl >= ONEBOX_TARGET_L) s->reached_l = 1U;
-    if (dr >= ONEBOX_TARGET_R) s->reached_r = 1U;
+    if (s->fixed_speed && (dl >= s->target_l || dr >= s->target_r)) {
+        /* Finish together at mean normalized cell distance, not at intermediate cells. */
+        if ((int64_t)dl*ONEBOX_TARGET_R+(int64_t)dr*ONEBOX_TARGET_L >= 2LL*s->target_l*ONEBOX_TARGET_R) {
+            s->reached_l=s->reached_r=1U;
+        }
+    } else if (dl >= s->target_l) s->reached_l = 1U;
+    if (!s->fixed_speed && dr >= s->target_r) s->reached_r = 1U;
     if (!out.reason && s->reached_l && s->reached_r)
         out.reason = ONEBOX_REASON_DONE;
 
@@ -127,7 +139,7 @@ OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right)
 void OneBoxCore_References(const OneBoxCore *s, float *left, float *right)
 {
     float error = (float)s->delta_l - (float)s->delta_r * ONEBOX_TARGET_L / ONEBOX_TARGET_R;
-    float correction = ClampF(ONEBOX_SYNC_K * error, -ONEBOX_SYNC_LIMIT, ONEBOX_SYNC_LIMIT);
+    float correction = s->fixed_speed ? 0.0f : ClampF(ONEBOX_SYNC_K * error, -ONEBOX_SYNC_LIMIT, ONEBOX_SYNC_LIMIT);
     *left = s->running && !s->reached_l ? ONEBOX_SPEED_PPS - correction : 0.0f;
     *right = s->running && !s->reached_r ? (ONEBOX_SPEED_PPS + correction) * ONEBOX_TARGET_R / ONEBOX_TARGET_L : 0.0f;
     /* Do not accelerate the remaining wheel once its partner has arrived. */

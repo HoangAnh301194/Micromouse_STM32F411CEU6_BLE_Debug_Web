@@ -465,6 +465,8 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
             BT_SendString("Selected encoder option 1: Log Receive\r\n");
         } else if (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX) {
             BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
+        } else if (menu->active_encoder_option == MODE_MENU_ENCODER_MULTI) {
+            BT_SendString("Selected encoder option 3: Multi Box Forward (ARMED; enter cells and Start)\r\n");
         } else if (menu->active_encoder_option == MODE_MENU_ENCODER_PID) {
             BT_SendString("Selected encoder option 8: PID\r\n");
             PidMenu_ReportGains("VALUES");
@@ -827,6 +829,11 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
+            } else if (command >= 'a' && command <= 'o' && mode_menu.page == MODE_MENU_PAGE_ENCODER && mode_menu.active_encoder_option == MODE_MENU_ENCODER_MULTI) {
+                /* Single-byte, atomic start: a..o encode 1..15; q encodes 16 below. */
+                uint8_t cells=(uint8_t)(command-'a'+1);
+                if (EncoderOneBox_StartMulti(cells)) BT_Printf("ONEBOX,START,cells=%u,target_l=%ld,target_r=%ld,pwm_max=%d,ref_l=%d,ref_r=%d\r\n",(unsigned)cells,(long)ONEBOX_TARGET_L*cells,(long)ONEBOX_TARGET_R*cells,ONEBOX_MAX_PWM,ONEBOX_SPEED_PPS,(int)ONEBOX_SPEED_R_PPS);
+                else BT_SendString("ONEBOX,REJECT,reason=NOT_READY\r\n");
             } else if (command == 'G') {
                 if (cal_active) Cal_Begin(now);
                 else if (ModeMenu_PivotTarget(&mode_menu)) {
@@ -845,7 +852,9 @@ int Main_Runtime(void)
                 } else if (ModeTest_OneBoxArmed(&mode_menu) &&
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
                     (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
-                    if (EncoderOneBox_Start()) {
+                    if (mode_menu.active_encoder_option == MODE_MENU_ENCODER_MULTI) {
+                        BT_SendString("ONEBOX,REJECT,reason=ENTER_CELL_COUNT\r\n");
+                    } else if (EncoderOneBox_Start()) {
                         BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_l=%d,ref_r=%d\r\n",
                                   (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
                                   (int)ONEBOX_MAX_PWM, (int)ONEBOX_SPEED_PPS, (int)ONEBOX_SPEED_R_PPS);

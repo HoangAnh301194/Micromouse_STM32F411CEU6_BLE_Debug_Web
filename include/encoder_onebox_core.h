@@ -40,6 +40,7 @@ uint8_t OneBoxGains_Valid(const OneBoxGains *g);
 void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s);
 int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
                             float reference, float measured);
+#define ONEBOX_MAX_CELLS 16U
 #define ONEBOX_MAX_TICKS 6500U      /* hard 6.5 s one-shot limit */
 #define ONEBOX_STALL_TICKS 900U      /* no encoder movement */
 #define ONEBOX_LEASE_TICKS 350U      /* require host heartbeat <350ms */
@@ -58,6 +59,8 @@ enum {
 };
 
 typedef struct {
+    int32_t target_l, target_r;
+    uint8_t cells, fixed_speed;
     int32_t start_l, start_r;
     int32_t last_l, last_r;
     int32_t delta_l, delta_r;
@@ -74,6 +77,7 @@ typedef struct {
     uint8_t reason;
 } OneBoxOutput;
 
+uint8_t OneBoxCore_StartCells(OneBoxCore *s, int32_t left, int32_t right, uint8_t cells, uint8_t fixed_speed);
 void OneBoxCore_Start(OneBoxCore *s, int32_t start_l, int32_t start_r);
 void OneBoxCore_HostPing(OneBoxCore *s);
 OneBoxOutput OneBoxCore_Step(OneBoxCore *s, int32_t left, int32_t right);

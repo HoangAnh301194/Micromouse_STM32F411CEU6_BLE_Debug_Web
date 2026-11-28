@@ -32,6 +32,7 @@ uint8_t EncoderOneBox_SetGains(const OneBoxGains *left, const OneBoxGains *right
 void EncoderOneBox_GetGains(OneBoxGains *left, OneBoxGains *right);
 void EncoderOneBox_Init(void);
 uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target);
+uint8_t EncoderOneBox_StartMulti(uint8_t cells);
 uint8_t EncoderOneBox_Start(void); /* SPP 'G' only, after menu 1 Box Forward */
 void EncoderOneBox_HostPing(void);  /* SPP 'H' <=100ms, 350ms safety lease */
 void EncoderOneBox_Abort(void);     /* SPP 'P' or menu navigation */

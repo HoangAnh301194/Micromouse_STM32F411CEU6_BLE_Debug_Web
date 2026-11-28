@@ -115,6 +115,9 @@ class SPPReader:
             return False
         return self._enqueue(command)
 
+    def send_multi(self, cells):
+        return 1 <= cells <= 15 and self._enqueue(bytes([96+cells]))
+
     def send_pid(self, values):
         limits = (10000, 20000, 1000) * 2
         if len(values) != 6 or any(not isinstance(v, int) or not 0 <= v <= m
@@ -406,6 +409,11 @@ class Dashboard:
                                          command=lambda: self.send_sensor_reset(b"I", "IR Test"),
                                          state="disabled")
         self.restart_ir_btn.pack(side="left")
+        self.multi_panel = ttk.Frame(right)
+        ttk.Label(self.multi_panel,text="Số ô (1–15):").pack(side="left")
+        self.multi_cells = tk.StringVar(value="5")
+        self.multi_entry = ttk.Entry(self.multi_panel,textvariable=self.multi_cells,width=6)
+        self.multi_entry.pack(side="left",padx=6)
         self.pid_panel = ttk.LabelFrame(right, text="Wheel PID (RAM) — PPS / permille", padding=6)
         self.pid_values = [tk.StringVar(value=x) for x in ("0.09", "0.25", "0", "0.09", "0.25", "0")]
         self.pid_ready = False
@@ -537,6 +545,10 @@ class Dashboard:
     def _update_test_controls(self):
         self._sync_wheel_panel()
         self._sync_angle_panel()
+        if self.menu_ready and self.active_test_name == "Multi Box Forward":
+            if not self.multi_panel.winfo_manager(): self.multi_panel.pack(fill="x",before=self.pid_status_bar,pady=4)
+            self.multi_entry.configure(state="disabled" if self.test_stream_running or self.onebox_start_pending else "normal")
+        else: self.multi_panel.pack_forget()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
         if pid_visible:
             if not self.pid_panel.winfo_manager():
@@ -549,7 +561,7 @@ class Dashboard:
         for entry in self.pid_entries:
             entry.configure(state="normal" if pid_editable else "disabled")
         can_control = self.menu_ready and self.active_test_name not in (None, "PID")
-        if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
+        if (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")):
             # This is an encoder + motor test, not an MPU test.
             can_control = can_control and self.onebox_capable
         self.start_test_btn.configure(
@@ -599,19 +611,26 @@ class Dashboard:
         if not self.menu_ready or self.active_test_name in (None, "PID"):
             self.status.set("Select Log Receive, IR/MPU or 1 Box Forward before Start/Stop.")
             return
-        if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")) and not self.onebox_capable:
+        if (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")) and not self.onebox_capable:
             self.status.set("1 Box Forward requires updated unified mode_menu_96m.")
             return
-        if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
+        if (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")):
             if command == b"G":
                 self.reader.motion_lease.set()
             elif command == b"P":
                 self.reader.motion_lease.clear()
-        if not self.reader.send_menu(command):
+        if command == b"G" and self.active_test_name == "Multi Box Forward":
+            try: cells=int(self.multi_cells.get())
+            except ValueError: cells=0
+            if not 1<=cells<=15:
+                self.reader.motion_lease.clear(); self.status.set("Nhập số ô nguyên từ 1 đến 15."); return
+            sent=self.reader.send_multi(cells)
+        else: sent=self.reader.send_menu(command)
+        if not sent:
             self.reader.motion_lease.clear()
             self.onebox_start_pending = False
             self.status.set("Could not send test Start/Stop; check the SPP connection.")
-        elif (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
+        elif (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")):
             self.onebox_start_pending = command == b"G"
             self._update_test_controls()
 
@@ -755,7 +774,7 @@ class Dashboard:
                 not self.test_stream_running):
             return
         if category == "data" and line.startswith("ONEBOX_CSV,") and (
-                self.active_test_name != "1 Box Forward" or
+                self.active_test_name not in ("1 Box Forward", "Multi Box Forward") or
                 not self.test_stream_running):
             return
         if not self._replaying and not self._logging_disabled:
@@ -771,7 +790,8 @@ class Dashboard:
                 self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
         # Encoder parent is navigation only; never turn on logging here.
         is_encoder_log = line == "Selected encoder option 1: Log Receive"
-        is_onebox = line.startswith("Selected encoder option 2: 1 Box Forward")
+        is_multi = line.startswith("Selected encoder option 3: Multi Box Forward")
+        is_onebox = is_multi or line.startswith("Selected encoder option 2: 1 Box Forward")
         is_ir_or_mpu = (line.startswith("Selected test ") and
                          line.split(": ", 1)[-1].strip() in
                          ("IR Test", "MPU Test", "All Sensors Test"))
@@ -824,7 +844,7 @@ class Dashboard:
             self.wheel_data.clear()
             self.wheel_dirty = True
             self.active_test_name = ("Encoder Test" if is_encoder_log else
-                                     "1 Box Forward" if is_onebox else
+                                     "Multi Box Forward" if is_multi else "1 Box Forward" if is_onebox else
                                      line.split(": ", 1)[-1].strip())
             # Log Receive and 1 Box Forward arm IDLE: no data/motion yet.
             self.test_stream_running = not (is_encoder_log or is_onebox or self.active_test_name == "MPU Test")
@@ -866,7 +886,7 @@ class Dashboard:
             self._update_test_controls()
             self.status.set("Legacy motor-locked firmware detected; update unified mode_menu_96m.")
         elif line.startswith(("ONEBOX,START,","PIVOT,START,")):
-            if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
+            if (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")):
                 self.wheel_data.clear()
                 self.wheel_dirty = True
                 self.clear_data()
@@ -882,11 +902,11 @@ class Dashboard:
             if line.startswith(("ONEBOX,RESULT,","PIVOT,RESULT,")) and not (
                     "reason=DONE" in line or "reason=STOP" in line):
                 self.onebox_capable = False
-            if (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
+            if (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")):
                 self.test_stream_running = False
                 self._update_test_controls()
             saved = self.dual_log.last_saved_path
-            if line.startswith("ONEBOX,RESULT,") and (self.active_test_name == "1 Box Forward" or (self.active_test_name or "").startswith("Pivot ")):
+            if line.startswith("ONEBOX,RESULT,") and (self.active_test_name in ("1 Box Forward", "Multi Box Forward") or (self.active_test_name or "").startswith("Pivot ")):
                 metrics = summarize_wheels(self.wheel_data.rows, 200)
                 self._append("WHEEL METRICS (applied PWM, sampled): " + str(metrics), ts, "status")
                 if saved and saved.parent.name == "mode 7 - encoder test - 1 box forward":
@@ -1085,7 +1105,7 @@ class Dashboard:
             put("ENC", extra, "enc_l" in fields and "enc_r" in fields)
         elif tag == "ENC_LIVE":
             put("ENC", fields, "left" in fields and "right" in fields)
-            if self.active_test_name != "1 Box Forward" and not (self.active_test_name or "").startswith("Pivot "):
+            if self.active_test_name not in ("1 Box Forward", "Multi Box Forward") and not (self.active_test_name or "").startswith("Pivot "):
                 row = {"t": now, "count_L": fields.get("left"), "count_R": fields.get("right"),
                        "speed_L": fields.get("speed_l"), "speed_R": fields.get("speed_r"),
                        "pwm_L": fields.get("pwm_l"), "pwm_R": fields.get("pwm_r")}

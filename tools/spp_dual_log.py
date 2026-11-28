@@ -257,7 +257,8 @@ class DualSessionLog:
             self._streaming = False
             return
 
-        if line.startswith(self._ONEBOX_SELECT):
+        if line.startswith((self._ONEBOX_SELECT, "Selected encoder option 3: Multi Box Forward")):
+            self.multi_forward = line.startswith("Selected encoder option 3:")
             # Selection only ARMS 1-box. Never open a motion CSV until the
             # firmware acknowledges a successful ONEBOX,START.
             self._has_menu_context = True
@@ -331,7 +332,7 @@ class DualSessionLog:
 
         if sensor in ("ENC", "ONEBOX", "MPU", "PIVOT"):
             name = {"ENC": "mode 7 - encoder test - log receiver",
-                    "ONEBOX": "mode 7 - encoder test - 1 box forward",
+                    "ONEBOX": "mode 7 - encoder test - multi box forward" if getattr(self,"multi_forward",False) else "mode 7 - encoder test - 1 box forward",
                     "MPU": "mode 7 - mpu test - log receiver",
                     "PIVOT": "mode 7 - mpu test - " + getattr(self, "pivot_name", "pivot").lower()}[sensor]
             folder = self.root / name

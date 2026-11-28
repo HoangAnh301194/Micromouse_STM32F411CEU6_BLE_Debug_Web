@@ -94,9 +94,10 @@ void EncoderOneBox_Init(void)
     core.running = 0U;
     Unlock(irq);
 }
-static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
+static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, uint8_t cells, uint8_t fixed_speed)
 {
     MPU6050_Snapshot_t snap = {0};
+    if (cells<1U || cells>ONEBOX_MAX_CELLS) return 0U;
     if (target && (!mpu || !MPU6050_GetSnapshot(mpu,&snap) || !snap.valid ||
         (uint32_t)(micros()-snap.completed_us)>3000U || snap.gyro_z_dps > 2.0f || snap.gyro_z_dps < -2.0f)) return 0U;
     uint32_t irq;
@@ -112,7 +113,7 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
     stall_l = stall_r = 0U;
     Motor_Stop();
     started_at_ms = millis();
-    OneBoxCore_Start(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
+    OneBoxCore_StartCells(&core, Encoder_GetLeftCount(), Encoder_GetRightCount(),cells,fixed_speed);
     OneBoxSpeedPid_Reset(&pid_l); OneBoxSpeedPid_Reset(&pid_r);
     result_pending = 0U;
     ref_l_pps = ref_r_pps = 0.0f;
@@ -120,10 +121,11 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target)
     Unlock(irq);
     return 1U;
 }
-uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0); }
+uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0,1U,0U); }
+uint8_t EncoderOneBox_StartMulti(uint8_t cells) { return StartMotion(0,0,cells,1U); }
 uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target) {
     if (target!=90 && target!=-90 && target!=180 && target!=-180) return 0U;
-    return StartMotion(mpu,target);
+    return StartMotion(mpu,target,1U,0U);
 }
 void EncoderOneBox_HostPing(void)
 {
