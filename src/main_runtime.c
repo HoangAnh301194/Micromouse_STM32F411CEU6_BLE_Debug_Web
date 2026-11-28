@@ -620,7 +620,15 @@ int Main_Runtime(void)
                 (void)IRC_ConfirmOpen(&ir_calibration, now);
             } else if (command == 'N') {
                 if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"MENU_STOP");
-                else {
+                else if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                         mode_menu.selected == 0U &&
+                         (ir_calibration.state == IRC_REVIEW ||
+                          ir_calibration.state == IRC_SAVED ||
+                          ir_calibration.state == IRC_FAULT)) {
+                    mode_menu.focus = 0U;
+                    BT_SendString("CAL,RESTART_ACCEPTED\r\n");
+                    IRC_Arm(&ir_calibration, now, 0U);
+                } else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Next(&mode_menu);
                 }
@@ -629,6 +637,20 @@ int Main_Runtime(void)
                     (void)IRC_ConfirmOpen(&ir_calibration, now);
                 } else if (IRC_IsMotionActive(&ir_calibration)) {
                     IRC_Abort(&ir_calibration,"MENU_STOP");
+                } else if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                           mode_menu.selected == 0U &&
+                           (ir_calibration.state == IRC_REVIEW ||
+                            ir_calibration.state == IRC_FAULT)) {
+                    if (!IRC_Save(&ir_calibration))
+                        BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
+                } else if (mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                           mode_menu.selected == 0U &&
+                           ir_calibration.state == IRC_SAVED) {
+                    mode_menu.selected = MODE_MENU_NO_SELECTION;
+                    mode_menu.focus = 0U;
+                    BT_SendString("CAL,EXIT\r\n");
+                    ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
+                    ModeMenu_Draw(&mode_menu, 0U);
                 } else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Select(&mode_menu);
@@ -743,6 +765,8 @@ int Main_Runtime(void)
         {
             uint8_t menu_key = Board_ButtonPressed();
             if (EncoderOneBox_SuppressMenuButton()) menu_key = 0U;
+            uint8_t was_calibration = mode_menu.page == MODE_MENU_PAGE_MAIN &&
+                                      mode_menu.selected == 0U;
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
             /* In WAIT_OPEN, a short or long physical KEY confirms that the
              * operator has moved the stationary robot into open space. Do not
@@ -770,8 +794,25 @@ int Main_Runtime(void)
                  ir_calibration.state == IRC_SAVED ||
                  ir_calibration.state == IRC_FAULT)) {
                 mode_menu.focus=0U;
+                BT_SendString("CAL,RESTART_ACCEPTED\r\n");
                 IRC_Arm(&ir_calibration,now,1U);
                 event=MODE_MENU_EVENT_NONE;
+            }
+            if (was_calibration && event == MODE_MENU_EVENT_SELECT &&
+                (ir_calibration.state == IRC_REVIEW ||
+                 ir_calibration.state == IRC_FAULT ||
+                 ir_calibration.state == IRC_SAVED)) {
+                mode_menu.focus = 0U;
+                mode_menu.selected = 0U;
+                if (ir_calibration.state == IRC_SAVED) {
+                    mode_menu.selected = MODE_MENU_NO_SELECTION;
+                    BT_SendString("CAL,EXIT\r\n");
+                    ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
+                    ModeMenu_Draw(&mode_menu, 0U);
+                } else if (!IRC_Save(&ir_calibration)) {
+                    BT_SendString("CAL,SAVE_REJECT,reason=NOT_READY_OR_UNSAFE\r\n");
+                }
+                event = MODE_MENU_EVENT_NONE;
             }
             if (event != MODE_MENU_EVENT_NONE) {
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();

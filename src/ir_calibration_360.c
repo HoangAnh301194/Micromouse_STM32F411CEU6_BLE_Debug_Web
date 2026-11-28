@@ -83,7 +83,7 @@ void IRC_Arm(IRC_Context *c, uint32_t now, uint8_t physical_start)
     c->started_ms = now;
     c->physical_start = physical_start ? 1U : 0U;
     IRC_ResetStage(c, 0U, now);
-    BT_SendString("CAL,START,mode=1,stages=2,samples=150,save=AUTO_IF_VALID\r\n");
+    BT_SendString("CAL,START,mode=1,stages=2,samples=150,save=USER_CONFIRM\r\n");
     BT_SendString("CAL,STAGE,WALL,setup=FRONT_LEFT_RIGHT,no_rear=1,action=KEEP_STILL\r\n");
 }
 
@@ -212,12 +212,7 @@ static void IRC_FinishOpenStage(IRC_Context *c)
     if (IRC_ComputeThresholds(c)) {
         BT_Printf("CAL,REVIEW,samples_wall=%lu,samples_open=%lu,failed=0,quality=CANDIDATE_ONLY\r\n",
                   (unsigned long)c->wall_samples, (unsigned long)c->open_samples);
-        if (IRC_Save(c)) {
-            BT_SendString("CAL,END,result=SUCCESS,quality=WALL_OPEN,flash=SAVED,auto_apply=0\r\n");
-        } else {
-            BT_SendString("CAL,AUTO_SAVE_FAILED,review=AVAILABLE\r\n");
-            BT_SendString("CAL,END,result=SAVE_FAILED,quality=WALL_OPEN,flash=FAILED\r\n");
-        }
+        BT_SendString("CAL,WAIT_SAVE,action=KEY_LONG_OR_V,retry=KEY_SHORT_OR_R\r\n");
     } else {
         BT_Printf("CAL,REVIEW,samples_wall=%lu,samples_open=%lu,failed=%u,quality=INSUFFICIENT\r\n",
                   (unsigned long)c->wall_samples, (unsigned long)c->open_samples,
@@ -318,6 +313,7 @@ uint8_t IRC_Save(IRC_Context *c)
     if (status == FLASH_OK) {
         c->state = IRC_SAVED;
         BT_SendString("CAL,SAVED,flash=OK,auto_apply=0,has_open_calib=1\r\n");
+        BT_SendString("CAL,END,result=SUCCESS,quality=WALL_OPEN,flash=SAVED,auto_apply=0\r\n");
         return 1U;
     }
     BT_Printf("CAL,SAVE_REJECT,flash_status=%u\r\n", (unsigned)status);

@@ -82,7 +82,13 @@ traces for the two conditions.
 
 ## Flash and safety semantics
 
-On a valid six-channel result, firmware attempts to save the legacy
+On a valid six-channel result, firmware waits in REVIEW without writing Flash.
+Hold physical KEY (or SPP K / V) to confirm the save. Short KEY (or SPP N / R)
+starts a fresh WALL capture, clearing candidate samples in RAM while retaining
+the previously saved Flash record. After successful save, short KEY starts a
+new capture; another long KEY exits Calibration to the main menu.
+WALL/OPEN capture and confirmation behavior are unchanged.
+Only explicit save attempts write the legacy
 \`IR_Simple_Calib_t\` record using the checked Flash API. It sets
 \`has_open_calib=1\`, stores the OPEN p95 baselines, and writes per-channel
 \`wall_on\` / \`wall_off\` thresholds. It leaves center-reference fields

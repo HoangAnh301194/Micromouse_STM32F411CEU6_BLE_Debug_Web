@@ -40,6 +40,15 @@ assert "IRC_CAPTURE_WALL" in cal and "IRC_CAPTURE_OPEN" in cal
 assert "IRC_ConfirmOpen" in cal and "CAL,WAIT,stage=OPEN" in cal
 assert "IRC_MIN_SEPARATION_ADC" in cal and "wall_p10" in cal and "open_p90" in cal
 assert "data.has_open_calib = 1U" in cal
+finish = cal.split("static void IRC_FinishOpenStage", 1)[1].split("void IRC_Update", 1)[0]
+assert "IRC_Save(" not in finish
+assert "CAL,WAIT_SAVE" in finish
+assert "save=USER_CONFIRM" in cal
+assert "CAL,END,result=SUCCESS" in cal.split("uint8_t IRC_Save(", 1)[1]
+assert 'self.cal_phase="REVIEW"' in dashboard
+assert 'self.cal_phase in ("REVIEW", "END")' in dashboard
+assert "was_calibration && event == MODE_MENU_EVENT_SELECT" in runtime
+assert "CAL,RESTART_ACCEPTED" in runtime
 assert "EncoderOneBox_StartCalibrationPivot" not in cal
 assert "MPU6050_GetSnapshot" not in cal
 assert "IRC_Update(&ir_calibration,now)" in runtime

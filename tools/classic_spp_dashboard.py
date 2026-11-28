@@ -899,7 +899,9 @@ class Dashboard:
             self.test_stream_running=False
             self.cal_monitoring=True
             self.cal_review="quality=CANDIDATE_ONLY" in line
-            self.cal_note.set(line)
+            self.cal_phase="REVIEW"
+            self.cal_stage="REVIEW"
+            self.cal_note.set("REVIEW — giữ KEY để lưu; KEY ngắn để làm lại. " + line)
             # Firmware emits all six CAL,THRESH frames before REVIEW. The
             # logger closes the completed two-stage CSV on REVIEW, so write
             # the report here when last_saved_path becomes available.
@@ -910,6 +912,18 @@ class Dashboard:
                     self.status.set("Wall/open calibration report: "+str(report))
                 except (ValueError,OSError) as exc:
                     self.status.set("Calibration report error: "+str(exc))
+            self._update_test_controls()
+        elif line.startswith("CAL,WAIT_SAVE,"):
+            self.cal_note.set("REVIEW — giữ KEY / Chọn để lưu; KEY ngắn / Chuyển để làm lại.")
+        elif line == "CAL,EXIT":
+            self.cal_visible=False
+            self.cal_review=False
+            self.cal_monitoring=False
+            self.cal_phase=self.cal_stage="IDLE"
+            self.active_test_name=None
+            self.data_filter_combo.configure(state="readonly")
+            self.data_filter.set("All")
+            self.left_log_frame.configure(text="Continuous data — sensor samples")
             self._update_test_controls()
         elif line.startswith("CAL,RESTART_ACCEPTED"):
             self.cal_note.set("RESTART ACCEPTED — chuẩn bị phiên Calibration mới")
@@ -1212,12 +1226,12 @@ class Dashboard:
         elif present and not show:self.data_split.forget(self.cal_pane)
         self.cal_save_btn.configure(state="normal" if show and self.cal_review else "disabled")
         self.cal_again_btn.configure(
-            state="normal" if show and self.cal_phase == "END" else "disabled")
+            state="normal" if show and self.cal_phase in ("REVIEW", "END") else "disabled")
         self.cal_open_btn.configure(
             state="normal" if show and self.cal_phase == "WAIT_OPEN" else "disabled")
 
     def request_calibration_again(self):
-        if (self.cal_phase != "END" or not self.menu_ready or
+        if (self.cal_phase not in ("REVIEW", "END") or not self.menu_ready or
                 self.active_test_name != "Calibration"):
             return
         self.cal_again_btn.configure(state="disabled")
@@ -1241,6 +1255,7 @@ class Dashboard:
         span=bottom-top
         step=(w-38)/6
         status=("END · LIVE ADC" if self.cal_phase=="END" else
+                "REVIEW · WAIT SAVE" if self.cal_phase=="REVIEW" else
                 "WALL · CAPTURING" if self.cal_phase=="WALL" else
                 "OPEN · CAPTURING" if self.cal_phase=="OPEN" else
                 "WAIT · MOVE TO OPEN SPACE" if self.cal_phase=="WAIT_OPEN" else "WAITING")
