@@ -213,7 +213,7 @@ int main(void) {
     assert(!ModeMenu_CanResetSensor(&m, 1));
     for (int k=1;k<=5;k++) {
         assert(ModeMenu_Next(&m)==MODE_MENU_EVENT_MPU_FOCUS);
-        if(k<5) { const int16_t expected[]={0,90,-90,180,-180}; assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_MPU_SELECT); assert(ModeMenu_PivotTarget(&m)==expected[k]); assert(ModeTest_Resources(&m)==(TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)); }
+        if(k<5) { const int16_t expected[]={0,90,-90,180,-180}; assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_MPU_SELECT); assert(ModeMenu_PivotTarget(&m)==expected[k]); assert(ModeTest_Resources(&m)==(TEST_RES_MPU|TEST_RES_MOTOR)); }
     }
     assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_MPU_EXIT);
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);

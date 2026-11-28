@@ -494,7 +494,7 @@ static void ModeMenu_ApplyResources(const ModeMenu *menu,
     uint8_t next = cal_active ? TEST_RES_IR : ModeTest_Resources(menu);
     if (next == *last_mask) return;
     Control_SetTestResources(next);
-    if ((next & TEST_RES_MPU) && !(*last_mask & TEST_RES_MPU) &&
+    if (next && !(*last_mask & TEST_RES_MPU) &&
         mpu_status == MPU6050_OK && !mpu->calibrated && !mpu->calibrating) {
         (void)MPU6050_Calibrate(mpu); /* nonblocking MPU/All test only */
     }
@@ -774,7 +774,7 @@ int Main_Runtime(void)
     while (1) {
         uint32_t now = millis();
 #if defined(MODE_MENU_ONLY)
-        if (mpu_status == MPU6050_OK && (test_resource_mask & TEST_RES_MPU))
+        if (mpu_status == MPU6050_OK && test_resource_mask)
             MPU6050_Update(&mpu);
 #else
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
@@ -834,10 +834,10 @@ int Main_Runtime(void)
                         BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
                     }
                     if (mpu_status==MPU6050_OK && mpu.calibrated &&
-                        (test_resource_mask & (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)) ==
-                        (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR) &&
+                        (test_resource_mask & (TEST_RES_MPU|TEST_RES_MOTOR)) ==
+                        (TEST_RES_MPU|TEST_RES_MOTOR) &&
                         EncoderOneBox_StartPivot(&mpu,target))
-                        BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,ONEBOX_SPEED_PPS,ONEBOX_MAX_PWM);
+                        BT_Printf("PIVOT,START,target=%d,feedback=MPU,pwm_max=%d\r\n",(int)target,ONEBOX_MAX_PWM);
                     else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");
                 } else if (ModeTest_OneBoxArmed(&mode_menu) &&
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
@@ -1055,24 +1055,23 @@ int Main_Runtime(void)
             /* Dashboard-only frames: do not alter existing CSV schemas. */
             if ((uint32_t)(now-last_dashboard_ms)>=100U) {
                 last_dashboard_ms=now;
-                if (cal_active && (test_resource_mask & TEST_RES_IR)) {
+                if (test_resource_mask) {
                     IR_Data_t ir;
                     Control_GetIRSnapshot(&ir);
-                    BT_Printf("CAL_IR,valid=%u,L90=%u,L45=%u,L0=%u,R0=%u,R45=%u,R90=%u\r\n",
+                    BT_Printf("IR_LIVE,valid=%u,L90=%u,L45=%u,L0=%u,R0=%u,R45=%u,R90=%u\r\n",
                         (unsigned)(ir.scan_count && (uint32_t)(micros()-ir.completed_us)<=5000U),
                         (unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_L45],
                         (unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_R0],
                         (unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90]);
                 }
-                if ((test_resource_mask & TEST_RES_MPU) && !mode_menu.stream_running && !EncoderOneBox_IsRunning()) {
+                if (test_resource_mask && !(ModeMenu_PivotTarget(&mode_menu) && EncoderOneBox_IsRunning())) {
                     MPU6050_Snapshot_t gyro;
                     uint8_t valid = mpu_status == MPU6050_OK && mpu.calibrated && MPU6050_GetSnapshot(&mpu, &gyro) && gyro.valid;
                     uint32_t age = valid ? micros()-gyro.completed_us : 0U;
                     if (valid && age <= 3000U) BT_Printf("MPU_LIVE,valid=1,age_us=%lu,yaw_cd=%ld,gz_cd=%ld\r\n",(unsigned long)age,(long)(gyro.yaw_deg*100.0f),(long)(gyro.gyro_z_dps*100.0f));
                     else BT_Printf("MPU_LIVE,valid=0,age_us=%lu\r\n",(unsigned long)age);
                 }
-                if ((test_resource_mask & TEST_RES_ENCODER) &&
-                    mode_menu.stream_running && !EncoderOneBox_IsRunning()) {
+                if (test_resource_mask && !EncoderOneBox_IsRunning()) {
                     int16_t pl=0,pr=0;
                     Motor_GetAppliedPairPermille(&pl,&pr);
                     BT_Printf("ENC_LIVE,left=%ld,right=%ld,speed_l=%ld,speed_r=%ld,pwm_l=%d,pwm_r=%d\r\n",

@@ -167,7 +167,6 @@ void EncoderOneBox_ControlTick(void)
         MPU6050_Snapshot_t snap;
         int32_t l=Encoder_GetLeftCount(), r=Encoder_GetRightCount();
         int sl=pivot_target>0?-1:1, sr=-sl;
-        int32_t dl=(l-core.start_l)*sl, dr=(r-core.start_r)*sr;
         float sign=pivot_target>0?1.0f:-1.0f;
         core.ticks++; core.host_age_ticks++;
         core.delta_l=l-core.start_l; core.delta_r=r-core.start_r;
@@ -178,15 +177,11 @@ void EncoderOneBox_ControlTick(void)
         if (core.ticks>=ONEBOX_MAX_TICKS) { Finish(ONEBOX_REASON_TIMEOUT); return; }
         if (!MPU6050_GetSnapshot(pivot_mpu,&snap) || !snap.valid ||
             (uint32_t)(micros()-snap.completed_us)>3000U) { Finish(ONEBOX_REASON_IMU); return; }
-        if (dl < -30 || dr < -30 || dl > 3000 || dr > 3000 ||
-            (dl+dr>600 && (dl-dr>250 || dr-dl>250))) { Finish(ONEBOX_REASON_ENCODER); return; }
-        if (stall_l>=ONEBOX_STALL_TICKS || stall_r>=ONEBOX_STALL_TICKS) { Finish(ONEBOX_REASON_STALL); return; }
         float angle=(snap.yaw_deg-pivot_origin)*sign;
         if (angle < -5.0f) { Finish(ONEBOX_REASON_IMU); return; }
         if (angle >= pivot_target*sign) { Finish(ONEBOX_REASON_DONE); return; }
-        int16_t pl=OneBoxSpeedPid_Step(&pid_l,&gains_l,ONEBOX_SPEED_PPS,sl*Encoder_GetLeftSpeedPPS());
-        int16_t pr=OneBoxSpeedPid_Step(&pid_r,&gains_r,ONEBOX_SPEED_PPS,sr*Encoder_GetRightSpeedPPS());
-        Motor_SetPairPermille(sl*pl,sr*pr);
+        /* MPU-only baseline: fixed bounded PWM; encoder is telemetry only. */
+        Motor_SetPairPermille(sl*ONEBOX_MAX_PWM,sr*ONEBOX_MAX_PWM);
         return;
     }
     /* Encoder-only test: no IMU/IR samples consumed here. */
@@ -229,8 +224,8 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     if (pivot_target) {
         MPU6050_Snapshot_t snap;
         int sl=pivot_target>0?-1:1;
-        out->ref_l=phase==1U?sl*ONEBOX_SPEED_PPS:0;
-        out->ref_r=-out->ref_l;
+        (void)sl;
+        out->ref_l=0; out->ref_r=0; /* no wheel-speed reference in MPU-only pivot */
         if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {
             out->age_us=micros()-snap.completed_us;
             if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=snap.yaw_deg-pivot_origin; out->gz=snap.gyro_z_dps; }

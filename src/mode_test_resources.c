@@ -21,7 +21,7 @@ uint8_t ModeTest_Resources(const ModeMenu *menu)
         }
     }
     if (menu->page == MODE_MENU_PAGE_MPU) {
-        if (ModeMenu_PivotTarget(menu)) return TEST_RES_MPU | TEST_RES_ENCODER | TEST_RES_MOTOR;
+        if (ModeMenu_PivotTarget(menu)) return TEST_RES_MPU | TEST_RES_MOTOR;
         if (menu->active_test == MODE_MENU_TEST_MPU) return TEST_RES_MPU;
     }
     if (menu->page == MODE_MENU_PAGE_ENCODER) {

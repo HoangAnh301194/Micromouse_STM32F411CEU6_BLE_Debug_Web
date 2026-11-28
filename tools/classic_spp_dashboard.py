@@ -314,14 +314,21 @@ class Dashboard:
         dashboard.columnconfigure(2, weight=3, uniform="sensors")
         dashboard.rowconfigure(0, weight=1)
         self.sensor_canvases = {}
+        self.sensor_lamps = {}
+        def add_lamp(parent, key):
+            lamp = tk.Label(parent, text='● DISABLE', fg='#94a3b8', anchor='w')
+            lamp.pack(fill='x', padx=5, pady=2)
+            self.sensor_lamps[key] = lamp
         for col, key, title in ((0,"IR","IR Sensors (ADC)"),(1,"MPU","MPU6050 - Yaw")):
             frame = ttk.LabelFrame(dashboard, text=title)
             frame.grid(row=0, column=col, sticky="nsew", padx=3)
+            add_lamp(frame, key)
             canvas = tk.Canvas(frame, bg="#101923", highlightthickness=0, width=250, height=190)
             canvas.pack(fill="both", expand=True)
             self.sensor_canvases[key] = canvas
         self.encoder_panel = ttk.LabelFrame(dashboard, text="Encoder / Motion")
         self.encoder_panel.grid(row=0, column=2, sticky="nsew", padx=3)
+        add_lamp(self.encoder_panel, "ENC")
         self.encoder_summary = ttk.Label(self.encoder_panel, text="ENC DISABLED", justify="left")
         self.encoder_summary.pack(fill="x", padx=4, pady=2)
         left = ttk.LabelFrame(panes, text="Continuous data - MPU / IR / Encoder", padding=5)
@@ -738,7 +745,7 @@ class Dashboard:
         self.rx_count.set("%d lines" % self.total_lines)
         category = classify_spp_line(line)
         self._sensor_receive(line)
-        if line.startswith(("CAL_IR,", "ENC_LIVE,", "MPU_LIVE,")):
+        if line.startswith(("CAL_IR,", "IR_LIVE,", "ENC_LIVE,", "MPU_LIVE,")):
             return  # Dashboard-only; no status spam or CSV schema changes.
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
@@ -1053,9 +1060,8 @@ class Dashboard:
         now = time.monotonic()
         tag = line.split(",", 1)[0]
         def put(key, values, valid=True):
-            if self.sensor_mask[key]:
-                self.sensor_live[key] = (now, valid, values)
-        if tag in ("IR", "ALL", "CAL_IR"):
+            self.sensor_live[key] = (now, valid, values)
+        if tag in ("IR", "ALL", "CAL_IR", "IR_LIVE"):
             names = ("L90","L45","L0","R0","R45","R90")
             if all(k in fields for k in names):
                 put("IR", fields, fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
@@ -1080,7 +1086,7 @@ class Dashboard:
             put("ENC", extra, "enc_l" in fields and "enc_r" in fields)
         elif tag == "ENC_LIVE":
             put("ENC", fields, "left" in fields and "right" in fields)
-            if self.sensor_mask["ENC"] and self.active_test_name != "1 Box Forward":
+            if self.active_test_name != "1 Box Forward" and not (self.active_test_name or "").startswith("Pivot "):
                 row = {"t": now, "count_L": fields.get("left"), "count_R": fields.get("right"),
                        "speed_L": fields.get("speed_l"), "speed_R": fields.get("speed_r"),
                        "pwm_L": fields.get("pwm_l"), "pwm_R": fields.get("pwm_r")}
@@ -1093,8 +1099,6 @@ class Dashboard:
                 self.wheel_dirty = True
 
     def _sensor_state(self, key, now):
-        if not self.sensor_mask[key]:
-            return "DISABLED", {}
         item = self.sensor_live.get(key)
         if not item:
             return "WAITING", {}
@@ -1107,6 +1111,9 @@ class Dashboard:
 
     def _draw_sensor_dashboard(self, now):
         import math
+        for key, lamp in self.sensor_lamps.items():
+            enabled = self.menu_ready and self.sensor_mask[key]
+            lamp.configure(text="● ENABLE" if enabled else "● DISABLE", fg="#16803d" if enabled else "#94a3b8")
         for key, c in self.sensor_canvases.items():
             state, fields = self._sensor_state(key, now)
             if key == "MPU":

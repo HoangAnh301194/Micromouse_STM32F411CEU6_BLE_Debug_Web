@@ -31,9 +31,9 @@ void Control_SetTestResources(uint8_t mask)
 {
     uint32_t irq = __get_PRIMASK();
     __disable_irq();
-    if ((test_resource_mask & TEST_RES_IR) != (mask & TEST_RES_IR)) {
+    if (!!test_resource_mask != !!mask) {
         /* ADC/TIM10/DMA and IR emitters run only in IR/All Test. */
-        if (mask & TEST_RES_IR) IR_StartScan();
+        if (mask) IR_StartScan();
         else IR_Stop();
     }
     test_resource_mask = mask;
@@ -250,13 +250,13 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     /* Policy B: only notify tick here; never run I2C in TIM11. */
 #if defined(MPU_TIM11_TICK_SCHED)
 #if defined(MODE_MENU_ONLY)
-    if (test_resource_mask & TEST_RES_MPU)
+    if (test_resource_mask)
 #endif
         MPU6050_NotifyControlTick(control_mpu, micros());
 #endif
 
 #if defined(MODE_MENU_ONLY)
-    if (test_resource_mask & TEST_RES_IR) {
+    if (test_resource_mask) {
 #endif
     if (IR_GetLatest(&sample)) {
         uint8_t i;
