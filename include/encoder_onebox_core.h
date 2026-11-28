@@ -40,7 +40,7 @@ uint8_t OneBoxGains_Valid(const OneBoxGains *g);
 void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s);
 int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
                             float reference, float measured);
-#define ONEBOX_MAX_CELLS 16U
+#define ONEBOX_MAX_CELLS 15U
 #define ONEBOX_MAX_TICKS 6500U      /* hard 6.5 s one-shot limit */
 #define ONEBOX_STALL_TICKS 900U      /* no encoder movement */
 #define ONEBOX_LEASE_TICKS 350U      /* require host heartbeat <350ms */

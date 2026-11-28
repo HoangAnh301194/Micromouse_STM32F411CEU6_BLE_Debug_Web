@@ -315,7 +315,7 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
                                 MODE_MENU_ENCODER_LOG_RECEIVE ?
                                 (menu->stream_running ? "LOG ACTIVE" : "LOG PAUSED") :
                                 (menu->active_encoder_option == MODE_MENU_ENCODER_PID ? "EDIT PID ON PC" :
-                                 menu->active_encoder_option == MODE_MENU_ENCODER_1BOX ? "START ON PC" : "NO MOTION YET"),
+                                 (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX || menu->active_encoder_option == MODE_MENU_ENCODER_MULTI) ? "START ON PC" : "NO MOTION YET"),
                                 &Font_7x10, SSD1306_WHITE);
             SSD1306_SetCursor(0U, 52U);
             SSD1306_WriteString("Next: browse", &Font_7x10, SSD1306_WHITE);
@@ -830,9 +830,10 @@ int Main_Runtime(void)
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
             } else if (command >= 'a' && command <= 'o' && mode_menu.page == MODE_MENU_PAGE_ENCODER && mode_menu.active_encoder_option == MODE_MENU_ENCODER_MULTI) {
-                /* Single-byte, atomic start: a..o encode 1..15; q encodes 16 below. */
+                /* Single-byte atomic start: a..o encode 1..15 cells. */
                 uint8_t cells=(uint8_t)(command-'a'+1);
-                if (EncoderOneBox_StartMulti(cells)) BT_Printf("ONEBOX,START,cells=%u,target_l=%ld,target_r=%ld,pwm_max=%d,ref_l=%d,ref_r=%d\r\n",(unsigned)cells,(long)ONEBOX_TARGET_L*cells,(long)ONEBOX_TARGET_R*cells,ONEBOX_MAX_PWM,ONEBOX_SPEED_PPS,(int)ONEBOX_SPEED_R_PPS);
+                if (EncoderOneBox_IsRunning()) { /* Ignore duplicate start; preserve active log. */ }
+                else if ((test_resource_mask & (TEST_RES_ENCODER|TEST_RES_MOTOR)) == (TEST_RES_ENCODER|TEST_RES_MOTOR) && EncoderOneBox_StartMulti(cells)) BT_Printf("ONEBOX,START,cells=%u,target_l=%ld,target_r=%ld,pwm_max=%d,ref_l=%d,ref_r=%d\r\n",(unsigned)cells,(long)ONEBOX_TARGET_L*cells,(long)ONEBOX_TARGET_R*cells,ONEBOX_MAX_PWM,ONEBOX_SPEED_PPS,(int)ONEBOX_SPEED_R_PPS);
                 else BT_SendString("ONEBOX,REJECT,reason=NOT_READY\r\n");
             } else if (command == 'G') {
                 if (cal_active) Cal_Begin(now);

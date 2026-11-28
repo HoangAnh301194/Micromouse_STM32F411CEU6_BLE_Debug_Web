@@ -129,7 +129,25 @@ static void CheckSynchronization(void) {
     OneBoxCore_References(&s,&l,&r);
     assert(l==0.0f && r==0.0f);
 }
+static void CheckMulti(void) {
+    OneBoxCore s; OneBoxOutput o; float l,r;
+    assert(!OneBoxCore_StartCells(&s,0,0,0,1));
+    assert(!OneBoxCore_StartCells(&s,0,0,16,1));
+    assert(OneBoxCore_StartCells(&s,100,200,5,1));
+    assert(s.target_l==12070 && s.target_r==12135);
+    o=OneBoxCore_Step(&s,100+2414,200+2427);
+    assert(o.reason==ONEBOX_REASON_NONE && s.running);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l==900.0f && r>904.0f && r<905.0f);
+    o=OneBoxCore_Step(&s,100+12070,200+12115);
+    assert(o.reason==ONEBOX_REASON_NONE && !s.reached_l && !s.reached_r);
+    OneBoxCore_References(&s,&l,&r);
+    assert(l==900.0f && r>904.0f && r<905.0f);
+    o=OneBoxCore_Step(&s,100+12070,200+12135);
+    assert(o.reason==ONEBOX_REASON_DONE && !s.running);
+}
 int main(void) {
+    CheckMulti();
     CheckSynchronization();
     CheckIndependentArrival();
     CheckSpeedPid();

@@ -176,7 +176,7 @@ int main(void) {
         assert(m.active_test == MODE_MENU_NO_SELECTION);
         assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_ENCODER_SELECT);
         assert(m.active_encoder_option == i);
-        if (i == MODE_MENU_ENCODER_1BOX) {
+        if (i == MODE_MENU_ENCODER_1BOX || i == MODE_MENU_ENCODER_MULTI) {
             assert(ModeTest_OneBoxArmed(&m));
             assert(ModeTest_Resources(&m) == (TEST_RES_ENCODER | TEST_RES_MOTOR));
         } else {
@@ -188,7 +188,7 @@ int main(void) {
         assert(!ModeMenu_CanResetSensor(&m, 1));
     }
     assert(!strcmp(ModeMenu_EncoderName(1), "1 Box Forward"));
-    assert(!strcmp(ModeMenu_EncoderName(2), "5 Box Forward"));
+    assert(!strcmp(ModeMenu_EncoderName(2), "Multi Box Forward"));
     assert(!strcmp(ModeMenu_EncoderName(3), "Pivot 90 Left"));
     assert(!strcmp(ModeMenu_EncoderName(4), "Pivot 90 Right"));
     assert(!strcmp(ModeMenu_EncoderName(5), "Pivot 180 Left"));
