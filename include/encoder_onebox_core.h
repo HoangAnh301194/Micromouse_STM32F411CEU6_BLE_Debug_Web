@@ -43,6 +43,15 @@ float Motion_Base(float previous, float desired, float limit);
 float Motion_DistanceDesired(float remaining);
 float Motion_AngleDesired(float remaining, float gyro);
 void Motion_Sync(float base, int32_t error, float *left, float *right);
+void Motion_SyncPD(float base, int32_t error, float rate, float heading_correction,
+                   float *left, float *right);
+#define MOTION_SYNC_KD 0.18f
+#define MOTION_HEADING_KP 35.0f
+#define MOTION_HEADING_KD 2.0f
+#define MOTION_HEADING_TOL 1.0f
+#define MOTION_MM_PER_COUNT (165.0f/2414.0f)
+typedef struct { float ks, kv; } WheelFF;
+extern const WheelFF motion_ff_l, motion_ff_r;
 #define ONEBOX_KS_PM 80.0f
 #define ONEBOX_KV_PM_PER_PPS 0.098f
 #define ONEBOX_INTEGRAL_LIMIT 3000.0f
@@ -62,6 +71,8 @@ uint8_t OneBoxGains_Valid(const OneBoxGains *g);
 void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s);
 int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
                             float reference, float measured);
+int16_t OneBoxSpeedPid_StepFF(OneBoxSpeedPid *s, const OneBoxGains *g,
+                             const WheelFF *ff, float reference, float measured);
 #define ONEBOX_MAX_TICKS 6500U      /* hard 6.5 s one-shot limit */
 #define ONEBOX_STALL_TICKS 900U      /* no encoder movement */
 #define ONEBOX_LEASE_TICKS 350U      /* require host heartbeat <350ms */

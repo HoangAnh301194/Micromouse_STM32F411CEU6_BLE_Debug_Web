@@ -29,15 +29,21 @@ float Motion_AngleDesired(float remaining, float gyro)
 {
     return ClampF(((float)motion_config.angle_p_x100/100.0f)*remaining-((float)motion_config.angle_d_x100/100.0f)*gyro, ((float)motion_config.minimum), ((float)motion_config.cruise));
 }
-void Motion_Sync(float base, int32_t error, float *left, float *right)
+const WheelFF motion_ff_l={70.0f,0.093f}, motion_ff_r={65.0f,0.088f};
+void Motion_SyncPD(float base, int32_t error, float rate, float heading_correction,
+                   float *left, float *right)
 {
     /* Slow the leading wheel, do not demand more from a saturated lagging wheel.
      * Keep both references positive during drive (no one-wheel catch-up stop). */
-    float u=ClampF(((float)motion_config.sync_p_x100/100.0f)*(float)error,-((float)motion_config.sync_max),((float)motion_config.sync_max));
+    float u=ClampF(((float)motion_config.sync_p_x100/100.0f)*(float)error+MOTION_SYNC_KD*rate+heading_correction,-((float)motion_config.sync_max),((float)motion_config.sync_max));
     float cap=base*0.45f;
     u=ClampF(u,-cap,cap);
     *left=base-(u>0.0f?u:0.0f);
     *right=base+(u<0.0f?u:0.0f);
+}
+void Motion_Sync(float base, int32_t error, float *left, float *right)
+{
+    Motion_SyncPD(base,error,0.0f,0.0f,left,right);
 }
 uint8_t OneBoxGains_Valid(const OneBoxGains *g)
 {
@@ -48,8 +54,8 @@ void OneBoxSpeedPid_Reset(OneBoxSpeedPid *s)
 {
     *s = (OneBoxSpeedPid){0};
 }
-int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
-                            float reference, float measured)
+int16_t OneBoxSpeedPid_StepFF(OneBoxSpeedPid *s, const OneBoxGains *g,
+                            const WheelFF *model, float reference, float measured)
 {
     float error, p, d, candidate, output, ki, ff;
     if (!OneBoxGains_Valid(g) || !(reference > 0.0f) ||
@@ -60,7 +66,7 @@ int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
     error = reference - measured;
     p = (float)g->p / ONEBOX_GAIN_SCALE * error;
     ki = (float)g->i / ONEBOX_GAIN_SCALE;
-    ff = ONEBOX_KS_PM + ONEBOX_KV_PM_PER_PPS * reference;
+    ff = model->ks + model->kv * reference;
     d = s->initialized ? -(float)g->d / ONEBOX_GAIN_SCALE *
              (measured - s->previous_speed) / ONEBOX_PID_DT_S : 0.0f;
     s->previous_speed = measured;
@@ -75,6 +81,12 @@ int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
     return (int16_t)(ClampF(output, 0.0f, ONEBOX_MAX_PWM) + 0.5f);
 }
 
+int16_t OneBoxSpeedPid_Step(OneBoxSpeedPid *s, const OneBoxGains *g,
+                            float reference, float measured)
+{
+    const WheelFF legacy={ONEBOX_KS_PM,ONEBOX_KV_PM_PER_PPS};
+    return OneBoxSpeedPid_StepFF(s,g,&legacy,reference,measured);
+}
 void OneBoxCore_Start(OneBoxCore *s, int32_t left, int32_t right)
 {
     if (!s) return;

@@ -4,7 +4,7 @@ uint8_t ModeTest_OneBoxArmed(const ModeMenu *menu)
 {
     return (menu != 0 &&
             menu->page == MODE_MENU_PAGE_ENCODER &&
-            menu->active_encoder_option == MODE_MENU_ENCODER_1BOX) ? 1U : 0U;
+            (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX || menu->active_encoder_option == MODE_MENU_ENCODER_HEADING)) ? 1U : 0U;
 }
 
 uint8_t ModeTest_Resources(const ModeMenu *menu)
@@ -31,6 +31,8 @@ uint8_t ModeTest_Resources(const ModeMenu *menu)
     if (menu->page == MODE_MENU_PAGE_ENCODER) {
         if (menu->active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE)
             return TEST_RES_ENCODER;
+        if (menu->active_encoder_option == MODE_MENU_ENCODER_HEADING)
+            return TEST_RES_MPU | TEST_RES_ENCODER | TEST_RES_MOTOR;
         if (ModeTest_OneBoxArmed(menu))
             return TEST_RES_ENCODER | TEST_RES_MOTOR;
     }

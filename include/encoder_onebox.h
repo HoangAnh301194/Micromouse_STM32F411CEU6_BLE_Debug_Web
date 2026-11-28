@@ -26,7 +26,7 @@ typedef struct {
     int16_t pivot_target;
     float yaw, angle, gz;
     uint32_t age_us;
-    uint8_t imu_valid;
+    uint8_t imu_valid, heading_mode;
 } EncoderOneBoxTelemetry;
 
 uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out);
@@ -37,6 +37,7 @@ void EncoderOneBox_Init(void);
 uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target);
 /* Calibration-only slower pivot; shares all safety guards with ordinary pivot. */
 uint8_t EncoderOneBox_StartCalibrationPivot(MPU6050_Handle_t *mpu, int16_t target);
+uint8_t EncoderOneBox_StartHeading(MPU6050_Handle_t *mpu);
 uint8_t EncoderOneBox_Start(void); /* SPP 'G' only, after menu 1 Box Forward */
 void EncoderOneBox_HostPing(void);  /* SPP 'H' <=100ms, 350ms safety lease */
 void EncoderOneBox_Abort(void);     /* SPP 'P' or menu navigation */

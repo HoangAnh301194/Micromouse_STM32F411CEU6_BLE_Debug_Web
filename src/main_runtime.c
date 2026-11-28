@@ -143,7 +143,7 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
                                 MODE_MENU_ENCODER_LOG_RECEIVE ?
                                 (menu->stream_running ? "LOG ACTIVE" : "LOG PAUSED") :
                                 (menu->active_encoder_option == MODE_MENU_ENCODER_PID ? "EDIT PID ON PC" :
-                                 menu->active_encoder_option == MODE_MENU_ENCODER_1BOX ? "START ON PC" : "NO MOTION YET"),
+                                 (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX || menu->active_encoder_option == MODE_MENU_ENCODER_HEADING) ? "START ON PC" : "NO MOTION YET"),
                                 &Font_7x10, SSD1306_WHITE);
             SSD1306_SetCursor(0U, 52U);
             SSD1306_WriteString("Next: browse", &Font_7x10, SSD1306_WHITE);
@@ -292,7 +292,9 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
         if (menu->active_encoder_option == MODE_MENU_ENCODER_LOG_RECEIVE) {
             BT_SendString("Selected encoder option 1: Log Receive\r\n");
         } else if (menu->active_encoder_option == MODE_MENU_ENCODER_1BOX) {
-            BT_SendString("Selected encoder option 2: 1 Box Forward (ARMED; press Start)\r\n");
+            BT_SendString("Selected encoder option 2: 1 Box Forward - Encoder Only (ARMED; press Start)\r\n");
+        } else if (menu->active_encoder_option == MODE_MENU_ENCODER_HEADING) {
+            BT_SendString("Selected encoder option 9: 1 Box Forward + MPU (ARMED; press Start)\r\n");
         } else if (menu->active_encoder_option == MODE_MENU_ENCODER_PID) {
             BT_SendString("Selected encoder option 8: PID\r\n");
             PidMenu_ReportGains("VALUES");
@@ -721,13 +723,19 @@ int Main_Runtime(void)
                         EncoderOneBox_StartPivot(&mpu,target))
                         BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,(int)motion_config.cruise,ONEBOX_MAX_PWM);
                     else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");
-                } else if (ModeTest_OneBoxArmed(&mode_menu) &&
-                    (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
-                    (TEST_RES_ENCODER | TEST_RES_MOTOR)) {
-                    if (EncoderOneBox_Start()) {
-                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_pps=%d\r\n",
+                } else if (ModeTest_OneBoxArmed(&mode_menu)) {
+                    uint8_t heading=mode_menu.active_encoder_option==MODE_MENU_ENCODER_HEADING;
+                    uint8_t required=TEST_RES_ENCODER|TEST_RES_MOTOR|(heading?TEST_RES_MPU:0U);
+                    if (heading && mpu_status==MPU6050_OK && !mpu.calibrated && !mpu.calibrating) {
+                        (void)MPU6050_Calibrate(&mpu);
+                        mpu_ready_reported=0U;
+                        BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
+                    }
+                    if (test_resource_mask==required &&
+                        (heading ? (mpu_status==MPU6050_OK && mpu.calibrated && EncoderOneBox_StartHeading(&mpu)) : EncoderOneBox_Start())) {
+                        BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_pps=%d,heading=%u\r\n",
                                   (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
-                                  (int)ONEBOX_MAX_PWM, (int)motion_config.cruise);
+                                  (int)ONEBOX_MAX_PWM, (int)motion_config.cruise,(unsigned)heading);
                     } else {
                         BT_SendString("ONEBOX,REJECT,reason=MOTOR_OR_ENCODER_NOT_READY\r\n");
                     }
@@ -961,7 +969,7 @@ int Main_Runtime(void)
                     has_motion = 1U;
                 }
                 if (has_motion && (has_result ||
-                    (uint32_t)(now - last_onebox_log_ms) >= 25U)) {
+                    (uint32_t)(now - last_onebox_log_ms) >= 30U)) {
                     last_onebox_log_ms = now;
                     if (motion.pivot_target) {
                         BT_Printf("PIVOT_CSV,ms=%lu,valid=%u,age_us=%lu,yaw_cd=%ld,angle_cd=%ld,gz_cd=%ld,target=%d,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,dl=%ld,dr=%ld,sync=%ld,remain=%ld,phase=%u\r\n",
@@ -972,7 +980,7 @@ int Main_Runtime(void)
                             (long)motion.delta_l,(long)motion.delta_r,
                             (long)(motion.pivot_target>0?-motion.delta_l-motion.delta_r:motion.delta_l+motion.delta_r),
                             (long)(motion.pivot_target*100-motion.angle*100),(unsigned)motion.motion_stage);
-                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,dl=%ld,dr=%ld,sync=%ld,remain=%ld,phase=%u\r\n",
+                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,dl=%ld,dr=%ld,sync=%ld,remain=%ld,phase=%u,heading=%u,valid=%u,age_us=%lu,angle_cd=%ld,gz_cd=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
                               (int)motion.pwm_l, (int)motion.pwm_r,
@@ -980,7 +988,9 @@ int Main_Runtime(void)
                               (long)motion.speed_l, (long)motion.speed_r,
                             (long)motion.delta_l,(long)motion.delta_r,
                             (long)(motion.delta_l-motion.delta_r),
-                            (long)(ONEBOX_TARGET_L-(motion.delta_l+motion.delta_r)/2),(unsigned)motion.motion_stage);
+                            (long)(ONEBOX_TARGET_L-(motion.delta_l+motion.delta_r)/2),(unsigned)motion.motion_stage,
+                             (unsigned)motion.heading_mode,(unsigned)motion.imu_valid,(unsigned long)motion.age_us,
+                             (long)(motion.angle*100),(long)(motion.gz*100));
                 }
                 if (has_result) {
                     BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",

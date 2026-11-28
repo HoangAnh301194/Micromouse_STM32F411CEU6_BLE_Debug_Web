@@ -31,17 +31,20 @@ static float pivot_previous_yaw, pivot_angle;
 static uint16_t stall_l, stall_r;
 static float motion_base, motion_ref_l, motion_ref_r;
 static uint8_t motion_stage;
+static float sync_rate;
 static float AbsF(float x) { return x<0.0f?-x:x; }
-static void ApplyMotion(float desired, float limit, int32_t sync, int sl, int sr)
+static void ApplyMotion(float desired, float limit, int32_t sync, int sl, int sr, float heading_correction)
 {
     float l,r;
     motion_base=Motion_Base(motion_base,desired,limit);
     motion_stage=desired<limit-1.0f && motion_base>=desired-1.0f ? MOTION_DEC :
                  motion_base<limit-1.0f ? MOTION_ACC : MOTION_CRUISE;
-    Motion_Sync(motion_base,sync,&l,&r);
+    float rate=sl*Encoder_GetLeftSpeedPPS()-sr*Encoder_GetRightSpeedPPS();
+    sync_rate+=0.08f*(rate-sync_rate);
+    Motion_SyncPD(motion_base,sync,sync_rate,heading_correction,&l,&r);
     motion_ref_l=sl*l; motion_ref_r=sr*r;
-    Motor_SetPairPermille(sl*OneBoxSpeedPid_Step(&pid_l,&gains_l,l,sl*Encoder_GetLeftSpeedPPS()),
-                          sr*OneBoxSpeedPid_Step(&pid_r,&gains_r,r,sr*Encoder_GetRightSpeedPPS()));
+    Motor_SetPairPermille(sl*OneBoxSpeedPid_StepFF(&pid_l,&gains_l,&motion_ff_l,l,sl*Encoder_GetLeftSpeedPPS()),
+                          sr*OneBoxSpeedPid_StepFF(&pid_r,&gains_r,&motion_ff_r,r,sr*Encoder_GetRightSpeedPPS()));
 }
 /* Relative 90-degree turns must remain valid at +/-180 yaw wrap. */
 static float RelativeYaw(float now, float origin)
@@ -131,7 +134,7 @@ void EncoderOneBox_Init(void)
 static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, int32_t speed_pps)
 {
     MPU6050_Snapshot_t snap = {0};
-    if (target && (!mpu || !MPU6050_GetSnapshot(mpu,&snap) || !snap.valid ||
+    if (mpu && (!MPU6050_GetSnapshot(mpu,&snap) || !snap.valid ||
         (uint32_t)(micros()-snap.completed_us)>3000U || snap.gyro_z_dps > 2.0f || snap.gyro_z_dps < -2.0f)) return 0U;
     uint32_t irq;
     if (fault_latched || Board_GetClockFault() || !Control_IsRunning() ||
@@ -143,7 +146,8 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, int32_t speed_
     }
     pivot_mpu = mpu; pivot_target = target;
     pivot_ref_pps = speed_pps;
-    pivot_previous_yaw = target ? snap.yaw_deg : 0.0f;
+    pivot_previous_yaw = mpu ? snap.yaw_deg : 0.0f;
+    sync_rate=0.0f;
     pivot_angle = 0.0f;
     motion_base=motion_ref_l=motion_ref_r=0.0f;
     motion_stage=MOTION_ACC;
@@ -156,6 +160,9 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, int32_t speed_
     phase = 1U;
     Unlock(irq);
     return 1U;
+}
+uint8_t EncoderOneBox_StartHeading(MPU6050_Handle_t *mpu) {
+    return mpu ? StartMotion(mpu,0,ONEBOX_SPEED_PPS) : 0U;
 }
 uint8_t EncoderOneBox_Start(void) { return StartMotion(0,0,ONEBOX_SPEED_PPS); }
 uint8_t EncoderOneBox_StartPivot(MPU6050_Handle_t *mpu, int16_t target) {
@@ -207,6 +214,13 @@ void EncoderOneBox_ControlTick(void)
                 } else {
                     ok=ok && AbsF((float)(result.count_l-ONEBOX_TARGET_L))<=MOTION_COUNT_TOL &&
                         AbsF((float)(result.count_r-ONEBOX_TARGET_R))<=MOTION_COUNT_TOL;
+                    if (pivot_mpu) {
+                        MPU6050_Snapshot_t snap;
+                        ok=ok && MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid &&
+                           (uint32_t)(micros()-snap.completed_us)<=3000U &&
+                           AbsF(snap.gyro_z_dps)<=MOTION_GYRO_TOL &&
+                           AbsF(pivot_angle+RelativeYaw(snap.yaw_deg,pivot_previous_yaw))<=MOTION_HEADING_TOL;
+                    }
                 }
                 if (!ok) result.reason=ONEBOX_REASON_TOLERANCE;
             }
@@ -253,10 +267,21 @@ void EncoderOneBox_ControlTick(void)
         /* Stop together before the endpoint; no reverse correction. */
         if (remaining<=0.35f) { Finish(ONEBOX_REASON_DONE); return; }
         float limit=pivot_ref_pps<((float)motion_config.cruise)?pivot_ref_pps:((float)motion_config.cruise);
-        ApplyMotion(Motion_AngleDesired(remaining,sign*snap.gyro_z_dps),limit,dl-dr,sl,sr);
+        ApplyMotion(Motion_AngleDesired(remaining,sign*snap.gyro_z_dps),limit,dl-dr,sl,sr,0.0f);
         return;
     }
-    /* Encoder-only test: no IMU/IR samples consumed here. */
+    /* Encoder-only path never consumes IMU/IR; heading variant uses fresh MPU. */
+    float heading_correction=0.0f;
+    if (pivot_mpu) {
+        MPU6050_Snapshot_t snap;
+        if (!MPU6050_GetSnapshot(pivot_mpu,&snap) || !snap.valid ||
+            (uint32_t)(micros()-snap.completed_us)>3000U) { Finish(ONEBOX_REASON_IMU); return; }
+        pivot_angle += RelativeYaw(snap.yaw_deg,pivot_previous_yaw);
+        pivot_previous_yaw=snap.yaw_deg;
+        if (AbsF(pivot_angle)>20.0f) { Finish(ONEBOX_REASON_IMU); return; }
+        /* Positive CCW yaw requires left faster/right slower. */
+        heading_correction=-MOTION_HEADING_KP*pivot_angle-MOTION_HEADING_KD*snap.gyro_z_dps;
+    }
     cmd = OneBoxCore_Step(&core, Encoder_GetLeftCount(), Encoder_GetRightCount());
     if (cmd.reason != ONEBOX_REASON_NONE) {
         Finish(cmd.reason);
@@ -265,7 +290,7 @@ void EncoderOneBox_ControlTick(void)
     {
         float remaining=(float)ONEBOX_TARGET_L-0.5f*(core.delta_l+core.delta_r);
         ApplyMotion(Motion_DistanceDesired(remaining),((float)motion_config.cruise),
-                    core.delta_l-core.delta_r,1,1);
+                    core.delta_l-core.delta_r,1,1,heading_correction);
     }
 }
 uint8_t EncoderOneBox_IsRunning(void)
@@ -293,8 +318,9 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
     out->delta_r=out->right-core.start_r;
     out->motion_stage=motion_stage;
     out->pivot_target = pivot_target;
+    out->heading_mode=(pivot_mpu && !pivot_target)?1U:0U;
     out->imu_valid = 0U; out->age_us=0U; out->yaw=out->angle=out->gz=0.0f;
-    if (pivot_target) {
+    if (pivot_mpu) {
         MPU6050_Snapshot_t snap;
         /* References are the actual signed profile outputs above. */
         if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {

@@ -19,9 +19,9 @@ static const char *const test_names[MODE_MENU_TEST_COUNT] = {
  * The movement options are inert placeholders in MODE_MENU_ONLY. */
 static const char *const encoder_names[MODE_MENU_ENCODER_COUNT] = {
     "Log Receive",
-    "1 Box Forward", "5 Box Forward",
+    "1 Box Forward - Encoder Only", "5 Box Forward",
     "Pivot 90 Left", "Pivot 90 Right",
-    "Pivot 180 Left", "Pivot 180 Right", "PID", "Back"
+    "Pivot 180 Left", "Pivot 180 Right", "PID", "1 Box Forward + MPU", "Back"
 };
 
 const char *ModeMenu_MpuName(uint8_t index)

@@ -487,3 +487,6 @@ benchmarks remain unchanged.
 - Encoder-only shared endpoint, ramped 850 PPS cruise, leading-wheel P correction; MPU pivot PD and signed wheel synchronization, no reverse. 100 ms brake and final tolerance check (TOLERANCE if outside). Safety limits unchanged; tuning constants preliminary. Compact sensor panel under left terminal; CSV extends signed delta, synchronization, remaining distance/angle and phase. CI/hardware pending.
 
 - Motion tuning v1: 8 bounded RAM parameters via q frame, selectable in Encoder/PID only while motors locked; UI on Telemetry & PID. Legacy CSV blank-field compatibility and replay updated. Tolerances fixed pending bench tests.
+
+## V3 forward heading and pivot balance trial — 28/11/2026
+- Encoder-only and Encoder+MPU one-cell modes; separate conservative forward feedforward estimates from logs, filtered velocity-difference synchronization PD, heading PD, no IR. Existing wheel PID gains retained pending step tests. Pivot center correction uses signed travel and velocity balance, not absolute position feedback. Host odometry to be added separately. No new hardware validation.
