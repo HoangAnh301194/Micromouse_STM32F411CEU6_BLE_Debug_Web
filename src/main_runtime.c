@@ -54,7 +54,16 @@ static MPU6050_Handle_t mpu;
  * All bytes are consumed as a frame, never dispatched as motion commands.
  * '?' resynchronizes; 'P' always remains available as an abort. */
 static uint8_t pid_rx_active, pid_rx_bad, pid_rx_count;
-static uint32_t pid_rx_started, pid_rx_values[6];
+static uint32_t pid_rx_started, pid_rx_values[8];
+static uint8_t pid_rx_motion;
+static void PidMenu_ReportMotion(const char *tag)
+{
+    BT_Printf("MOTION,%s,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\r\n",tag,
+      (unsigned long)motion_config.cruise,(unsigned long)motion_config.minimum,
+      (unsigned long)motion_config.acceleration,(unsigned long)motion_config.decel_counts,
+      (unsigned long)motion_config.sync_p_x100,(unsigned long)motion_config.sync_max,
+      (unsigned long)motion_config.angle_p_x100,(unsigned long)motion_config.angle_d_x100);
+}
 static void PidMenu_ReportGains(const char *tag)
 {
     OneBoxGains l, r;
@@ -62,14 +71,16 @@ static void PidMenu_ReportGains(const char *tag)
     BT_Printf("PID,%s,%lu,%lu,%lu,%lu,%lu,%lu\r\n", tag,
               (unsigned long)l.p, (unsigned long)l.i, (unsigned long)l.d,
               (unsigned long)r.p, (unsigned long)r.i, (unsigned long)r.d);
+    PidMenu_ReportMotion("VALUES");
 }
 static uint8_t PidMenu_Consume(char c, const ModeMenu *menu, uint32_t now)
 {
     if (c == '?' || c == 'P') { pid_rx_active = 0U; return 0U; }
-    if (c == 'p') {
+    if (c == 'p' || c == 'q') {
         uint8_t i;
         pid_rx_active = 1U; pid_rx_bad = 0U; pid_rx_count = 0U; pid_rx_started = now;
-        for (i=0U; i<6U; ++i) pid_rx_values[i] = 0U;
+        pid_rx_motion=(c=='q');
+        for (i=0U; i<8U; ++i) pid_rx_values[i] = 0U;
         return 1U;
     }
     if (!pid_rx_active) return 0U;
@@ -81,12 +92,22 @@ static uint8_t PidMenu_Consume(char c, const ModeMenu *menu, uint32_t now)
         OneBoxGains l = {pid_rx_values[0], pid_rx_values[1], pid_rx_values[2]};
         OneBoxGains r = {pid_rx_values[3], pid_rx_values[4], pid_rx_values[5]};
         pid_rx_active = 0U;
+        if (pid_rx_motion) {
+            MotionConfig config={pid_rx_values[0],pid_rx_values[1],pid_rx_values[2],pid_rx_values[3],
+                pid_rx_values[4],pid_rx_values[5],pid_rx_values[6],pid_rx_values[7]};
+            if (!pid_rx_bad && pid_rx_count==40U &&
+                menu->page==MODE_MENU_PAGE_ENCODER &&
+                menu->active_encoder_option==MODE_MENU_ENCODER_PID &&
+                EncoderOneBox_SetMotionConfig(&config)) PidMenu_ReportMotion("APPLIED");
+            else BT_SendString("MOTION,REJECT,INVALID_OR_NOT_IDLE\r\n");
+            return 1U;
+        }
         if (!pid_rx_bad && pid_rx_count == 30U &&
             menu->page == MODE_MENU_PAGE_ENCODER &&
             menu->active_encoder_option == MODE_MENU_ENCODER_PID &&
             EncoderOneBox_SetGains(&l, &r)) PidMenu_ReportGains("APPLIED");
         else BT_SendString("PID,REJECT,INVALID_OR_NOT_IDLE\r\n");
-    } else if (c >= '0' && c <= '9' && pid_rx_count < 30U) {
+    } else if (c >= '0' && c <= '9' && pid_rx_count < (pid_rx_motion?40U:30U)) {
         uint8_t slot = pid_rx_count / 5U;
         pid_rx_values[slot] = pid_rx_values[slot] * 10U + (uint32_t)(c - '0');
         ++pid_rx_count;
@@ -698,7 +719,7 @@ int Main_Runtime(void)
                     if (mpu_status==MPU6050_OK && mpu.calibrated &&
                         test_resource_mask == (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR) &&
                         EncoderOneBox_StartPivot(&mpu,target))
-                        BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,ONEBOX_SPEED_PPS,ONEBOX_MAX_PWM);
+                        BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,(int)motion_config.cruise,ONEBOX_MAX_PWM);
                     else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");
                 } else if (ModeTest_OneBoxArmed(&mode_menu) &&
                     (test_resource_mask & (TEST_RES_ENCODER | TEST_RES_MOTOR)) ==
@@ -706,7 +727,7 @@ int Main_Runtime(void)
                     if (EncoderOneBox_Start()) {
                         BT_Printf("ONEBOX,START,target_l=%ld,target_r=%ld,pwm_max=%d,ref_pps=%d\r\n",
                                   (long)ONEBOX_TARGET_L, (long)ONEBOX_TARGET_R,
-                                  (int)ONEBOX_MAX_PWM, (int)ONEBOX_SPEED_PPS);
+                                  (int)ONEBOX_MAX_PWM, (int)motion_config.cruise);
                     } else {
                         BT_SendString("ONEBOX,REJECT,reason=MOTOR_OR_ENCODER_NOT_READY\r\n");
                     }

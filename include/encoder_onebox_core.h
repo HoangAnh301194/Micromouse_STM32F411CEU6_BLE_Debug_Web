@@ -32,6 +32,13 @@
 #define MOTION_COUNT_TOL 20L
 #define MOTION_STOP_COUNTS 5L
 enum { MOTION_ACC=1, MOTION_CRUISE=2, MOTION_DEC=3, MOTION_SETTLE=4, MOTION_END=5 };
+/* RAM-only tuning: integer wire units, gains in hundredths. */
+typedef struct {
+    uint32_t cruise, minimum, acceleration, decel_counts, sync_p_x100,
+             sync_max, angle_p_x100, angle_d_x100;
+} MotionConfig;
+extern MotionConfig motion_config;
+uint8_t MotionConfig_Valid(const MotionConfig *c);
 float Motion_Base(float previous, float desired, float limit);
 float Motion_DistanceDesired(float remaining);
 float Motion_AngleDesired(float remaining, float gyro);

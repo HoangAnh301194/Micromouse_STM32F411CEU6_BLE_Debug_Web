@@ -5,24 +5,35 @@ static float ClampF(float v, float lo, float hi)
 {
     return v < lo ? lo : (v > hi ? hi : v);
 }
+MotionConfig motion_config = {850,220,2200,450,300,220,4000,200};
+uint8_t MotionConfig_Valid(const MotionConfig *c)
+{
+    return c && c->cruise>=350 && c->cruise<=1100 &&
+           c->minimum>=100 && c->minimum<=c->cruise &&
+           c->acceleration>=500 && c->acceleration<=4000 &&
+           c->decel_counts>=100 && c->decel_counts<=1200 &&
+           c->sync_p_x100<=1000 && c->sync_max<=400 &&
+           c->angle_p_x100>=500 && c->angle_p_x100<=10000 &&
+           c->angle_d_x100<=1000;
+}
 float Motion_Base(float previous, float desired, float limit)
 {
     /* Slew only upward; distance/angle braking cap takes precedence. */
-    return ClampF(desired, 0.0f, ClampF(previous+MOTION_ACCEL_PPS_S*ONEBOX_PID_DT_S,0.0f,limit));
+    return ClampF(desired, 0.0f, ClampF(previous+((float)motion_config.acceleration)*ONEBOX_PID_DT_S,0.0f,limit));
 }
 float Motion_DistanceDesired(float remaining)
 {
-    return ClampF(MOTION_CRUISE_PPS*remaining/MOTION_DECEL_COUNTS, MOTION_MIN_PPS, MOTION_CRUISE_PPS);
+    return ClampF(((float)motion_config.cruise)*remaining/((float)motion_config.decel_counts), ((float)motion_config.minimum), ((float)motion_config.cruise));
 }
 float Motion_AngleDesired(float remaining, float gyro)
 {
-    return ClampF(MOTION_ANGLE_KP*remaining-MOTION_ANGLE_KD*gyro, MOTION_MIN_PPS, MOTION_CRUISE_PPS);
+    return ClampF(((float)motion_config.angle_p_x100/100.0f)*remaining-((float)motion_config.angle_d_x100/100.0f)*gyro, ((float)motion_config.minimum), ((float)motion_config.cruise));
 }
 void Motion_Sync(float base, int32_t error, float *left, float *right)
 {
     /* Slow the leading wheel, do not demand more from a saturated lagging wheel.
      * Keep both references positive during drive (no one-wheel catch-up stop). */
-    float u=ClampF(MOTION_SYNC_KP*(float)error,-MOTION_SYNC_MAX_PPS,MOTION_SYNC_MAX_PPS);
+    float u=ClampF(((float)motion_config.sync_p_x100/100.0f)*(float)error,-((float)motion_config.sync_max),((float)motion_config.sync_max));
     float cap=base*0.45f;
     u=ClampF(u,-cap,cap);
     *left=base-(u>0.0f?u:0.0f);

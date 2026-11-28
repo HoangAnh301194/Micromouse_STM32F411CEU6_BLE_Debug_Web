@@ -59,6 +59,15 @@ static uint32_t Lock(void)
     return x;
 }
 static void Unlock(uint32_t x) { if (!x) __enable_irq(); }
+uint8_t EncoderOneBox_SetMotionConfig(const MotionConfig *config)
+{
+    if (!MotionConfig_Valid(config)) return 0U;
+    uint32_t irq=Lock();
+    if (phase!=0U || result_pending || !Motor_OutputsLocked()) { Unlock(irq); return 0U; }
+    motion_config=*config;
+    Unlock(irq);
+    return 1U;
+}
 uint8_t EncoderOneBox_SetGains(const OneBoxGains *left, const OneBoxGains *right)
 {
     uint32_t irq;
@@ -167,6 +176,7 @@ void EncoderOneBox_Abort(void)
 {
     uint32_t irq = Lock();
     if (phase == 1U) Finish(ONEBOX_REASON_USER_STOP);
+    else if (phase==2U) { result.reason=ONEBOX_REASON_USER_STOP; brake_ticks=0U; }
     Unlock(irq);
 }
 void EncoderOneBox_ControlTick(void)
@@ -242,7 +252,7 @@ void EncoderOneBox_ControlTick(void)
         float remaining=pivot_target*sign-angle;
         /* Stop together before the endpoint; no reverse correction. */
         if (remaining<=0.35f) { Finish(ONEBOX_REASON_DONE); return; }
-        float limit=pivot_ref_pps<MOTION_CRUISE_PPS?pivot_ref_pps:MOTION_CRUISE_PPS;
+        float limit=pivot_ref_pps<((float)motion_config.cruise)?pivot_ref_pps:((float)motion_config.cruise);
         ApplyMotion(Motion_AngleDesired(remaining,sign*snap.gyro_z_dps),limit,dl-dr,sl,sr);
         return;
     }
@@ -254,7 +264,7 @@ void EncoderOneBox_ControlTick(void)
     }
     {
         float remaining=(float)ONEBOX_TARGET_L-0.5f*(core.delta_l+core.delta_r);
-        ApplyMotion(Motion_DistanceDesired(remaining),MOTION_CRUISE_PPS,
+        ApplyMotion(Motion_DistanceDesired(remaining),((float)motion_config.cruise),
                     core.delta_l-core.delta_r,1,1);
     }
 }

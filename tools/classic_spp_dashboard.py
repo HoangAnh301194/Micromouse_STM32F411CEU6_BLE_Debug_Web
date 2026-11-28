@@ -123,6 +123,11 @@ class SPPReader:
         frame = ("p" + "".join(f"{v:05d}" for v in values) + ";").encode("ascii")
         return self._enqueue(frame)
 
+    def send_motion(self, values):
+        if len(values)!=8 or any(not isinstance(v,int) or not 0<=v<=99999 for v in values):
+            return False
+        return self._enqueue(("q"+"".join(f"{v:05d}" for v in values)+";").encode("ascii"))
+
     def _enqueue(self, command):
         if not self.thread or not self.thread.is_alive():
             return False
@@ -437,6 +442,21 @@ class Dashboard:
                 self.pid_entries.append(entry)
         self.pid_apply_btn = ttk.Button(self.pid_panel, text="Áp dụng PID", command=self.apply_pid, state="disabled")
         self.pid_apply_btn.grid(row=4, column=0, columnspan=4, pady=4)
+        self.motion_panel = ttk.LabelFrame(self.telemetry_tab, text="Motion tuning (RAM; select Encoder / PID first)", padding=4)
+        self.motion_values=[tk.StringVar(value=str(v)) for v in (850,220,2200,450,3,220,40,2)]
+        self.motion_entries=[]
+        self.motion_ready=False
+        self.motion_pending=False
+        labels=("Cruise PPS","Min PPS","Accel PPS/s","Decel counts","Sync Kp","Sync cap PPS","Angle Kp","Angle Kd")
+        for i,(label,var) in enumerate(zip(labels,self.motion_values)):
+            col=(i%4)*2; row=i//4
+            ttk.Label(self.motion_panel,text=label).grid(row=row,column=col,padx=2,pady=2)
+            e=ttk.Entry(self.motion_panel,textvariable=var,width=7,state="disabled")
+            e.grid(row=row,column=col+1,padx=2); self.motion_entries.append(e)
+        self.motion_note=tk.StringVar(value="Select PID on STM32 to read values.")
+        self.motion_apply=ttk.Button(self.motion_panel,text="Apply motion",command=self.apply_motion,state="disabled")
+        self.motion_apply.grid(row=2,column=0,columnspan=2,pady=3)
+        ttk.Label(self.motion_panel,textvariable=self.motion_note).grid(row=2,column=2,columnspan=6,sticky="w")
         self.pid_note = tk.StringVar(value="Chờ thông số từ STM32")
         ttk.Label(self.pid_panel, textvariable=self.pid_note, wraplength=360).grid(row=5, column=0, columnspan=4, sticky="w")
         status_bar = self.pid_status_bar = ttk.Frame(right)
@@ -484,6 +504,7 @@ class Dashboard:
         self.map_canvas.bind("<Configure>", lambda event: self._mark_maze())
 
     def _telemetry_widgets(self):
+        self.motion_panel.pack(fill="x", pady=(0,4))
         controls = ttk.Frame(self.telemetry_tab)
         controls.pack(fill="x")
         ttk.Label(controls, text="Series A:").pack(side="left")
@@ -545,6 +566,30 @@ class Dashboard:
         else:
             self.pid_note.set("Không gửi được PID; kiểm tra SPP.")
 
+    def apply_motion(self):
+        if not self.menu_ready or self.active_test_name!="PID" or not self.motion_ready or self.motion_pending:
+            return
+        try:
+            v=[Decimal(x.get().strip())*(100 if i in (4,6,7) else 1) for i,x in enumerate(self.motion_values)]
+            if any(not x.is_finite() or x!=x.to_integral_value() for x in v): raise ValueError
+            vals=list(map(int,v))
+            lo=(350,100,500,100,0,0,500,0); hi=(1100,1100,4000,1200,1000,400,10000,1000)
+            if any(not a<=x<=b for x,a,b in zip(vals,lo,hi)) or vals[1]>vals[0]: raise ValueError
+        except (ValueError,InvalidOperation,OverflowError):
+            self.motion_note.set("Invalid tuning values; cruise 350–1100 PPS, min <= cruise.")
+            return
+        if self.reader.send_motion(vals):
+            self.motion_pending=True
+            self.motion_note.set("Waiting for STM32 ACK...")
+            self._update_test_controls()
+            self.root.after(2000,self._motion_timeout)
+
+    def _motion_timeout(self):
+        if self.motion_pending:
+            self.motion_pending=False
+            self.motion_note.set("No ACK. Select PID again to read RAM.")
+            self._update_test_controls()
+
     def _pid_ack_timeout(self):
         if self.pid_pending:
             self.pid_pending = False
@@ -563,6 +608,10 @@ class Dashboard:
         else:
             self.pid_panel.pack_forget()
             self.pid_ready = self.pid_pending = False
+        if not pid_visible: self.motion_ready=self.motion_pending=False
+        motion_editable=pid_visible and self.motion_ready and not self.motion_pending
+        self.motion_apply.configure(state="normal" if motion_editable else "disabled")
+        for entry in self.motion_entries: entry.configure(state="normal" if motion_editable else "disabled")
         pid_editable = pid_visible and self.pid_ready and not self.pid_pending
         self.pid_apply_btn.configure(state="normal" if pid_editable else "disabled")
         for entry in self.pid_entries:
@@ -1007,6 +1056,22 @@ class Dashboard:
             self.reader.motion_lease.clear()
             self.pid_ready = self.pid_pending = False
             self.pid_note.set("Chờ đọc hệ số đang lưu trong RAM...")
+            self._update_test_controls()
+        elif line.startswith(("MOTION,VALUES,","MOTION,APPLIED,")) and self.active_test_name=="PID":
+            try:
+                vals=list(map(int,line.split(",")[2:]))
+                if len(vals)!=8: raise ValueError
+                for i,(var,v) in enumerate(zip(self.motion_values,vals)):
+                    var.set(str(v/100 if i in (4,6,7) else v))
+                self.motion_ready=True
+                self.motion_pending=False
+                self.motion_note.set("RAM values acknowledged by STM32")
+                self._update_test_controls()
+            except ValueError:
+                self.motion_note.set("Invalid MOTION reply")
+        elif line.startswith("MOTION,REJECT,"):
+            self.motion_pending=False
+            self.motion_note.set("STM32 rejected motion tuning")
             self._update_test_controls()
         elif line.startswith(("PID,VALUES,", "PID,APPLIED,")) and self.active_test_name == "PID":
             try:
@@ -1764,6 +1829,10 @@ class Dashboard:
                                     else:
                                         line += (f",yaw_cd={int(row['yaw_cd'])},"
                                                  f"gz_cd={int(row['gz_cd'])}")
+                            if mode in ("ONEBOX","PIVOT"):
+                                extra=("DELTA_L","DELTA_R","SYNC_ERROR","ANGLE_ERROR_CD" if mode=="PIVOT" else "REMAIN_COUNTS","PHASE")
+                                if all(row.get(k) not in (None,"") for k in extra):
+                                    line+=","+",".join(f"{key}={int(row[k])}" for key,k in zip(("dl","dr","sync","remain","phase"),extra))
                             timestamp = row.get("timestamp") or datetime.now().isoformat(
                                 timespec="milliseconds")
                             if mode in ("MPU","PIVOT") and self.angle_sample.consume(line):

@@ -91,7 +91,7 @@ void BT_SendString(const char *s)
 
 void BT_Printf(const char *fmt,...)
 {
-    char buf[256];
+    char buf[320];
     va_list args;
     int n;
     va_start(args,fmt);

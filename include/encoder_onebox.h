@@ -30,6 +30,7 @@ typedef struct {
 } EncoderOneBoxTelemetry;
 
 uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out);
+uint8_t EncoderOneBox_SetMotionConfig(const MotionConfig *config);
 uint8_t EncoderOneBox_SetGains(const OneBoxGains *left, const OneBoxGains *right);
 void EncoderOneBox_GetGains(OneBoxGains *left, OneBoxGains *right);
 void EncoderOneBox_Init(void);

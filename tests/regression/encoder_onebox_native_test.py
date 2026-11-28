@@ -100,6 +100,9 @@ static void CheckSharedArrival(void) {
     assert(o.reason==ONEBOX_REASON_NONE && o.pwm_l>0 && o.pwm_r>0);
     o=OneBoxCore_Step(&s,ONEBOX_TARGET_L+25,ONEBOX_TARGET_R-25);
     assert(o.reason==ONEBOX_REASON_DONE && o.pwm_l==0 && o.pwm_r==0);
+    MotionConfig good={850,220,2200,450,300,220,4000,200};
+    assert(MotionConfig_Valid(&good));
+    good.cruise=1200; assert(!MotionConfig_Valid(&good));
     Motion_Sync(600,100,&l,&r); assert(l<r && r==600 && l>0);
     Motion_Sync(600,-100,&l,&r); assert(r<l && l==600 && r>0);
     assert(Motion_Base(0,850,850)>0 && Motion_Base(0,850,850)<10);

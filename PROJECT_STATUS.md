@@ -485,3 +485,5 @@ benchmarks remain unchanged.
 
 ## V3 synchronized motion trial — 28/11/2026
 - Encoder-only shared endpoint, ramped 850 PPS cruise, leading-wheel P correction; MPU pivot PD and signed wheel synchronization, no reverse. 100 ms brake and final tolerance check (TOLERANCE if outside). Safety limits unchanged; tuning constants preliminary. Compact sensor panel under left terminal; CSV extends signed delta, synchronization, remaining distance/angle and phase. CI/hardware pending.
+
+- Motion tuning v1: 8 bounded RAM parameters via q frame, selectable in Encoder/PID only while motors locked; UI on Telemetry & PID. Legacy CSV blank-field compatibility and replay updated. Tolerances fixed pending bench tests.
