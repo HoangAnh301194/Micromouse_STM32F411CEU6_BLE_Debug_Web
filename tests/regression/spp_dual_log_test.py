@@ -171,7 +171,7 @@ def main():
         assert log.write("MPU,valid=1,yaw_cd=9000,gz_cd=0", host_time=t2) is None
         log.write("TEST STREAM STARTED: MPU Test", host_time=t2)
         m1 = log.write("MPU,ms=50,valid=1,age_us=25,yaw_cd=12,gz_cd=-2", host_time=t2)
-        assert m1.parent.name.startswith("Mode 7 - MPU Test - ")
+        assert m1.parent.name == "mode 7 - mpu test - log receiver"
         assert read_csv(m1) == [["timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"], [t2, "50", "1", "0.12", "25"]]
         log.write("MPU,ms=100,valid=0,age_us=10000")
         assert read_csv(m1)[-1][1:] == ["100", "0", "", "10000"]
@@ -179,7 +179,7 @@ def main():
         assert log.last_saved_path == m1
         log.write("TEST STREAM STARTED: MPU Test", host_time=t3)
         m2 = log.write("MPU,ms=200,valid=1,age_us=30,yaw_cd=-9000,gz_cd=0", host_time=t3)
-        assert m2 != m1 and read_csv(m2)[-1][3] == "-90.00"
+        assert m2 != m1 and m2.parent == m1.parent and read_csv(m2)[-1][3] == "-90.00"
         log.write("TEST STREAM STOPPED: MPU Test", host_time=t3)
         log.write("System Test 1: IR Test")
         log.write("Selected test 1: IR Test")
@@ -198,7 +198,8 @@ def main():
         assert log.write(pivot,host_time=t0) is None
         log.write("PIVOT,START,target=90",host_time=t0)
         p1=log.write(pivot,host_time=t0)
-        assert p1 and read_csv(p1)[-1][3:10]==["95.00","850","90.00","1.00","90","-900","920"]
+        assert p1 and p1.parent.name == "mode 7 - mpu test - pivot 90 left"
+        assert read_csv(p1)[-1][3:10]==["95.00","850","90.00","1.00","90","-900","920"]
         log.write("PIVOT,RESULT,reason=DONE",host_time=t1)
         assert log.last_saved_path==p1 and log.write(pivot,host_time=t1) is None
 
