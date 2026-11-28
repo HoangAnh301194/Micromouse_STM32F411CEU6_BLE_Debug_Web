@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable
 
-LOG_DIR = Path(__file__).resolve().parents[1] / "logs" / "spp_runs" / "mpu test - manual yaw"
+LOG_DIR = Path(__file__).resolve().parents[1] / "logs" / "spp_runs" / "mode 7 - mpu test - log receiver"
 
 
 class MPUTestTab(ttk.Frame):
