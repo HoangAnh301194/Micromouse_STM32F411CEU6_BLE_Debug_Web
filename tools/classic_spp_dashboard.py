@@ -133,6 +133,9 @@ class SPPReader:
     def send_multi(self, cells):
         return 1 <= cells <= 15 and self._enqueue(bytes([96+cells]))
 
+    def send_irpid(self, values):
+        return self._enqueue(('w'+''.join(f'{v:05d}' for v in values)+';G').encode('ascii'))
+
     def send_pid(self, values):
         limits = (10000, 20000, 1000) * 2
         if len(values) != 6 or any(not isinstance(v, int) or not 0 <= v <= m
@@ -428,6 +431,12 @@ class Dashboard:
                                          command=lambda: self.send_sensor_reset(b"I", "IR Test"),
                                          state="disabled")
         self.restart_ir_btn.pack(side="left")
+        self.irpid_panel=ttk.LabelFrame(right,text='IR PID — base PWM (%) / normalized error',padding=6)
+        self.irpid_vars=[tk.StringVar(value=x) for x in ('12','40','0','0')]
+        self.irpid_entries=[]
+        for i,(name,var) in enumerate(zip(('Speed PWM %','Kp','Ki','Kd'),self.irpid_vars)):
+            ttk.Label(self.irpid_panel,text=name).grid(row=i//2,column=(i%2)*2)
+            e=ttk.Entry(self.irpid_panel,textvariable=var,width=9);e.grid(row=i//2,column=(i%2)*2+1);self.irpid_entries.append(e)
         self.multi_panel = ttk.Frame(right)
         ttk.Label(self.multi_panel,text="Số ô (1–15):").pack(side="left")
         self.multi_cells = tk.StringVar(value="5")
@@ -568,6 +577,10 @@ class Dashboard:
             if not self.multi_panel.winfo_manager(): self.multi_panel.pack(fill="x",before=self.pid_status_bar,pady=4)
             self.multi_entry.configure(state="disabled" if self.test_stream_running or self.onebox_start_pending else "normal")
         else: self.multi_panel.pack_forget()
+        if self.menu_ready and self.active_test_name=='IR PID':
+            if not self.irpid_panel.winfo_manager():self.irpid_panel.pack(fill='x',before=self.pid_status_bar,pady=4)
+            for e in self.irpid_entries:e.configure(state='disabled' if self.test_stream_running or self.onebox_start_pending else 'normal')
+        else:self.irpid_panel.pack_forget()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
         if pid_visible:
             if not self.pid_panel.winfo_manager():
@@ -638,6 +651,17 @@ class Dashboard:
                 self.reader.motion_lease.set()
             elif command == b"P":
                 self.reader.motion_lease.clear()
+        if command == b'G' and self.active_test_name=='IR PID':
+            try:
+                v=[float(x.get()) for x in self.irpid_vars]; limits=[(5,20),(0,100),(0,100),(0,10)]
+                if not all(lo<=x<=hi for x,(lo,hi) in zip(v,limits)):raise ValueError
+                vals=[round(v[0]*10)]+[round(x*100) for x in v[1:]]
+            except (ValueError,OverflowError):self.status.set('PWM 5–20%; Kp/Ki 0–100; Kd 0–10');return
+            self.reader.motion_lease.set();sent=self.reader.send_irpid(vals)
+            self.onebox_start_pending=sent
+            if not sent:self.reader.motion_lease.clear()
+            self._update_test_controls();return
+        if self.active_test_name=='IR PID' and command==b'P':self.reader.motion_lease.clear()
         if command == b"G" and self.active_test_name == "Multi Box Forward":
             try: cells=int(self.multi_cells.get())
             except ValueError: cells=0
@@ -815,7 +839,13 @@ class Dashboard:
                          line.split(": ", 1)[-1].strip() in
                          ("IR Test", "MPU Test", "All Sensors Test"))
         is_pivot = line.startswith("Selected mpu option ") and line.partition(": ")[2].startswith("Pivot ")
-        if is_pivot:
+        if line == 'Selected ir option 2: PID':
+            self.active_test_name='IR PID';self.test_stream_running=False;self.onebox_start_pending=False;self.reader.motion_lease.clear();self._update_test_controls()
+        elif line.startswith('IRPID,START,'):
+            self.onebox_start_pending=False;self.test_stream_running=True;self._update_test_controls()
+        elif line.startswith(('IRPID,RESULT,','IRPID,REJECT,')):
+            self.reader.motion_lease.clear();self.onebox_start_pending=False;self.test_stream_running=False;self._update_test_controls();self.status.set(line)
+        elif is_pivot:
             self.angle_preview=False
             self.wheel_preview=False
             self.active_test_name=line.partition(": ")[2]
@@ -866,7 +896,7 @@ class Dashboard:
                                      "Multi Box Forward" if is_multi else "1 Box Forward" if is_onebox else
                                      line.split(": ", 1)[-1].strip())
             # Log Receive and 1 Box Forward arm IDLE: no data/motion yet.
-            self.test_stream_running = not (is_encoder_log or is_onebox or self.active_test_name == "MPU Test")
+            self.test_stream_running = not (is_encoder_log or is_onebox or self.active_test_name in ("MPU Test","IR Test"))
             self.onebox_start_pending = False
             self.reader.motion_lease.clear()
             self.data_filter.set("All")
@@ -876,7 +906,7 @@ class Dashboard:
             self.series.clear()
             self.plot_dirty = True
             self._update_test_controls()
-        elif (line.startswith("MPU Test:") or line.startswith("MPU Test option ") or
+        elif (line.startswith("IR Test:") or line.startswith("IR Test option ") or line.startswith("MPU Test:") or line.startswith("MPU Test option ") or
               line.startswith("Encoder Test") or
               line.startswith("Selected encoder option ") or
               line.startswith("Selected test 2: Encoder Test") or
@@ -1118,10 +1148,10 @@ class Dashboard:
         tag = line.split(",", 1)[0]
         def put(key, values, valid=True):
             self.sensor_live[key] = (now, valid, values)
-        if tag in ("IR", "ALL", "CAL_IR", "IR_LIVE", "CAL_SAMPLE"):
+        if tag in ("IR", "ALL", "CAL_IR", "IR_LIVE", "CAL_SAMPLE","IRPID_CSV"):
             names = ("L90","L45","L0","R0","R45","R90")
             if all(k in fields for k in names):
-                put("IR", fields, tag == "CAL_SAMPLE" or fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
+                put("IR", fields, tag in ("CAL_SAMPLE","IRPID_CSV") or fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
         if tag in ("MPU", "ALL", "MPU_LIVE", "PIVOT_CSV"):
             if tag == "PIVOT_CSV":
                 fields["yaw_cd"] = fields.get("angle_cd", fields.get("yaw_cd"))

@@ -94,6 +94,78 @@ static uint8_t PidMenu_Consume(char c, const ModeMenu *menu, uint32_t now)
     return 1U;
 }
 
+/* IR-only corridor PID; main-context 5ms nominal update, motor watchdog independent. */
+static uint8_t irpid_running, irpid_rx, irpid_n, irpid_configured;
+static uint32_t irpid_frame[4], irpid_rx_ms, irpid_ping, irpid_last, irpid_log, irpid_start;
+static uint16_t irpid_base;
+static float irpid_kp,irpid_ki,irpid_kd,irpid_i,irpid_prev,irpid_d;
+static IR_Simple_Calib_t irpid_cal;
+static uint8_t IrPidArmed(const ModeMenu *m){return m->page==MODE_MENU_PAGE_IR && m->active_encoder_option==1U;}
+static float IrPidClip(float x,float lo,float hi){return x<lo?lo:x>hi?hi:x;}
+static void IrPidStop(const char *why){
+    if(!irpid_running)return;
+    irpid_running=0U; Motor_LockOutputs();
+    BT_Printf("IRPID,RESULT,reason=%s\\r\\n",why);
+}
+static uint8_t IrPidConsume(char c,const ModeMenu *m,uint32_t now){
+    if(c=='P'||c=='N'||c=='K'||c=='?'){irpid_rx=0U;return 0U;}
+    if(c=='w'&&IrPidArmed(m)){
+        irpid_rx=1U;irpid_n=0U;irpid_rx_ms=now;
+        for(unsigned i=0;i<4;i++)irpid_frame[i]=0U;
+        return 1U;
+    }
+    if(!irpid_rx)return 0U;
+    if(now-irpid_rx_ms>1000U){irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_TIMEOUT\\r\\n");return 1U;}
+    if(c==';'){
+        irpid_rx=0U;
+        if(IrPidArmed(m)&&!irpid_running&&irpid_n==20U&&irpid_frame[0]>=50U&&irpid_frame[0]<=200U&&irpid_frame[1]<=10000U&&irpid_frame[2]<=10000U&&irpid_frame[3]<=1000U){
+            irpid_base=(uint16_t)irpid_frame[0];irpid_kp=irpid_frame[1]/100.0f;irpid_ki=irpid_frame[2]/100.0f;irpid_kd=irpid_frame[3]/100.0f;irpid_configured=1U;
+            BT_SendString("IRPID,APPLIED\\r\\n");
+        }else{irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG\\r\\n");}
+    }else if(c>='0'&&c<='9'&&irpid_n<20U){unsigned i=irpid_n/5U;irpid_frame[i]=irpid_frame[i]*10U+(unsigned)(c-'0');irpid_n++;}
+    else{irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_FRAME\\r\\n");}
+    return 1U;
+}
+static uint8_t IrPidStart(uint32_t now){
+    IR_Data_t ir;
+    if(irpid_running||!irpid_configured||!Motor_OutputsLocked()||!Control_IsRunning()||Board_ButtonPressed()||EncoderOneBox_IsRunning())return 0U;
+    if(Flash_LoadIRCalibChecked(&irpid_cal)!=FLASH_OK||!irpid_cal.has_open_calib||
+       irpid_cal.center_l0<=irpid_cal.open_l0||irpid_cal.center_r0<=irpid_cal.open_r0||
+       !irpid_cal.wall_on_l0||!irpid_cal.wall_on_r0||!irpid_cal.wall_on_l90||!irpid_cal.wall_on_r90)return 0U;
+    Control_GetIRSnapshot(&ir);
+    if(!ir.scan_count||micros()-ir.completed_us>5000U||ir.value[IR_L90]>=irpid_cal.wall_on_l90||ir.value[IR_R90]>=irpid_cal.wall_on_r90||
+       ir.value[IR_L0]<irpid_cal.wall_on_l0||ir.value[IR_R0]<irpid_cal.wall_on_r0)return 0U;
+    if(!Motor_OneBoxUnlockOutputs())return 0U;
+    irpid_running=1U;irpid_ping=irpid_last=irpid_log=irpid_start=now;
+    irpid_i=irpid_d=0.0f;
+    irpid_prev=((float)ir.value[IR_L0]-irpid_cal.open_l0)/(irpid_cal.center_l0-irpid_cal.open_l0)-((float)ir.value[IR_R0]-irpid_cal.open_r0)/(irpid_cal.center_r0-irpid_cal.open_r0);
+    BT_Printf("IRPID,START,base=%u,kp100=%lu,ki100=%lu,kd100=%lu\\r\\n",(unsigned)irpid_base,(unsigned long)irpid_frame[1],(unsigned long)irpid_frame[2],(unsigned long)irpid_frame[3]);
+    return 1U;
+}
+static void IrPidPoll(const ModeMenu *m,uint32_t now){
+    IR_Data_t ir;float dt,e,u,cap,ni;int16_t l,r;
+    if(!irpid_running)return;
+    if(!IrPidArmed(m)||Board_ButtonPressed()||Motor_OutputsLocked()||now-irpid_ping>=350U||now-irpid_start>=60000U){IrPidStop("GUARD");return;}
+    if(now-irpid_last<5U)return;
+    dt=(now-irpid_last)*0.001f;irpid_last=now;
+    Control_GetIRSnapshot(&ir);
+    if(!ir.scan_count||micros()-ir.completed_us>5000U||dt>0.05f){IrPidStop("STALE");return;}
+    if(ir.value[IR_L90]>=irpid_cal.wall_on_l90||ir.value[IR_R90]>=irpid_cal.wall_on_r90){IrPidStop("FRONT_WALL");return;}
+    if(ir.value[IR_L0]<irpid_cal.wall_off_l0||ir.value[IR_R0]<irpid_cal.wall_off_r0){IrPidStop("SIDE_LOST");return;}
+    e=((float)ir.value[IR_L0]-irpid_cal.open_l0)/(irpid_cal.center_l0-irpid_cal.open_l0)-((float)ir.value[IR_R0]-irpid_cal.open_r0)/(irpid_cal.center_r0-irpid_cal.open_r0);
+    irpid_d+=0.25f*((e-irpid_prev)/dt-irpid_d);irpid_prev=e;
+    cap=IrPidClip(200.0f-irpid_base,0.0f,irpid_base);
+    ni=IrPidClip(irpid_i+e*dt,-2.0f,2.0f);
+    u=irpid_kp*e+irpid_ki*ni+irpid_kd*irpid_d;
+    if(u<=cap&&u>=-cap)irpid_i=ni;
+    u=IrPidClip(irpid_kp*e+irpid_ki*irpid_i+irpid_kd*irpid_d,-cap,cap);
+    Motor_SetPairPermille((int16_t)(irpid_base+u),(int16_t)(irpid_base-u));
+    if(now-irpid_log>=50U){
+        irpid_log=now;Motor_GetAppliedPairPermille(&l,&r);
+        BT_Printf("IRPID_CSV,ms=%lu,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u,err1000=%ld,u100=%ld,pwm_l=%d,pwm_r=%d,left=%ld,right=%ld\\r\\n",(unsigned long)(now-irpid_start),(unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_L45],(unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_R0],(unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90],(long)(e*1000),(long)(u*100),(int)l,(int)r,(long)Encoder_GetLeftCount(),(long)Encoder_GetRightCount());
+    }
+}
+
 /* Static three-placement IR calibration. Main context only; TIM11 owns
  * acquisition. No motor unlock, heap, blocking delays or ISR logging. */
 #define CAL_N 200U
@@ -298,6 +370,10 @@ static void ModeMenu_Draw(const ModeMenu *menu, uint8_t confirmed)
     if (!menu) return;
 
     SSD1306_Fill(SSD1306_BLACK);
+    if(menu->page==MODE_MENU_PAGE_IR){
+        SSD1306_SetCursor(0U,0U); SSD1306_WriteString("IR TEST",&Font_7x10,SSD1306_WHITE);
+        SSD1306_SetCursor(0U,20U); SSD1306_WriteString(menu->encoder_focus==0U?"IR Log":menu->encoder_focus==1U?"PID":"Back",&Font_7x10,SSD1306_WHITE);return;
+    }
     if (menu->page == MODE_MENU_PAGE_MPU) {
         SSD1306_SetCursor(0U,0U); SSD1306_WriteString("MPU TEST", &Font_7x10, SSD1306_WHITE);
         SSD1306_SetCursor(0U,20U); SSD1306_WriteString((char *)ModeMenu_MpuName(menu->encoder_focus), &Font_7x10, SSD1306_WHITE);
@@ -446,6 +522,12 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
     case MODE_MENU_EVENT_TEST_EXIT:
         BT_SendString("System Test: back to main menu\r\n");
         break;
+    case MODE_MENU_EVENT_IR_ENTER: BT_SendString("IR Test: choose IR Log / PID / Back\r\n");break;
+    case MODE_MENU_EVENT_IR_FOCUS: BT_Printf("IR Test option %u: %s\r\n",(unsigned)(menu->encoder_focus+1U),menu->encoder_focus==0U?"IR Log":menu->encoder_focus==1U?"PID":"Back");break;
+    case MODE_MENU_EVENT_IR_SELECT:
+        if(menu->active_encoder_option==0U)BT_SendString("Selected test 1: IR Test\r\n");
+        else {irpid_configured=0U;BT_SendString("Selected ir option 2: PID\r\n");}break;
+    case MODE_MENU_EVENT_IR_EXIT: BT_SendString("IR Test: back to System Test\r\n");break;
     case MODE_MENU_EVENT_MPU_ENTER:
         BT_SendString("MPU Test: choose MPU Log / Pivot / Back\r\n"); break;
     case MODE_MENU_EVENT_MPU_FOCUS:
@@ -795,7 +877,7 @@ int Main_Runtime(void)
              * Motors remain locked regardless of Bluetooth traffic. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
-            if (PidMenu_Consume(command, &mode_menu, now)) {
+            if (IrPidConsume(command,&mode_menu,now) || PidMenu_Consume(command, &mode_menu, now)) {
                 /* gain configuration never enters the single-byte command dispatcher */
             } else if (command == '?') {
                 BT_SendString("SPP CONNECTED\r\n");
@@ -818,15 +900,19 @@ int Main_Runtime(void)
                     PidMenu_ReportGains("VALUES");
                 }
             } else if (command == 'N') {
+                IrPidStop("MENU");
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 remote = ModeMenu_Next(&mode_menu);
             } else if (command == 'K') {
+                IrPidStop("MENU");
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 remote = ModeMenu_Select(&mode_menu);
             } else if (command == 'H') {
                 EncoderOneBox_HostPing(); /* lease only */
+                if(irpid_running)irpid_ping=now;
             } else if (command == 'P') {
                 if (cal_active) Cal_Cancel();
+                else if(irpid_running) IrPidStop("STOP");
                 else if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 else if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
@@ -841,6 +927,7 @@ int Main_Runtime(void)
                 else BT_SendString("ONEBOX,REJECT,reason=NOT_READY\r\n");
             } else if (command == 'G') {
                 if (cal_active) Cal_Begin(now);
+                else if(IrPidArmed(&mode_menu)){if(!irpid_running&&!IrPidStart(now))BT_SendString("IRPID,REJECT,reason=CALIB_CONFIG_OR_WALL_NOT_READY\r\n");}
                 else if (ModeMenu_PivotTarget(&mode_menu)) {
                     int16_t target=ModeMenu_PivotTarget(&mode_menu);
                     if (mpu_status==MPU6050_OK && !mpu.calibrated && !mpu.calibrating) {
@@ -897,7 +984,7 @@ int Main_Runtime(void)
                     }
                     BT_SendString("MPU YAW RESET REJECTED: NOT READY\r\n");
                 }
-            } else if (command == 'I') {
+            } else if (command == 'I' && !irpid_running) {
                 /* Restart a live IR acquisition; this is NOT a calibration.
                  * Keep motor outputs locked and sampling independent of SPP. */
                 IR_Stop();
@@ -927,6 +1014,7 @@ int Main_Runtime(void)
             if (EncoderOneBox_SuppressMenuButton()) menu_key = 0U;
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
             if (event != MODE_MENU_EVENT_NONE) {
+                IrPidStop("MENU");
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 if (event == MODE_MENU_EVENT_TEST_SELECT ||
                     (event == MODE_MENU_EVENT_ENCODER_SELECT &&
@@ -1081,6 +1169,7 @@ int Main_Runtime(void)
                               (unsigned)result.motor_locked);
                 }
             }
+            IrPidPoll(&mode_menu,now);
             Cal_Poll(now);
             /* Dashboard-only frames: do not alter existing CSV schemas. */
             if ((uint32_t)(now-last_dashboard_ms)>=100U) {

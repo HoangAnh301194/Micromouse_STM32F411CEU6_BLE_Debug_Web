@@ -90,6 +90,12 @@ void ModeMenu_Init(ModeMenu *menu, uint8_t button_pressed, uint32_t now_ms)
 ModeMenuEvent ModeMenu_Next(ModeMenu *menu)
 {
     if (!menu) return MODE_MENU_EVENT_NONE;
+    if (menu->page == MODE_MENU_PAGE_IR) {
+        menu->active_test=menu->active_encoder_option=MODE_MENU_NO_SELECTION;
+        menu->stream_running=0U;
+        menu->encoder_focus=menu->encoder_focus==MODE_MENU_NO_SELECTION?0U:(menu->encoder_focus+1U)%3U;
+        return MODE_MENU_EVENT_IR_FOCUS;
+    }
     if (menu->page == MODE_MENU_PAGE_MPU) {
         menu->active_test = menu->active_encoder_option = MODE_MENU_NO_SELECTION;
         menu->stream_running = 0U;
@@ -122,6 +128,14 @@ ModeMenuEvent ModeMenu_Next(ModeMenu *menu)
 ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
 {
     if (!menu) return MODE_MENU_EVENT_NONE;
+    if(menu->page==MODE_MENU_PAGE_IR){
+        if(menu->encoder_focus>=3U)return MODE_MENU_EVENT_NONE;
+        menu->stream_running=0U; menu->active_test=MODE_MENU_NO_SELECTION;
+        menu->active_encoder_option=menu->encoder_focus;
+        if(menu->encoder_focus==2U){menu->page=MODE_MENU_PAGE_TEST;menu->active_encoder_option=menu->encoder_focus=MODE_MENU_NO_SELECTION;return MODE_MENU_EVENT_IR_EXIT;}
+        if(menu->encoder_focus==0U)menu->active_test=MODE_MENU_TEST_IR;
+        return MODE_MENU_EVENT_IR_SELECT;
+    }
     if (menu->page == MODE_MENU_PAGE_MPU) {
         if (menu->encoder_focus == MODE_MENU_NO_SELECTION) return MODE_MENU_EVENT_NONE;
         menu->stream_running = 0U;
@@ -168,6 +182,7 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
             menu->test_focus = MODE_MENU_NO_SELECTION;
             return MODE_MENU_EVENT_TEST_EXIT;
         }
+        if(menu->test_focus==MODE_MENU_TEST_IR){menu->page=MODE_MENU_PAGE_IR;menu->encoder_focus=menu->active_encoder_option=menu->active_test=MODE_MENU_NO_SELECTION;menu->stream_running=0U;return MODE_MENU_EVENT_IR_ENTER;}
         if (menu->test_focus == MODE_MENU_TEST_ENCODER) {
             /* Encoder Test is a navigation page, not an active stream. */
             menu->page = MODE_MENU_PAGE_ENCODER;
@@ -205,7 +220,7 @@ ModeMenuEvent ModeMenu_Select(ModeMenu *menu)
 uint8_t ModeMenu_PauseTest(ModeMenu *menu)
 {
     if (!menu || (menu->page != MODE_MENU_PAGE_TEST &&
-                  menu->page != MODE_MENU_PAGE_ENCODER && menu->page != MODE_MENU_PAGE_MPU) ||
+                  menu->page != MODE_MENU_PAGE_ENCODER && menu->page != MODE_MENU_PAGE_MPU && menu->page != MODE_MENU_PAGE_IR) ||
         menu->active_test == MODE_MENU_NO_SELECTION ||
         (menu->page == MODE_MENU_PAGE_ENCODER &&
          menu->active_encoder_option != MODE_MENU_ENCODER_LOG_RECEIVE) ||
@@ -218,7 +233,7 @@ uint8_t ModeMenu_PauseTest(ModeMenu *menu)
 uint8_t ModeMenu_ResumeTest(ModeMenu *menu)
 {
     if (!menu || (menu->page != MODE_MENU_PAGE_TEST &&
-                  menu->page != MODE_MENU_PAGE_ENCODER && menu->page != MODE_MENU_PAGE_MPU) ||
+                  menu->page != MODE_MENU_PAGE_ENCODER && menu->page != MODE_MENU_PAGE_MPU && menu->page != MODE_MENU_PAGE_IR) ||
         menu->active_test == MODE_MENU_NO_SELECTION ||
         (menu->page == MODE_MENU_PAGE_ENCODER &&
          menu->active_encoder_option != MODE_MENU_ENCODER_LOG_RECEIVE) ||

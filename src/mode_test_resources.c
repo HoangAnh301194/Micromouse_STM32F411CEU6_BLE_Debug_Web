@@ -10,6 +10,7 @@ uint8_t ModeTest_OneBoxArmed(const ModeMenu *menu)
 uint8_t ModeTest_Resources(const ModeMenu *menu)
 {
     if (!menu) return 0U;
+    if(menu->page==MODE_MENU_PAGE_IR){if(menu->active_encoder_option==0U)return TEST_RES_IR;if(menu->active_encoder_option==1U)return TEST_RES_IR|TEST_RES_MOTOR;return 0U;}
     if (menu->page == MODE_MENU_PAGE_TEST) {
         switch (menu->active_test) {
         case MODE_MENU_TEST_IR:  return TEST_RES_IR;
