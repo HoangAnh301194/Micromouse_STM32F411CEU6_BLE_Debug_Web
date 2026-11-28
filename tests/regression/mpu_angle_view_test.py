@@ -29,3 +29,16 @@ assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=
 s = AngleSample()
 assert s.consume("PIVOT_CSV,ms=100,valid=1,age_us=850,yaw_cd=12500,angle_cd=9000,gz_cd=0,target=90,left=-985,right=991,pwm_l=0,pwm_r=0,ref_l=0,ref_r=0,speed_l=0,speed_r=0")
 assert s.valid and s.yaw == 90.0
+
+from wheel_plot_data import WheelPlotData
+w=WheelPlotData()
+frame="PIVOT_CSV,ms=100,valid=1,age_us=850,yaw_cd=12500,angle_cd=9000,gz_cd=0,target=90,left=-985,right=991,pwm_l=-100,pwm_r=100,ref_l=-1100,ref_r=1100,speed_l=-1050,speed_r=1000"
+assert w.add(frame, "2026-11-28T12:00:00")
+assert w.rows[-1]["ref_L"]==-1100 and w.rows[-1]["error_L"]==-50
+assert w.add(frame.replace("ms=100,","ms=120,").replace("left=-985","left=-995"), "2026-11-28T12:00:00")
+assert abs(w.rows[-1]["t"]-.02)<1e-6 and w.rows[-1]["count_L"]==-10
+assert w.add_live(dict(left=1,right=2,speed_l=-4,speed_r=5,pwm_l=0,pwm_r=0), 10.)
+assert w.kind=="LIVE" and w.rows[-1]["speed_L"]==-4
+runtime=(Path(__file__).resolve().parents[2]/"src"/"encoder_onebox.c").read_text()
+assert "pivot_angle += RelativeYaw(snap.yaw_deg, pivot_previous_yaw)" in runtime
+assert "RelativeYaw(snap.yaw_deg,pivot_origin)" not in runtime

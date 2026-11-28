@@ -25,7 +25,7 @@ The six channels are recorded in this order:
 4. OPEN starts automatically 4 seconds after WALL finishes; no button press.
 5. Firmware captures another 150 fresh samples per channel.
 
-Short KEY enters Mode 1 when reached in the main menu. Inside Mode 1,
+Short KEY navigates the main menu; hold KEY to select Mode 1 and start WALL. Inside Mode 1,
 short KEY / N / R restarts WALL; long KEY / K exits, aborting unfinished capture.
 The next short KEY after exit advances to Mode 2. Motors stay locked.
 

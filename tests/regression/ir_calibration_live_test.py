@@ -66,3 +66,7 @@ assert "self.cal_phase=\"WAIT_OPEN\"" in dashboard
 assert "cal_phase not in (\"WALL\", \"OPEN\")" in dashboard
 assert "provisional_wall_threshold" not in dashboard
 print("ir_calibration_live_test PASS")
+
+assert "remote = ModeMenu_Next(&mode_menu);" in runtime
+assert "remote == MODE_MENU_EVENT_FOCUS && mode_menu.focus == 0U" not in runtime
+assert "event = ModeMenu_Select(&mode_menu);" not in runtime

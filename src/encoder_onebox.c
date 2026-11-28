@@ -27,7 +27,7 @@ static MPU6050_Handle_t *pivot_mpu;
 static int16_t pivot_target;
 static int32_t pivot_ref_pps;
 #define CAL_PIVOT_SPEED_PPS 800
-static float pivot_origin;
+static float pivot_previous_yaw, pivot_angle;
 static uint16_t stall_l, stall_r;
 /* Relative 90-degree turns must remain valid at +/-180 yaw wrap. */
 static float RelativeYaw(float now, float origin)
@@ -117,7 +117,8 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, int32_t speed_
     }
     pivot_mpu = mpu; pivot_target = target;
     pivot_ref_pps = speed_pps;
-    pivot_origin = target ? snap.yaw_deg : 0.0f;
+    pivot_previous_yaw = target ? snap.yaw_deg : 0.0f;
+    pivot_angle = 0.0f;
     stall_l = stall_r = 0U;
     Motor_Stop();
     started_at_ms = millis();
@@ -196,7 +197,9 @@ void EncoderOneBox_ControlTick(void)
         if (dl < -30 || dr < -30 || dl > 3000 || dr > 3000 ||
             (dl+dr>600 && (dl-dr>250 || dr-dl>250))) { Finish(ONEBOX_REASON_ENCODER); return; }
         if (stall_l>=ONEBOX_STALL_TICKS || stall_r>=ONEBOX_STALL_TICKS) { Finish(ONEBOX_REASON_STALL); return; }
-        float angle=RelativeYaw(snap.yaw_deg,pivot_origin)*sign;
+        pivot_angle += RelativeYaw(snap.yaw_deg, pivot_previous_yaw);
+        pivot_previous_yaw = snap.yaw_deg;
+        float angle = pivot_angle * sign;
         if (angle < -5.0f) { Finish(ONEBOX_REASON_IMU); return; }
         if (angle >= pivot_target*sign) { Finish(ONEBOX_REASON_DONE); return; }
         int16_t pl=OneBoxSpeedPid_Step(&pid_l,&gains_l,pivot_ref_pps,sl*Encoder_GetLeftSpeedPPS());
@@ -248,7 +251,7 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
         out->ref_r=-out->ref_l;
         if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {
             out->age_us=micros()-snap.completed_us;
-            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=RelativeYaw(snap.yaw_deg,pivot_origin); out->gz=snap.gyro_z_dps; }
+            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=pivot_angle + RelativeYaw(snap.yaw_deg,pivot_previous_yaw); out->gz=snap.gyro_z_dps; }
         }
     }
     out->speed_l = (int32_t)Encoder_GetLeftSpeedPPS();

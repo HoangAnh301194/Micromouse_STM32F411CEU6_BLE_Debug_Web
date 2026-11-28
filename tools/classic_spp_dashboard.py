@@ -243,6 +243,8 @@ class Dashboard:
         self.test_stream_running = False
         self.onebox_start_pending = False
         self.active_data_stream = None
+        self.sensor_mask = dict.fromkeys(("IR", "MPU", "ENC", "MOTOR"), False)
+        self.sensor_live = {}
         self.cal_rows=deque(maxlen=1000)
         self.cal_live=(0,)*6
         self.cal_live_valid=False
@@ -313,8 +315,23 @@ class Dashboard:
         self._telemetry_widgets()
 
     def _terminal_widgets(self):
-        panes = ttk.PanedWindow(self.terminal_tab, orient="horizontal")
-        panes.pack(fill="both", expand=True)
+        self.main_split = ttk.PanedWindow(self.terminal_tab, orient="vertical")
+        self.main_split.pack(fill="both", expand=True)
+        panes = ttk.PanedWindow(self.main_split, orient="horizontal")
+        self.main_split.add(panes, weight=3)
+        dashboard = ttk.LabelFrame(self.main_split, text="Sensor Dashboard", padding=4)
+        self.main_split.add(dashboard, weight=2)
+        dashboard.rowconfigure(0, weight=1)
+        for col, weight in enumerate((3, 2, 4)):
+            dashboard.columnconfigure(col, weight=weight, uniform="sensor")
+        self.ir_panel = ttk.LabelFrame(dashboard, text="IR — 6 ADC")
+        self.ir_panel.grid(row=0, column=0, sticky="nsew", padx=3)
+        self.ir_canvas = tk.Canvas(self.ir_panel, bg="#101923", highlightthickness=0, width=300, height=200)
+        self.ir_canvas.pack(fill="both", expand=True)
+        self.encoder_panel = ttk.LabelFrame(dashboard, text="Encoder / Motion")
+        self.encoder_panel.grid(row=0, column=2, sticky="nsew", padx=3)
+        self.encoder_summary = ttk.Label(self.encoder_panel, text="ENC DISABLED", justify="left")
+        self.encoder_summary.pack(fill="x", padx=4, pady=2)
         left = ttk.LabelFrame(panes, text="Continuous data — sensor samples", padding=5)
         right = ttk.LabelFrame(panes, text="Mode selection", padding=5)
         self.left_log_frame = left
@@ -337,7 +354,7 @@ class Dashboard:
         self.data_split.add(self.log_pane, weight=1)
         self.data_text = self._make_log_text(self.log_pane, "none")
         self.data_text.configure(height=6)
-        self.cal_pane=ttk.LabelFrame(self.data_split,text="Mode 1 — IR calibration (6 mắt)")
+        self.cal_pane=ttk.LabelFrame(self.ir_panel,text="Mode 1 — IR calibration (6 mắt)")
         ttk.Label(self.cal_pane,textvariable=self.cal_note).pack(anchor="w")
         self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=230,highlightthickness=0)
         self.cal_canvas.pack(fill="both",expand=True)
@@ -349,7 +366,8 @@ class Dashboard:
             command=self.request_calibration_again)
         self.cal_again_btn.pack(side="left")
         ttk.Label(cal_actions, text="KEY ngắn: đo lại | KEY giữ: thoát").pack(side="left", padx=6)
-        self.wheel_pane = ttk.Frame(self.data_split)
+        self.wheel_pane = ttk.Frame(self.encoder_panel)
+        self.wheel_pane.pack(fill="both", expand=True)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
         self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
         self.wheel_pane.rowconfigure(1, weight=1)
@@ -369,7 +387,8 @@ class Dashboard:
             canvas.pack(fill="both", expand=True)
             canvas.bind("<Configure>", lambda event: self._mark_wheels())
             self.wheel_canvases.append(canvas)
-        self.angle_pane = ttk.LabelFrame(self.data_split, text="MPU — Yaw / góc quay Micromouse")
+        self.angle_pane = ttk.LabelFrame(dashboard, text="MPU — Yaw / góc quay Micromouse")
+        self.angle_pane.grid(row=0, column=1, sticky="nsew", padx=3)
         self.angle_canvas = tk.Canvas(self.angle_pane, bg="#081722", highlightthickness=0, height=260)
         self.angle_canvas.pack(fill="both", expand=True)
         self.angle_canvas.bind("<Configure>", lambda event: self._draw_angle_panel())
@@ -575,6 +594,8 @@ class Dashboard:
         self.next_btn.configure(state=state)
         self.select_btn.configure(state=state)
         if not ready:
+            self.sensor_mask = dict.fromkeys(self.sensor_mask, False)
+            self.sensor_live.clear()
             self.wheel_preview = False
             self.angle_preview = False
             self.angle_sample.clear()
@@ -747,6 +768,9 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def handle_line(self, line: str):
+        self._sensor_receive(line)
+        if line.startswith("ENC_LIVE,"):
+            return  # dashboard only, never terminal or CSV
         # Unlogged post-calibration dashboard frame. Ignore when another
         # mode owns the screen; never append to a finished calibration CSV.
         if line.startswith("CAL_LIVE,"):
@@ -1141,9 +1165,15 @@ class Dashboard:
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
-        if category == "data" and (self.active_test_name == "MPU Test" or (self.active_test_name or "").startswith("Pivot ")) and self.angle_sample.consume(line):
-            self.angle_last_rx = time.monotonic()
-        if category == "data" and self.wheel_data.add(line, host_time):
+        if category == "data" and (self.active_test_name == "MPU Test" or (self.active_test_name or "").startswith("Pivot ")):
+            # A final invalid frame must not overwrite the last measured pivot angle.
+            previous = self.angle_sample.yaw, self.angle_sample.valid, self.angle_sample.age
+            if self.angle_sample.consume(line):
+                if line.startswith("PIVOT_CSV,") and not self.angle_sample.valid and previous[1]:
+                    self.angle_sample.yaw, self.angle_sample.valid, self.angle_sample.age = previous
+                else:
+                    self.angle_last_rx = time.monotonic()
+        if category == "data" and not (line.startswith("ENC,") and self.wheel_data.kind == "LIVE") and self.wheel_data.add(line, host_time):
             self.wheel_dirty = True
         self._append(line, ts, category, host_time=host_time)
         changed = self.maze.apply(line)
@@ -1211,15 +1241,21 @@ class Dashboard:
         if self.wheel_dirty:
             self.draw_wheels()
             self.wheel_dirty = False
+        self._draw_sensor_dashboard(now)
         self._draw_angle_panel()
         if self.cal_visible:self._draw_calibration_panel()
         self.root.after(150, self.redraw)
 
     def _sync_cal_panel(self):
         show=self.cal_visible and self.menu_ready and self.active_test_name=="Calibration"
-        present=str(self.cal_pane) in self.data_split.panes()
-        if show and not present:self.data_split.add(self.cal_pane,weight=1)
-        elif present and not show:self.data_split.forget(self.cal_pane)
+        if show:
+            self.ir_canvas.pack_forget()
+            if not self.cal_pane.winfo_manager():
+                self.cal_pane.pack(fill="both", expand=True)
+        else:
+            self.cal_pane.pack_forget()
+            if not self.ir_canvas.winfo_manager():
+                self.ir_canvas.pack(fill="both", expand=True)
         self.cal_again_btn.configure(state="normal" if show else "disabled")
 
     def request_calibration_again(self):
@@ -1302,47 +1338,126 @@ class Dashboard:
         self.wheel_dirty = True
 
     def _sync_wheel_panel(self):
-        visible = not self.angle_preview and (self.wheel_preview or (self.menu_ready and
-                   self.active_test_name in ("Encoder Test", "1 Box Forward")))
-        shown = str(self.wheel_pane) in self.data_split.panes()
-        if visible and not shown:
-            self.data_split.add(self.wheel_pane, weight=1)
-            self.root.after_idle(self._balance_wheel_panes)
-        elif shown and not visible:
-            self.data_split.forget(self.wheel_pane)
         self.wheel_dirty = True
+
+    def _sync_angle_panel(self):
+        pass  # persistent MPU panel, including while Pivot wheel plots are active
+
+    def _sensor_receive(self, line):
+        fields = numeric_fields(line)
+        tag = line.split(",", 1)[0]
+        if line.startswith("TEST,RESOURCES,"):
+            new = {k: fields.get(k) == 1 for k in self.sensor_mask}
+            for key in ("IR", "MPU", "ENC"):
+                if new[key] != self.sensor_mask[key]:
+                    self.sensor_live.pop(key, None)
+                    if key == "ENC":
+                        self.wheel_data.clear()
+                    elif key == "MPU":
+                        self.angle_sample.clear()
+            self.sensor_mask = new
+            self.wheel_dirty = True
+            return
+        if line.startswith(("Mode ", "Selected mode ", "Selected test ", "Selected encoder option ",
+                            "Selected mpu option ", "System Test ", "CAL,EXIT",
+                            "TEST STREAM STARTED:", "PIVOT,START,", "ONEBOX,START,")):
+            self.sensor_live.clear()
+            self.wheel_data.clear()
+            self.angle_sample.clear()
+            self.wheel_dirty = True
+        now = time.monotonic()
+        def put(key, values, valid=True):
+            if self.sensor_mask[key]:
+                self.sensor_live[key] = (now, valid, values)
+        if tag in ("IR", "ALL", "CAL_IR", "CAL_LIVE"):
+            names = ("L0","L45","L90","R0","R45","R90")
+            if all(k in fields for k in names):
+                put("IR", fields, tag == "CAL_IR" or fields.get("ir_valid" if tag == "ALL" else "valid") == 1)
+        if tag in ("MPU", "ALL", "PIVOT_CSV"):
+            valid = fields.get("mpu_valid" if tag == "ALL" else "valid") == 1
+            put("MPU", fields, valid and "yaw_cd" in fields)
+            if tag == "ALL" and self.sensor_mask["MPU"]:
+                self.angle_sample.valid = valid and "yaw_cd" in fields
+                self.angle_sample.yaw = fields.get("yaw_cd", 0)/100 if self.angle_sample.valid else None
+                self.angle_sample.age = None
+                self.angle_last_rx = now
+        if tag in ("ENC_LIVE", "ONEBOX_CSV", "PIVOT_CSV"):
+            put("ENC", fields, "left" in fields and "right" in fields)
+            if tag == "ENC_LIVE" and self.sensor_mask["ENC"] and self.active_test_name not in ("1 Box Forward",) and not (self.active_test_name or "").startswith("Pivot "):
+                if self.wheel_data.add_live(fields, now):
+                    self.wheel_dirty = True
+        elif tag == "ENC":
+            record = sensor_test_csv(line)
+            if record:
+                previous = self.sensor_live.get("ENC")
+                extra = dict(previous[2]) if previous and now-previous[0]<.3 else {}
+                extra.update(left=int(record[2][1]), right=int(record[2][2]))
+                put("ENC", extra)
+        elif tag == "ALL":
+            previous = self.sensor_live.get("ENC")
+            extra = dict(previous[2]) if previous and now-previous[0]<.3 else {}
+            extra.update(left=fields.get("enc_l"), right=fields.get("enc_r"))
+            put("ENC", extra, "enc_l" in fields and "enc_r" in fields)
+
+    def _sensor_state(self, key, now):
+        if not self.sensor_mask[key]:
+            return "DISABLED", {}
+        item = self.sensor_live.get(key)
+        if item is None:
+            return "WAITING", {}
+        when, valid, fields = item
+        if now-when > 1.5:
+            return "STALE", fields
+        return ("ACTIVE" if valid else "INVALID"), fields
+
+    def _draw_sensor_dashboard(self, now):
+        state, fields = self._sensor_state("IR", now)
+        if not self.cal_visible:
+            c=self.ir_canvas
+            c.delete("all")
+            w,h=c.winfo_width(),c.winfo_height()
+            if w>=100 and h>=90:
+                c.create_text(8,8,anchor="nw",text="IR "+state,fill="#a5c5df")
+                if state != "ACTIVE":
+                    c.create_text(w/2,h/2,text=state,fill="#91a3b5")
+                else:
+                    bottom=h-35
+                    for v in (0,1024,2048,3072,4095):
+                        y=bottom-v/4095*(bottom-30)
+                        c.create_line(30,y,w-5,y,fill="#405063")
+                        c.create_text(27,y,text=str(v),anchor="e",fill="#abc0d0",font=("Consolas",7))
+                    step=(w-35)/6
+                    for i,k in enumerate(("L0","L45","L90","R0","R45","R90")):
+                        v=int(fields[k]); x=30+(i+.5)*step
+                        y=bottom-max(0,min(4095,v))/4095*(bottom-30)
+                        c.create_rectangle(x-step*.32,y,x+step*.32,bottom,fill="#58c9ff",outline="")
+                        c.create_text(x,bottom+9,text=k,fill="#d5e2ef",font=("Consolas",8))
+                        c.create_text(x,bottom+23,text=str(v),fill="#d5e2ef",font=("Consolas",8))
+        state,f=self._sensor_state("ENC",now)
+        def val(k):
+            return str(int(f[k])) if f.get(k) is not None else "--"
+        self.encoder_summary.configure(text=(
+            f"ENC {state} | L {val('left')} / R {val('right')} counts\n"
+            f"Speed L {val('speed_l')} / R {val('speed_r')} PPS | PWM L {val('pwm_l')} / R {val('pwm_r')}"))
+        if state=="DISABLED" and not self.wheel_preview:
+            for c in self.wheel_canvases:
+                c.delete("all")
+                c.create_text(c.winfo_width()/2,c.winfo_height()/2,text="DISABLED",fill="#91a3b5")
 
     def _draw_angle_panel(self):
         now = time.monotonic()
-        if str(self.angle_pane) in self.data_split.panes():
-            if self.angle_preview:
-                state = "REPLAY"
-            elif not self.test_stream_running:
-                state = "PAUSED" if self.angle_sample.valid else ("READY — START" if self.angle_ready else "WAIT FOR MPU")
-            elif self.angle_last_rx is None or now - self.angle_last_rx > .5:
-                state = "NO FRESH TELEMETRY"
-                self.angle_sample.clear()
-            else:
-                state = "LIVE" if self.angle_sample.valid else "INVALID SAMPLE"
-            draw_angle(self.angle_canvas, self.angle_sample, state)
-
-    def _sync_angle_panel(self):
-        visible = self.angle_preview or (not self.wheel_preview and self.menu_ready and (self.active_test_name == "MPU Test" or (self.active_test_name or "").startswith("Pivot ")))
-        shown = str(self.angle_pane) in self.data_split.panes()
-        if visible and not shown:
-            self.data_split.add(self.angle_pane, weight=1)
-            self.root.after_idle(self._balance_angle_panes)
-            self.root.after_idle(self._draw_angle_panel)
-        elif shown and not visible:
-            self.data_split.forget(self.angle_pane)
-
-    def _balance_angle_panes(self):
-        if str(self.angle_pane) in self.data_split.panes():
-            self.data_split.sashpos(0, self.data_split.winfo_height() // 2)
-
-    def _balance_wheel_panes(self):
-        if str(self.wheel_pane) in self.data_split.panes():
-            self.data_split.sashpos(0, self.data_split.winfo_height() // 2)
+        if self.angle_preview:
+            state="REPLAY"
+        elif not self.sensor_mask["MPU"]:
+            self.angle_sample.clear()
+            state="DISABLED"
+        elif not self.test_stream_running:
+            state="PAUSED" if self.angle_sample.valid else ("READY — START" if self.angle_ready else "WAIT FOR MPU")
+        elif self.angle_last_rx is None or now-self.angle_last_rx>.5:
+            state="NO FRESH TELEMETRY"
+        else:
+            state="LIVE" if self.angle_sample.valid else "INVALID SAMPLE"
+        draw_angle(self.angle_canvas, self.angle_sample, state)
 
     def draw_wheels(self):
         rows = list(self.wheel_data.rows)

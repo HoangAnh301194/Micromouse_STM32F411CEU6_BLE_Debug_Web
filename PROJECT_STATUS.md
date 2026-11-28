@@ -4,6 +4,11 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## V3 sensor dashboard integration — 28/11/2026
+
+- Mode 1 now enters only on long KEY / K; short KEY navigates main menu or retries inside Mode 1. Four-second wall/open calibration unchanged.
+- V2-style persistent IR/MPU/Encoder panels, resource mask and dashboard-only ENC_LIVE; Pivot uses signed wheel plots alongside relative yaw. Accumulate incremental wrapped yaw to avoid 180-degree discontinuity. CI and bench acceptance pending.
+
 ## Mode 1 automatic calibration, 4 seconds — 28/11/2026, giomuadongbacv3
 
 - Short KEY enters/restarts Mode 1, long KEY exits; 150 fresh frames per condition, 4-second nonblocking relocation countdown, automatic checked Flash save for valid thresholds only. No auto-apply or motor motion.

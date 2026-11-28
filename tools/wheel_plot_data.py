@@ -16,12 +16,13 @@ class WheelPlotData:
 
     def add(self, line, host_time):
         record = sensor_test_csv(line, host_time=host_time)
-        if not record or record[0] not in ("ENC", "ONEBOX"):
+        if not record or record[0] not in ("ENC", "ONEBOX", "PIVOT"):
             return False
         kind, cols, values = record
         d = dict(zip(cols, values))
         try:
-            raw_t = int(d["t_ms"])/1000 if kind=="ONEBOX" else datetime.fromisoformat(d["timestamp"]).timestamp()
+            raw_t = (int(d["t_ms"])/1000 if kind=="ONEBOX" else
+                     int(d["mcu_ms"])/1000 if kind=="PIVOT" else datetime.fromisoformat(d["timestamp"]).timestamp())
             counts = [int(d["ENC_"+s]) for s in ("L","R")]
         except (ValueError, TypeError, KeyError):
             return False
@@ -39,5 +40,24 @@ class WheelPlotData:
                     row[key+"_"+s] = int(d[col])
             if "ref_"+s in row and "speed_"+s in row:
                 row["error_"+s] = row["ref_"+s]-row["speed_"+s]
+        self.rows.append(row)
+        return True
+
+    def add_live(self, fields, now):
+        try:
+            counts=[int(fields[k]) for k in ("left","right")]
+            values={k: int(fields[k]) for k in ("speed_l","speed_r","pwm_l","pwm_r")}
+        except (KeyError, TypeError, ValueError):
+            return False
+        if self.kind!="LIVE":
+            self.clear()
+            self.kind="LIVE"
+            self.origin=now
+            self.count_origin=counts
+        row={"t":now-self.origin}
+        for i,side in enumerate(("L","R")):
+            row["count_"+side]=counts[i]-self.count_origin[i]
+            row["speed_"+side]=values["speed_"+side.lower()]
+            row["pwm_"+side]=values["pwm_"+side.lower()]
         self.rows.append(row)
         return True

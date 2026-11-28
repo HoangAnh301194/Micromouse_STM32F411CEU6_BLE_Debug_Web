@@ -483,7 +483,7 @@ int Main_Runtime(void)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
     IRC_Context ir_calibration;
-    uint32_t last_cal_live_ms=0U;
+    uint32_t last_cal_live_ms=0U, last_dashboard_ms=0U;
     uint8_t mpu_ready_reported = 0U;
     uint32_t mpu_health_ms = 0U;
 #endif
@@ -646,6 +646,9 @@ int Main_Runtime(void)
                 BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
                 BT_SendString("TEST,PROFILE,UNIFIED,IR,MPU,ENC,MOTOR\r\n");
                 ModeMenu_ReportSnapshot(&mode_menu, &ir_calibration);
+                BT_Printf("TEST,RESOURCES,IR=%u,MPU=%u,ENC=%u,MOTOR=%u\r\n",
+                    (unsigned)!!(test_resource_mask & TEST_RES_IR), (unsigned)!!(test_resource_mask & TEST_RES_MPU),
+                    (unsigned)!!(test_resource_mask & TEST_RES_ENCODER), (unsigned)!!(test_resource_mask & TEST_RES_MOTOR));
                 if (mode_menu.page == MODE_MENU_PAGE_ENCODER &&
                     mode_menu.active_encoder_option == MODE_MENU_ENCODER_PID) {
                     BT_SendString("Selected encoder option 8: PID\r\n");
@@ -660,10 +663,6 @@ int Main_Runtime(void)
                 } else {
                     if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                     remote = ModeMenu_Next(&mode_menu);
-                    if (remote == MODE_MENU_EVENT_FOCUS && mode_menu.focus == 0U) {
-                        ModeMenu_Report(&mode_menu, remote);
-                        remote = ModeMenu_Select(&mode_menu);
-                    }
                 }
             } else if (command == 'K') {
                 if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U) {
@@ -798,10 +797,6 @@ int Main_Runtime(void)
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
                 ModeMenu_Draw(&mode_menu, 0U);
                 event = MODE_MENU_EVENT_NONE;
-            } else if (event == MODE_MENU_EVENT_FOCUS &&
-                       mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.focus == 0U) {
-                ModeMenu_Report(&mode_menu, event);
-                event = ModeMenu_Select(&mode_menu);
             }
             if (event != MODE_MENU_EVENT_NONE) {
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
@@ -967,6 +962,18 @@ int Main_Runtime(void)
                               (long)result.count_l, (long)result.count_r,
                               (unsigned long)result.elapsed_ms,
                               (unsigned)result.motor_locked);
+                }
+            }
+            /* Dashboard-only telemetry; never alter the CSV stream or arm motors. */
+            if ((uint32_t)(now-last_dashboard_ms)>=100U) {
+                last_dashboard_ms=now;
+                if ((test_resource_mask & TEST_RES_ENCODER) && !EncoderOneBox_IsRunning() &&
+                    !ModeMenu_PivotTarget(&mode_menu)) {
+                    int16_t pl=0,pr=0;
+                    Motor_GetAppliedPairPermille(&pl,&pr);
+                    BT_Printf("ENC_LIVE,left=%ld,right=%ld,speed_l=%ld,speed_r=%ld,pwm_l=%d,pwm_r=%d\r\n",
+                        (long)Encoder_GetLeftCount(), (long)Encoder_GetRightCount(),
+                        (long)Encoder_GetLeftSpeedPPS(), (long)Encoder_GetRightSpeedPPS(), (int)pl, (int)pr);
                 }
             }
             OLED_SharedService(&mpu);
