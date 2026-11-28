@@ -4,7 +4,12 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
-## Mode 1 reserved — 28/11/2026, giomuadongbacv3
+## Mode 1 automatic calibration, 4 seconds — 28/11/2026, giomuadongbacv3
+
+- Short KEY enters/restarts Mode 1, long KEY exits; 150 fresh frames per condition, 4-second nonblocking relocation countdown, automatic checked Flash save for valid thresholds only. No auto-apply or motor motion.
+- SPP shows WALL/OPEN transitions and six ADC bars with numeric values. Invalid thresholds never show blue; CSV sessions are separate. Build and hardware acceptance pending.
+
+## Mode 1 reserved — 28/11/2026, giomuadongbacv3 (superseded)
 
 - Mode 1 remains in menu only. No IR capture, countdown, automatic save or calibration panel. Historical module and offline report code retained but not invoked by mode menu. Build/bench acceptance pending.
 

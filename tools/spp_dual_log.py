@@ -8,7 +8,7 @@ MENU_NAVIGATION_PREFIXES = (
     "Mode ", "Selected mode ", "System Test ", "System Test:",
     "Selected test ", "Encoder Test:", "Encoder Test option ",
     "MPU Test:", "MPU Test option ", "Selected encoder option ", "Selected mpu option ",
-    "Menu snapshot: ", "CAL,START,", "CAL,WAIT,", "CAL,REVIEW,",
+    "Menu snapshot: ", "CAL,START,", "CAL,STAGE,", "CAL,STAGE_DONE,", "CAL,WAIT,", "CAL,REVIEW,",
     "CAL,WAIT_SAVE,", "CAL,COUNTDOWN,", "CAL,RESTART_ACCEPTED", "CAL,RESTART_REJECTED",
     "CAL,SAVED,", "CAL,SAVE_REJECT,", "CAL,END,", "CAL,EXIT", "CAL,FAULT,",
 )
@@ -250,8 +250,22 @@ class DualSessionLog:
         if line == "Selected mode 1: Calibration":
             self._has_menu_context=True
             self._deactivate()
+            self.active_sensor="CAL"
+            self._streaming=False
             return
-        if line.startswith(("CAL,", "CAL_LIVE,")):
+        if line.startswith("CAL,START,mode=1,stages=2"):
+            if self.active_sensor=="CAL":
+                self._close_active()
+                self._streaming=True
+                self._open_run("CAL",TEST_CSV_COLUMNS["CAL"],host_time)
+            return
+        if line == "CAL,EXIT":
+            self._deactivate()
+            return
+        if line.startswith(("CAL,REVIEW,","CAL,FAULT,","CAL,END,")):
+            if self.active_sensor=="CAL":
+                self._streaming=False
+                self._close_active()
             return
 
         if line.startswith("Selected mpu option "):

@@ -11,7 +11,7 @@
 #define IRC_SAMPLE_PERIOD_MS       20U
 #define IRC_REQUIRED_SAMPLES       150U
 #define IRC_CAPTURE_TIMEOUT_MS     20000UL
-#define IRC_OPEN_TRANSITION_MS     5000UL
+#define IRC_OPEN_TRANSITION_MS     4000UL
 #define IRC_MIN_SEPARATION_ADC     96U
 #define IRC_HIST_BINS              64U
 #define IRC_HIST_BIN_SHIFT         6U
@@ -254,9 +254,9 @@ void IRC_Update(IRC_Context *c, uint32_t now)
         c->stage_started_ms = now;
         BT_Printf("CAL,STAGE_DONE,stage=WALL,samples=%lu\r\n",
                   (unsigned long)c->wall_samples);
-        c->wait_seconds = 5U;
-        BT_SendString("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,delay_ms=5000\r\n");
-        BT_SendString("CAL,COUNTDOWN,seconds=5\r\n");
+        c->wait_seconds = (uint8_t)(IRC_OPEN_TRANSITION_MS / 1000U);
+        BT_SendString("CAL,WAIT,stage=OPEN,action=MOVE_TO_OPEN_SPACE,delay_ms=4000\r\n");
+        BT_SendString("CAL,COUNTDOWN,seconds=4\r\n");
     } else if (c->state == IRC_CAPTURE_OPEN &&
                c->open_samples >= IRC_REQUIRED_SAMPLES) {
         BT_Printf("CAL,STAGE_DONE,stage=OPEN,samples=%lu\r\n",

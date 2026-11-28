@@ -1,7 +1,3 @@
-# Historical reference — Mode 1 calibration disabled
-
-Mode 1 is now a reserved menu entry on giomuadongbacv3. The procedure below is archived for reference only; it is not active firmware behavior.
-
 # Mode 1 — Stationary two-condition IR calibration (wall/open)
 
 This replaces the former four-pivot 360-degree procedure on branch
@@ -26,7 +22,7 @@ The six channels are recorded in this order:
 1. Wait for the firmware message \`CAL,WAIT,stage=OPEN\`.
 2. Move the robot to an open area with no walls around it.
 3. Put it down on a flat surface and keep it still.
-4. OPEN starts automatically 5 seconds after WALL finishes; no button press.
+4. OPEN starts automatically 4 seconds after WALL finishes; no button press.
 5. Firmware captures another 150 fresh samples per channel.
 
 Short KEY enters Mode 1 when reached in the main menu. Inside Mode 1,

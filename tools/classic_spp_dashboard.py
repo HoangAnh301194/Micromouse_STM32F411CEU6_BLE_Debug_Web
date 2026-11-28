@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """JDY-33 Classic SPP dashboard with menu-only status and sensor data views.
 
-Guarded menu commands and sensor test views.
-Mode 1 is reserved. Web BLE is untouched.
+Guarded menu commands, automatic Mode-1 WALL/OPEN and six-channel ADC bars.
+Flash auto-save only for valid six-channel calibration. Web BLE is untouched.
 Run: python tools/classic_spp_dashboard.py --port COM37
 """
 from __future__ import annotations
@@ -243,6 +243,18 @@ class Dashboard:
         self.test_stream_running = False
         self.onebox_start_pending = False
         self.active_data_stream = None
+        self.cal_rows=deque(maxlen=1000)
+        self.cal_live=(0,)*6
+        self.cal_live_valid=False
+        self.cal_monitoring=False
+        self.cal_phase="IDLE"
+        self.cal_stage="IDLE"
+        self.cal_protocol_error=False
+        self.cal_wall_state=[False]*6
+        self.cal_thresholds={}
+        self.cal_review=False
+        self.cal_visible=False
+        self.cal_note=tk.StringVar(value="Mode 1: chọn để bắt đầu")
         self.plot_a = tk.StringVar(value="l0")
         self.plot_b = tk.StringVar(value="r0")
 
@@ -261,8 +273,8 @@ class Dashboard:
         outer.pack(fill="both", expand=True)
         ttk.Label(outer, text="Nezumi Chan · Classic SPP Console",
                   style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select. "
-                  "Mode 1 is reserved.",
+        ttk.Label(outer, text="JDY-33 · STM32 USART2 PA2/PA3 · '?' check, N=Next, K=Select, N=Retry / K=Exit in Mode 1. "
+                  "Mode 1 is stationary: wall capture → open-space capture; motors remain locked.",
                   style="Muted.TLabel").pack(anchor="w", pady=(1, 8))
         bar = ttk.Frame(outer)
         bar.pack(fill="x", pady=(0, 8))
@@ -314,7 +326,7 @@ class Dashboard:
         ttk.Label(data_bar, text="Stream:").pack(side="left")
         self.data_filter_combo = ttk.Combobox(
             data_bar, textvariable=self.data_filter, width=12,
-            values=("All", "MPU", "PIVOT_CSV", "IR", "ENC",
+            values=("All", "CAL_IR", "MPU", "PIVOT_CSV", "IR", "ENC",
                     "ONEBOX_CSV", "ALL", "ENC_CSV", "CSV", "DATA"),
             state="readonly")
         self.data_filter_combo.pack(side="left", padx=5)
@@ -325,6 +337,18 @@ class Dashboard:
         self.data_split.add(self.log_pane, weight=1)
         self.data_text = self._make_log_text(self.log_pane, "none")
         self.data_text.configure(height=6)
+        self.cal_pane=ttk.LabelFrame(self.data_split,text="Mode 1 — IR calibration (6 mắt)")
+        ttk.Label(self.cal_pane,textvariable=self.cal_note).pack(anchor="w")
+        self.cal_canvas=tk.Canvas(self.cal_pane,bg="#101923",height=230,highlightthickness=0)
+        self.cal_canvas.pack(fill="both",expand=True)
+        self.cal_canvas.bind("<Configure>",lambda event:self._draw_calibration_panel())
+        cal_actions = ttk.Frame(self.cal_pane)
+        cal_actions.pack(fill="x", pady=3)
+        self.cal_again_btn = ttk.Button(
+            cal_actions, text="Calibrate Again", state="disabled",
+            command=self.request_calibration_again)
+        self.cal_again_btn.pack(side="left")
+        ttk.Label(cal_actions, text="KEY ngắn: đo lại | KEY giữ: thoát").pack(side="left", padx=6)
         self.wheel_pane = ttk.Frame(self.data_split)
         self.wheel_pane.columnconfigure(0, weight=1, uniform="wheel")
         self.wheel_pane.columnconfigure(1, weight=1, uniform="wheel")
@@ -513,6 +537,7 @@ class Dashboard:
             self._update_test_controls()
 
     def _update_test_controls(self):
+        self._sync_cal_panel()
         self._sync_wheel_panel()
         self._sync_angle_panel()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
@@ -562,6 +587,10 @@ class Dashboard:
             self.reader.motion_lease.clear()
             self.onebox_capable = False
             self.mpu_boot_ok = True
+            self.cal_review = self.cal_visible = False
+            self.cal_phase = self.cal_stage = "IDLE"
+            self.cal_rows.clear()
+            self.cal_thresholds.clear()
             self.data_filter_combo.configure(state="readonly")
             self.data_filter.set("All")
             self.left_log_frame.configure(text="Continuous data — sensor samples")
@@ -718,8 +747,19 @@ class Dashboard:
         widget.configure(state="disabled")
 
     def handle_line(self, line: str):
-        # Ignore obsolete Mode 1 calibration frames from older firmware.
-        if line.startswith(("CAL,", "CAL_IR,", "CAL_LIVE,")):
+        # Unlogged post-calibration dashboard frame. Ignore when another
+        # mode owns the screen; never append to a finished calibration CSV.
+        if line.startswith("CAL_LIVE,"):
+            if self.active_test_name == "Calibration" and self.cal_visible:
+                try:
+                    fields=dict(part.split("=",1) for part in line.split(",")[1:] if "=" in part)
+                    values=tuple(int(fields[k]) for k in ("L0","L45","L90","R0","R45","R90"))
+                    if all(0<=v<=4095 for v in values):
+                        self.cal_live=values
+                        self.cal_live_valid=fields.get("valid")=="1"
+                        self.cal_monitoring=True
+                except (KeyError,ValueError):
+                    self.cal_live_valid=False
             return
         # Retried '?' probes can produce multiple acknowledgements if the
         # firmware was briefly busy. Keep only the first status log entry.
@@ -732,6 +772,17 @@ class Dashboard:
         category = classify_spp_line(line)
         # An Encoder frame is displayable only while Log Receive was
         # explicitly selected. Ignore any queued frames from old tests.
+        if category == "data" and line.startswith("CAL_IR,"):
+            # Reject old three-placement CAL_IR,valid=... packets rather than
+            # silently displaying them as a 360-degree capture.
+            if sensor_test_csv(line,host_time=host_time) is None:
+                self.cal_protocol_error=True
+                self.cal_note.set("PROTOCOL ERROR: expected CAL_IR,stage=0|1,ms=...,L0=...,...")
+                self.status.set("CAL_IR protocol mismatch: check stationary wall-open firmware.")
+                self.reader.motion_lease.clear()
+                return
+            if self.active_test_name != "Calibration" or self.cal_phase not in ("WALL", "OPEN"):
+                return
         if category == "data" and line.startswith("PIVOT_CSV,") and (not (self.active_test_name or "").startswith("Pivot ") or not self.test_stream_running):
             return
         if category == "data" and line.startswith("MPU,") and (
@@ -757,15 +808,158 @@ class Dashboard:
                 self._logging_disabled = True
                 self.status.set("Auto-save failed: %s (reconnect to retry)" % exc)
         # Encoder parent is navigation only; never turn on logging here.
-        if line.startswith("Selected mode "):
-            self.active_test_name=None
+        if line == "Selected mode 1: Calibration":
+            self.active_test_name="Calibration"
+            self.cal_visible=True
+            self.cal_review=False
+            self.cal_rows.clear()
+            self.cal_thresholds.clear()
+            self.cal_wall_state=[False]*6
+            self.cal_monitoring=False
+            self.cal_live_valid=False
+            self.cal_phase="SELECTED"
+            self.cal_protocol_error=False
+            self.cal_note.set("MODE 1 SELECTED — chờ CAL,START từ STM32")
+            self.left_log_frame.configure(text="Mode 1 — CAL_IR / t_ms + 6 IR channels")
+            self.data_filter.set("CAL_IR")
+            self.data_filter_combo.configure(state="disabled")
             self.test_stream_running=False
-            self.onebox_start_pending=False
+            self._clear_log(self.data_text)
+            self.active_data_stream=None
+            self._update_test_controls()
+        elif line.startswith("CAL,START,mode=1,stages=2"):
+            self.cal_phase="WALL"
+            self.cal_stage="WALL"
+            self.cal_protocol_error=False
+            self.active_test_name="Calibration"
+            self.cal_visible=True
+            self.cal_review=False
+            self.cal_rows.clear()
+            self.cal_thresholds.clear()
+            self.cal_wall_state=[False]*6
+            self.cal_monitoring=False
+            self.cal_live=(0,)*6
+            self.cal_live_valid=False
+            self.data_filter.set("CAL_IR")
+            self.data_filter_combo.configure(state="disabled")
+            self._clear_log(self.data_text)
+            self.active_data_stream=None
+            self.left_log_frame.configure(text="Mode 1 — wall/open CAL_IR / t_ms, stage + 6 IR channels")
+            self.cal_note.set("WALL CAPTURE — đặt xe đứng yên, tường trước + trái + phải, không có tường phía sau.")
+            self.test_stream_running=True
             self.reader.motion_lease.clear()
+            self._update_test_controls()
+        elif line.startswith("CAL,START,"):
+            self.cal_protocol_error=True
+            self.cal_phase="MISMATCH"
+            self.cal_note.set("PROTOCOL MISMATCH — cần firmware stationary wall/open calibration")
+            self.status.set("CAL START protocol mismatch: expected mode=1,stages=2.")
+            self.reader.motion_lease.clear()
+        elif line.startswith("CAL,STAGE,WALL,"):
+            self.cal_phase=self.cal_stage="WALL"
+            self.cal_note.set("WALL CAPTURE — giữ xe đứng yên trong bố trí 3 mặt tường (trước/trái/phải), phía sau mở.")
+        elif line.startswith("CAL,STAGE,OPEN,"):
+            self.cal_phase=self.cal_stage="OPEN"
+            self.cal_note.set("OPEN CAPTURE — đặt xe ở vùng trống, không có tường xung quanh; giữ xe đứng yên.")
+        elif line.startswith("CAL,STAGE_DONE,stage=WALL"):
+            self.cal_note.set("Đã thu đủ mẫu WALL. Di chuyển xe sang vùng trống ngay.")
+        elif line.startswith("CAL,WAIT,stage=OPEN"):
+            self.cal_phase="WAIT_OPEN"
+            self.cal_stage="WAIT_OPEN"
+            self.cal_note.set("WALL DONE — di chuyển xe ra vùng trống trong 4 giây. OPEN tự bắt đầu.")
+            self._update_test_controls()
+        elif line.startswith("CAL,COUNTDOWN,seconds="):
+            if self.cal_phase == "WAIT_OPEN":
+                self.cal_note.set("Di chuyển xe ra vùng trống — còn " + line.rsplit("=", 1)[1] + " giây.")
+        elif line.startswith("CAL,STAGE_DONE,stage=OPEN"):
+            self.cal_note.set("Đã thu đủ mẫu OPEN. STM32 đang tính ngưỡng WALL_ON / WALL_OFF cho 6 mắt.")
+        elif line.startswith("CAL,STAGE,"):
+            self.cal_protocol_error=True
+            self.cal_phase="MISMATCH"
+            self.cal_note.set("UNKNOWN CALIBRATION STAGE — kiểm tra firmware.")
+            self.reader.motion_lease.clear()
+        elif line.startswith("CAL,THRESH,"):
+            try:
+                f=dict(item.split("=",1) for item in line.split(",")[2:] if "=" in item)
+                i=int(f["index"])
+                if 0<=i<6:
+                    self.cal_thresholds[i]=(int(f["off"]),int(f["on"]))
+                if len(self.cal_thresholds)==6 and self.dual_log.last_saved_path:
+                    from ir_calibration_report import write_ir_report
+                    report=write_ir_report(self.dual_log.last_saved_path,self.cal_thresholds)
+                    self.status.set("Calibration plots and summary: "+str(report))
+            except (KeyError,ValueError,OSError) as exc:
+                self.status.set("Calibration report error: "+str(exc))
+        elif line.startswith("CAL,REVIEW,"):
+            self.reader.motion_lease.clear()
+            self.test_stream_running=False
+            self.cal_monitoring=True
+            self.cal_review="quality=CANDIDATE_ONLY" in line
+            self.cal_phase="REVIEW"
+            self.cal_stage="REVIEW"
+            self.cal_note.set("REVIEW — STM32 tự lưu nếu đạt. " + line)
+            # Firmware emits all six CAL,THRESH frames before REVIEW. The
+            # logger closes the completed two-stage CSV on REVIEW, so write
+            # the report here when last_saved_path becomes available.
+            if len(self.cal_thresholds)==6 and self.dual_log.last_saved_path:
+                try:
+                    from ir_calibration_report import write_ir_report
+                    report=write_ir_report(self.dual_log.last_saved_path,self.cal_thresholds)
+                    self.status.set("Wall/open calibration report: "+str(report))
+                except (ValueError,OSError) as exc:
+                    self.status.set("Calibration report error: "+str(exc))
+            self._update_test_controls()
+        elif line.startswith("CAL,WAIT_SAVE,"):
+            self.cal_note.set("Firmware cũ: cần cập nhật firmware tự động lưu.")
+        elif line == "CAL,EXIT":
+            self.cal_visible=False
+            self.cal_review=False
+            self.cal_monitoring=False
+            self.cal_phase=self.cal_stage="IDLE"
+            self.active_test_name=None
             self.data_filter_combo.configure(state="readonly")
             self.data_filter.set("All")
             self.left_log_frame.configure(text="Continuous data — sensor samples")
             self._update_test_controls()
+        elif line.startswith("CAL,RESTART_ACCEPTED"):
+            self.cal_note.set("RESTART ACCEPTED — chuẩn bị phiên Calibration mới")
+            self.cal_again_btn.configure(state="disabled")
+        elif line.startswith("CAL,RESTART_REJECTED"):
+            self.cal_note.set("RESTART REJECTED — " + line.partition(",")[2])
+            self._update_test_controls()
+        elif line.startswith("CAL,END,"):
+            self.reader.motion_lease.clear()
+            self.test_stream_running=False
+            self.cal_phase="END"
+            self.cal_stage="END"
+            self.cal_monitoring=True
+            self.cal_review=False
+            self.cal_note.set("END — "+line.partition("CAL,END,")[2]+" · IR LIVE")
+            self._update_test_controls()
+        elif line.startswith(("CAL,FAULT,","CAL,SAVED,","CAL,SAVE_REJECT,")):
+            self.reader.motion_lease.clear()
+            self.test_stream_running=False
+            self.cal_monitoring=True
+            if line.startswith(("CAL,FAULT,","CAL,SAVED,")):self.cal_review=False
+            self.cal_note.set(line)
+            self._update_test_controls()
+        if line.startswith("CAL_IR,") and self.active_test_name=="Calibration":
+            rec=sensor_test_csv(line,host_time=host_time)
+            if rec:
+                self.cal_rows.append(tuple(map(int,rec[2])))
+                self.cal_live=tuple(map(int,rec[2][2:]))
+                self.cal_live_valid=True
+        if line.startswith("Selected mode ") and not line.startswith("Selected mode 1:"):
+            self.left_log_frame.configure(text="Continuous data — sensor samples")
+            self.data_filter_combo.configure(state="readonly")
+            self.data_filter.set("All")
+            self.cal_visible=False
+            self.cal_review=False
+            self.cal_monitoring=False
+            self.cal_phase="IDLE"
+            if self.active_test_name=="Calibration":
+                self.active_test_name=None
+                self._update_test_controls()
         is_encoder_log = line == "Selected encoder option 1: Log Receive"
         is_onebox = line.startswith("Selected encoder option 2: 1 Box Forward")
         is_ir_or_mpu = (line.startswith("Selected test ") and
@@ -1018,7 +1212,91 @@ class Dashboard:
             self.draw_wheels()
             self.wheel_dirty = False
         self._draw_angle_panel()
+        if self.cal_visible:self._draw_calibration_panel()
         self.root.after(150, self.redraw)
+
+    def _sync_cal_panel(self):
+        show=self.cal_visible and self.menu_ready and self.active_test_name=="Calibration"
+        present=str(self.cal_pane) in self.data_split.panes()
+        if show and not present:self.data_split.add(self.cal_pane,weight=1)
+        elif present and not show:self.data_split.forget(self.cal_pane)
+        self.cal_again_btn.configure(state="normal" if show else "disabled")
+
+    def request_calibration_again(self):
+        if (not self.menu_ready or self.active_test_name != "Calibration"):
+            return
+        self.cal_again_btn.configure(state="disabled")
+        self.cal_note.set("RESTART REQUESTED — chờ STM32 xác nhận")
+        if not self.send_menu(b"R"):
+            self.cal_note.set("Không gửi được lệnh Calibration lại qua SPP")
+            self._update_test_controls()
+
+    def _draw_calibration_panel(self):
+        c=self.cal_canvas
+        c.delete("all")
+        w=max(c.winfo_width(),340)
+        h=max(c.winfo_height(),230)
+        names=("L0","L45","L90","R0","R45","R90")
+        current=self.cal_live
+        if not self.cal_monitoring and self.cal_rows:
+            current=self.cal_rows[-1][2:]
+        invalid=self.cal_monitoring and not self.cal_live_valid
+        top=47
+        bottom=max(top+80,h-48)
+        span=bottom-top
+        step=(w-38)/6
+        status=("END · LIVE ADC" if self.cal_phase=="END" else
+                "REVIEW · AUTO SAVE" if self.cal_phase=="REVIEW" else
+                "WALL · CAPTURING" if self.cal_phase=="WALL" else
+                "OPEN · CAPTURING" if self.cal_phase=="OPEN" else
+                "WAIT · MOVE TO OPEN SPACE" if self.cal_phase=="WAIT_OPEN" else "WAITING")
+        c.create_text(12,8,anchor="nw",text="6 IR CHANNELS · LIVE ADC (0–4095)",
+                      fill="#d9e9f6",font=("Segoe UI",10,"bold"))
+        c.create_text(w-12,9,anchor="ne",text=status,
+                      fill="#4ee2ad" if self.cal_monitoring else "#f2c66d",
+                      font=("Segoe UI",9,"bold"))
+        c.create_text(12,26,anchor="nw",
+                      text="BLUE = WALL  |  GREY = NO WALL  |  YELLOW = ON threshold; GREY also means uncalibrated",
+                      fill="#9babc1",font=("Segoe UI",8))
+        for value in (0,1024,2048,3072,4095):
+            y=bottom-(value/4095)*span
+            c.create_line(30,y,w-8,y,fill="#29384b",dash=(2,5))
+            c.create_text(27,y,anchor="e",text=str(value),fill="#8397aa",
+                          font=("Consolas",7))
+        for i,name in enumerate(names):
+            x=34+i*step
+            value=int(current[i])
+            threshold=self.cal_thresholds.get(i)
+            # A failed channel (0,0) is not a valid wall detector.
+            if threshold and not (0 <= threshold[0] < threshold[1] <= 4095):
+                threshold=None
+                self.cal_wall_state[i]=False
+            # Thresholds are calculated by firmware only after both labelled
+            # placements have completed. Never infer a threshold from one stage.
+            if threshold and not invalid:
+                off,on=threshold
+                if value>=on:self.cal_wall_state[i]=True
+                elif value<=off:self.cal_wall_state[i]=False
+            if invalid:self.cal_wall_state[i]=False
+            detected=bool(threshold and self.cal_wall_state[i] and not invalid)
+            color="#2196F3" if detected else "#788696"
+            if invalid:
+                color="#465364"
+            bar_width=max(13,step-14)
+            bar_height=value/4095*span
+            c.create_rectangle(x+5,bottom-bar_height,x+5+bar_width,bottom,
+                               fill=color,outline="")
+            if threshold:
+                off,on=threshold
+                y=bottom-(on/4095)*span
+                c.create_line(x+3,y,x+7+bar_width,y,fill="#f6c847",width=2)
+            c.create_text(x+5+bar_width/2,bottom+11,text=name,fill="#e9f2ff",
+                          font=("Consolas",9,"bold"))
+            c.create_text(x+5+bar_width/2,bottom+29,text=str(value),fill=color,
+                          font=("Consolas",9))
+        if invalid:
+            c.create_text(w/2,round((top+bottom)/2),text="IR INVALID · CHECK SCAN",
+                          fill="#ffb86c",font=("Segoe UI",12,"bold"))
 
     def _mark_wheels(self):
         self.wheel_dirty = True
