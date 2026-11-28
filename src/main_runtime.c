@@ -696,8 +696,7 @@ int Main_Runtime(void)
                         BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
                     }
                     if (mpu_status==MPU6050_OK && mpu.calibrated &&
-                        (test_resource_mask & (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)) ==
-                        (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR) &&
+                        test_resource_mask == (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR) &&
                         EncoderOneBox_StartPivot(&mpu,target))
                         BT_Printf("PIVOT,START,target=%d,ref_pps=%d,pwm_max=%d\r\n",(int)target,ONEBOX_SPEED_PPS,ONEBOX_MAX_PWM);
                     else BT_SendString("PIVOT,REJECT,reason=NOT_READY\r\n");

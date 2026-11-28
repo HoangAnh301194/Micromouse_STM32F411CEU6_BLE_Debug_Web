@@ -42,3 +42,12 @@ assert w.kind=="LIVE" and w.rows[-1]["speed_L"]==-4
 runtime=(Path(__file__).resolve().parents[2]/"src"/"encoder_onebox.c").read_text()
 assert "pivot_angle += RelativeYaw(snap.yaw_deg, pivot_previous_yaw)" in runtime
 assert "RelativeYaw(snap.yaw_deg,pivot_origin)" not in runtime
+
+# Pure pivot: no IR capability and no unrelated dashboard panel.
+resources=(Path(__file__).resolve().parents[2]/"src"/"mode_test_resources.c").read_text()
+main=(Path(__file__).resolve().parents[2]/"src"/"main_runtime.c").read_text()
+assert "if (ModeMenu_PivotTarget(menu)) return TEST_RES_MPU | TEST_RES_ENCODER | TEST_RES_MOTOR;" in resources
+assert "test_resource_mask == (TEST_RES_MPU|TEST_RES_ENCODER|TEST_RES_MOTOR)" in main
+dashboard=(Path(__file__).resolve().parents[2]/"tools"/"classic_spp_dashboard.py").read_text()
+assert '("MPU","ENC") if name.startswith("Pivot ") else ()' in dashboard
+assert "self.main_split.forget(self.sensor_dashboard)" in dashboard

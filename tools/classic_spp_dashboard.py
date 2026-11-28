@@ -315,12 +315,13 @@ class Dashboard:
         self._telemetry_widgets()
 
     def _terminal_widgets(self):
+        controls = ttk.Frame(self.terminal_tab)
+        controls.pack(fill="x", pady=(0, 4))
         self.main_split = ttk.PanedWindow(self.terminal_tab, orient="vertical")
         self.main_split.pack(fill="both", expand=True)
         panes = ttk.PanedWindow(self.main_split, orient="horizontal")
         self.main_split.add(panes, weight=3)
-        dashboard = ttk.LabelFrame(self.main_split, text="Sensor Dashboard", padding=4)
-        self.main_split.add(dashboard, weight=2)
+        dashboard = self.sensor_dashboard = ttk.LabelFrame(self.main_split, text="Sensor Dashboard", padding=4)
         dashboard.rowconfigure(0, weight=1)
         for col, weight in enumerate((3, 2, 4)):
             dashboard.columnconfigure(col, weight=weight, uniform="sensor")
@@ -394,37 +395,31 @@ class Dashboard:
         self.angle_canvas.bind("<Configure>", lambda event: self._draw_angle_panel())
         # Header is selected when the first frame identifies ENC/IR/MPU.
 
-        controls = ttk.Frame(right)
-        controls.pack(fill="x", pady=(0, 6))
-        self.next_btn = ttk.Button(controls, text="Chuyển (KEY ngắn)",
+        self.next_btn = ttk.Button(controls, text="Chuyển",
                                    command=lambda: self.send_menu(b"N"), state="disabled")
         self.next_btn.pack(side="left", padx=(0, 6))
-        self.select_btn = ttk.Button(controls, text="Chọn (KEY giữ)",
+        self.select_btn = ttk.Button(controls, text="Chọn",
                                      command=lambda: self.send_menu(b"K"), state="disabled")
         self.select_btn.pack(side="left")
-        stream_bar = ttk.Frame(right)
-        stream_bar.pack(fill="x", pady=(0, 6))
-        self.start_test_btn = ttk.Button(stream_bar, text="Start test",
+        stream_bar = controls
+        self.start_test_btn = ttk.Button(stream_bar, text="Start",
                                          command=lambda: self.send_test_control(b"G"),
                                          state="disabled")
         self.start_test_btn.pack(side="left", padx=(0, 6))
-        self.stop_test_btn = ttk.Button(stream_bar, text="Stop test",
+        self.stop_test_btn = ttk.Button(stream_bar, text="Stop",
                                         command=lambda: self.send_test_control(b"P"),
                                         state="disabled")
         self.stop_test_btn.pack(side="left")
-        ttk.Label(stream_bar, text="Pause/resume selected sensor only",
-                  style="Muted.TLabel").pack(side="left", padx=(8, 0))
-        reset_bar = ttk.Frame(right)
-        reset_bar.pack(fill="x", pady=(0, 6))
-        self.reset_enc_btn = ttk.Button(reset_bar, text="Reset Encoder",
+        reset_bar = controls
+        self.reset_enc_btn = ttk.Button(reset_bar, text="Reset ENC",
                                         command=lambda: self.send_sensor_reset(b"E", "Encoder Test"),
                                         state="disabled")
         self.reset_enc_btn.pack(side="left", padx=(0, 6))
-        self.reset_yaw_btn = ttk.Button(reset_bar, text="Zero MPU yaw",
+        self.reset_yaw_btn = ttk.Button(reset_bar, text="Zero Yaw",
                                         command=lambda: self.send_sensor_reset(b"Y", "MPU Test"),
                                         state="disabled")
         self.reset_yaw_btn.pack(side="left", padx=(0, 6))
-        self.restart_ir_btn = ttk.Button(reset_bar, text="Restart IR scan",
+        self.restart_ir_btn = ttk.Button(reset_bar, text="Reset IR",
                                          command=lambda: self.send_sensor_reset(b"I", "IR Test"),
                                          state="disabled")
         self.restart_ir_btn.pack(side="left")
@@ -450,6 +445,7 @@ class Dashboard:
                   style="Muted.TLabel").pack(side="left")
         ttk.Button(status_bar, text="Clear", command=self.clear_status).pack(side="right")
         self.status_text = self._make_log_text(right, "word")
+        self._sync_sensor_panels()
 
     def _data_header(self, stream=None):
         columns = TEST_CSV_COLUMNS.get(stream, CSV_COLUMNS)
@@ -559,6 +555,7 @@ class Dashboard:
         self._sync_cal_panel()
         self._sync_wheel_panel()
         self._sync_angle_panel()
+        self._sync_sensor_panels()
         pid_visible = self.menu_ready and self.active_test_name == "PID"
         if pid_visible:
             if not self.pid_panel.winfo_manager():
@@ -1243,7 +1240,7 @@ class Dashboard:
             self.wheel_dirty = False
         self._draw_sensor_dashboard(now)
         self._draw_angle_panel()
-        if self.cal_visible:self._draw_calibration_panel()
+        if self.cal_visible and self.ir_panel.winfo_ismapped():self._draw_calibration_panel()
         self.root.after(150, self.redraw)
 
     def _sync_cal_panel(self):
@@ -1341,7 +1338,29 @@ class Dashboard:
         self.wheel_dirty = True
 
     def _sync_angle_panel(self):
-        pass  # persistent MPU panel, including while Pivot wheel plots are active
+        self._sync_sensor_panels()
+
+    def _sync_sensor_panels(self):
+        # Firmware resources are authoritative; selected mode additionally
+        # prevents stale resource frames from exposing unrelated panels.
+        name=self.active_test_name or ""
+        expected=({"Calibration":("IR",), "IR Test":("IR",),
+                   "Encoder Test":("ENC",), "1 Box Forward":("ENC",),
+                   "MPU Test":("MPU",), "All Sensors Test":("IR","MPU","ENC")}
+                  .get(name, ("MPU","ENC") if name.startswith("Pivot ") else ()))
+        visible=[k for k in expected if self.menu_ready and self.sensor_mask.get(k)]
+        if self.angle_preview and "MPU" not in visible: visible.append("MPU")
+        if self.wheel_preview and "ENC" not in visible: visible.append("ENC")
+        panels={"IR":self.ir_panel,"MPU":self.angle_pane,"ENC":self.encoder_panel}
+        for panel in panels.values(): panel.grid_remove()
+        for col in range(3): self.sensor_dashboard.columnconfigure(col,weight=0,uniform="")
+        for col,k in enumerate(visible):
+            self.sensor_dashboard.columnconfigure(col,weight=2 if k=="ENC" else 1,uniform="")
+            panels[k].grid(row=0,column=col,sticky="nsew",padx=3)
+        mounted=str(self.sensor_dashboard) in self.main_split.panes()
+        if visible and not mounted: self.main_split.add(self.sensor_dashboard,weight=2)
+        elif mounted and not visible: self.main_split.forget(self.sensor_dashboard)
+        self.wheel_dirty=True
 
     def _sensor_receive(self, line):
         fields = numeric_fields(line)
@@ -1356,6 +1375,7 @@ class Dashboard:
                     elif key == "MPU":
                         self.angle_sample.clear()
             self.sensor_mask = new
+            self._sync_sensor_panels()
             self.wheel_dirty = True
             return
         if line.startswith(("Mode ", "Selected mode ", "Selected test ", "Selected encoder option ",
@@ -1412,7 +1432,7 @@ class Dashboard:
 
     def _draw_sensor_dashboard(self, now):
         state, fields = self._sensor_state("IR", now)
-        if not self.cal_visible:
+        if not self.cal_visible and self.ir_panel.winfo_ismapped():
             c=self.ir_canvas
             c.delete("all")
             w,h=c.winfo_width(),c.winfo_height()
@@ -1445,6 +1465,8 @@ class Dashboard:
                 c.create_text(c.winfo_width()/2,c.winfo_height()/2,text="DISABLED",fill="#91a3b5")
 
     def _draw_angle_panel(self):
+        if not self.angle_pane.winfo_ismapped():
+            return
         now = time.monotonic()
         if self.angle_preview:
             state="REPLAY"

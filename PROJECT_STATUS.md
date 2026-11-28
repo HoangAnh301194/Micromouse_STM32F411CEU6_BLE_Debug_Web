@@ -4,6 +4,10 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
+## V3 adaptive dashboard and pure pivot — 28/11/2026
+
+- Compact one-row controls; show only selected, resource-enabled sensor panels; collapse dashboard in inactive menu. Pivot displays MPU and encoder only; Start requires exact MPU+ENC+MOTOR mask, never IR. No motion/PID changes. CI and hardware verification pending.
+
 ## V3 sensor dashboard integration — 28/11/2026
 
 - Mode 1 now enters only on long KEY / K; short KEY navigates main menu or retries inside Mode 1. Four-second wall/open calibration unchanged.
