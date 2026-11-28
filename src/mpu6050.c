@@ -1,3 +1,4 @@
+#include "yaw_wrap.h"
 /* MPU6050 gyro Z diagnostic driver, STM32F411 I2C1.
  * The 2-byte I2C read runs in event/error IRQs. No I2C waits or recovery
  * from TIM11; main polls for completion and starts the next transaction.
@@ -676,6 +677,11 @@ MPU6050_Status MPU6050_Update(MPU6050_Handle_t *h)
                     h->yaw += h->gyro_z_filtered * dt;
                     h->yaw_no_deadzone += h->gyro_z_lpf * dt;
                     h->yaw_raw += h->gyro_z_raw_corrected * dt;
+#if defined(MODE_MENU_ONLY)
+                    h->yaw = Yaw_Wrap360(h->yaw);
+                    h->yaw_no_deadzone = Yaw_Wrap360(h->yaw_no_deadzone);
+                    h->yaw_raw = Yaw_Wrap360(h->yaw_raw);
+#endif
                 }
             }
             h->last_update_us = now;
@@ -969,6 +975,9 @@ void MPU6050_SetYaw(MPU6050_Handle_t *h, float angle)
     if (!h) return;
     primask = __get_PRIMASK();
     __disable_irq();
+ #if defined(MODE_MENU_ONLY)
+    angle = Yaw_Wrap360(angle);
+#endif
     h->yaw = angle;
     h->published_yaw_deg = angle;
     if (!primask) __enable_irq();

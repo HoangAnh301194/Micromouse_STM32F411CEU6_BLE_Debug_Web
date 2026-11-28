@@ -5,6 +5,7 @@
  */
 #if defined(MODE_MENU_ONLY)
 #include "encoder_onebox.h"
+#include "yaw_wrap.h"
 #include "board.h"
 #include "control.h"
 #include "encoder.h"
@@ -26,7 +27,7 @@ static uint32_t started_at_ms;
 static EncoderOneBoxResult result;
 static MPU6050_Handle_t *pivot_mpu;
 static int16_t pivot_target;
-static float pivot_origin;
+static float pivot_last_yaw, pivot_travel;
 static uint16_t stall_l, stall_r;
 
 static uint32_t Lock(void)
@@ -109,7 +110,8 @@ static uint8_t StartMotion(MPU6050_Handle_t *mpu, int16_t target, uint8_t cells,
         return 0U;
     }
     pivot_mpu = mpu; pivot_target = target;
-    pivot_origin = target ? snap.yaw_deg : 0.0f;
+    pivot_last_yaw = target ? snap.yaw_deg : 0.0f;
+    pivot_travel = 0.0f;
     stall_l = stall_r = 0U;
     Motor_Stop();
     started_at_ms = millis();
@@ -182,7 +184,9 @@ void EncoderOneBox_ControlTick(void)
         if (core.ticks>=ONEBOX_MAX_TICKS) { Finish(ONEBOX_REASON_TIMEOUT); return; }
         if (!MPU6050_GetSnapshot(pivot_mpu,&snap) || !snap.valid ||
             (uint32_t)(micros()-snap.completed_us)>3000U) { Finish(ONEBOX_REASON_IMU); return; }
-        float angle=(snap.yaw_deg-pivot_origin)*sign;
+        pivot_travel += Yaw_SampleDelta(snap.yaw_deg,pivot_last_yaw);
+        pivot_last_yaw = snap.yaw_deg;
+        float angle=pivot_travel*sign;
         if (angle < -5.0f) { Finish(ONEBOX_REASON_IMU); return; }
         if (angle >= pivot_target*sign) { Finish(ONEBOX_REASON_DONE); return; }
         /* MPU-only baseline: fixed bounded PWM; encoder is telemetry only. */
@@ -234,7 +238,7 @@ uint8_t EncoderOneBox_GetTelemetry(EncoderOneBoxTelemetry *out)
         out->ref_l=0; out->ref_r=0; /* no wheel-speed reference in MPU-only pivot */
         if (MPU6050_GetSnapshot(pivot_mpu,&snap) && snap.valid) {
             out->age_us=micros()-snap.completed_us;
-            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=snap.yaw_deg-pivot_origin; out->gz=snap.gyro_z_dps; }
+            if (out->age_us<=3000U) { out->imu_valid=1U; out->yaw=snap.yaw_deg; out->angle=pivot_travel+Yaw_SampleDelta(snap.yaw_deg,pivot_last_yaw); out->gz=snap.gyro_z_dps; }
         }
     }
     out->speed_l = (int32_t)Encoder_GetLeftSpeedPPS();
