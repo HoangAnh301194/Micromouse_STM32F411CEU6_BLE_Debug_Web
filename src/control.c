@@ -250,7 +250,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
     /* Policy B: only notify tick here; never run I2C in TIM11. */
 #if defined(MPU_TIM11_TICK_SCHED)
 #if defined(MODE_MENU_ONLY)
-    if (test_resource_mask)
+    /* Keep passive MPU sampling available for global yaw reset. */
 #endif
         MPU6050_NotifyControlTick(control_mpu, micros());
 #endif

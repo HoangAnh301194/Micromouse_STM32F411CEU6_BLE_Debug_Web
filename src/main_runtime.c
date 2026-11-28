@@ -755,6 +755,9 @@ int Main_Runtime(void)
     EncoderOneBox_Init(); /* motor remains locked until guarded Start */
 #endif
     Control_Start();
+#if defined(MODE_MENU_ONLY)
+    if (mpu_status == MPU6050_OK) (void)MPU6050_Calibrate(&mpu);
+#endif
 
 #if !defined(MODE_MENU_ONLY)
     BT_SendString("\r\n[BOOT] MPU RC2 calibration started\r\n");
@@ -774,7 +777,7 @@ int Main_Runtime(void)
     while (1) {
         uint32_t now = millis();
 #if defined(MODE_MENU_ONLY)
-        if (mpu_status == MPU6050_OK && test_resource_mask)
+        if (mpu_status == MPU6050_OK)
             MPU6050_Update(&mpu);
 #else
         MPU6050_Update(&mpu); /* Main-context IRQ-driven Policy B. */
@@ -863,22 +866,24 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
-            } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
-                Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
-                BT_SendString("ENCODER RESET OK\r\n");
-            } else if (command == 'Y' && ModeMenu_CanResetSensor(&mode_menu, 2U)) {
-                if (mpu_status == MPU6050_OK && mpu.calibrated) {
+            } else if (command == 'E') {
+                if (!Motor_OutputsLocked()) BT_SendString("ENCODER RESET REJECTED: MOTOR ACTIVE\r\n");
+                else { Encoder_Reset(); BT_SendString("ENCODER RESET OK\r\n"); }
+            } else if (command == 'Y') {
+                if (ModeMenu_PivotTarget(&mode_menu) && !Motor_OutputsLocked()) {
+                    BT_SendString("MPU YAW RESET REJECTED: PIVOT ACTIVE\r\n");
+                } else if (mpu_status == MPU6050_OK && mpu.calibrated) {
                     MPU6050_ResetYaw(&mpu);
                     BT_SendString("MPU YAW RESET OK\r\n");
                 } else {
-                    if (mpu_status == MPU6050_OK && !mpu.calibrating) {
+                    if (mpu_status == MPU6050_OK && !mpu.calibrating && Motor_OutputsLocked()) {
                         (void)MPU6050_Calibrate(&mpu);
                         mpu_ready_reported = 0U;
                         BT_SendString("TEST,MPU,CALIB_RESTART,KEEP_STILL\r\n");
                     }
                     BT_SendString("MPU YAW RESET REJECTED: NOT READY\r\n");
                 }
-            } else if (command == 'I' && ModeMenu_CanResetSensor(&mode_menu, 0U)) {
+            } else if (command == 'I') {
                 /* Restart a live IR acquisition; this is NOT a calibration.
                  * Keep motor outputs locked and sampling independent of SPP. */
                 IR_Stop();
@@ -963,7 +968,11 @@ int Main_Runtime(void)
                      * The dashboard adds host timestamp and strips the tag. */
                     int32_t left = Encoder_GetLeftCount();
                     int32_t right = Encoder_GetRightCount();
-                    BT_Printf("ENC,%ld,%ld\r\n", (long)left, (long)right);
+                    MPU6050_Snapshot_t gyro = {0};
+                    uint8_t valid = mpu_status == MPU6050_OK && mpu.calibrated && MPU6050_GetSnapshot(&mpu,&gyro) && gyro.valid;
+                    uint32_t age = valid ? micros()-gyro.completed_us : 0U;
+                    valid = valid && age <= 3000U;
+                    BT_Printf("ENC,ms=%lu,left=%ld,right=%ld,mpu_valid=%u,mpu_age_us=%lu,yaw_cd=%ld,gz_cd=%ld\r\n",(unsigned long)now,(long)left,(long)right,(unsigned)valid,(unsigned long)age,valid?(long)(gyro.yaw_deg*100.0f):0L,valid?(long)(gyro.gyro_z_dps*100.0f):0L);
                 } else if (mode_menu.active_test == MODE_MENU_TEST_ALL) {
                     IR_Data_t ir;
                     MPU6050_Snapshot_t gyro;
@@ -1035,12 +1044,19 @@ int Main_Runtime(void)
                             (long)(motion.yaw*100),(long)(motion.angle*100),(long)(motion.gz*100),(int)motion.pivot_target,
                             (long)motion.left,(long)motion.right,(int)motion.pwm_l,(int)motion.pwm_r,
                             (long)motion.ref_l,(long)motion.ref_r,(long)motion.speed_l,(long)motion.speed_r);
-                    } else BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld\r\n",
+                    } else {
+                        MPU6050_Snapshot_t gyro = {0};
+                        uint8_t valid = mpu_status == MPU6050_OK && mpu.calibrated && MPU6050_GetSnapshot(&mpu,&gyro) && gyro.valid;
+                        uint32_t age = valid ? micros()-gyro.completed_us : 0U;
+                        valid = valid && age <= 3000U;
+                        BT_Printf("ONEBOX_CSV,ms=%lu,left=%ld,right=%ld,pwm_l=%d,pwm_r=%d,ref_l=%ld,ref_r=%ld,speed_l=%ld,speed_r=%ld,mpu_valid=%u,mpu_age_us=%lu,yaw_cd=%ld,gz_cd=%ld\r\n",
                               (unsigned long)motion.elapsed_ms,
                               (long)motion.left, (long)motion.right,
                               (int)motion.pwm_l, (int)motion.pwm_r,
                               (long)motion.ref_l, (long)motion.ref_r,
-                              (long)motion.speed_l, (long)motion.speed_r);
+                              (long)motion.speed_l, (long)motion.speed_r,
+                              (unsigned)valid,(unsigned long)age,valid?(long)(gyro.yaw_deg*100.0f):0L,valid?(long)(gyro.gyro_z_dps*100.0f):0L);
+                    }
                 }
                 if (has_result) {
                     BT_Printf("%s,RESULT,reason=%s,L=%ld,R=%ld,ms=%lu,locked=%u\r\n",

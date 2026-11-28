@@ -29,9 +29,9 @@ def classify_spp_line(line):
 # Each System Test has its own CSV schema. ENC is exactly two counts;
 # sensor metadata (valid) is retained only for IR/MPU diagnostics.
 TEST_CSV_COLUMNS = {
-    "ENC": ("timestamp", "ENC_L", "ENC_R"),
+    "ENC": ("timestamp", "ENC_L", "ENC_R", "mpu_valid", "mpu_age_us", "yaw_deg", "gz_dps"),
     "ONEBOX": ("timestamp", "t_ms", "ENC_L", "ENC_R", "PWM_L", "PWM_R",
-               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS"),
+               "REF_L_PPS", "REF_R_PPS", "SPEED_L_PPS", "SPEED_R_PPS", "mpu_valid", "mpu_age_us", "yaw_deg", "gz_dps"),
     "IR": ("valid", "L0", "L45", "L90", "R0", "R45", "R90"),
     "PIVOT": ("timestamp","mcu_ms","valid","yaw_deg","age_us","angle_deg","gz_dps","target_deg","ENC_L","ENC_R","PWM_L","PWM_R","REF_L_PPS","REF_R_PPS","SPEED_L_PPS","SPEED_R_PPS"),
     "MPU": ("timestamp", "mcu_ms", "valid", "yaw_deg", "age_us"),
@@ -111,6 +111,17 @@ def sensor_test_csv(line, host_time=None):
             if not _DECIMAL.fullmatch(fields.get("yaw_cd", "")):
                 return None
             values = (ms, "1", f"{int(fields['yaw_cd'])/100:.2f}", age)
+    if sensor in ("ENC", "ONEBOX"):
+        valid = fields.get("mpu_valid", "")
+        age = fields.get("mpu_age_us", "")
+        if valid not in ("", "0", "1") or (age and not _DECIMAL.fullmatch(age)):
+            return None
+        if valid == "1":
+            if not all(_DECIMAL.fullmatch(fields.get(k, "")) for k in ("yaw_cd", "gz_cd")):
+                return None
+            values += (valid, age, f"{int(fields['yaw_cd'])/100:.2f}", f"{int(fields['gz_cd'])/100:.2f}")
+        else:
+            values += (valid, age, "", "")
     if sensor in ("ENC", "ALL", "ONEBOX", "MPU", "PIVOT"):
         values = (host_time or datetime.now().isoformat(timespec="milliseconds"),) + values
     return sensor, TEST_CSV_COLUMNS[sensor], values

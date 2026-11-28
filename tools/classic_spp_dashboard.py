@@ -559,12 +559,11 @@ class Dashboard:
             state="normal" if can_control and (self.test_stream_running or
                   self.onebox_start_pending) else "disabled")
         self.reset_enc_btn.configure(
-            state="normal" if can_control and self.active_test_name == "Encoder Test" else "disabled")
+            state="normal" if self.menu_ready else "disabled")
         self.reset_yaw_btn.configure(
-            state="normal" if can_control and self.active_test_name == "MPU Test"
-                  and self.mpu_boot_ok else "disabled")
+            state="normal" if self.menu_ready else "disabled")
         self.restart_ir_btn.configure(
-            state="normal" if can_control and self.active_test_name == "IR Test" else "disabled")
+            state="normal" if self.menu_ready else "disabled")
 
     def _set_menu_ready(self, ready: bool):
         self.menu_ready = ready
@@ -617,11 +616,8 @@ class Dashboard:
             self._update_test_controls()
 
     def send_sensor_reset(self, command: bytes, expected_test: str):
-        if not self.menu_ready or self.active_test_name != expected_test:
-            self.status.set("Reset requires the corresponding active sensor test.")
-            return
-        if command == b"Y" and not self.mpu_boot_ok:
-            self.status.set("MPU failed boot: yaw reset is unavailable.")
+        if not self.menu_ready:
+            self.status.set("Connect SPP before resetting sensors.")
             return
         if not self.reader.send_menu(command):
             self.status.set("Could not send sensor reset over SPP.")
@@ -951,7 +947,7 @@ class Dashboard:
             self.angle_sample.clear()  # wait for the next measured sample
             self.angle_last_rx = None
             self.status.set(line)
-        elif (line.startswith("ENCODER RESET OK") or
+        elif (line.startswith("ENCODER RESET") or
               line.startswith("MPU YAW RESET") or
               line.startswith("IR SCAN RESTARTED")):
             self.status.set(line)
@@ -1070,6 +1066,9 @@ class Dashboard:
                 fields["yaw_cd"] = fields.get("angle_cd", fields.get("yaw_cd"))
             put("MPU", fields, fields.get("mpu_valid" if tag == "ALL" else "valid") == 1
                 and "yaw_cd" in fields)
+        if tag in ("ENC", "ONEBOX_CSV") and "mpu_valid" in fields:
+            mpu_fields = dict(fields, age_us=fields.get("mpu_age_us", 0))
+            put("MPU", mpu_fields, fields.get("mpu_valid")==1 and "yaw_cd" in fields)
         if tag == "ENC":
             record = sensor_test_csv(line)
             if record and record[0] == "ENC":
@@ -1455,6 +1454,12 @@ class Dashboard:
                                     else:
                                         line += (f",yaw_cd={int(row['yaw_cd'])},"
                                                  f"gz_cd={int(row['gz_cd'])}")
+                            if mode in ("ENC", "ONEBOX") and row.get("mpu_valid") in ("0", "1"):
+                                if mode == "ENC":
+                                    line = f"ENC,left={int(row['ENC_L'])},right={int(row['ENC_R'])}"
+                                line += f",mpu_valid={row['mpu_valid']},mpu_age_us={int(row.get('mpu_age_us') or 0)}"
+                                if row["mpu_valid"] == "1":
+                                    line += f",yaw_cd={round(float(row['yaw_deg'])*100)},gz_cd={round(float(row['gz_dps'])*100)}"
                             timestamp = row.get("timestamp") or datetime.now().isoformat(
                                 timespec="milliseconds")
                             if mode in ("MPU","PIVOT") and self.angle_sample.consume(line):
