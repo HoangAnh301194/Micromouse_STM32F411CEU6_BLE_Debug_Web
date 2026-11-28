@@ -248,6 +248,8 @@ uint8_t ModeMenu_CanResetSensor(const ModeMenu *menu, uint8_t test_index)
     if (!menu || test_index >= MODE_MENU_TEST_BACK)
         return 0U;
     if (menu->active_test != test_index) return 0U;
+    if (menu->page == MODE_MENU_PAGE_IR)
+        return test_index == MODE_MENU_TEST_IR && menu->active_encoder_option==0U;
     if (menu->page == MODE_MENU_PAGE_MPU)
         return test_index == MODE_MENU_TEST_MPU && menu->active_encoder_option == 0U;
     if (menu->page == MODE_MENU_PAGE_TEST)

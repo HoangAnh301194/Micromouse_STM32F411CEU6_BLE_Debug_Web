@@ -653,10 +653,10 @@ class Dashboard:
                 self.reader.motion_lease.clear()
         if command == b'G' and self.active_test_name=='IR PID':
             try:
-                v=[float(x.get()) for x in self.irpid_vars]; limits=[(5,20),(0,100),(0,100),(0,10)]
+                v=[float(x.get()) for x in self.irpid_vars]; limits=[(5,18),(0,100),(0,100),(0,10)]
                 if not all(lo<=x<=hi for x,(lo,hi) in zip(v,limits)):raise ValueError
                 vals=[round(v[0]*10)]+[round(x*100) for x in v[1:]]
-            except (ValueError,OverflowError):self.status.set('PWM 5–20%; Kp/Ki 0–100; Kd 0–10');return
+            except (ValueError,OverflowError):self.status.set('PWM 5–18%; Kp/Ki 0–100; Kd 0–10');return
             self.reader.motion_lease.set();sent=self.reader.send_irpid(vals)
             self.onebox_start_pending=sent
             if not sent:self.reader.motion_lease.clear()

@@ -122,8 +122,11 @@ int main(void) {
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 0);
     assert(!strcmp(ModeMenu_TestName(0), "IR Test"));
-    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_TEST_SELECT);
-    assert(m.active_test == 0 && m.stream_running);
+    assert(ModeMenu_Select(&m) == MODE_MENU_EVENT_IR_ENTER);
+    assert(ModeMenu_Next(&m)==MODE_MENU_EVENT_IR_FOCUS);
+    assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_IR_SELECT);
+    assert(m.active_test==0 && !m.stream_running);
+    assert(ModeMenu_ResumeTest(&m));
     assert(ModeTest_Resources(&m) == TEST_RES_IR);
     assert(ModeMenu_CanResetSensor(&m, 0));
     assert(!ModeMenu_CanResetSensor(&m, 1));
@@ -135,6 +138,12 @@ int main(void) {
     assert(m.stream_running);
     assert(!ModeMenu_ResumeTest(&m)); /* start twice is a no-op */
     assert(ModeMenu_PauseTest(&m));
+    assert(ModeMenu_Next(&m)==MODE_MENU_EVENT_IR_FOCUS);
+    assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_IR_SELECT);
+    assert(ModeTest_Resources(&m)==(TEST_RES_IR|TEST_RES_MOTOR));
+    assert(!ModeMenu_ResumeTest(&m));
+    assert(ModeMenu_Next(&m)==MODE_MENU_EVENT_IR_FOCUS);
+    assert(ModeMenu_Select(&m)==MODE_MENU_EVENT_IR_EXIT);
     assert(ModeMenu_Next(&m) == MODE_MENU_EVENT_TEST_FOCUS);
     assert(m.test_focus == 1 && m.active_test == MODE_MENU_NO_SELECTION);
     assert(!m.stream_running && !ModeMenu_ResumeTest(&m));

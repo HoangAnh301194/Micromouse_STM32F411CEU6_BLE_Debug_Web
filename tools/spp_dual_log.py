@@ -241,7 +241,10 @@ class DualSessionLog:
         if line.startswith("IRPID,START,"):
             if self.active_sensor=="IRPID_CSV":self._close_active();self._streaming=True;self._open_run("IRPID_CSV",TEST_CSV_COLUMNS["IRPID_CSV"],host_time)
             return
-        if line.startswith(("IRPID,RESULT,","IRPID,REJECT,")) or line.startswith(("IR Test:","IR Test option ")):
+        if line.startswith(("IRPID,RESULT,","IRPID,REJECT,")):
+            if self.active_sensor=="IRPID_CSV":self._close_active();self._streaming=False
+            return
+        if line.startswith(("IR Test:","IR Test option ")):
             self._deactivate();return
         if line.startswith("CAL,START,"):
             match=re.search(r"(?:^|,)stage=([123])(?:,|$)",line)
@@ -323,7 +326,7 @@ class DualSessionLog:
             self._has_menu_context = True
             self._close_active()
             self.active_sensor = self.TEST_NAME_TO_SENSOR[selected.group(1)]
-            self._streaming = self.active_sensor != "MPU"
+            self._streaming = self.active_sensor not in ("MPU","IR")
             return
 
         if line.startswith("System Test ") or line.startswith("System Test:"):

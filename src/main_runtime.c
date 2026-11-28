@@ -104,26 +104,26 @@ static uint8_t IrPidArmed(const ModeMenu *m){return m->page==MODE_MENU_PAGE_IR &
 static float IrPidClip(float x,float lo,float hi){return x<lo?lo:x>hi?hi:x;}
 static void IrPidStop(const char *why){
     if(!irpid_running)return;
-    irpid_running=0U; Motor_LockOutputs();
-    BT_Printf("IRPID,RESULT,reason=%s\\r\\n",why);
+    irpid_configured=0U;irpid_running=0U; Motor_LockOutputs();
+    BT_Printf("IRPID,RESULT,reason=%s\r\n",why);
 }
 static uint8_t IrPidConsume(char c,const ModeMenu *m,uint32_t now){
-    if(c=='P'||c=='N'||c=='K'||c=='?'){irpid_rx=0U;return 0U;}
+    if(c=='P'||c=='N'||c=='K'||c=='?'){if(irpid_rx)irpid_configured=0U;irpid_rx=0U;return 0U;}
     if(c=='w'&&IrPidArmed(m)){
-        irpid_rx=1U;irpid_n=0U;irpid_rx_ms=now;
+        irpid_configured=0U;irpid_rx=1U;irpid_n=0U;irpid_rx_ms=now;
         for(unsigned i=0;i<4;i++)irpid_frame[i]=0U;
         return 1U;
     }
     if(!irpid_rx)return 0U;
-    if(now-irpid_rx_ms>1000U){irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_TIMEOUT\\r\\n");return 1U;}
+    if(now-irpid_rx_ms>1000U){irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_TIMEOUT\r\n");return 1U;}
     if(c==';'){
         irpid_rx=0U;
-        if(IrPidArmed(m)&&!irpid_running&&irpid_n==20U&&irpid_frame[0]>=50U&&irpid_frame[0]<=200U&&irpid_frame[1]<=10000U&&irpid_frame[2]<=10000U&&irpid_frame[3]<=1000U){
+        if(IrPidArmed(m)&&!irpid_running&&irpid_n==20U&&irpid_frame[0]>=50U&&irpid_frame[0]<=180U&&irpid_frame[1]<=10000U&&irpid_frame[2]<=10000U&&irpid_frame[3]<=1000U){
             irpid_base=(uint16_t)irpid_frame[0];irpid_kp=irpid_frame[1]/100.0f;irpid_ki=irpid_frame[2]/100.0f;irpid_kd=irpid_frame[3]/100.0f;irpid_configured=1U;
-            BT_SendString("IRPID,APPLIED\\r\\n");
-        }else{irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG\\r\\n");}
+            BT_SendString("IRPID,APPLIED\r\n");
+        }else{irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG\r\n");}
     }else if(c>='0'&&c<='9'&&irpid_n<20U){unsigned i=irpid_n/5U;irpid_frame[i]=irpid_frame[i]*10U+(unsigned)(c-'0');irpid_n++;}
-    else{irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_FRAME\\r\\n");}
+    else{irpid_rx=0U;irpid_configured=0U;BT_SendString("IRPID,REJECT,reason=CONFIG_FRAME\r\n");}
     return 1U;
 }
 static uint8_t IrPidStart(uint32_t now){
@@ -139,7 +139,7 @@ static uint8_t IrPidStart(uint32_t now){
     irpid_running=1U;irpid_ping=irpid_last=irpid_log=irpid_start=now;
     irpid_i=irpid_d=0.0f;
     irpid_prev=((float)ir.value[IR_L0]-irpid_cal.open_l0)/(irpid_cal.center_l0-irpid_cal.open_l0)-((float)ir.value[IR_R0]-irpid_cal.open_r0)/(irpid_cal.center_r0-irpid_cal.open_r0);
-    BT_Printf("IRPID,START,base=%u,kp100=%lu,ki100=%lu,kd100=%lu\\r\\n",(unsigned)irpid_base,(unsigned long)irpid_frame[1],(unsigned long)irpid_frame[2],(unsigned long)irpid_frame[3]);
+    BT_Printf("IRPID,START,base=%u,kp100=%lu,ki100=%lu,kd100=%lu\r\n",(unsigned)irpid_base,(unsigned long)irpid_frame[1],(unsigned long)irpid_frame[2],(unsigned long)irpid_frame[3]);
     return 1U;
 }
 static void IrPidPoll(const ModeMenu *m,uint32_t now){
@@ -162,7 +162,7 @@ static void IrPidPoll(const ModeMenu *m,uint32_t now){
     Motor_SetPairPermille((int16_t)(irpid_base+u),(int16_t)(irpid_base-u));
     if(now-irpid_log>=50U){
         irpid_log=now;Motor_GetAppliedPairPermille(&l,&r);
-        BT_Printf("IRPID_CSV,ms=%lu,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u,err1000=%ld,u100=%ld,pwm_l=%d,pwm_r=%d,left=%ld,right=%ld\\r\\n",(unsigned long)(now-irpid_start),(unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_L45],(unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_R0],(unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90],(long)(e*1000),(long)(u*100),(int)l,(int)r,(long)Encoder_GetLeftCount(),(long)Encoder_GetRightCount());
+        BT_Printf("IRPID_CSV,ms=%lu,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u,err1000=%ld,u100=%ld,pwm_l=%d,pwm_r=%d,left=%ld,right=%ld\r\n",(unsigned long)(now-irpid_start),(unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_L45],(unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_R0],(unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90],(long)(e*1000),(long)(u*100),(int)l,(int)r,(long)Encoder_GetLeftCount(),(long)Encoder_GetRightCount());
     }
 }
 
