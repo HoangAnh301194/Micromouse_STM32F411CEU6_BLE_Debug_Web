@@ -21,8 +21,8 @@ print("mpu_angle_view_test: PASS")
 import ast
 module=ast.parse((Path(__file__).resolve().parents[2]/"tools"/"classic_spp_dashboard.py").read_text(encoding="utf-8"))
 redraw=next(n for n in ast.walk(module) if isinstance(n,ast.FunctionDef) and n.name=="redraw")
-assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr=="_draw_angle_panel" for n in ast.walk(redraw))
-render=next(n for n in ast.walk(module) if isinstance(n,ast.FunctionDef) and n.name=="_draw_angle_panel")
+assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr=="_draw_sensor_dashboard" for n in ast.walk(redraw))
+render=next(n for n in ast.walk(module) if isinstance(n,ast.FunctionDef) and n.name=="_draw_sensor_dashboard")
 assert any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=="draw_angle" for n in ast.walk(render))
 
 # Pivot radar uses relative angle, not accumulated MPU yaw.
