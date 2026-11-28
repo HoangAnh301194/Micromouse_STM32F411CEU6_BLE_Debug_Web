@@ -1312,7 +1312,8 @@ int Main_Runtime(void)
 
 #endif
 
-        if ((now - last_debug_ms) >= DEBUG_PERIOD_MS) {
+        /* MPU-only tests emit dedicated compact frames, not 50 Hz motion telemetry. */
+        if (!mpu_test_active && (now - last_debug_ms) >= DEBUG_PERIOD_MS) {
             static uint8_t ext_div = 0U;
             int32_t left_count;
             int32_t right_count;
