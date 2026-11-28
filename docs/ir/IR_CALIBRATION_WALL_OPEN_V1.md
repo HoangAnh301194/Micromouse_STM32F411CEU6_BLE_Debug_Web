@@ -1,3 +1,7 @@
+# Historical reference — Mode 1 calibration disabled
+
+Mode 1 is now a reserved menu entry on giomuadongbacv3. The procedure below is archived for reference only; it is not active firmware behavior.
+
 # Mode 1 — Stationary two-condition IR calibration (wall/open)
 
 This replaces the former four-pivot 360-degree procedure on branch

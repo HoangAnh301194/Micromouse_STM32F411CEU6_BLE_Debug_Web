@@ -4,7 +4,11 @@
 
 **Nguyên tắc:** trạng thái *đã bàn giao* chỉ áp dụng trong phạm vi đã kiểm tra; CI PASS không thay thế phép đo trên MCU và encoder có xung không chứng minh đã đo được điện áp/dòng điện. Khi có kết quả mới, cập nhật hồ sơ này và giữ nguyên các log gốc.
 
-## Mode 1 automatic wall/open — 28/11/2026, giomuadongbacv3
+## Mode 1 reserved — 28/11/2026, giomuadongbacv3
+
+- Mode 1 remains in menu only. No IR capture, countdown, automatic save or calibration panel. Historical module and offline report code retained but not invoked by mode menu. Build/bench acceptance pending.
+
+## Mode 1 automatic wall/open — 28/11/2026, giomuadongbacv3 (superseded)
 
 - Short KEY enters Mode 1 when reached, restarts during/after capture; long KEY exits. WALL 150 samples, nonblocking 5-second relocation, OPEN 150 samples, checked auto-save only for valid six-channel result. No motor motion or auto-apply.
 - SPP mirrors countdown, retry and exit; CSV format unchanged. Build/bench acceptance pending; see docs/ir/IR_CALIBRATION_WALL_OPEN_V1.md.

@@ -1,4 +1,4 @@
-name: v3 IR calibration smoke build
+name: v3 reserved Mode 1 smoke build
 on:
   push:
     branches: [giomuadongbacv3]

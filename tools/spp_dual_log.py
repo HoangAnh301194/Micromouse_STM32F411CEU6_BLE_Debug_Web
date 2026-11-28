@@ -250,22 +250,8 @@ class DualSessionLog:
         if line == "Selected mode 1: Calibration":
             self._has_menu_context=True
             self._deactivate()
-            self.active_sensor="CAL"
-            self._streaming=False
             return
-        if line.startswith("CAL,START,mode=1,stages=2"):
-            if self.active_sensor=="CAL":
-                self._close_active()
-                self._streaming=True
-                self._open_run("CAL",TEST_CSV_COLUMNS["CAL"],host_time)
-            return
-        if line == "CAL,EXIT":
-            self._deactivate()
-            return
-        if line.startswith(("CAL,REVIEW,","CAL,FAULT,","CAL,END,")):
-            if self.active_sensor=="CAL":
-                self._streaming=False
-                self._close_active()
+        if line.startswith(("CAL,", "CAL_LIVE,")):
             return
 
         if line.startswith("Selected mpu option "):

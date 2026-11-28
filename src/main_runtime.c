@@ -35,7 +35,6 @@
 #include "mode_menu.h"
 #include "mode_test_resources.h"
 #include "encoder_onebox.h"
-#include "ir_calibration_360.h"
 #include "oled_shared.h"
 #include "ssd1306.h"
 #endif
@@ -290,7 +289,7 @@ static void ModeMenu_Report(const ModeMenu *menu, ModeMenuEvent event)
 }
 
 /* Read-only snapshot: never replay selection events or arm a test on reconnect. */
-static void ModeMenu_ReportSnapshot(const ModeMenu *menu, const IRC_Context *cal)
+static void ModeMenu_ReportSnapshot(const ModeMenu *menu)
 {
     const char *focus = "None";
     const char *active = "None";
@@ -319,8 +318,8 @@ static void ModeMenu_ReportSnapshot(const ModeMenu *menu, const IRC_Context *cal
         if (menu->selected < MODE_MENU_ITEM_COUNT)
             active = ModeMenu_Name(menu->selected);
     }
-    BT_Printf("Menu snapshot: %s | focus=%s | selected=%s | stream=%u | cal=%u\r\n",
-              page, focus, active, (unsigned)menu->stream_running, (unsigned)cal->state);
+    BT_Printf("Menu snapshot: %s | focus=%s | selected=%s | stream=%u\r\n",
+              page, focus, active, (unsigned)menu->stream_running);
 }
 
 /* Runs in main context on every menu state change. Initializes every
@@ -482,8 +481,6 @@ int Main_Runtime(void)
 #if defined(MODE_MENU_ONLY)
     uint8_t test_resource_mask = 0U;
     uint32_t last_onebox_log_ms = 0U;
-    IRC_Context ir_calibration;
-    uint32_t last_cal_live_ms=0U;
     uint8_t mpu_ready_reported = 0U;
     uint32_t mpu_health_ms = 0U;
 #endif
@@ -599,7 +596,6 @@ int Main_Runtime(void)
     Control_Init(&mpu);
 #if defined(MODE_MENU_ONLY)
     EncoderOneBox_Init(); /* motor remains locked until guarded Start */
-    IRC_Init(&ir_calibration);
 #endif
     Control_Start();
 
@@ -629,7 +625,7 @@ int Main_Runtime(void)
 
         if (BT_Available()) {
 #if defined(MODE_MENU_ONLY)
-            /* Safe SPP commands: ?, N/K, P/G, E/Y/I, R calibration retry.
+            /* Safe SPP commands: ?, N/K, P/G, E/Y/I, menu navigation.
              * Motors remain locked regardless of Bluetooth traffic. */
             char command = BT_ReceiveChar();
             ModeMenuEvent remote = MODE_MENU_EVENT_NONE;
@@ -645,44 +641,22 @@ int Main_Runtime(void)
                               (unsigned)mpu.init_i2c_status);
                 BT_SendString("ONEBOX,PROFILE,ENABLED\r\n");
                 BT_SendString("TEST,PROFILE,UNIFIED,IR,MPU,ENC,MOTOR\r\n");
-                ModeMenu_ReportSnapshot(&mode_menu, &ir_calibration);
+                ModeMenu_ReportSnapshot(&mode_menu);
                 if (mode_menu.page == MODE_MENU_PAGE_ENCODER &&
                     mode_menu.active_encoder_option == MODE_MENU_ENCODER_PID) {
                     BT_SendString("Selected encoder option 8: PID\r\n");
                     PidMenu_ReportGains("VALUES");
                 }
             } else if (command == 'N') {
-                if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U) {
-                    if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"RESTART");
-                    mode_menu.focus = 0U;
-                    BT_SendString("CAL,RESTART_ACCEPTED\r\n");
-                    IRC_Arm(&ir_calibration, now, 0U);
-                } else {
-                    if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
-                    remote = ModeMenu_Next(&mode_menu);
-                    if (remote == MODE_MENU_EVENT_FOCUS && mode_menu.focus == 0U) {
-                        ModeMenu_Report(&mode_menu, remote);
-                        remote = ModeMenu_Select(&mode_menu);
-                    }
-                }
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                remote = ModeMenu_Next(&mode_menu);
             } else if (command == 'K') {
-                if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U) {
-                    if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"EXIT");
-                    IRC_Init(&ir_calibration);
-                    mode_menu.selected = MODE_MENU_NO_SELECTION;
-                    mode_menu.focus = 0U;
-                    BT_SendString("CAL,EXIT\r\n");
-                    ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
-                    ModeMenu_Draw(&mode_menu, 0U);
-                } else {
-                    if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
-                    remote = ModeMenu_Select(&mode_menu);
-                }
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                remote = ModeMenu_Select(&mode_menu);
             } else if (command == 'H') {
                 EncoderOneBox_HostPing(); /* lease only */
             } else if (command == 'P') {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"USER_STOP");
-                else if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
+                if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 else if (ModeMenu_PauseTest(&mode_menu)) {
                     BT_Printf("TEST STREAM STOPPED: %s\r\n",
                               ModeMenu_TestName(mode_menu.active_test));
@@ -726,17 +700,6 @@ int Main_Runtime(void)
                               ModeMenu_TestName(mode_menu.active_test));
                     ModeMenu_Draw(&mode_menu, 0U);
                 }
-            } else if (command == 'R') {
-                if (mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.selected == 0U &&
-                    !EncoderOneBox_IsRunning()) {
-                    if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"RESTART");
-                    BT_SendString("CAL,RESTART_ACCEPTED\r\n");
-                    IRC_Arm(&ir_calibration, now, 0U);
-                } else {
-                    BT_SendString("CAL,RESTART_REJECTED,reason=NOT_IN_MODE1\r\n");
-                }
-            } else if (command == 'O' || command == 'V') {
-                BT_SendString("CAL,COMMAND_REJECT,reason=AUTOMATIC_MODE\r\n");
             } else if (command == 'E' && ModeMenu_CanResetSensor(&mode_menu, 1U)) {
                 Encoder_Reset(); /* Atomic relative to TIM11. Motor locked. */
                 BT_SendString("ENCODER RESET OK\r\n");
@@ -768,8 +731,6 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, remote);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
-                if (remote == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
-                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now,0U);
                 ModeMenu_Draw(&mode_menu, remote == MODE_MENU_EVENT_SELECT);
             }
 #else
@@ -780,29 +741,7 @@ int Main_Runtime(void)
         {
             uint8_t menu_key = Board_ButtonPressed();
             if (EncoderOneBox_SuppressMenuButton()) menu_key = 0U;
-            uint8_t was_calibration = mode_menu.page == MODE_MENU_PAGE_MAIN &&
-                                      mode_menu.selected == 0U;
             ModeMenuEvent event = ModeMenu_Poll(&mode_menu, menu_key, now);
-            if (was_calibration && event == MODE_MENU_EVENT_FOCUS) {
-                mode_menu.focus = mode_menu.selected = 0U;
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"RESTART");
-                BT_SendString("CAL,RESTART_ACCEPTED\r\n");
-                IRC_Arm(&ir_calibration, now, 1U);
-                event = MODE_MENU_EVENT_NONE;
-            } else if (was_calibration && event == MODE_MENU_EVENT_SELECT) {
-                if (IRC_IsMotionActive(&ir_calibration)) IRC_Abort(&ir_calibration,"EXIT");
-                IRC_Init(&ir_calibration);
-                mode_menu.selected = MODE_MENU_NO_SELECTION;
-                mode_menu.focus = 0U;
-                BT_SendString("CAL,EXIT\r\n");
-                ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status, &test_resource_mask);
-                ModeMenu_Draw(&mode_menu, 0U);
-                event = MODE_MENU_EVENT_NONE;
-            } else if (event == MODE_MENU_EVENT_FOCUS &&
-                       mode_menu.page == MODE_MENU_PAGE_MAIN && mode_menu.focus == 0U) {
-                ModeMenu_Report(&mode_menu, event);
-                event = ModeMenu_Select(&mode_menu);
-            }
             if (event != MODE_MENU_EVENT_NONE) {
                 if (EncoderOneBox_IsRunning()) EncoderOneBox_Abort();
                 if (event == MODE_MENU_EVENT_TEST_SELECT ||
@@ -813,8 +752,6 @@ int Main_Runtime(void)
                 ModeMenu_Report(&mode_menu, event);
                 ModeMenu_ApplyResources(&mode_menu, &mpu, mpu_status,
                                         &test_resource_mask);
-                if (event == MODE_MENU_EVENT_SELECT && mode_menu.page==MODE_MENU_PAGE_MAIN &&
-                    mode_menu.selected==0U) IRC_Arm(&ir_calibration,now,1U);
                 ModeMenu_Draw(&mode_menu, event == MODE_MENU_EVENT_SELECT);
             }
             /* IR, MPU, All, and Encoder Log Receive stream only their
@@ -901,27 +838,6 @@ int Main_Runtime(void)
                                   (unsigned long)now, (unsigned long)age_us);
                     }
                 }
-            }
-            IRC_Update(&ir_calibration,now);
-            /* Live dashboard after completed run: no CSV write, does not
-             * change the per-run CAL_IR capture or its START/STOP lifetime. */
-            if (mode_menu.page==MODE_MENU_PAGE_MAIN &&
-                mode_menu.selected==0U &&
-                !IRC_IsMotionActive(&ir_calibration) &&
-                (ir_calibration.state==IRC_REVIEW ||
-                 ir_calibration.state==IRC_SAVED ||
-                 ir_calibration.state==IRC_FAULT) &&
-                (uint32_t)(now-last_cal_live_ms)>=100U) {
-                IR_Data_t ir;
-                uint32_t age;
-                last_cal_live_ms=now;
-                Control_GetIRSnapshot(&ir);
-                age=ir.scan_count?(uint32_t)(micros()-ir.completed_us):0xFFFFFFFFUL;
-                BT_Printf("CAL_LIVE,valid=%u,L0=%u,L45=%u,L90=%u,R0=%u,R45=%u,R90=%u\r\n",
-                    (unsigned)(age<=5000UL),
-                    (unsigned)ir.value[IR_L0],(unsigned)ir.value[IR_L45],
-                    (unsigned)ir.value[IR_L90],(unsigned)ir.value[IR_R0],
-                    (unsigned)ir.value[IR_R45],(unsigned)ir.value[IR_R90]);
             }
             {
                 EncoderOneBoxTelemetry motion;
